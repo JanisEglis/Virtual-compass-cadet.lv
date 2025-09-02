@@ -1,104 +1,128 @@
 <!DOCTYPE html>
 <html lang="lv">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CADET.LV Interaktīvais kompass ©Jānis Eglis</title>
-
-  <style>
-    /* Sākuma lapas poga (nemainīta) */
-    #openInteractivebuttoncase{
-      display:inline-flex;justify-content:center;align-items:center;width:100%;height:90%;
-    }
-    #openInteractive{
-      display:flex;padding:10px 20px;background-color:#783200;color:#fff;border:none;border-radius:3px;
-      font-size:16px;cursor:pointer;width:80%;justify-content:center;align-items:center;
-    }
-    #openInteractive:hover{ background:#bf5509; }
-  </style>
-</head>
-<body>
-
-  <p id="openInteractivebuttoncase">
-    <button id="openInteractive">Atvērt Interaktīvo kompasu</button>
-  </p>
-
-  <script>
-  document.getElementById('openInteractive').addEventListener('click', () => {
-    const interactiveWindow = window.open('', '_blank', 'width=1280,height=800');
-
-    if (!interactiveWindow) {
-      alert('Pārlūks bloķē jaunus logus. Lūdzu, atļaujiet pārlūkam atvērt logus.');
-      return;
-    }
-
-    interactiveWindow.document.write(`
-<!DOCTYPE html>
-<html lang="lv">
-<head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<link rel="icon" type="image/png" href="https://site-710050.mozfiles.com/files/710050/CADET_ICON.PNG" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 <title>CADET.LV Interaktīvais kompass ©Jānis Eglis</title>
+<link rel="icon" type="image/png" href="https://site-710050.mozfiles.com/files/710050/CADET_ICON.PNG" />
 
 <style>
-  /* ========= TAVS ESOŠAIS STILS (SAĪSINĀTS TIKAI KOMENTĀRIEM) ========= */
   :root { --vh: 1vh; }
+
   html, body { height:100%; margin:0; padding:0; }
-  body { height:calc(var(--vh) * 100); margin:0; padding:0; background:#f0f0f0;
-         display:flex; align-items:center; justify-content:center; height:100vh; overflow:hidden; position:relative; }
+  body {
+    height: calc(var(--vh) * 100);
+    margin:0; padding:0; background:#f0f0f0;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; position:relative;
+    font-family: system-ui, Segoe UI, Roboto, Ubuntu, sans-serif;
+  }
+
   canvas{
     background-color:#181818;
     background-image:url('https://site-710050.mozfiles.com/files/710050/medium/CADET_TRANSP_.png?1542126381');
-    background-repeat:no-repeat; background-attachment:fixed; background-size:70% 30%;
-    background-position:center; z-index:1; height:100%; width:100%;
+    background-repeat:no-repeat; background-attachment:fixed;
+    background-size:70% 30%; background-position:center;
+    z-index:1; height:100%; width:100%;
   }
 
-  #fullscreenMessage{ position:fixed; z-index:15; color:white; background:rgba(0,0,0,.4);
-    width:100%; height:100vh; display:flex; justify-content:center; align-items:center; visibility:visible;
+  #fullscreenMessage{
+    position:fixed; z-index:15; color:white; background:rgba(0,0,0,.4);
+    width:100%; height:100vh; display:flex; justify-content:center; align-items:center;
     backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);
   }
-  #fullscreenMessagetext{ background:rgba(255,0,0,.5); position:relative; color:white; font-weight:bold;
-    padding:20px; width:60%; max-width:90%; text-align:center; border-radius:10px; border:2px solid red; z-index:50; box-sizing:border-box; }
-  .highlight-title{ font-size:2.5vw; color:#fff; font-weight:bold; text-shadow:2px 2px 5px rgba(0,0,0,.5); display:block; margin-bottom:2px; }
-  .copyright{ display:block; margin-top:10px; font-size:1.5vw; color:#fff; opacity:.8; }
-
-  .arrow{ border-left:2.5vh solid transparent; border-right:2.5vh solid transparent; border-bottom:5vh solid red;
-    position:fixed; top:20px; right:56px; display:flex; animation:bounce 1.5s infinite ease-in-out; z-index:10; }
-  .arrow::before{ content:"𖧵"; position:absolute; color:white; font-size:2.5vh; transform:scaleX(1.5); top:10px; right:-5px; z-index:11; }
-  @keyframes bounce{ 0%{transform:translateY(0)} 50%{transform:translateY(-15px)} 100%{transform:translateY(0)} }
-
   #fullscreenMessage.hidden{ visibility:hidden; }
   .fs-message-hidden{ display:none !important; }
 
-  @media (max-width:1024px){ :root{ --vh:1vh; } }
+  #fullscreenMessagetext{
+    background:rgba(255, 0, 0, 0.5);
+    color:white; font-weight:bold; padding:20px;
+    width:60%; max-width:90%; text-align:center; border-radius:10px; border:2px solid red;
+    z-index:50; box-sizing:border-box;
+  }
+  .highlight-title{ font-size:2.5vw; color:#fff; font-weight:bold; text-shadow:2px 2px 5px rgba(0,0,0,.5); display:block; margin-bottom:2px; }
+  .copyright{ display:block; margin-top:10px; font-size:1.5vw; color:#fff; opacity:.8; }
 
-  /* ——— POZĪCIJAS IZVĒLNES (nemainītas) ——— */
-  .button-container.bottom{ /* vecais nosaukums — vairs neizmantojam vizuāli, bet atstājam saderībai */ }
-  .button-container.left{}
-  .button-container.right{}
+  .arrow{
+    border-left:2.5vh solid transparent; border-right:2.5vh solid transparent; border-bottom:5vh solid red;
+    position:fixed; top:20px; right:56px; display:flex; animation:bounce 1.5s infinite ease-in-out; z-index:10;
+  }
+  .arrow::before{ content:"𖧵"; position:absolute; color:white; font-size:2.5vh; transform:scaleX(1.5); top:10px; right:-5px; z-index:11; }
+  @keyframes bounce{ 0%{transform:translateY(0)} 50%{transform:translateY(-15px)} 100%{transform:translateY(0)} }
 
-  .position-selector-container{ position:fixed; top:15%; right:0; transform:translateY(-50%); z-index:3; }
-  .position-selector{ background:rgba(0,0,0,.8); padding:10px; border-radius:0; box-shadow:0 4px 6px rgba(0,0,0,.2);
-    width:250px; display:flex; flex-direction:column; align-items:center; position:relative; transition:transform .3s ease-in-out; }
-  .position-selector::after{ content:""; display:block; height:3px; background:rgba(255,0,0,.8); position:absolute; bottom:0; left:0; right:0; }
-  .position-selector select{ width:200px; padding:5px; border:none; border-radius:3px; font-size:16px; background:rgba(0,0,0,.5); color:white; }
-  .position-selector.hidden{ transform:translateX(100%); }
-  .position-selector-container .toggle-selector{ position:absolute; top:50%; left:-11%; transform:translateY(-50%);
-    background:rgba(255,0,51,.7); border:none; color:white; border-radius:10px 0 0 10px; width:30px; height:100%; cursor:pointer; }
-  .position-selector-container .toggle-selector:hover{ background:rgba(255,0,0,.9); }
+  /* Canvas konteiners + resize rokturis */
+  #canvasContainer{ position:fixed; width:1920px; height:1080px; }
+  #resizeHandle{
+    display:none; align-items:center; justify-content:center;
+    width:12px; height:12px; border-radius:5px;
+    position:absolute; background-color:rgba(255,0,0,.5);
+    cursor:se-resize; z-index:5;
+  }
+  #resizeHandle img{ width:90%; height:90%; object-fit:contain; pointer-events:none; }
 
-  .position-selector-container-left{ position:fixed; top:15%; left:0; transform:translateY(-50%); z-index:3; }
-  .position-selector-left{ background:rgba(0,0,0,.8); padding:10px; border-radius:0; box-shadow:0 4px 6px rgba(0,0,0,.2);
-    width:250px; display:flex; flex-direction:column; align-items:center; position:relative; transition:transform .3s ease-in-out; }
-  .position-selector-left.hidden-left{ transform:translateX(-100%); }
-  .toggle-selector-left{ position:absolute; top:50%; right:-7%; transform:translateY(-50%); background:rgba(255,0,51,.7);
-    border:none; color:white; border-radius:0 10px 10px 0; width:30px; height:100%; cursor:pointer; }
-  .toggle-selector-left:hover{ background:rgba(255,0,0,.9); }
-  .position-selector-left select, .position-selector select{ width:230px; padding:5px; border:none; border-radius:3px; font-size:16px; background:rgba(0,0,0,.5); color:white; }
-  .position-selector-left select option, .position-selector select option{ background:rgba(0,0,0,.6); color:white; border:2px solid red; border-radius:4px; }
+  /* Dropdowns */
+  .dropdown-container{ position:fixed; top:0; left:0; z-index:10; width:100%; background:transparent; }
+  .top-bar{
+    position:fixed; top:0; left:0; width:100%; color:#fff; padding:0;
+    display:flex; justify-content:space-between; align-items:center; z-index:20;
+    background:transparent; transition:height .3s ease, padding .3s ease;
+  }
+  .top-bar .dropdown-toggle{
+    background:rgba(255,0,51,.7); border:none; color:white; padding:3px; cursor:pointer; font-size:20px;
+    border-radius:0 0 5px 5px; width:49%; text-align:center; display:block; transition:background .3s, box-shadow .3s;
+  }
+  .top-bar .dropdown-toggle:hover{ background:rgba(255,0,0,.9); }
+  .top-bar .dropdown-toggle.active{ box-shadow:0 0 10px rgba(255,0,51,.8); }
+  .top-bar .dropdown-toggle:first-child{ margin-right:10px; }
 
-  /* ——— DAUDZ PĀRĒJĀ TAVA STILA PALIEK NEMAINĪTI (dropdowns, about, canvas, compass utt.) ——— */
+  .dropdown-menu{
+    position:fixed; top:-100%; left:0; width:100%; height:calc(100vh - 40px);
+    background:rgba(0,0,0,.8); padding:20px; display:flex; flex-wrap:wrap;
+    justify-content:center; align-items:center; box-shadow:0 4px 6px rgba(0,0,0,.2);
+    transition: top .4s ease, opacity .4s ease, visibility 0s .4s; opacity:0; visibility:hidden;
+  }
+  .dropdown-menu.visible{ top:-20px; margin-left:-18px; opacity:1; visibility:visible; transition: top .4s ease, opacity .4s ease; }
+  .dropdown-menu a{
+    color:white; text-decoration:none; padding:15px 20px; font-size:20px; text-align:center; transition:background .3s;
+    display:flex; align-items:center; justify-content:center; width:30%; height:50px; margin:10px; background:rgba(50,50,50,.8); border-radius:5px;
+  }
+  .dropdown-menu a:hover{ background:rgba(255,0,51,.7); color:#fff; }
+
+  #contentFrame, #instructionFrame{ width:100%; height:0; border:none; display:block; margin-top:0; transition:height .3s, margin-top .3s; }
+  #contentFrame.active, #instructionFrame.active{ height:75vh; margin-top:20px; margin-bottom:-40px; }
+  .dropdown-menu.shrink a{ padding:5px 10px; font-size:14px; height:30px; margin-top:60px; }
+
+  /* About josla */
+  #about{
+    position:fixed; bottom:0; display:flex; gap:2vw; justify-content:center; width:100%; z-index:20;
+    padding:.3vw; background:rgba(0,0,0,.8); color:rgba(255,255,255,.8); text-align:center;
+  }
+  .abouttext{ font-size:15px; margin:1px 0; text-align:center; }
+
+  .aboutlink, .qrLink{
+    display:inline-block; padding:5px 10px; background:#d0021b; color:white; font-weight:bold; text-decoration:none;
+    border-radius:5px 5px 0 0; transition:all .3s; width:170px;
+  }
+  .aboutlink{ position:absolute; right:10px; top:0; z-index:5; }
+  .qrLink{ position:absolute; left:10px; bottom:-2px; z-index:5; }
+  .aboutlink:hover, .qrLink:hover{ background:rgba(255,0,51,1); transform:scale(1.05); }
+
+  /* Iframe konteineri */
+  #iframeContainerAbout{
+    position:fixed; width:500px; height:600px; bottom:-620px; right:20px; background:#fff;
+    box-shadow:0 4px 6px rgba(0,0,0,.1); border-radius:8px; overflow:hidden; transition:bottom .5s; display:none; z-index:9999;
+  }
+  #iframeContainerAbout iframe{ width:100%; height:100%; border:none; }
+  #closeIframeAbout{ position:absolute; top:5px; right:5px; background:red; color:#fff; border:none; width:25px; height:25px; border-radius:50%; font-size:14px; cursor:pointer; }
+
+  #iframeContainerQR{
+    position:fixed; width:300px; height:330px; bottom:-370px; left:20px; background:rgba(0,0,0,.8);
+    box-shadow:0 4px 6px rgba(0,0,0,.1); border-radius:8px; overflow:hidden; transition:bottom .5s; display:none; z-index:20; text-align:center; padding:20px;
+  }
+  .qrTitle{ font-size:18px; font-weight:bold; margin-bottom:10px; color:#fff; }
+  #qrCodeImage{ width:250px; height:250px; }
+
+  /* Kompass */
   #compassContainer{ position:absolute; width:25vw; height:14vw; z-index:3; transform-origin:center; pointer-events:none; image-rendering:crisp-edges; }
   #compassScaleContainer{ position:relative; width:25vw; height:14vw; transform-origin:center; pointer-events:none; image-rendering:crisp-edges; }
   #compassInner{ position:absolute; width:14vw; height:14vw; left:41.5%; top:0%; transform:translate(-50%,-50%); transform-origin:center; image-rendering:crisp-edges; }
@@ -107,36 +131,38 @@
   #compassScale{ position:absolute; width:13vw; height:13vw; left:50.05%; top:50.04%; transform:translate(-50%,-50%); transform-origin:center; display:block; pointer-events:auto; image-rendering:crisp-edges; border-radius:50%; }
   @keyframes rotateCompassNeedle{ from{transform:translate(-50%,-50%) rotate(0deg)} to{transform:translate(-50%,-50%) rotate(360deg)} }
   #compassNeedle{ position:absolute; width:.65vw; height:auto; left:69.5%; top:50%; transform:translate(-50%,-50%); transform-origin:center; opacity:.85; image-rendering:crisp-edges; animation:rotateCompassNeedle 50s linear infinite; }
-  canvas,#compassContainer{ touch-action:none; }
+
+  canvas, #compassContainer{ touch-action:none; }
   #mapCanvas.with-transition{ transition:transform .5s ease-in-out; }
 
-  /* ======== JAUNAIS DOCK + KUPOLS (pogu konteiners) ======== */
+  #touchscreenPopup, #fullscreenPopup{
+    position:fixed; bottom:30px; right:10px; color:white; padding:15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,.1);
+    z-index:9999; display:none; font-weight:bold; animation:slide-in .5s ease-out;
+  }
+  .popup-success{ background:#28a745; }
+  .popup-error{ background:#dc3545; }
+  @keyframes slide-in{ from{transform:translateX(100%);} to{transform:translateX(0);} }
 
+  /* ===================== JAUNAIS DOCK + KUPOLS ===================== */
   :root{
-    --dock-bg:#0f1115;
     --dock1:#1b1f25; --dock2:#14171c;
     --dock-ring:#d22; --dock-icon:#eef2f7; --dock-muted:#3a3f47;
     --dock-shadow:0 12px 28px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.35);
-
-    /* Dinamika – JS pārraksta uz .dock */
     --tipX: 50%;
-    --labelW: 210px;       /* max platums etiķetei */
-    --capH: 32px;          /* kupola augstums (pielāgojas etiķetei) */
-    --capSkew: 14px;       /* augšas sašaurinājums – mazāks = lēzenāki sāni */
-    --capR: 10px;          /* augšas stūru rādiuss (vienāds ar etiķeti) */
-    --capExtraW: 12px;     /* papildu platums kupolam – lēzenāki sāni */
-    --labelOffsetY: 2px;   /* etiķetes vertikālā nobīde */
+    --labelW: 210px;
+    --capH: 32px;
+    --capSkew: 14px;
+    --capR: 10px;
+    --capExtraW: 12px;
+    --labelOffsetY: 2px;
   }
 
-  /* Doka ārējais konteiners — saglabājam #buttonContainer + bottom|left|right */
-  #buttonContainer.dock-wrap{
-    position:fixed; width:100%; z-index:25; pointer-events:none; transition:all .20s ease-in-out;
-  }
+  /* Doka “wrapper” — izmantojam Tavas klases bottom/left/right */
+  #buttonContainer.dock-wrap{ position:fixed; width:100%; z-index:25; pointer-events:none; transition:all .2s ease; }
   #buttonContainer.bottom{ bottom: calc(var(--vh) * 5); left:50%; transform:translateX(-50%); display:flex; justify-content:center; }
   #buttonContainer.left{ bottom:50%; left:2%; transform:translateY(50%); display:flex; justify-content:flex-start; }
   #buttonContainer.right{ bottom:50%; right:2%; transform:translateY(50%); display:flex; justify-content:flex-end; }
 
-  /* Pats doks */
   .dock{
     position:relative; overflow:visible; pointer-events:auto;
     display:flex; gap:22px; align-items:center;
@@ -147,63 +173,31 @@
     backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
   }
 
-  /* Kupols (SVG) */
   .dock-cap{
-    position:absolute; left:0;
-    top:calc(-1 * var(--capH));
-    width:calc(var(--labelW) + 22px + var(--capExtraW));
-    height:var(--capH);
-    transform:translateX(calc(var(--tipX) - 50%));
-    transform-origin:bottom center;
-    opacity:0; pointer-events:none; z-index:1;
-    filter:drop-shadow(0 10px 18px rgba(0,0,0,.35));
-    will-change:transform,opacity;
+    position:absolute; left:0; top:calc(-1 * var(--capH));
+    width:calc(var(--labelW) + 22px + var(--capExtraW)); height:var(--capH);
+    transform:translateX(calc(var(--tipX) - 50%)); transform-origin:bottom center;
+    opacity:0; pointer-events:none; z-index:1; filter:drop-shadow(0 10px 18px rgba(0,0,0,.35)); will-change:transform,opacity;
   }
-  .dock.show-cap .dock-cap{
-    opacity:1; animation:capPop .35s cubic-bezier(.17,.9,.25,1.2) both;
-  }
-  @keyframes capPop{
-    0% { transform:translateX(calc(var(--tipX) - 50%)) scaleY(.2); }
-    60%{ transform:translateX(calc(var(--tipX) - 50%)) scaleY(1.06); }
-    100%{transform:translateX(calc(var(--tipX) - 50%)) scaleY(1); }
-  }
+  .dock.show-cap .dock-cap{ opacity:1; animation:capPop .35s cubic-bezier(.17,.9,.25,1.2) both; }
+  @keyframes capPop{ 0%{transform:translateX(calc(var(--tipX) - 50%)) scaleY(.2)} 60%{transform:translateX(calc(var(--tipX) - 50%)) scaleY(1.06)} 100%{transform:translateX(calc(var(--tipX) - 50%)) scaleY(1)} }
 
-  /* Etiķete (teksts) — sinhroni ar kupolu */
   .dock-label{
-    position:absolute; left:0;
-    top:calc(-1 * var(--capH) - var(--labelOffsetY));
+    position:absolute; left:0; top:calc(-1 * var(--capH) - var(--labelOffsetY));
     transform:translateX(calc(var(--tipX) - 50%));
-    max-width:var(--labelW);
-    padding:6px 12px;
-    background:rgba(22,25,30,.92);
-    border:1px solid rgba(210,34,34,.45);
-    border-radius:var(--capR);
-    color:#fff; font-size:13px; line-height:1.05; font-weight:600;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    box-shadow:0 8px 20px rgba(0,0,0,.35);
-    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-    opacity:0; pointer-events:none; z-index:3;
-    transition:opacity .18s ease, max-width .12s ease, clip-path .24s ease;
-    clip-path: inset(0 50% 0 50% round var(--capR));
+    max-width:var(--labelW); padding:6px 12px; background:rgba(22,25,30,.92);
+    border:1px solid rgba(210,34,34,.45); border-radius:var(--capR);
+    color:#fff; font-size:13px; line-height:1.05; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    box-shadow:0 8px 20px rgba(0,0,0,.35); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    opacity:0; pointer-events:none; z-index:3; transition:opacity .18s, max-width .12s, clip-path .24s; clip-path: inset(0 50% 0 50% round var(--capR));
     will-change: transform, clip-path, opacity;
   }
-  .dock.show-label .dock-label{
-    opacity:1; clip-path: inset(0 0 0 0 round var(--capR));
-    animation:labelIn .26s cubic-bezier(.22,.9,.24,1) both;
-  }
-  @keyframes labelIn{
-    from{ transform:translateX(calc(var(--tipX) - 50%)) translateY(6px) scale(.96); }
-    to  { transform:translateX(calc(var(--tipX) - 50%)) translateY(0)   scale(1); }
-  }
+  .dock.show-label .dock-label{ opacity:1; clip-path: inset(0 0 0 0 round var(--capR)); animation:labelIn .26s cubic-bezier(.22,.9,.24,1) both; }
+  @keyframes labelIn{ from{ transform:translateX(calc(var(--tipX) - 50%)) translateY(6px) scale(.96)} to{ transform:translateX(calc(var(--tipX) - 50%)) translateY(0) scale(1)} }
 
-  /* Doka pogas (override globālajam button stilam) */
   .dock-btn{
-    all:unset; /* izolējamies no globālā button stila */
-    --size:64px;
-    width:var(--size); height:var(--size);
-    position:relative; color:var(--dock-icon);
-    border-radius:50%; display:grid; place-items:center; cursor:pointer;
-    -webkit-tap-highlight-color:transparent; outline:none;
+    all:unset; --size:64px; width:var(--size); height:var(--size); position:relative; color:var(--dock-icon);
+    border-radius:50%; display:grid; place-items:center; cursor:pointer; -webkit-tap-highlight-color:transparent; outline:none;
   }
   .dock-btn::before{
     content:""; position:absolute; inset:0; border-radius:50%;
@@ -221,16 +215,14 @@
     .dock-btn{ --size:58px }
     .dock-btn svg{ width:26px; height:26px }
   }
-
   @media (prefers-reduced-motion: reduce){
     .dock-cap, .dock-label{ transition:none !important; animation:none !important; }
   }
-
 </style>
 </head>
 <body>
 
-  <!-- Brīdinājumi / pārklājumi (nemainīti) -->
+  <!-- Pilnekrāna brīdinājums -->
   <div id="fullscreenMessage" class="fs-message-hidden">
     <div class="arrow"></div>
     <p id="fullscreenMessagetext">
@@ -244,16 +236,18 @@
   <div id="touchscreenPopup"></div>
   <div id="fullscreenPopup"></div>
 
-  <div id="canvasContainer" style="position:fixed;width:1920px;height:1080px;">
-    <canvas id="mapCanvas" width="1920" height="1080" style="display:block;width:100%;height:100%;"></canvas>
-    <img id="uploadedImg" src="" alt="Augšupielādētais attēls" style="position:absolute;top:0;left:0;display:none;cursor:move;">
+  <!-- Kanvas konteiners -->
+  <div id="canvasContainer">
+    <canvas id="mapCanvas" width="1920" height="1080"></canvas>
+    <img id="uploadedImg" src="" alt="Augšupielādētais attēls" style="position:absolute; top:0; left:0; display:none; cursor:move;">
     <div id="resizeHandle"><img src="https://site-710050.mozfiles.com/files/710050/resize_map__1_.png" alt="Resize"></div>
   </div>
 
+  <!-- Papildu (palīdz) attēlu rediģēšanai – atstāts saderībai -->
   <img id="newUploadedImg" style="position:absolute; top:50px; left:50px; display:none; cursor:move;" alt="Augšupielādētais attēls">
   <div id="newResizeHandle" style="display:none; width:30px; height:30px; position:absolute; cursor:se-resize; z-index:9;"></div>
 
-  <!-- Dropdown joslas (nemainītas) -->
+  <!-- Augšas izvēlnes -->
   <div class="dropdown-container">
     <div class="top-bar">
       <span class="dropdown-toggle" id="toggleInstruction">Lietotāja ceļvedis ⬇</span>
@@ -264,7 +258,7 @@
       <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/lietotaja-celvedis/page/">DARBAM AR DATORU</a>
       <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/lietotaja-celvedis/page-1/">DARBAM AR SKĀRIENJŪTĪGĀM IERĪCĒM</a>
       <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/lietotaja-celvedis/page-2/">LIETOŠANAS NOTEIKUMI</a>
-      <iframe id="instructionFrame" name="contentFrame" style="width:100%; height:85vh; border:none;"></iframe>
+      <iframe id="instructionFrame" name="contentFrame"></iframe>
     </div>
 
     <div class="dropdown-menu" id="dropdownMaterials">
@@ -274,11 +268,11 @@
       <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/direkcijas-lenkis-un-azimuts/" class="dropdown-link">DIREKCIJAS LEŅĶIS UN AZIMUTS</a>
       <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/koordinates/" class="dropdown-link">KOORDINĀTES</a>
       <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/citi/" class="dropdown-link">CITI</a>
-      <iframe id="contentFrame" name="contentFrame" style="width:100%; height:75vh; border:none;"></iframe>
+      <iframe id="contentFrame" name="contentFrame"></iframe>
     </div>
   </div>
 
-  <!-- Izvēlnes novietojumam (nemainītas) -->
+  <!-- Pozīcijas izvēles (pogu novietojumam) -->
   <div class="position-selector-container">
     <div class="position-selector">
       <button class="toggle-selector">❯</button>
@@ -303,17 +297,17 @@
     </div>
   </div>
 
-  <!-- Popup GRID menu (nemainīts) -->
+  <!-- GRID izvēlne (kura jau bija) -->
   <div id="popupMenu" style="display:none;">
     <h3>Izvēlieties noteikšanas metodi</h3>
-    <div class="button-row">
-      <button id="popupOption1" class="popup-button"><img src="https://site-710050.mozfiles.com/files/710050/GRID_VIEW_1_1.png" alt="Funkcija 1" /></button>
-      <button id="popupOption2" class="popup-button"><img src="https://site-710050.mozfiles.com/files/710050/GRID_VIEW_2.png" alt="Funkcija 2" /></button>
+    <div class="button-row" style="display:flex; gap:20px; justify-content:center;">
+      <button id="popupOption1" class="popup-button"><img src="https://site-710050.mozfiles.com/files/710050/GRID_VIEW_1_1.png" alt="Funkcija 1" style="width:9vw; height:9vw; object-fit:contain; border-radius:10px;" /></button>
+      <button id="popupOption2" class="popup-button"><img src="https://site-710050.mozfiles.com/files/710050/GRID_VIEW_2.png" alt="Funkcija 2" style="width:9vw; height:9vw; object-fit:contain; border-radius:10px;" /></button>
     </div>
     <button id="popupClose" class="popup-close">Aizvērt</button>
   </div>
 
-  <!-- ====== LEGACY POGAS (SLĒPTAS) – saglabā esošos eventus ====== -->
+  <!-- Slēptās legacy pogas (tām jau ir event listeneri zemāk) -->
   <div aria-hidden="true" style="display:none">
     <button id="resetMap"></button>
     <button id="uploadMap"></button>
@@ -324,7 +318,7 @@
     <button id="lockRotationMode"></button>
   </div>
 
-  <!-- ====== JAUNAIS DOCK POGU KONTEINERS ====== -->
+  <!-- ====================== JAUNAIS DOCK POGU KONTEINERS ====================== -->
   <div id="buttonContainer" class="dock-wrap bottom">
     <nav class="dock" id="dock" aria-label="Galvenā rīkjosla">
       <svg class="dock-cap" id="dockCap" aria-hidden="true"></svg>
@@ -379,26 +373,27 @@
     </nav>
   </div>
 
-  <!-- About josla/QR/Feedback (nemainīts) -->
-  <div id="about" style="position:fixed; bottom:0; width:100%; z-index:20; padding:.3vw; background:rgba(0,0,0,.8); color:rgba(255,255,255,.8); text-align:center;">
-    <a href="javascript:void(0);" class="qrLink" onclick="toggleIframeQR(event)" style="display:inline-block;padding:5px 10px;background:#d0021b;color:#fff;font-weight:bold;text-decoration:none;border-radius:5px 5px 0 0;position:absolute;left:10px;bottom:-2px;z-index:5;width:170px;">KOPLIETOT</a>
+  <!-- About josla -->
+  <div id="about">
+    <a href="javascript:void(0);" class="qrLink" onclick="toggleIframeQR(event)">KOPLIETOT</a>
     <span class="abouttext">CADET.LV</span>
     <span class="abouttext">INTERAKTĪVAIS KOMPASS</span>
     <span class="abouttext">© JĀNIS EGLIS</span>
-    <a href="javascript:void(0);" class="aboutlink" onclick="toggleIframeAbout(event)" style="display:inline-block;padding:5px 10px;background:#d0021b;color:#fff;font-weight:bold;text-decoration:none;border-radius:5px 5px 0 0;position:absolute;right:10px;top:0;z-index:5;width:170px;">ATSAUKSME / ZIŅOT</a>
+    <a href="javascript:void(0);" class="aboutlink" onclick="toggleIframeAbout(event)">ATSAUKSME / ZIŅOT</a>
   </div>
 
-  <div id="iframeContainerAbout" style="position:fixed;width:500px;height:600px;bottom:-620px;right:20px;background:#fff;box-shadow:0 4px 6px rgba(0,0,0,.1);border-radius:8px;overflow:hidden;transition:bottom .5s ease-in-out;display:none;z-index:9999;">
-    <iframe id="feedbackIframe" src="https://docs.google.com/forms/d/e/1FAIpQLSdflr72km2RpI7hdn05AmH5gRZgBk69y7UCz0sCJ37ujOyQ3Q/viewform?embedded=true" style="width:100%;height:100%;border:none;"></iframe>
-    <button id="closeIframeAbout" onclick="toggleIframeAbout(event)" style="position:absolute;top:5px;right:5px;background:red;color:#fff;border:none;width:25px;height:25px;border-radius:50%;font-size:14px;cursor:pointer;">✖</button>
+  <!-- Iframe konteineri -->
+  <div id="iframeContainerAbout">
+    <iframe id="feedbackIframe" src="https://docs.google.com/forms/d/e/1FAIpQLSdflr72km2RpI7hdn05AmH5gRZgBk69y7UCz0sCJ37ujOyQ3Q/viewform?embedded=true"></iframe>
+    <button id="closeIframeAbout" onclick="toggleIframeAbout(event)">✖</button>
   </div>
 
-  <div id="iframeContainerQR" style="position:fixed;width:300px;height:330px;bottom:-370px;left:20px;background:rgba(0,0,0,.8);box-shadow:0 4px 6px rgba(0,0,0,.1);border-radius:8px;overflow:hidden;transition:bottom .5s ease-in-out;display:none;z-index:20;text-align:center;padding:20px;">
+  <div id="iframeContainerQR">
     <div id="qrCodeContent">
-      <p class="qrTitle" style="font-size:18px;font-weight:bold;margin-bottom:10px;color:#fff;">KOPLIETOŠANAS QR KODS AUDITORIJAI</p>
-      <img id="qrCodeImage" src="https://site-710050.mozfiles.com/files/710050/DOC_ERROR_AR_KRUSTU_PNG-1.png" alt="QR Code" style="width:250px;height:250px;">
+      <p class="qrTitle">KOPLIETOŠANAS QR KODS AUDITORIJAI</p>
+      <img id="qrCodeImage" src="https://site-710050.mozfiles.com/files/710050/DOC_ERROR_AR_KRUSTU_PNG-1.png" alt="QR Code">
     </div>
-    <button id="closeIframeQR" onclick="toggleIframeQR(event)" style="position:absolute;top:5px;right:5px;background:red;color:white;border:none;width:25px;height:25px;border-radius:50%;font-size:14px;cursor:pointer;">✖</button>
+    <button id="closeIframeQR" onclick="toggleIframeQR(event)">✖</button>
   </div>
 
   <!-- Kompass -->
@@ -415,39 +410,606 @@
   </div>
 
 <script>
-/* ========= TAVA ESOŠĀ LOĢIKA (saīsināta komentāriem) ========= */
-function debounce(func, wait=50){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>func.apply(this,a), wait); }; }
-function updateViewportHeight(){ const vh=window.innerHeight*0.01; document.documentElement.style.setProperty('--vh', vh+'px'); }
-function checkWindowSize(){ const fm=document.getElementById('fullscreenMessage'); const w=window.innerWidth, h=window.innerHeight; if(w>=1024 && h>=700){ fm.classList.add('hidden'); } else { fm.classList.remove('hidden'); } }
+/* =================== Palīgfunkcijas & sākotnējie iestatījumi =================== */
+function debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a), wait||50); }; }
+function updateViewportHeight(){ const vh = window.innerHeight * 0.01; document.documentElement.style.setProperty('--vh', vh + 'px'); }
+function checkWindowSize(){
+  const el=document.getElementById('fullscreenMessage');
+  if(window.innerWidth>=1024 && window.innerHeight>=700) el.classList.add('hidden'); else el.classList.remove('hidden');
+}
 function handleResize(){ updateViewportHeight(); checkWindowSize(); }
-window.addEventListener('resize', debounce(handleResize,50)); window.addEventListener('orientationchange', handleResize); window.addEventListener('load', handleResize);
+window.addEventListener('resize', debounce(handleResize,50));
+window.addEventListener('orientationchange', handleResize);
+window.addEventListener('load', handleResize);
 
-/* ——— KARTES ATTĒLS, ZĪMĒŠANA, UPLOAD, ZOOM, DRAG u.c. ——— */
-const canvas=document.getElementById('mapCanvas'); const ctx=canvas.getContext('2d'); const img=new Image(); img.src='';
+/* =================== KARTES ATTĒLS – zīmēšana, drag, zoom, resize =================== */
+const canvas = document.getElementById('mapCanvas');
+const ctx = canvas.getContext('2d');
+const img = new Image(); img.src = '';
 let imgX=0,imgY=0,imgScale=1,imgWidth,imgHeight,dragging=false,resizing=false,startX,startY,startWidth,startHeight,lastTouchDistance=0;
-const resizeHandle=document.getElementById('resizeHandle');
-resizeHandle.style.display='block'; resizeHandle.style.position='absolute'; resizeHandle.style.zIndex='10';
-resizeHandle.style.width=Math.max(40, window.innerWidth*0.05)+'px'; resizeHandle.style.height=Math.max(40, window.innerHeight*0.05)+'px';
+
+const resizeHandle = document.getElementById('resizeHandle');
+resizeHandle.style.display='block';
+resizeHandle.style.position='absolute';
+resizeHandle.style.zIndex='10';
+resizeHandle.style.width=Math.max(40, window.innerWidth*0.05)+'px';
+resizeHandle.style.height=Math.max(40, window.innerHeight*0.05)+'px';
 resizeHandle.style.cursor='se-resize';
 
 function adjustImageSize(){
-  const ar=img.naturalWidth/img.naturalHeight, scaleFactor=.85;
-  if (canvas.width/canvas.height>ar){ imgWidth=canvas.height*ar*scaleFactor; imgHeight=canvas.height*scaleFactor; }
-  else{ imgWidth=canvas.width*scaleFactor; imgHeight=(canvas.width/ar)*scaleFactor; }
-  imgX=(canvas.width-imgWidth)/2; imgY=(canvas.height-imgHeight)/2; imgScale=1;
+  const ar = img.naturalWidth / img.naturalHeight;
+  const scaleFactor = 0.85;
+  if (canvas.width / canvas.height > ar) {
+    imgWidth = canvas.height * ar * scaleFactor;
+    imgHeight = canvas.height * scaleFactor;
+  } else {
+    imgWidth = canvas.width * scaleFactor;
+    imgHeight = (canvas.width / ar) * scaleFactor;
+  }
+  imgX = (canvas.width - imgWidth) / 2;
+  imgY = (canvas.height - imgHeight) / 2;
+  imgScale = 1;
 }
 function positionResizeHandle(){
-  resizeHandle.style.left=(imgX + (imgWidth*imgScale) - resizeHandle.clientWidth)+'px';
-  resizeHandle.style.top =(imgY + (imgHeight*imgScale) - resizeHandle.clientHeight)+'px';
+  resizeHandle.style.left = (imgX + (imgWidth*imgScale) - resizeHandle.clientWidth) + 'px';
+  resizeHandle.style.top  = (imgY + (imgHeight*imgScale) - resizeHandle.clientHeight) + 'px';
   resizeHandle.style.display='flex';
 }
 function drawImage(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(img.src) ctx.drawImage(img, imgX, imgY, imgWidth*imgScale, imgHeight*imgScale);
-  ctx.lineWidth=2; ctx.strokeStyle="red"; if(img.src) ctx.strokeRect(imgX,imgY,imgWidth*imgScale,imgHeight*imgScale);
+  if(img.src){ ctx.lineWidth=2; ctx.strokeStyle="red"; ctx.strokeRect(imgX,imgY,imgWidth*imgScale,imgHeight*imgScale); }
   positionResizeHandle();
 }
+img.onload = function(){ adjustImageSize(); drawImage(); positionResizeHandle(); };
 
+document.getElementById('resetMap').addEventListener('click', ()=>{ adjustImageSize(); drawImage(); });
+
+canvas.addEventListener('mousedown', e=>{ if(e.target===resizeHandle) return; startX=e.offsetX; startY=e.offsetY; dragging=true; });
+canvas.addEventListener('mousemove', e=>{
+  if(!dragging) return;
+  let dx=e.offsetX-startX, dy=e.offsetY-startY; imgX+=dx; imgY+=dy; startX=e.offsetX; startY=e.offsetY; drawImage();
+});
+canvas.addEventListener('mouseup', ()=> dragging=false);
+
+canvas.addEventListener('wheel', e=>{
+  e.preventDefault();
+  const z = e.deltaY>0 ? 0.95 : 1.05;
+  const mx=e.offsetX, my=e.offsetY; const offX=mx-imgX, offY=my-imgY;
+  imgX = mx - offX*z; imgY = my - offY*z; imgScale*=z; drawImage();
+},{passive:false});
+
+function getDistance(t1,t2){ const dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY; return Math.hypot(dx,dy); }
+
+canvas.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  if(e.touches.length===1){ startX=e.touches[0].clientX; startY=e.touches[0].clientY; dragging=true; }
+  else if(e.touches.length===2){ lastTouchDistance=getDistance(e.touches[0], e.touches[1]); }
+},{passive:false});
+canvas.addEventListener('touchmove', e=>{
+  e.preventDefault();
+  if(e.touches.length===1 && dragging){
+    let dx=e.touches[0].clientX-startX, dy=e.touches[0].clientY-startY;
+    imgX+=dx; imgY+=dy; startX=e.touches[0].clientX; startY=e.touches[0].clientY; drawImage();
+  } else if(e.touches.length===2){
+    const t1=e.touches[0], t2=e.touches[1]; const nd=getDistance(t1,t2); const z=nd/lastTouchDistance; lastTouchDistance=nd;
+    const cx=(t1.clientX+t2.clientX)/2, cy=(t1.clientY+t2.clientY)/2;
+    imgX = cx - (cx - imgX)*z; imgY = cy - (cy - imgY)*z; imgScale*=z; drawImage();
+  }
+},{passive:false});
+canvas.addEventListener('touchend', ()=> dragging=false);
+
+resizeHandle.addEventListener('mousedown', startResize);
+resizeHandle.addEventListener('touchstart', startResize, {passive:false});
+function startResize(e){
+  e.preventDefault(); resizing=true;
+  startX=(e.clientX || e.touches[0].clientX); startY=(e.clientY || e.touches[0].clientY);
+  startWidth=imgWidth; startHeight=imgHeight;
+  document.addEventListener('mousemove', resizeImage); document.addEventListener('mouseup', stopResize);
+  document.addEventListener('touchmove', resizeImage, {passive:false}); document.addEventListener('touchend', stopResize);
+}
+function resizeImage(e){
+  if(!resizing) return;
+  let dx=(e.clientX || e.touches[0].clientX)-startX; let dy=(e.clientY || e.touches[0].clientY)-startY;
+  imgWidth=Math.max(50, startWidth+dx); imgHeight=Math.max(50, startHeight+dy); drawImage();
+}
+function stopResize(){
+  resizing=false;
+  document.removeEventListener('mousemove', resizeImage); document.removeEventListener('mouseup', stopResize);
+  document.removeEventListener('touchmove', resizeImage); document.removeEventListener('touchend', stopResize);
+}
+
+/* Upload */
+const uploadBtn = document.getElementById('uploadMap');
+if(uploadBtn){
+  uploadBtn.addEventListener('click', ()=>{
+    const fileInput=document.createElement('input'); fileInput.type='file'; fileInput.accept='image/*';
+    fileInput.addEventListener('change', (ev)=>{
+      const file=ev.target.files[0];
+      if(file){ const r=new FileReader(); r.onload=(e)=>{ img.src=e.target.result; }; r.readAsDataURL(file); }
+    });
+    fileInput.click();
+  });
+}
+
+/* =================== KOMPASS =================== */
+const compassContainer = document.getElementById('compassContainer');
+const compassInner = document.getElementById('compassInner');
+const compassScaleContainer = document.getElementById('compassScaleContainer');
+const compassScaleInner = document.getElementById('compassScaleInner');
+const compassNeedle = document.getElementById('compassNeedle');
+const toggleRotationModeButton = document.getElementById('toggleRotationMode');
+const lockRotationModeButton = document.getElementById('lockRotationMode');
+const resetCompassButton = document.getElementById('resetCompass');
+
+const initialCompassLeft=550, initialCompassTop=60, initialGlobalScale=1, initialBaseRotation=0, initialScaleRotation=70;
+
+let compassIsDragging=false, compassDragStartX=0, compassDragStartY=0;
+let compassStartLeft=0, compassStartTop=0;
+let activeRotationTarget='compassInner';
+let isTouchingCompass=false, touchStartX=0, touchStartY=0, isRotationLocked=false;
+let globalScale=1, baseRotation=0, scaleRotation=70;
+let lastRotation=0;
+
+function getAngle(t1,t2){ const dx=t2.clientX-t1.clientX, dy=t2.clientY-t1.clientY; return Math.atan2(dy,dx)*(180/Math.PI); }
+
+if(toggleRotationModeButton){
+  toggleRotationModeButton.addEventListener('click', ()=>{
+    activeRotationTarget = (activeRotationTarget==='compassInner') ? 'compassScaleInner' : 'compassInner';
+    toggleRotationModeButton.classList.toggle('active', activeRotationTarget!=='compassInner');
+  });
+}
+if(lockRotationModeButton){
+  lockRotationModeButton.addEventListener('click', ()=>{
+    isRotationLocked=!isRotationLocked;
+    lockRotationModeButton.classList.toggle('active', isRotationLocked);
+  });
+}
+if(resetCompassButton){
+  resetCompassButton.addEventListener('click', ()=>{
+    compassContainer.classList.add('with-transition');
+    compassInner.classList.add('with-transition');
+    compassScaleInner.classList.add('with-transition');
+    compassScaleContainer.classList.add('with-transition');
+
+    compassStartLeft=initialCompassLeft; compassStartTop=initialCompassTop;
+    globalScale=initialGlobalScale; baseRotation=initialBaseRotation; scaleRotation=initialScaleRotation;
+    updateCompassTransform();
+
+    setTimeout(()=>{
+      compassContainer.classList.remove('with-transition');
+      compassInner.classList.remove('with-transition');
+      compassScaleInner.classList.remove('with-transition');
+      compassScaleContainer.classList.remove('with-transition');
+    },500);
+  });
+}
+function updateCompassTransform(){
+  compassContainer.style.left=compassStartLeft+'px';
+  compassContainer.style.top =compassStartTop +'px';
+  compassScaleContainer.style.transform='scale('+globalScale+')';
+  compassInner.style.transform='rotate('+baseRotation+'deg)';
+  compassScaleInner.style.transform='rotate('+scaleRotation+'deg)';
+}
+updateCompassTransform();
+
+compassContainer.addEventListener('mousedown', e=>{
+  e.preventDefault(); compassIsDragging=true;
+  const rect = compassContainer.getBoundingClientRect();
+  compassDragStartX = e.clientX - rect.left; compassDragStartY = e.clientY - rect.top; e.stopPropagation();
+});
+document.addEventListener('mousemove', e=>{
+  if(!compassIsDragging) return;
+  compassStartLeft = e.clientX - compassDragStartX;
+  compassStartTop  = e.clientY - compassDragStartY;
+  updateCompassTransform();
+});
+document.addEventListener('mouseup', ()=> compassIsDragging=false);
+
+/* Touch: drag, pinch zoom, rotate */
+compassContainer.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  if(e.touches.length===1){
+    isTouchingCompass=true; touchStartX=e.touches[0].clientX; touchStartY=e.touches[0].clientY;
+    compassDragStartX=e.touches[0].clientX - compassStartLeft;
+    compassDragStartY=e.touches[0].clientY - compassStartTop;
+  } else if(e.touches.length===2){
+    lastTouchDistance=getDistance(e.touches[0], e.touches[1]);
+    lastRotation=getAngle(e.touches[0], e.touches[1]);
+  }
+},{passive:false});
+compassContainer.addEventListener('touchmove', e=>{
+  e.preventDefault();
+  if(e.touches.length===1 && isTouchingCompass){
+    compassStartLeft = e.touches[0].clientX - compassDragStartX;
+    compassStartTop  = e.touches[0].clientY - compassDragStartY;
+    updateCompassTransform();
+  } else if(e.touches.length===2){
+    const nd=getDistance(e.touches[0], e.touches[1]); globalScale *= nd/lastTouchDistance; lastTouchDistance=nd;
+    if(!isRotationLocked){
+      const nr=getAngle(e.touches[0], e.touches[1]);
+      if(activeRotationTarget==='compassInner') baseRotation += nr-lastRotation; else scaleRotation += nr-lastRotation;
+      lastRotation=nr;
+    }
+    updateCompassTransform();
+  }
+},{passive:false});
+compassContainer.addEventListener('touchend', ()=> isTouchingCompass=false);
+
+/* Riteņa īsceļi */
+compassContainer.addEventListener('wheel', e=>{
+  e.preventDefault();
+  if(e.shiftKey) baseRotation += e.deltaY*0.005;
+  else if(e.altKey){ globalScale += e.deltaY*-0.0005; globalScale=Math.min(Math.max(.5,globalScale),5); }
+  else if(e.ctrlKey) scaleRotation += e.deltaY*0.005;
+  updateCompassTransform();
+},{passive:false});
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowLeft') baseRotation-=5;
+  else if(e.key==='ArrowRight') baseRotation+=5;
+  else if(e.key==='ArrowUp') scaleRotation+=5;
+  else if(e.key==='ArrowDown') scaleRotation-=5;
+  updateCompassTransform();
+});
+window.addEventListener('load', ()=>{ compassStartLeft=initialCompassLeft; compassStartTop=initialCompassTop; updateCompassTransform(); });
+
+/* =================== Pilnekrāns =================== */
+(function(){
+  const toggleFullscreenButton=document.getElementById('toggleFullscreen');
+  const fullscreenIcon=document.getElementById('fullscreenIcon');
+  const fullscreenPopup=document.getElementById('fullscreenPopup');
+  const enterIcon='https://site-710050.mozfiles.com/files/710050/fulscreen.png';
+  const exitIcon='https://site-710050.mozfiles.com/files/710050/fulscreen_exit.png';
+  if(fullscreenIcon) fullscreenIcon.src=enterIcon;
+
+  function isFS(){ return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement; }
+  function enterFS(el){ (el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen||el.mozRequestFullScreen).call(el); }
+  function exitFS(){ (document.exitFullscreen||document.webkitExitFullscreen||document.msExitFullscreen||document.mozCancelFullScreen).call(document); }
+  function showFS(msg, cls){ fullscreenPopup.textContent=msg; fullscreenPopup.className=''; fullscreenPopup.classList.add(cls); fullscreenPopup.style.display='block'; setTimeout(()=>fullscreenPopup.style.display='none', 4000); }
+  function updateBtn(){ if(isFS()){ if(fullscreenIcon) fullscreenIcon.src=exitIcon; showFS('Pilnekrāna režīms ieslēgts','popup-success'); } else { if(fullscreenIcon) fullscreenIcon.src=enterIcon; showFS('Pilnekrāna režīms izslēgts','popup-error'); } }
+
+  if(toggleFullscreenButton){ toggleFullscreenButton.addEventListener('click', ()=>{ const el=document.documentElement; if(!isFS()) enterFS(el); else exitFS(); }); }
+  document.addEventListener('fullscreenchange', updateBtn);
+  document.addEventListener('webkitfullscreenchange', updateBtn);
+  document.addEventListener('mozfullscreenchange', updateBtn);
+  document.addEventListener('MSFullscreenChange', updateBtn);
+  window.addEventListener('keydown', e=>{ if(e.key==='Escape') exitFS(); });
+  window.addEventListener('visibilitychange', ()=>{ if(!document.hidden) updateBtn(); });
+})();
+
+/* =================== Dropdown loģika =================== */
+document.getElementById("toggleMaterials").addEventListener("click", function(){
+  let menu=document.getElementById("dropdownMaterials"); let btn=this;
+  menu.classList.toggle("visible"); btn.classList.toggle("active");
+});
+document.getElementById("toggleInstruction").addEventListener("click", function(){
+  let menu=document.getElementById("dropdownInstruction"); let btn=this;
+  menu.classList.toggle("visible"); btn.classList.toggle("active");
+});
+document.addEventListener("click", function(event){
+  let instructionMenu=document.getElementById("dropdownInstruction");
+  let materialsMenu=document.getElementById("dropdownMaterials");
+  let instructionButton=document.getElementById("toggleInstruction");
+  let materialsButton=document.getElementById("toggleMaterials");
+  if (!instructionMenu.contains(event.target) && !instructionButton.contains(event.target)) { instructionMenu.classList.remove("visible"); instructionButton.classList.remove("active"); }
+  if (!materialsMenu.contains(event.target) && !materialsButton.contains(event.target)) { materialsMenu.classList.remove("visible"); materialsButton.classList.remove("active"); }
+});
+document.querySelectorAll('.dropdown-menu a').forEach(link=>{
+  link.addEventListener('click', function(e){
+    e.preventDefault();
+    let href=this.getAttribute('href');
+    let iframe = this.closest('#dropdownInstruction') ? document.getElementById('instructionFrame') : document.getElementById('contentFrame');
+    let dropdownMenu = this.closest('.dropdown-menu');
+    iframe.style.display='block'; iframe.classList.add('active'); iframe.src=href;
+    dropdownMenu.classList.add('shrink');
+  });
+});
+document.getElementById("toggleMaterials").addEventListener("click", function () {
+  let iframe=document.getElementById('contentFrame'); let menus=document.querySelectorAll('.dropdown-menu');
+  iframe.classList.remove('active'); setTimeout(()=>{ iframe.style.display='none'; iframe.src=""; },300); menus.forEach(m=>m.classList.remove('shrink'));
+});
+document.getElementById("toggleInstruction").addEventListener("click", function () {
+  let iframe=document.getElementById('instructionFrame'); let menu=document.getElementById('dropdownInstruction');
+  iframe.classList.remove('active'); setTimeout(()=>{ iframe.style.display='none'; iframe.src=""; },300); menu.classList.remove('shrink');
+});
+
+/* =================== About / QR =================== */
+function toggleIframeAbout(e){
+  if(e) e.preventDefault();
+  let c=document.getElementById("iframeContainerAbout"); let st=getComputedStyle(c);
+  if(st.display==="none" || st.bottom==="-620px"){ c.style.display="block"; setTimeout(()=>{ c.style.bottom="35px"; },10); }
+  else { c.style.bottom="-620px"; setTimeout(()=>{ c.style.display="none"; },500); }
+}
+function toggleIframeQR(e){
+  if(e) e.preventDefault();
+  let c=document.getElementById("iframeContainerQR"); let st=getComputedStyle(c);
+  if(st.display==="none" || st.bottom==="-370px"){ c.style.display="block"; setTimeout(()=>{ c.style.bottom="35px"; },10); }
+  else { c.style.bottom="-370px"; setTimeout(()=>{ c.style.display="none"; },500); }
+}
+document.addEventListener("DOMContentLoaded", function () {
+  let c=document.getElementById("iframeContainerAbout"); c.style.display="none"; c.style.bottom="-220px";
+  let q=document.getElementById("iframeContainerQR"); q.style.display="none"; q.style.bottom="-370px";
+});
+
+/* =================== Pogu konteinera novietojums (apakša/kreisā/labā) =================== */
+function closeBothMenus(){
+  document.querySelector('.position-selector-left').classList.add('hidden-left');
+  document.querySelector('.position-selector').classList.add('hidden');
+  document.querySelector('.toggle-selector-left').textContent='❯';
+  document.querySelector('.toggle-selector').textContent='❮';
+}
+document.querySelector('.toggle-selector').addEventListener('click', ()=>{
+  const sel=document.querySelector('.position-selector');
+  if(sel.classList.contains('hidden')){ sel.classList.remove('hidden'); document.querySelector('.toggle-selector').textContent='❯'; }
+  else closeBothMenus();
+});
+document.querySelector('.toggle-selector-left').addEventListener('click', ()=>{
+  const sel=document.querySelector('.position-selector-left');
+  if(sel.classList.contains('hidden-left')){ sel.classList.remove('hidden-left'); document.querySelector('.toggle-selector-left').textContent='❮'; }
+  else closeBothMenus();
+});
+function syncSelectOptions(val){ document.getElementById('positionSelectLeft').value=val; document.getElementById('positionSelect').value=val; }
+function updateButtonContainerPosition(position){
+  const el=document.getElementById('buttonContainer');
+  el.classList.remove('bottom','right','left');
+  el.classList.add(position);
+}
+document.getElementById('positionSelectLeft').addEventListener('change', ()=>{
+  const v=document.getElementById('positionSelectLeft').value; syncSelectOptions(v); closeBothMenus(); updateButtonContainerPosition(v); localStorage.setItem('buttonPosition', v);
+});
+document.getElementById('positionSelect').addEventListener('change', ()=>{
+  const v=document.getElementById('positionSelect').value; syncSelectOptions(v); closeBothMenus(); updateButtonContainerPosition(v); localStorage.setItem('buttonPosition', v);
+});
+document.addEventListener('DOMContentLoaded', ()=>{
+  const leftSel=document.querySelector('.position-selector-left');
+  if(!leftSel.classList.contains('hidden-left')) leftSel.classList.add('hidden-left');
+  const saved=localStorage.getItem('buttonPosition'); if(saved) updateButtonContainerPosition(saved);
+});
+
+/* =================== JAUNĀ DOKA LOĢIKA (kupols + etiķete + klikšķi) =================== */
+(function(){
+  var dock   = document.getElementById('dock');
+  var label  = document.getElementById('dockLabel');
+  var capSVG = document.getElementById('dockCap');
+  var btns   = Array.prototype.slice.call(dock.querySelectorAll('.dock-btn'));
+
+  function updateCapGeometry(){
+    var cs = getComputedStyle(dock);
+    var labelW = parseFloat(cs.getPropertyValue('--labelW')) || 0;
+    var extra  = parseFloat(cs.getPropertyValue('--capExtraW')) || 0;
+    var w = labelW + 22 + extra;
+    var h = parseFloat(cs.getPropertyValue('--capH')) || 0;
+    var inset = parseFloat(cs.getPropertyValue('--capSkew')) || 0;
+    var r = parseFloat(cs.getPropertyValue('--capR')) || 0;
+    if(!w || !h) return;
+
+    var TLx = inset + r, TRx = w - inset - r;
+    var LEx = inset, LEy = r;
+    var REx = w - inset, REy = r;
+
+    var sideMidY = r + (h - r) * 0.45;
+    var rightCP1x = REx + (w - REx) * 0.18, rightCP1y = sideMidY;
+    var rightCP2x = w, rightCP2y = r + (h - r) * 0.82;
+    var leftCP2x  = 0,  leftCP2y  = r + (h - r) * 0.82;
+    var leftCP1x  = LEx - (LEx - 0) * 0.18, leftCP1y  = sideMidY;
+
+    capSVG.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    capSVG.setAttribute('width', w);
+    capSVG.setAttribute('height', h);
+    capSVG.innerHTML =
+      '<defs>' +
+        '<linearGradient id="capFill" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0%"  stop-color="rgba(40,44,52,.96)"/>' +
+          '<stop offset="100%" stop-color="rgba(30,33,40,.96)"/>' +
+        '</linearGradient>' +
+        '<radialGradient id="capShine" cx="50%" cy="-30%" r="120%">' +
+          '<stop offset="0%" stop-color="rgba(255,255,255,.18)"/>' +
+          '<stop offset="60%" stop-color="rgba(255,255,255,0)"/>' +
+        '</radialGradient>' +
+      '</defs>' +
+      '<path d="' +
+        'M ' + TLx + ',0 H ' + TRx + ' A ' + r + ',' + r + ' 0 0 1 ' + REx + ',' + REy + ' ' +
+        'C ' + rightCP1x + ',' + rightCP1y + ' ' + rightCP2x + ',' + rightCP2y + ' ' + w + ',' + h + ' ' +
+        'L 0,' + h + ' C ' + leftCP2x + ',' + leftCP2y + ' ' + leftCP1x + ',' + leftCP1y + ' ' + LEx + ',' + LEy + ' ' +
+        'A ' + r + ',' + r + ' 0 0 1 ' + TLx + ',0 Z" fill="url(#capFill)" stroke="rgba(210,34,34,.38)" stroke-width="1" />' +
+      '<path d="' +
+        'M ' + TLx + ',0 H ' + TRx + ' A ' + r + ',' + r + ' 0 0 1 ' + REx + ',' + REy + ' ' +
+        'C ' + rightCP1x + ',' + rightCP1y + ' ' + rightCP2x + ',' + rightCP2y + ' ' + w + ',' + h + ' ' +
+        'L 0,' + h + ' C ' + leftCP2x + ',' + leftCP2y + ' ' + leftCP1x + ',' + leftCP1y + ' ' + LEx + ',' + LEy + ' ' +
+        'A ' + r + ',' + r + ' 0 0 1 ' + TLx + ',0 Z" fill="url(#capShine)" />';
+  }
+
+  var raf = null, targetX = null, currentX = null;
+  function setTipX(px){
+    targetX = px;
+    if(currentX == null) currentX = px;
+    if(raf) return;
+    function step(){
+      currentX += (targetX - currentX) * 0.25;
+      dock.style.setProperty('--tipX', currentX + 'px');
+      if(Math.abs(targetX - currentX) > 0.5){ raf = requestAnimationFrame(step); }
+      else { currentX = targetX; dock.style.setProperty('--tipX', currentX + 'px'); raf = null; }
+    }
+    raf = requestAnimationFrame(step);
+  }
+
+  function clampX(centerX){
+    var rDock = dock.getBoundingClientRect();
+    var cs = getComputedStyle(dock);
+    var padL = parseFloat(cs.paddingLeft)  || 18;
+    var padR = parseFloat(cs.paddingRight) || 18;
+    var radL = parseFloat(cs.borderTopLeftRadius)  || 48;
+    var radR = parseFloat(cs.borderTopRightRadius) || 48;
+
+    var labelW = Math.min(label.scrollWidth + 2, rDock.width - 40);
+    dock.style.setProperty('--labelW', labelW + 'px');
+    var capH = label.offsetHeight + 2; dock.style.setProperty('--capH', capH + 'px');
+
+    updateCapGeometry();
+
+    var extra = parseFloat(cs.getPropertyValue('--capExtraW')) || 0;
+    var capW = labelW + 22 + extra; var safe = 10;
+    var minX = padL + radL/2 + capW/2 + safe;
+    var maxX = rDock.width - (padR + radR/2 + capW/2 + safe);
+    return Math.max(minX, Math.min(maxX, centerX));
+  }
+  function centerOf(btn){
+    var rDock = dock.getBoundingClientRect();
+    var rBtn  = btn.getBoundingClientRect();
+    return rBtn.left + rBtn.width/2 - rDock.left;
+  }
+  function moveTo(btn){
+    label.textContent = btn.getAttribute('data-title') || btn.getAttribute('aria-label') || '';
+    dock.classList.add('show-label','show-cap');
+    var x = clampX(centerOf(btn)); setTipX(x);
+  }
+
+  dock.addEventListener('pointerenter', function(e){ var b=e.target.closest('.dock-btn') || btns[0]; if(b) moveTo(b); });
+  dock.addEventListener('pointerleave', function(){ dock.classList.remove('show-label','show-cap'); });
+  dock.addEventListener('pointermove', function(e){
+    var best=null, bestD=Infinity, x=e.clientX;
+    for(var i=0;i<btns.length;i++){
+      var b=btns[i], cx=b.getBoundingClientRect().left + b.offsetWidth/2;
+      var d=Math.abs(cx-x); if(d<bestD){ bestD=d; best=b; }
+    }
+    if(best) moveTo(best);
+  });
+  dock.addEventListener('focusin', function(e){ var b=e.target.closest('.dock-btn'); if(b) moveTo(b); });
+  dock.addEventListener('focusout', function(e){ if(!dock.contains(e.relatedTarget)) dock.classList.remove('show-label','show-cap'); });
+
+  var t;
+  btns.forEach(function(b){
+    b.addEventListener('touchstart', function(){ moveTo(b); clearTimeout(t); t=setTimeout(function(){ dock.classList.remove('show-label','show-cap'); }, 1600); }, {passive:true});
+  });
+
+  /* Klikšķi → izsauc slēptās legacy pogas (saglabā Tavu loģiku) */
+  dock.addEventListener('click', function(e){
+    var b=e.target.closest('.dock-btn'); if(!b) return;
+    var a=b.getAttribute('data-action');
+
+    if(a==='reset-map')      document.getElementById('resetMap').click();
+    if(a==='reset-compass')  document.getElementById('resetCompass').click();
+    if(a==='upload-map')     document.getElementById('uploadMap').click();
+    if(a==='grid-view')      document.getElementById('rotateCompass90').click();
+    if(a==='fullscreen')     document.getElementById('toggleFullscreen').click();
+    if(a==='lock-rotation')  document.getElementById('lockRotationMode').click();
+
+    if(a==='toggle-rotate-target'){
+      var tBtn=document.getElementById('toggleBtn');
+      var tIcon=document.getElementById('toggleIcon');
+      activeRotationTarget = (activeRotationTarget==='compassInner') ? 'compassScaleInner' : 'compassInner';
+      var txt=(activeRotationTarget==='compassInner')?'Griezt bāzi':'Griezt skalu';
+      tBtn.setAttribute('data-title', txt);
+      tBtn.setAttribute('aria-label', txt);
+
+      if(dock.classList.contains('show-label')){
+        label.textContent = txt;
+        var x=clampX(centerOf(tBtn)); setTipX(x);
+      }
+
+      tIcon.style.transition='transform .18s ease, opacity .18s ease';
+      tIcon.style.transform='scale(.92) rotate(-8deg)'; tIcon.style.opacity='.85';
+      setTimeout(function(){
+        tIcon.innerHTML=(activeRotationTarget==='compassInner')
+          ? '<polygon points="12 2 22 22 2 22 12 2"></polygon>'
+          : '<circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path>';
+        tIcon.style.transform='scale(1) rotate(0)'; tIcon.style.opacity='1';
+      },120);
+    }
+  });
+
+  window.addEventListener('resize', function(){ dock.classList.remove('show-label','show-cap'); });
+})();
+
+/* =================== GRID popup loģika (saistīta ar #rotateCompass90) =================== */
+(function(){
+  const rotateCompass90Button = document.getElementById('rotateCompass90');
+  let isCompassLocked = false;
+
+  if(rotateCompass90Button){
+    rotateCompass90Button.addEventListener('click', function () {
+      if (!isCompassLocked) {
+        const popupMenu = document.createElement('div');
+        popupMenu.id = 'popupMenu';
+        popupMenu.style.position='fixed';
+        popupMenu.style.top='50%'; popupMenu.style.left='50%';
+        popupMenu.style.transform='translate(-50%, -50%)';
+        popupMenu.style.padding='10px';
+        popupMenu.style.background='rgba(0,0,0,.8)';
+        popupMenu.style.color='#fff';
+        popupMenu.style.borderRadius='10px';
+        popupMenu.style.textAlign='center';
+        popupMenu.style.zIndex='9999';
+        popupMenu.style.width='30vw';
+
+        const menuTitle = document.createElement('p');
+        menuTitle.textContent = 'Izvēlieties noteikšanas metodi:';
+        popupMenu.appendChild(menuTitle);
+
+        const buttonRow = document.createElement('div');
+        buttonRow.style.display='flex'; buttonRow.style.justifyContent='center'; buttonRow.style.gap='20px';
+
+        const rotate90Button = document.createElement('button');
+        rotate90Button.id = 'rotateTo90';
+        const rotate90Image = document.createElement('img');
+        rotate90Image.src = 'https://site-710050.mozfiles.com/files/710050/GRID_VIEW_1_1.png';
+        rotate90Image.alt = 'Rotēt 90°'; rotate90Image.style.width='9vw'; rotate90Image.style.height='9vw';
+        rotate90Image.style.objectFit='contain'; rotate90Image.style.borderRadius='10px';
+        rotate90Button.appendChild(rotate90Image);
+        buttonRow.appendChild(rotate90Button);
+
+        const rotateNegative90Button = document.createElement('button');
+        rotateNegative90Button.id = 'rotateToNegative90';
+        const rotateNegative90Image = document.createElement('img');
+        rotateNegative90Image.src = 'https://site-710050.mozfiles.com/files/710050/GRID_VIEW_2.png';
+        rotateNegative90Image.alt = 'Rotēt -90°'; rotateNegative90Image.style.width='9vw'; rotateNegative90Image.style.height='9vw';
+        rotateNegative90Image.style.objectFit='contain'; rotateNegative90Image.style.borderRadius='10px';
+        rotateNegative90Button.appendChild(rotateNegative90Image);
+        buttonRow.appendChild(rotateNegative90Button);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent='Aizvērt';
+        closeBtn.style.marginTop='10px';
+        closeBtn.addEventListener('click', ()=>{ document.body.removeChild(popupMenu); });
+
+        popupMenu.appendChild(buttonRow);
+        popupMenu.appendChild(closeBtn);
+        document.body.appendChild(popupMenu);
+
+        rotate90Button.addEventListener('click', () => {
+          compassInner.classList.add('with-transition'); 
+          compassScaleInner.classList.add('with-transition');
+          baseRotation = 90; updateCompassTransform(); 
+          isRotationLocked = true; lockRotationModeButton.classList.add('active');
+          isCompassLocked = true;
+          setTimeout(() => {
+            compassInner.classList.remove('with-transition');
+            compassScaleInner.classList.remove('with-transition');
+          }, 500);
+          document.body.removeChild(popupMenu);
+        });
+
+        rotateNegative90Button.addEventListener('click', () => {
+          compassInner.classList.add('with-transition'); 
+          compassScaleInner.classList.add('with-transition');
+          baseRotation = -90; updateCompassTransform(); 
+          isRotationLocked = true; lockRotationModeButton.classList.add('active');
+          isCompassLocked = true;
+          setTimeout(() => {
+            compassInner.classList.remove('with-transition');
+            compassScaleInner.classList.remove('with-transition');
+          }, 500);
+          document.body.removeChild(popupMenu);
+        });
+      } else {
+        isRotationLocked = false; lockRotationModeButton.classList.remove('active'); isCompassLocked = false;
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
 img.onload=function(){ adjustImageSize(); drawImage(); positionResizeHandle(); resizeHandle.style.display='block'; };
 document.getElementById('resetMap').addEventListener('click', ()=>{ adjustImageSize(); drawImage(); });
 
