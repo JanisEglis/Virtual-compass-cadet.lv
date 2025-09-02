@@ -176,7 +176,7 @@
   }
   .toggle-selector-left:hover{ background:rgba(255,0,0,.9) }
 
-  /* ======= AUGŠĒJĀ NOLAIŽAMĀ JOSLA (LIETOTĀJA CEĻVEDIS / MATERIĀLI) ======= */
+  /* ======= AUGŠĒJĀ NOLAIŽAMĀ JOSLA ======= */
   .dropdown-container{ position:fixed; top:0; left:0; z-index:10; width:100%; background:transparent; }
   .top-bar{
     position:fixed; top:0; left:0; width:100%; z-index:20; display:flex; justify-content:space-between; gap:10px;
@@ -215,7 +215,7 @@
     .dropdown-menu a{ width:90%; font-size:18px; padding:12px }
   }
 
-  /* Par komandu joslu apakšā (saglabāts) */
+  /* Par joslu apakšā (saglabāts) */
   #about{
     position:fixed; bottom:0; left:0; right:0; display:flex; gap:2vw; justify-content:center; padding:.3vw;
     background:var(--panel); color:var(--muted); text-align:center; z-index:20;
@@ -262,7 +262,6 @@
   }
   .popup-success{ background:#28a745 } .popup-error{ background:#dc3545 }
   @keyframes slide-in{ from{transform:translateX(100%)} to{transform:translateX(0)} }
-
 </style>
 </head>
 <body>
@@ -276,16 +275,17 @@ document.getElementById('openInteractive').addEventListener('click', () => {
   const win = window.open('', '_blank', 'width=1280,height=800');
   if(!win){ alert('Pārlūks bloķē jaunus logus. Lūdzu, atļaujiet pārlūkam atvērt logus.'); return; }
 
-  win.document.write(`<!DOCTYPE html>
+  // 1) Uzģenerējam iekšējā loga HTML BEZ <script> taga, lai izvairītos no </script> konfliktu
+  const innerCss = document.querySelector('style').innerHTML;
+  win.document.write(`
+<!DOCTYPE html>
 <html lang="lv">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 <link rel="icon" type="image/png" href="https://site-710050.mozfiles.com/files/710050/CADET_ICON.PNG">
 <title>CADET.LV Interaktīvais kompass © Jānis Eglis</title>
-<style>
-${document.querySelector('style').innerHTML}
-</style>
+<style>${innerCss}</style>
 </head>
 <body>
 
@@ -318,18 +318,17 @@ ${document.querySelector('style').innerHTML}
 <div id="touchscreenPopup"></div>
 <div id="fullscreenPopup"></div>
 
-<!-- Darba laukums (kā pie Tevis) -->
+<!-- Darba laukums -->
 <div id="canvasContainer" style="position:fixed; width:1920px; height:1080px;">
   <canvas id="mapCanvas" width="1920" height="1080" style="display:block; width:100%; height:100%"></canvas>
   <img id="uploadedImg" src="" alt="Augšupielādētais attēls" style="position:absolute; top:0; left:0; display:none; cursor:move;">
   <div id="resizeHandle"><img src="https://site-710050.mozfiles.com/files/710050/resize_map__1_.png" alt="Resize"></div>
 </div>
 
-<!-- Papildu image (saglabāts hooks) -->
 <img id="newUploadedImg" style="position:absolute; top:50px; left:50px; display:none; cursor:move;" alt="Augšupielādētais attēls">
 <div id="newResizeHandle" style="display:none; width:30px; height:30px; position:absolute; cursor:se-resize; z-index:9"></div>
 
-<!-- AUGŠĒJĀ JOSLA ar divām izvelkamām izvēlnēm (saglabātas) -->
+<!-- AUGŠĒJĀ JOSLA -->
 <div class="dropdown-container">
   <div class="top-bar">
     <span class="dropdown-toggle" id="toggleInstruction">Lietotāja ceļvedis ⬇</span>
@@ -354,7 +353,7 @@ ${document.querySelector('style').innerHTML}
   </div>
 </div>
 
-<!-- SĀNU IZVĒLŅAS (saglabātas) -->
+<!-- SĀNU IZVĒLŅAS -->
 <div class="position-selector-container">
   <div class="position-selector hidden">
     <button class="toggle-selector">❮</button>
@@ -379,7 +378,7 @@ ${document.querySelector('style').innerHTML}
   </div>
 </div>
 
-<!-- Režīmu popup (saglabāts) -->
+<!-- Režīmu popup -->
 <div id="popupMenu" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); padding:10px; background:rgba(0,0,0,.8); color:#fff; border-radius:10px; text-align:center; z-index:9; width:30vw;">
   <h3>Izvēlieties noteikšanas metodi</h3>
   <div class="button-row" style="display:flex; gap:20px; justify-content:center; margin-top:10px">
@@ -389,7 +388,7 @@ ${document.querySelector('style').innerHTML}
   <button id="popupClose" class="popup-close" style="margin-top:10px; background:rgba(20,20,20,.8); color:#fff; border:1px solid rgba(255,255,255,.06); border-radius:8px; padding:6px 10px; cursor:pointer">Aizvērt</button>
 </div>
 
-<!-- POGU PANELIS (saglabāts) -->
+<!-- POGU PANELIS -->
 <div class="button-container bottom" id="buttonContainer">
   <button id="resetMap" title="Reset Map"><img src="https://site-710050.mozfiles.com/files/710050/RESER_MAPS_Cropped-Photoroom.png" alt="Reset Map"></button>
   <button id="uploadMap" title="Upload Map"><img src="https://site-710050.mozfiles.com/files/710050/UPLOAD_MAPS_Cropped-Photoroom.png" alt="Upload Map"></button>
@@ -402,7 +401,7 @@ ${document.querySelector('style').innerHTML}
   <button id="toggleFullscreen" title="Pilnekrāns"><img id="fullscreenIcon" src="https://site-710050.mozfiles.com/files/710050/fulscreen.png" alt="Pilnekrāns"></button>
 </div>
 
-<!-- Par joslu apakšā (saglabāts) -->
+<!-- Par joslu apakšā -->
 <div id="about">
   <a href="javascript:void(0);" class="qrLink" onclick="toggleIframeQR(event)">KOPLIETOT</a>
   <span class="abouttext">CADET.LV</span>
@@ -424,7 +423,7 @@ ${document.querySelector('style').innerHTML}
   <button id="closeIframeQR" onclick="toggleIframeQR(event)">✖</button>
 </div>
 
-<!-- KOMPASS (saglabāts) -->
+<!-- KOMPASS -->
 <div id="compassContainer">
   <div id="compassScaleContainer">
     <div id="compassInner">
@@ -437,9 +436,15 @@ ${document.querySelector('style').innerHTML}
   </div>
 </div>
 
-<script>
+</body>
+</html>
+  `);
+  win.document.close();
+
+  // 2) Pievienojam iekšējā loga <script> dinamiski, lai nekas nepārtrauktu ārējo <script>
+  const s = win.document.createElement('script');
+  s.textContent = `
 (function(){
-  /* ======= UTIL ======= */
   const $ = s => document.querySelector(s);
   const $$ = s => Array.from(document.querySelectorAll(s));
   function debounce(fn, wait=50){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(null,a),wait); } }
@@ -447,7 +452,6 @@ ${document.querySelector('style').innerHTML}
   function updateVH(){ document.documentElement.style.setProperty('--vh', (window.innerHeight*0.01)+'px'); }
   updateVH(); window.addEventListener('resize', debounce(updateVH,50));
 
-  /* ======= Pilnekrāna ziņojums & logs ======= */
   function checkWindowSize(){
     const el = $('#fullscreenMessage');
     const w = window.innerWidth, h = window.innerHeight;
@@ -472,7 +476,7 @@ ${document.querySelector('style').innerHTML}
   window.addEventListener('orientationchange', checkOrientation);
   checkWindowSize(); showMobileWarning(); checkOrientation();
 
-  /* ======= POGU NOVIETOJUMA IZVĒLNES (abas puses saglabātas) ======= */
+  /* ======= Sānu izvēlnes ======= */
   const rightPanel = document.querySelector('.position-selector');
   const leftPanel  = document.querySelector('.position-selector-left');
   const rightToggle = document.querySelector('.toggle-selector');
@@ -507,11 +511,10 @@ ${document.querySelector('style').innerHTML}
   selectLeft.addEventListener('change', ()=>{ const v=selectLeft.value; syncSelect(v); closeBothMenus(); applyDock(v); });
   selectRight.addEventListener('change',()=>{ const v=selectRight.value; syncSelect(v); closeBothMenus(); applyDock(v); });
 
-  // Atjauno no localStorage
   const savedDock = localStorage.getItem('buttonPosition') || 'bottom';
   applyDock(savedDock); syncSelect(savedDock);
 
-  /* ======= AUGŠĒJĀ DROPDOWN LOĢIKA (saglabāta) ======= */
+  /* ======= Augšējā josla (dropdown) ======= */
   $('#toggleMaterials').addEventListener('click', ()=>{
     const menu = $('#dropdownMaterials'); const btn = $('#toggleMaterials');
     menu.classList.toggle('visible'); btn.classList.toggle('active');
@@ -531,7 +534,6 @@ ${document.querySelector('style').innerHTML}
     }
   });
 
-  // Atver saites materiāliem Instruction/Materials
   document.querySelectorAll('#dropdownMaterials a').forEach(a=>{
     a.addEventListener('click',(e)=>{
       e.preventDefault();
@@ -549,7 +551,6 @@ ${document.querySelector('style').innerHTML}
     });
   });
 
-  // Aizvēršana uz ārēja klikšķa
   document.addEventListener('click', (e)=>{
     const m1 = $('#dropdownInstruction'), b1 = $('#toggleInstruction');
     const m2 = $('#dropdownMaterials'),  b2 = $('#toggleMaterials');
@@ -557,7 +558,7 @@ ${document.querySelector('style').innerHTML}
     if(!m2.contains(e.target) && !b2.contains(e.target)){ m2.classList.remove('visible'); b2.classList.remove('active'); }
   });
 
-  /* ======= PILNEKRĀNS ======= */
+  /* ======= Pilnekrāns ======= */
   const fullscreenIcon = $('#fullscreenIcon');
   function isFS(){ return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement; }
   function enterFS(){ const el=document.documentElement; (el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen)?.call(el); }
@@ -575,7 +576,7 @@ ${document.querySelector('style').innerHTML}
   }
   setFSIcon();
 
-  /* ======= TOUCH ierīces detekcija (saglabāts) ======= */
+  /* ======= Touch ierīce (popup + pogas) ======= */
   (function(){
     let prevPoints = navigator.maxTouchPoints;
     const pop = $('#touchscreenPopup');
@@ -627,11 +628,9 @@ ${document.querySelector('style').innerHTML}
   }
   function getDist(t1,t2){ const dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY; return Math.hypot(dx,dy); }
 
-  // Reset
-  $('#resetMap').addEventListener('click', ()=>{ fit(); draw(); });
+  document.getElementById('resetMap').addEventListener('click', ()=>{ fit(); draw(); });
 
-  // Augšupielāde
-  $('#uploadMap').addEventListener('click', ()=>{
+  document.getElementById('uploadMap').addEventListener('click', ()=>{
     const fi = document.createElement('input'); fi.type='file'; fi.accept='image/*';
     fi.addEventListener('change', e=>{
       const f=e.target.files?.[0]; if(!f) return;
@@ -640,7 +639,6 @@ ${document.querySelector('style').innerHTML}
     fi.click();
   });
 
-  // Drag&Drop
   canvas.addEventListener('dragover', e=>e.preventDefault());
   canvas.addEventListener('drop', e=>{
     e.preventDefault();
@@ -648,10 +646,8 @@ ${document.querySelector('style').innerHTML}
     const rd=new FileReader(); rd.onload=ev=>{ img.src = ev.target.result; }; rd.readAsDataURL(f);
   });
 
-  // Kad attēls ielādēts
   img.onload = ()=>{ fit(); draw(); };
 
-  // Pele drag vai roktura resize
   canvas.addEventListener('mousedown', (e)=>{
     const rh = resizeHandle.getBoundingClientRect();
     if(e.clientX>=rh.left && e.clientX<=rh.right && e.clientY>=rh.top && e.clientY<=rh.bottom){
@@ -669,7 +665,6 @@ ${document.querySelector('style').innerHTML}
   });
   window.addEventListener('mouseup', ()=>{ dragging=false; resizing=false; });
 
-  // Zoom ar riteni ap kursora punktu
   canvas.addEventListener('wheel', (e)=>{
     e.preventDefault();
     if(!(imgW>0 && imgH>0)) return;
@@ -680,7 +675,6 @@ ${document.querySelector('style').innerHTML}
     imgX = mx - ox*zoom; imgY = my - oy*zoom; imgScale*=zoom; draw();
   }, { passive:false });
 
-  // Touch: pārvietošana + pinch zoom
   canvas.addEventListener('touchstart', (e)=>{
     e.preventDefault();
     if(e.touches.length===1){
@@ -705,13 +699,13 @@ ${document.querySelector('style').innerHTML}
   }, { passive:false });
   canvas.addEventListener('touchend', ()=>{ dragging=false; });
 
-  /* ======= KOMPASS ======= */
-  const compassContainer = $('#compassContainer');
-  const compassScaleContainer = $('#compassScaleContainer');
-  const compassInner = $('#compassInner');
-  const compassScaleInner = $('#compassScaleInner');
-  const lockRotationModeButton = $('#lockRotationMode');
-  const toggleRotationModeButton = $('#toggleRotationMode');
+  /* ======= Kompass ======= */
+  const compassContainer = document.getElementById('compassContainer');
+  const compassScaleContainer = document.getElementById('compassScaleContainer');
+  const compassInner = document.getElementById('compassInner');
+  const compassScaleInner = document.getElementById('compassScaleInner');
+  const lockRotationModeButton = document.getElementById('lockRotationMode');
+  const toggleRotationModeButton = document.getElementById('toggleRotationMode');
 
   let compassLeft=550, compassTop=60, globalScale=1, baseRotation=0, scaleRotation=70;
   let activeRotationTarget='compassInner', isRotationLocked=false;
@@ -725,7 +719,6 @@ ${document.querySelector('style').innerHTML}
   }
   updateCompass();
 
-  // Drag kompass ar peli
   let compDrag=false, compDX=0, compDY=0;
   compassContainer.addEventListener('mousedown', (e)=>{
     e.preventDefault(); compDrag=true;
@@ -735,9 +728,10 @@ ${document.querySelector('style').innerHTML}
   window.addEventListener('mousemove', (e)=>{ if(!compDrag) return; compassLeft=e.clientX-compDX; compassTop=e.clientY-compDY; updateCompass(); });
   window.addEventListener('mouseup', ()=> compDrag=false);
 
-  // Touch kompass: drag + pinch scale + rotācija
   let lastD=0, lastAng=0;
   function ang(a,b){ const dx=b.clientX-a.clientX, dy=b.clientY-a.clientY; return Math.atan2(dy,dx)*180/Math.PI; }
+  function getDist(a,b){ const dx=a.clientX-b.clientX, dy=a.clientY-b.clientY; return Math.hypot(dx,dy); }
+
   compassContainer.addEventListener('touchstart', (e)=>{
     e.preventDefault();
     if(e.touches.length===1){
@@ -763,7 +757,6 @@ ${document.querySelector('style').innerHTML}
     }
   }, { passive:false });
 
-  // Ritenis virs kompasa (modifikatori)
   compassContainer.addEventListener('wheel', (e)=>{
     e.preventDefault();
     if(e.shiftKey){ baseRotation += e.deltaY*0.005; }
@@ -772,7 +765,6 @@ ${document.querySelector('style').innerHTML}
     updateCompass();
   }, { passive:false });
 
-  // Tastatūra – bultiņas
   document.addEventListener('keydown', (e)=>{
     if(e.key==='ArrowLeft'){ baseRotation-=5; updateCompass(); }
     if(e.key==='ArrowRight'){ baseRotation+=5; updateCompass(); }
@@ -780,12 +772,10 @@ ${document.querySelector('style').innerHTML}
     if(e.key==='ArrowDown'){ scaleRotation-=5; updateCompass(); }
   });
 
-  // Reset kompass
-  $('#resetCompass').addEventListener('click', ()=>{
+  document.getElementById('resetCompass').addEventListener('click', ()=>{
     compassLeft=550; compassTop=60; globalScale=1; baseRotation=0; scaleRotation=70; updateCompass();
   });
 
-  // Skārienam paredzētie slēdži
   toggleRotationModeButton?.addEventListener('click', ()=>{
     activeRotationTarget = (activeRotationTarget==='compassInner') ? 'compassScaleInner' : 'compassInner';
     toggleRotationModeButton.style.background = (activeRotationTarget==='compassInner') ? 'rgba(91,16,16,0.8)' : 'rgb(187, 1, 1)';
@@ -794,19 +784,15 @@ ${document.querySelector('style').innerHTML}
     isRotationLocked=!isRotationLocked; lockRotationModeButton.classList.toggle('active', isRotationLocked);
   });
 
-  // Režīmu popup (saglabāts)
-  const popup = $('#popupMenu');
-  $('#rotateCompass90').addEventListener('click', ()=>{
-    popup.style.display='block';
-  });
-  $('#popupClose').addEventListener('click', ()=>{ popup.style.display='none' });
-  $('#popupOption1').addEventListener('click', ()=>{ popup.style.display='none' });
-  $('#popupOption2').addEventListener('click', ()=>{ popup.style.display='none' });
+  const popup = document.getElementById('popupMenu');
+  document.getElementById('rotateCompass90').addEventListener('click', ()=>{ popup.style.display='block'; });
+  document.getElementById('popupClose').addEventListener('click', ()=>{ popup.style.display='none' });
+  document.getElementById('popupOption1').addEventListener('click', ()=>{ popup.style.display='none' });
+  document.getElementById('popupOption2').addEventListener('click', ()=>{ popup.style.display='none' });
 
-  /* ======= IFRAME paneļi apakšā (saglabāti) ======= */
   window.toggleIframeAbout = function(ev){
     if(ev) ev.preventDefault();
-    const box = $('#iframeContainerAbout');
+    const box = document.getElementById('iframeContainerAbout');
     const cs = getComputedStyle(box);
     if(cs.display==='none' || cs.bottom==='-620px'){
       box.style.display='block'; setTimeout(()=> box.style.bottom='35px', 10);
@@ -816,7 +802,7 @@ ${document.querySelector('style').innerHTML}
   }
   window.toggleIframeQR = function(ev){
     if(ev) ev.preventDefault();
-    const box = $('#iframeContainerQR');
+    const box = document.getElementById('iframeContainerQR');
     const cs = getComputedStyle(box);
     if(cs.display==='none' || cs.bottom==='-370px'){
       box.style.display='block'; setTimeout(()=> box.style.bottom='35px', 10);
@@ -824,18 +810,13 @@ ${document.querySelector('style').innerHTML}
       box.style.bottom='-370px'; setTimeout(()=> box.style.display='none', 500);
     }
   }
-  // Sākuma stāvoklis
   (function initIframeStates(){
-    const a = $('#iframeContainerAbout'); a.style.display='none'; a.style.bottom='-620px';
-    const q = $('#iframeContainerQR'); q.style.display='none'; q.style.bottom='-370px';
+    const a = document.getElementById('iframeContainerAbout'); a.style.display='none'; a.style.bottom='-620px';
+    const q = document.getElementById('iframeContainerQR'); q.style.display='none'; q.style.bottom='-370px';
   })();
 })();
-</script>
-
-</body>
-</html>`);
-
-  win.document.close();
+  `;
+  win.document.body.appendChild(s);
 });
 </script>
 
