@@ -1368,9 +1368,15 @@
 }
 
 /* Paslēpšana ar “atvilkni”: atstāj redzamu tikai rokturi */
-#buttonContainer.docked.bottom{ transform: translateY(calc(100% - var(--handle-size))); }
-#buttonContainer.docked.left {  transform: translateX(calc(-100% + var(--handle-size))); }
-#buttonContainer.docked.right{  transform: translateX(calc(100%  - var(--handle-size))); }
+#buttonContainer.docked.bottom{
+  transform: translateY(calc(100% + var(--vh) * 5 - var(--handle-size)));
+}
+#buttonContainer.docked.left{
+  transform: translateX(calc(-100% - 2vw + var(--handle-size)));
+}
+#buttonContainer.docked.right{
+  transform: translateX(calc(100% + 2vw - var(--handle-size)));
+}
 
 
 
