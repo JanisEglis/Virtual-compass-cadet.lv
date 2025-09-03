@@ -1323,9 +1323,9 @@
 /* === REGULATORI vienuviet === */
 :root{
   /* cik liela strēmele paliek redzama, kad paslēpts */
-  --expose-bottom: 15px; /* apakša */
-  --expose-left:   6vw;  /* kreisā mala */
-  --expose-right:  6vw;  /* labā mala */
+  --expose-bottom: 28px; /* apakša */
+  --expose-left:   -2vw;  /* kreisā mala */
+  --expose-right:  -2vw;  /* labā mala */
 
   /* kad KONTEINERS ir atvērts apakšā – atstarpe no ekrāna malas */
   --bottom-offset: 15px;
@@ -1333,8 +1333,8 @@
 
 /* === DRAWER/ROKTURIS priekš #buttonContainer === */
 #buttonContainer{
-  --handle-w: 44px;  /* roktura platums */
-  --handle-h: 44px;  /* roktura augstums */
+  --handle-w: 60px;  /* roktura platums */
+  --handle-h: 30px;  /* roktura augstums */
   transition: transform .28s ease;
   z-index: 50;
 }
@@ -3232,12 +3232,10 @@ window.__fitDock && window.__fitDock();
 
   // ── SVG ikona (backticki aizsargāti ar \`) ───────────────────────────────────
   const GRID_ICON = \`
-  <svg viewBox="0 0 24 24" width="70%" height="70%" aria-hidden="true">
-    <rect x="3.5" y="3.5" width="17" height="17" rx="3" ry="3"
-          fill="none" stroke="currentColor" stroke-width="2"/>
-    <line x1="12" y1="3.5"  x2="12" y2="20.5" stroke="currentColor" stroke-width="2"/>
-    <line x1="3.5" y1="12"  x2="20.5" y2="12" stroke="currentColor" stroke-width="2"/>
-  </svg>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect>
+        </svg>
   \`;
 
   /* — ROKTURIS — */
