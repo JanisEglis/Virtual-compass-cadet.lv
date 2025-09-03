@@ -1333,8 +1333,8 @@
 
 /* === DRAWER/ROKTURIS priekš #buttonContainer === */
 #buttonContainer{
-  --handle-w: 60px;  /* roktura platums */
-  --handle-h: 30px;  /* roktura augstums */
+  --handle-w: 45px;  /* roktura platums */
+  --handle-h: 45px;  /* roktura augstums */
   transition: transform .28s ease;
   z-index: 50;
 }
@@ -1359,6 +1359,14 @@
   pointer-events:auto;
   user-select:none;
 }
+
+/* pēc roktura izmēra: */
+#buttonContainer .dock-handle svg{
+  width:  calc(var(--handle-w) * .74);
+  height: calc(var(--handle-h) * .74);
+}
+
+
 /* Kad dokēts — rokturis parādās */
 #buttonContainer.docked .dock-handle{ display:flex; }
 
