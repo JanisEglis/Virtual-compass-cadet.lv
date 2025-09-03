@@ -3080,7 +3080,7 @@ updateButtonContainerPosition(initial);
 })();
 
 
-// === Auto-fit dokam (#buttonContainer .dock-shell) ===
+// === Auto-fit dokam (#buttonContainer .dock-shell) — ar apakšējās joslas korekciju ===
 (function(){
   function fitDock(){
     var bc = document.getElementById('buttonContainer');
@@ -3088,31 +3088,43 @@ updateButtonContainerPosition(initial);
     var shell = bc.querySelector('.dock-shell');
     if(!shell) return;
 
-    // nomēram dabisko izmēru bez skalas
-    var prev = shell.style.transform;
+    var about = document.getElementById('about');
+    var ah = about ? (about.getBoundingClientRect().height || 0) : 0;
+
+    var isVertical = bc.classList.contains('left') || bc.classList.contains('right');
+    var isBottom   = bc.classList.contains('bottom');
+
+    // 1) Novietojums: bottom režīmā pārbīdam virs #about
+    if (isBottom) {
+      var baseBottom = Math.round(window.innerHeight * 0.05); // ~5vh
+      var minBottom  = Math.ceil(ah + 12);                    // droša atstarpe virs about
+      bc.style.bottom = Math.max(baseBottom, minBottom) + 'px';
+    } else {
+      // ļaujam CSS kontrolēt (left/right)
+      bc.style.bottom = '';
+    }
+
+    // 2) Mērogs: nomēram “dabisko” izmēru bez skalas
+    var prevTransform = shell.style.transform;
     shell.style.transform = 'none';
     var natural = shell.getBoundingClientRect();
+    shell.style.transform = prevTransform;
 
-    var vertical = bc.classList.contains('left') || bc.classList.contains('right');
+    // pieejamie izmēri
+    var maxW = window.innerWidth * 0.96;
+    var maxH = window.innerHeight * 0.90;
 
-    var maxW = window.innerWidth * 0.96;     // horizontāli – līdz ~96% no ekrāna platuma
-    var maxH = window.innerHeight * 0.90;    // vertikāli – līdz ~90% no ekrāna augstuma
-
-    // ja ir apakšējā josla, atņemam tās augstumu vertikālajā režīmā
-    var about = document.getElementById('about');
-    if (vertical && about) {
-      var ah = about.getBoundingClientRect().height || 0;
+    // vertical režīmā atņemam #about augstumu (lai kolonnu nesaplacina)
+    if (isVertical) {
       maxH = Math.max(120, maxH - ah);
     }
 
-    var scale = 1;
-    if (vertical) {
-      scale = Math.min(1, maxH / natural.height);
-    } else {
-      scale = Math.min(1, maxW / natural.width);
-    }
+    // aprēķinām scale
+    var scale = isVertical
+      ? Math.min(1, maxH / natural.height)
+      : Math.min(1, maxW / natural.width);
 
-    // tikai samazinam (nepalielinām), ar saprātīgu minimumu
+    // tikai samazinām, nepalielinām (ar saprātīgu minimumu)
     scale = Math.max(0.35, Math.min(1, scale));
     shell.style.transform = 'scale(' + scale + ')';
   }
@@ -3120,13 +3132,14 @@ updateButtonContainerPosition(initial);
   // padaram pieejamu citur
   window.__fitDock = fitDock;
 
-  // palaidam uzreiz un pie izmēru/orientācijas maiņām
-  var deb;
-  function queue(){ clearTimeout(deb); deb = setTimeout(fitDock, 100); }
+  // palaižam un klausāmies izmēru izmaiņas
+  var t;
+  function queue(){ clearTimeout(t); t = setTimeout(fitDock, 100); }
   window.addEventListener('load', fitDock);
   window.addEventListener('resize', queue);
-  window.addEventListener('orientationchange', fitDock);
+  window.addEventListener('orientationchange', queue);
 })();
+
 
 // 🔹 Tagad __fitDock noteikti ir definēts — pielāgo mērlogu uzreiz
 window.__fitDock && window.__fitDock();
