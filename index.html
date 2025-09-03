@@ -1383,27 +1383,24 @@
 
 :root{
   /* Cik tālu no ekrāna apakšas sēž doks, kad redzams (undocked) */
-  --dock-bottom-reserve: calc(var(--vh) * 2.5);
+  --dock-bottom-reserve: calc(var(--vh) * 6);
 
   /* Cik liels rokturis paliek redzams */
-  --dock-handle-side: 6vw;   /* kreisajai/labajai – tev der */
+ 
   --dock-handle-bottom: 3.6vh; /* apakšā – samazini/paaugstini pēc sajūtas */
 }
 
-/* redzama pozīcija (undocked) — nolaid mazliet zemāk */
-.button-container.bottom{
-  bottom: var(--dock-bottom-reserve);
-}
+
 
 /* atvilktnes stāvoklis (docked) — paslēp tik dziļi, lai paliek tikai rokturis */
 #buttonContainer.docked.bottom{
   transform: translateY(calc(100% + var(--dock-bottom-reserve) - var(--dock-handle-bottom)));
 }
 #buttonContainer.docked.left{
-  transform: translateX(calc(-100% - 2vw + var(--dock-handle-side)));
+  transform: translateX(calc(-100% - 6vw + var(--dock-handle-side)));
 }
 #buttonContainer.docked.right{
-  transform: translateX(calc(100% + 2vw - var(--dock-handle-side)));
+  transform: translateX(calc(100% + 6vw - var(--dock-handle-side)));
 }
 
 
