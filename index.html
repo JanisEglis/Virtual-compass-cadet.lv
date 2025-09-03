@@ -1870,13 +1870,31 @@
 							updateButtonContainerPosition(selectedValue); // Atjaunina pogu novietojumu
 						});
 
+
+const savedPosition = localStorage.getItem('buttonPosition');
+const valid = ['bottom', 'left', 'right'];
+const initial = valid.includes(savedPosition) ? savedPosition : 'bottom';
+
+syncSelectOptions(initial);
+updateButtonContainerPosition(initial);
+
+
+
+
+
 						// Funkcija, kas atjaunina pogas konteinera novietojumu atkarībā no izvēlētās vērtības
 						function updateButtonContainerPosition(position) {
-							const buttonContainer = document.getElementById('buttonContainer');
-							buttonContainer.classList.remove('bottom', 'right', 'left');
-							buttonContainer.classList.add(position);
-	   						window.__fitDock && window.__fitDock();
+						  	const buttonContainer = document.getElementById('buttonContainer');
+ 						 	buttonContainer.classList.remove('bottom', 'right', 'left');
+  							buttonContainer.classList.add(position);
+
+  							// saglabā izvēli
+  							localStorage.setItem('buttonPosition', position);
+
+ 				 			// uzreiz piemeklē mērogu
+						  	window.__fitDock && window.__fitDock();
 						}
+
 
 						document.addEventListener('DOMContentLoaded', () => {
 							// Atlasām kreisās puses pogu
@@ -1895,15 +1913,7 @@
 							}
 						});
 
-						// Saglabā lietotāja izvēli localStorage
-							positionSelect.addEventListener('change', function() {
-								const selectedPosition = positionSelect.value;
-								buttonContainer.classList.remove('bottom', 'right', 'left');
-								buttonContainer.classList.add(selectedPosition);
-
-							// Saglabā izvēlēto pozīciju
-								localStorage.setItem('buttonPosition', selectedPosition);
-							});
+						
 
 
 
@@ -3066,6 +3076,7 @@
 
   // Sākotnējais stāvoklis: ja vertical, kupolu neredzam
   if(isVertical()) shell.classList.remove('show-cap');
+  window.__fitDock && window.__fitDock();
 })();
 
 
@@ -3117,7 +3128,8 @@
   window.addEventListener('orientationchange', fitDock);
 })();
 
-
+// 🔹 Tagad __fitDock noteikti ir definēts — pielāgo mērlogu uzreiz
+window.__fitDock && window.__fitDock();
 
                 `;
                 interactiveWindow.document.body.appendChild(script);
