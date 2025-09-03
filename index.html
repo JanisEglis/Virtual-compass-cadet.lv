@@ -3225,49 +3225,50 @@ window.__fitDock && window.__fitDock();
 
 
 
-(function(){
-  const GRID_ICON = `
+(function () {
+  // ── nodrošinām, ka ir konteiners ─────────────────────────────────────────────
+  const bc = document.getElementById('buttonContainer');
+  if (!bc) return;
+
+  // ── SVG ikona (backticki aizsargāti ar \`) ───────────────────────────────────
+  const GRID_ICON = \`
   <svg viewBox="0 0 24 24" width="70%" height="70%" aria-hidden="true">
     <rect x="3.5" y="3.5" width="17" height="17" rx="3" ry="3"
           fill="none" stroke="currentColor" stroke-width="2"/>
     <line x1="12" y1="3.5"  x2="12" y2="20.5" stroke="currentColor" stroke-width="2"/>
     <line x1="3.5" y1="12"  x2="20.5" y2="12" stroke="currentColor" stroke-width="2"/>
   </svg>
-`;
- 
+  \`;
 
   /* — ROKTURIS — */
   const handle = document.createElement('div');
   handle.className = 'dock-handle';
-  handle.setAttribute('title','Parādīt pogas');
+  handle.setAttribute('title', 'Parādīt pogas');
+  handle.setAttribute('aria-label', 'Parādīt pogas');
+  handle.innerHTML = GRID_ICON; // uzreiz ieliekam SVG
   bc.appendChild(handle);
 
-function setHandleGlyph(){
-  handle.innerHTML = GRID_ICON;
-}
-  setHandleGlyph();
-
   /* — PUBLISKĀS FUNKCIJAS — */
-  function dockButtons(){ bc.classList.add('docked'); }
-  function showButtons(){ bc.classList.remove('docked'); window.__fitDock && window.__fitDock(); }
+  function dockButtons() { bc.classList.add('docked'); }
+  function showButtons() { bc.classList.remove('docked'); window.__fitDock && window.__fitDock(); }
 
   // Piesienam rokturim
   handle.addEventListener('click', showButtons);
 
-  // Ja maina novietojumu ar taviem selectiem — nomainām roktura simbolu
+  // Ja maina novietojumu ar selectiem — atjaunojam un pārrēķinām izkārtojumu
   const leftSel  = document.getElementById('positionSelectLeft');
   const rightSel = document.getElementById('positionSelect');
-  function refreshBySelect(){ setHandleGlyph(); window.__fitDock && window.__fitDock(); }
+  function refreshBySelect() { handle.innerHTML = GRID_ICON; window.__fitDock && window.__fitDock(); }
   leftSel  && leftSel.addEventListener('change', refreshBySelect);
   rightSel && rightSel.addEventListener('change', refreshBySelect);
 
-  // Ielāpam tavu updateButtonContainerPosition, lai rokturis sekotu līdzi
+  // Ielāpam updateButtonContainerPosition, lai rokturis sekotu
   if (window.updateButtonContainerPosition) {
     const _old = window.updateButtonContainerPosition;
-    window.updateButtonContainerPosition = function(pos){
+    window.updateButtonContainerPosition = function (pos) {
       _old(pos);
-      setHandleGlyph();
-      // ja bija dokēts, paliek dokēts; rokturis vienmēr pareizā vietā
+      refreshBySelect();
+      // ja bija dokēts, saglabājas; rokturis vienmēr pareizā vietā
     };
   }
 
@@ -3275,38 +3276,20 @@ function setHandleGlyph(){
   const map     = document.getElementById('mapCanvas');
   const compass = document.getElementById('compassContainer');
 
-  // Ja lietotājs sāk kustināt karti/kompasu – paslēpjam pogas atvilknē
-  const autoDockEvts = ['pointerdown','mousedown','touchstart'];
-  autoDockEvts.forEach(ev => {
-    map     && map.addEventListener(ev, dockButtons,    {passive:true});
-    compass && compass.addEventListener(ev, dockButtons, {passive:true});
+  ['pointerdown', 'mousedown', 'touchstart'].forEach(ev => {
+    map     && map.addEventListener(ev, dockButtons,    { passive: true });
+    compass && compass.addEventListener(ev, dockButtons, { passive: true });
   });
 
-  // Ja lietotājs atkal atver atvilkni – rokturis to izdara (click uz roktura)
-  // Papildus: ja kāds nospiež bultiņu taustiņu vai ESC – nevajag neko īpašu
-
-  // Pēc loga/virtuālā viewport izmaiņām pielāgo mērogu, lai rokturis “nepazūd”
-  function onViewportChange(){ window.__fitDock && window.__fitDock(); }
+  // Pēc loga/virtuālā viewport izmaiņām pielāgo mērogu
+  function onViewportChange() { window.__fitDock && window.__fitDock(); }
   window.addEventListener('resize', onViewportChange);
-  if (window.visualViewport){
+  if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', onViewportChange);
     window.visualViewport.addEventListener('scroll', onViewportChange);
   }
-
-  // (neobligāti) – ja gribi, var automātiski dokēt pēc X sekundēm neaktivitātes:
-  /*
-  let idleT;
-  function armIdle(){
-    clearTimeout(idleT);
-    idleT = setTimeout(dockButtons, 7000);
-  }
-  ['mousemove','pointermove','touchmove','keydown'].forEach(e => {
-    window.addEventListener(e, armIdle, {passive:true});
-  });
-  armIdle();
-  */
-
 })();
+
 
 
 
