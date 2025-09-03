@@ -77,7 +77,7 @@
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
-                                height: 100vh;
+                                height: calc(var(--vh, 1vh) * 100);
                                 overflow: hidden;
                                 position: relative;
                             }
@@ -1589,39 +1589,51 @@
 					script.textContent = `
 
 
-						function debounce(func, wait = 50) {
-							let timeout;
-							return function(...args) {
-								clearTimeout(timeout);
-								timeout = setTimeout(() => func.apply(this, args), wait);
-							};
-						}
+function debounce(func, wait = 50) {
+  let timeout;
+  return function (...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
 
-						function updateViewportHeight() {
-							const vh = window.innerHeight * 0.01;
-							document.documentElement.style.setProperty('--vh', vh + 'px');
-						}
+// Izmanto vizuālo viewport (adreses joslas “elpošana”)
+function updateViewportHeight() {
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty('--vh', (h * 0.01) + 'px');
+}
 
-						function checkWindowSize() {
-							const fullscreenMessage = document.getElementById('fullscreenMessage');
-							const windowWidth = window.innerWidth;
-							const windowHeight = window.innerHeight;
+// Arī loga izmēra pārbaude laiž caur vizuālo viewport
+function checkWindowSize() {
+  const fullscreenMessage = document.getElementById('fullscreenMessage');
+  const w = window.innerWidth;
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
 
-							if (windowWidth >= 1024 && windowHeight >= 700) {
-								fullscreenMessage.classList.add('hidden');
-							} else {
-								fullscreenMessage.classList.remove('hidden');
-							}
-						}
+  if (w >= 1024 && h >= 700) {
+    fullscreenMessage.classList.add('hidden');
+  } else {
+    fullscreenMessage.classList.remove('hidden');
+  }
+}
 
-						function handleResize() {
-							updateViewportHeight();
-							checkWindowSize();
-						}
+function handleResize() {
+  updateViewportHeight();
+  checkWindowSize();
+  // pārrēķini doku uzreiz (lai nepārklājas ar #about)
+  window.__fitDock && window.__fitDock();
+}
 
-						window.addEventListener('resize', debounce(handleResize, 50));
-						window.addEventListener('orientationchange', handleResize);
-						window.addEventListener('load', handleResize);
+// Sākotnējais un klasiskie notikumi
+window.addEventListener('load', handleResize);
+window.addEventListener('resize', debounce(handleResize, 50));
+window.addEventListener('orientationchange', handleResize);
+
+// Papildu notikumi, kas reaģē uz adreses joslas parādīšanos/paslēpšanos
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', debounce(handleResize, 50));
+  window.visualViewport.addEventListener('scroll', debounce(handleResize, 50));
+}
+
 
                         // Dinamiskās pogas konfigurācija: katrai pogai sākuma un alternatīvie attēli
 						const buttonImageMap = {
