@@ -1246,9 +1246,20 @@
   backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
   background:linear-gradient(180deg,var(--dock1),var(--dock2));
   border:1px solid rgba(255,255,255,.04);
-  box-shadow:var(--dock-shadow);
+  box-shadow:var(--dock-shadow);  
   pointer-events:auto; /* lai var klikšķināt pogas */
 }
+
+
+/* lai auto-fit mērogs izskatās pareizi visos novietojumos */
+#buttonContainer .dock-shell{ 
+  transform-origin: center center; 
+  will-change: transform; 
+}
+#buttonContainer.left  .dock-shell{ transform-origin: left  center; }
+#buttonContainer.right .dock-shell{ transform-origin: right center; }
+
+
 
 /* orientācijas mantošana no Tavām klasēm */
 #buttonContainer.bottom .dock-shell{ flex-direction:row; }
@@ -1864,6 +1875,7 @@
 							const buttonContainer = document.getElementById('buttonContainer');
 							buttonContainer.classList.remove('bottom', 'right', 'left');
 							buttonContainer.classList.add(position);
+	   						window.__fitDock && window.__fitDock();
 						}
 
 						document.addEventListener('DOMContentLoaded', () => {
@@ -3057,6 +3069,53 @@
 })();
 
 
+// === Auto-fit dokam (#buttonContainer .dock-shell) ===
+(function(){
+  function fitDock(){
+    var bc = document.getElementById('buttonContainer');
+    if(!bc) return;
+    var shell = bc.querySelector('.dock-shell');
+    if(!shell) return;
+
+    // nomēram dabisko izmēru bez skalas
+    var prev = shell.style.transform;
+    shell.style.transform = 'none';
+    var natural = shell.getBoundingClientRect();
+
+    var vertical = bc.classList.contains('left') || bc.classList.contains('right');
+
+    var maxW = window.innerWidth * 0.96;     // horizontāli – līdz ~96% no ekrāna platuma
+    var maxH = window.innerHeight * 0.90;    // vertikāli – līdz ~90% no ekrāna augstuma
+
+    // ja ir apakšējā josla, atņemam tās augstumu vertikālajā režīmā
+    var about = document.getElementById('about');
+    if (vertical && about) {
+      var ah = about.getBoundingClientRect().height || 0;
+      maxH = Math.max(120, maxH - ah);
+    }
+
+    var scale = 1;
+    if (vertical) {
+      scale = Math.min(1, maxH / natural.height);
+    } else {
+      scale = Math.min(1, maxW / natural.width);
+    }
+
+    // tikai samazinam (nepalielinām), ar saprātīgu minimumu
+    scale = Math.max(0.35, Math.min(1, scale));
+    shell.style.transform = 'scale(' + scale + ')';
+  }
+
+  // padaram pieejamu citur
+  window.__fitDock = fitDock;
+
+  // palaidam uzreiz un pie izmēru/orientācijas maiņām
+  var deb;
+  function queue(){ clearTimeout(deb); deb = setTimeout(fitDock, 100); }
+  window.addEventListener('load', fitDock);
+  window.addEventListener('resize', queue);
+  window.addEventListener('orientationchange', fitDock);
+})();
 
 
 
