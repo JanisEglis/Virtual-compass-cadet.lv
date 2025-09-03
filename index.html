@@ -1320,28 +1320,38 @@
 
 
 
-/* === DRAWER/ROKTURIS priekš #buttonContainer === */
-#buttonContainer { 
-  --handle-size: 44px;          /* redzamā roktura izmērs */
-  transition: transform .28s ease;
-  z-index: 50;                  /* lai rokturis vienmēr ir virs #about */
+/* === REGULATORI vienuviet === */
+:root{
+  /* cik liela strēmele paliek redzama, kad paslēpts */
+  --expose-bottom: 15px; /* apakša */
+  --expose-left:   6vw;  /* kreisā mala */
+  --expose-right:  6vw;  /* labā mala */
+
+  /* kad KONTEINERS ir atvērts apakšā – atstarpe no ekrāna malas */
+  --bottom-offset: 15px;
 }
 
+/* === DRAWER/ROKTURIS priekš #buttonContainer === */
+#buttonContainer{
+  --handle-w: 44px;  /* roktura platums */
+  --handle-h: 44px;  /* roktura augstums */
+  transition: transform .28s ease;
+  z-index: 50;
+}
 @media (pointer:coarse){
-  #buttonContainer{ --handle-size: 52px; }
+  #buttonContainer{ --handle-w: 52px; --handle-h: 52px; }
 }
 
 #buttonContainer .dock-handle{
   position:absolute;
-  width: var(--handle-size);
-  height: var(--handle-size);
-  display:none;                 /* redzams tikai dokētā režīmā */
+  width: var(--handle-w);
+  height: var(--handle-h);
+  display:none; /* redzams tikai dokētā režīmā */
   align-items:center;
   justify-content:center;
   background: linear-gradient(180deg, #d22, #b01616);
   color:#fff;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 0;           /* ikonai lietosim SVG, nevis tekstu */
   border-radius:10px;
   box-shadow:0 8px 18px rgba(0,0,0,.35);
   border:1px solid rgba(255,255,255,.25);
@@ -1349,56 +1359,42 @@
   pointer-events:auto;
   user-select:none;
 }
-
 /* Kad dokēts — rokturis parādās */
 #buttonContainer.docked .dock-handle{ display:flex; }
 
 /* Roktura novietojums atkarībā no orientācijas */
 #buttonContainer.bottom .dock-handle{
-  top:0; left:50%; transform: translate(-50%, -100%);   /* ārpus augšējās malas */
+  top:0; left:50%; transform: translate(-50%, -100%);
   border-radius:10px 10px 0 0;
 }
 #buttonContainer.left .dock-handle{
-  top:50%; right:0; transform: translate(100%, -50%);   /* ārpus labās malas */
+  top:50%; right:0; transform: translate(100%, -50%);
   border-radius:0 10px 10px 0;
 }
 #buttonContainer.right .dock-handle{
-  top:50%; left:0; transform: translate(-100%, -50%);   /* ārpus kreisās malas */
+  top:50%; left:0; transform: translate(-100%, -50%);
   border-radius:10px 0 0 10px;
 }
 
-/* Paslēpšana ar “atvilkni”: atstāj redzamu tikai rokturi */
+/* Apakšā atvērts – pārspēj inline style="bottom: 43px" */
+.button-container.bottom{
+  bottom: var(--bottom-offset) !important;
+}
+
+/* Paslēpšana ar “atvilkni”: atstāj redzamu tieši expose-* */
 #buttonContainer.docked.bottom{
-  transform: translateY(calc(100% + var(--vh) * 5 - var(--handle-size)));
+  transform: translateY(calc(100% + var(--bottom-offset) - var(--expose-bottom)));
 }
 #buttonContainer.docked.left{
-  transform: translateX(calc(-100% - 6vw + var(--handle-size)));
+  transform: translateX(calc(-100% + var(--expose-left)));
 }
 #buttonContainer.docked.right{
-  transform: translateX(calc(100% + 6vw - var(--handle-size)));
+  transform: translateX(calc(100% - var(--expose-right)));
 }
 
 
 
 
-/* Globālie regulatori */
-:root{
-  --dock-handle-side: 6vw;         /* sānu rokturis – tev der */
-  --dock-bottom-reserve: 15px;     /* attālums no apakšas, kad atvilktne atvērta */
-  --dock-handle-bottom: var(--handle-size); /* cik paliek redzams, kad paslēpts */
-}
-
-/* Apakšas novietojums – pārspēj iepriekšējo “calc(var(--vh)*5)” */
-.button-container.bottom{
-  bottom: var(--dock-bottom-reserve) !important;
-}
-
-/* Paslēpšana apakšā – paliek tikai rokturis */
-#buttonContainer.docked.bottom{
-  transform: translateY(
-    calc(100% + var(--dock-bottom-reserve) - var(--dock-handle-bottom))
-  );
-}
 
 
 
@@ -3230,8 +3226,15 @@ window.__fitDock && window.__fitDock();
 
 
 (function(){
-  const bc = document.getElementById('buttonContainer');
-  if(!bc) return;
+  const GRID_ICON = `
+  <svg viewBox="0 0 24 24" width="70%" height="70%" aria-hidden="true">
+    <rect x="3.5" y="3.5" width="17" height="17" rx="3" ry="3"
+          fill="none" stroke="currentColor" stroke-width="2"/>
+    <line x1="12" y1="3.5"  x2="12" y2="20.5" stroke="currentColor" stroke-width="2"/>
+    <line x1="3.5" y1="12"  x2="20.5" y2="12" stroke="currentColor" stroke-width="2"/>
+  </svg>
+`;
+ 
 
   /* — ROKTURIS — */
   const handle = document.createElement('div');
@@ -3239,12 +3242,9 @@ window.__fitDock && window.__fitDock();
   handle.setAttribute('title','Parādīt pogas');
   bc.appendChild(handle);
 
-  function setHandleGlyph(){
-    // ▲ / ▶ / ◀ pēc novietojuma
-    if (bc.classList.contains('bottom')) handle.textContent = '▲';
-    else if (bc.classList.contains('left')) handle.textContent = '▶';
-    else if (bc.classList.contains('right')) handle.textContent = '◀';
-  }
+function setHandleGlyph(){
+  handle.innerHTML = GRID_ICON;
+}
   setHandleGlyph();
 
   /* — PUBLISKĀS FUNKCIJAS — */
