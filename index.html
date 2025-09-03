@@ -1381,20 +1381,23 @@
 
 
 
+/* Globālie regulatori */
 :root{
-  /* Cik tālu no ekrāna apakšas sēž doks, kad redzams (undocked) */
-  --dock-bottom-reserve: calc(var(--vh) * 6);
-
-  /* Cik liels rokturis paliek redzams */
- 
-  --dock-handle-bottom: 3.6vh; /* apakšā – samazini/paaugstini pēc sajūtas */
+  --dock-handle-side: 6vw;         /* sānu rokturis – tev der */
+  --dock-bottom-reserve: 15px;     /* attālums no apakšas, kad atvilktne atvērta */
+  --dock-handle-bottom: var(--handle-size); /* cik paliek redzams, kad paslēpts */
 }
 
+/* Apakšas novietojums – pārspēj iepriekšējo “calc(var(--vh)*5)” */
+.button-container.bottom{
+  bottom: var(--dock-bottom-reserve) !important;
+}
 
-
-/* atvilktnes stāvoklis (docked) — paslēp tik dziļi, lai paliek tikai rokturis */
+/* Paslēpšana apakšā – paliek tikai rokturis */
 #buttonContainer.docked.bottom{
-  transform: translateY(calc(100% + var(--dock-bottom-reserve) - var(--dock-handle-bottom)));
+  transform: translateY(
+    calc(100% + var(--dock-bottom-reserve) - var(--dock-handle-bottom))
+  );
 }
 
 
