@@ -983,22 +983,13 @@
 
 
 
-/* Kad aizveras */
-.dropdown-menu:not(.visible) {
-    top: -100%;
-    opacity: 0;
-    visibility: hidden;
-    transition: top 0.4s ease-in-out, opacity 0.4s ease-in-out, visibility 0s 0.4s; /* Visibility delay, lai paslēptu tikai pēc animācijas */
-}
-
-
-
-
-
-
-
-
-
+							/* Kad aizveras */
+							.dropdown-menu:not(.visible) {
+							    top: -100%;
+							    opacity: 0;
+							    visibility: hidden;
+							    transition: top 0.4s ease-in-out, opacity 0.4s ease-in-out, visibility 0s 0.4s; /* Visibility delay, lai paslēptu tikai pēc animācijas */
+							}
 
 
 							/* Kad iframe ir aktīvs, dropdown pogas tiek paceltas un samazinātas */
@@ -1009,9 +1000,6 @@
 								transform: translateY(70px); /* Paceļ pogas augstāk, bet saglabā rindu izvietojumu */
 								margin-top:-40px;
 							}
-
-
-
 
 
 							@media (max-width: 768px) {
@@ -1039,9 +1027,6 @@
 									padding: 12px;
 								}
 							}
-
-
-
 
 
 
@@ -1077,11 +1062,6 @@
 								margin-top: 20px; /* Paceļ nedaudz uz augšu */
 								margin-bottom: -40px;
 							}
-
-
-
-
-
 
 
 
@@ -1229,113 +1209,176 @@
 							}
 
 
-/* === DOCK (tikai #buttonContainer) — jauns dizains bez loģikas maiņas === */
-:root{
-  --dock1:#1b1f25; --dock2:#14171c;
-  --dock-ring:#d22; --dock-icon:#eef2f7; --dock-muted:#3a3f47;
-  --dock-shadow:0 12px 28px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.35);
-  --tipX:50%; --tipY:50%;
-  --labelW:210px; --capH:32px; --capSkew:14px; --capR:10px; --capExtraW:10px; --labelOffsetY:2px;
+							/* === DOCK (tikai #buttonContainer) — jauns dizains bez loģikas maiņas === */
+							:root{
+							  --dock1:#1b1f25; --dock2:#14171c;
+							  --dock-ring:#d22; --dock-icon:#eef2f7; --dock-muted:#3a3f47;
+							  --dock-shadow:0 12px 28px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.35);
+							  --tipX:50%; --tipY:50%;
+							  --labelW:210px; --capH:32px; --capSkew:14px; --capR:10px; --capExtraW:10px; --labelOffsetY:2px;
+							}
+							
+							/* “Čaula” ap pašām pogām (izveidosim ar JS), lai fona kapsula būtu pēc satura platuma */
+							#buttonContainer { pointer-events:none;}
+							#buttonContainer .dock-shell{
+							  position:relative; display:flex; gap:22px; align-items:center;
+							  padding:14px 18px; border-radius:48px;
+							  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+							  background:linear-gradient(180deg,var(--dock1),var(--dock2));
+							  border:1px solid rgba(255,255,255,.04);
+							  box-shadow:var(--dock-shadow);  
+							  pointer-events:auto; /* lai var klikšķināt pogas */
+							}
+							
+							
+							/* lai auto-fit mērogs izskatās pareizi visos novietojumos */
+							#buttonContainer .dock-shell{ 
+							  transform-origin: center center; 
+							  will-change: transform; 
+							}
+							#buttonContainer.left  .dock-shell{ transform-origin: left  center; }
+							#buttonContainer.right .dock-shell{ transform-origin: right center; }
+							
+							
+							
+							/* orientācijas mantošana no Tavām klasēm */
+							#buttonContainer.bottom .dock-shell{ flex-direction:row; }
+							#buttonContainer.left  .dock-shell,
+							#buttonContainer.right .dock-shell{ flex-direction:column; }
+							
+							/* Etiķete (teksta burbulis) + kupola SVG (horizontālajam režīmam) */
+							#buttonContainer .dock-label{
+							  position:absolute; left:0; top:calc(-1 * var(--capH) - var(--labelOffsetY));
+							  transform:translateX(calc(var(--tipX) - 50%));
+							  max-width:var(--labelW);
+							  padding:6px 12px; background:rgba(22,25,30,.92);
+							  border:1px solid rgba(210,34,34,.45); border-radius:var(--capR);
+							  color:#fff; font-size:13px; line-height:1.05; font-weight:600;
+							  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+							  box-shadow:0 8px 20px rgba(0,0,0,.35);
+							  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+							  opacity:0; pointer-events:none; z-index:3;
+							  clip-path: inset(0 50% 0 50% round var(--capR));
+							  transition:opacity .18s, clip-path .24s, max-width .12s;
+							}
+							#buttonContainer .show-label .dock-label{
+							  opacity:1; clip-path: inset(0 0 0 0 round var(--capR));
+							}
+							#buttonContainer .dock-cap{
+							  position:absolute; left:0; top:calc(-1 * var(--capH));
+							  width:calc(var(--labelW) + 22px + var(--capExtraW)); height:var(--capH);
+							  transform:translateX(calc(var(--tipX) - 50%));
+							  transform-origin:bottom center;
+							  opacity:0; pointer-events:none; z-index:1;
+							  filter:drop-shadow(0 10px 18px rgba(0,0,0,.35));
+							}
+							#buttonContainer .show-cap .dock-cap{ opacity:1; }
+							
+							/* Vertikālie novietojumi: etiķete slīd vertikāli un stāv sānis (kupolu slēpjam) */
+							#buttonContainer.left  .dock-cap,
+							#buttonContainer.right .dock-cap{ display:none; }
+							#buttonContainer.left  .dock-label,
+							#buttonContainer.right .dock-label{
+							  top:0; transform:translateY(calc(var(--tipY) - 50%));
+							}
+							#buttonContainer.left  .dock-label{ left:100%; margin-left:12px; }
+							#buttonContainer.right .dock-label{ right:100%; left:auto; margin-right:12px; }
+							
+							/* Pogu stils #buttonContainer iekšienē (pārraksta globālo “button” izskatu tikai šeit) */
+							#buttonContainer .dock-shell > button{
+							  position:relative; background:transparent !important; color:var(--dock-icon);
+							  border:none; border-radius:50%;
+							  width:64px; height:64px; /* mobilajam var samazināt ar @media */
+							  display:grid; place-items:center; cursor:pointer; outline:none;
+							  -webkit-tap-highlight-color:transparent;
+							}
+							#buttonContainer .dock-shell > button::before{
+							  content:""; position:absolute; inset:0; border-radius:50%;
+							  border:3px solid var(--dock-ring); box-shadow:0 6px 16px rgba(210,34,34,.35);
+							  transition:transform .18s ease, opacity .18s ease, border-color .18s ease, box-shadow .18s ease;
+							}
+							#buttonContainer .dock-shell > button:active::before{ transform:scale(.95); opacity:.9; }
+							#buttonContainer .dock-shell > button img{
+							  width:78%; height:78%; object-fit:contain; display:block; margin:auto; pointer-events:none;
+							}
+							/* Aktīvajām (Tavā kodā tiek pievienota .active) – neliels izcelums */
+							#buttonContainer .dock-shell > button.active::before{
+							  border-color:#ff4d4d; box-shadow:0 0 0 4px rgba(255,77,77,.12);
+							}
+							/* “Touch-only” pogas paliek kā ir – tikai izmērs/dizains vienots */
+							#buttonContainer .dock-shell > .touch-only{ display:none; }
+							@media (pointer:coarse){
+							  #buttonContainer .dock-shell > .touch-only{ display:grid; }
+							}
+							
+							/* Mazi skatlogi */
+							@media (max-width:540px){
+							  #buttonContainer .dock-shell{ gap:16px; padding:12px 14px; }
+							  #buttonContainer .dock-shell > button{ width:58px; height:58px; }
+							}
+
+
+
+
+/* === DRAWER/ROKTURIS priekš #buttonContainer === */
+#buttonContainer { 
+  --handle-size: 44px;          /* redzamā roktura izmērs */
+  transition: transform .28s ease;
+  z-index: 50;                  /* lai rokturis vienmēr ir virs #about */
 }
 
-/* “Čaula” ap pašām pogām (izveidosim ar JS), lai fona kapsula būtu pēc satura platuma */
-#buttonContainer { pointer-events:none;}
-#buttonContainer .dock-shell{
-  position:relative; display:flex; gap:22px; align-items:center;
-  padding:14px 18px; border-radius:48px;
-  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-  background:linear-gradient(180deg,var(--dock1),var(--dock2));
-  border:1px solid rgba(255,255,255,.04);
-  box-shadow:var(--dock-shadow);  
-  pointer-events:auto; /* lai var klikšķināt pogas */
-}
-
-
-/* lai auto-fit mērogs izskatās pareizi visos novietojumos */
-#buttonContainer .dock-shell{ 
-  transform-origin: center center; 
-  will-change: transform; 
-}
-#buttonContainer.left  .dock-shell{ transform-origin: left  center; }
-#buttonContainer.right .dock-shell{ transform-origin: right center; }
-
-
-
-/* orientācijas mantošana no Tavām klasēm */
-#buttonContainer.bottom .dock-shell{ flex-direction:row; }
-#buttonContainer.left  .dock-shell,
-#buttonContainer.right .dock-shell{ flex-direction:column; }
-
-/* Etiķete (teksta burbulis) + kupola SVG (horizontālajam režīmam) */
-#buttonContainer .dock-label{
-  position:absolute; left:0; top:calc(-1 * var(--capH) - var(--labelOffsetY));
-  transform:translateX(calc(var(--tipX) - 50%));
-  max-width:var(--labelW);
-  padding:6px 12px; background:rgba(22,25,30,.92);
-  border:1px solid rgba(210,34,34,.45); border-radius:var(--capR);
-  color:#fff; font-size:13px; line-height:1.05; font-weight:600;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  box-shadow:0 8px 20px rgba(0,0,0,.35);
-  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-  opacity:0; pointer-events:none; z-index:3;
-  clip-path: inset(0 50% 0 50% round var(--capR));
-  transition:opacity .18s, clip-path .24s, max-width .12s;
-}
-#buttonContainer .show-label .dock-label{
-  opacity:1; clip-path: inset(0 0 0 0 round var(--capR));
-}
-#buttonContainer .dock-cap{
-  position:absolute; left:0; top:calc(-1 * var(--capH));
-  width:calc(var(--labelW) + 22px + var(--capExtraW)); height:var(--capH);
-  transform:translateX(calc(var(--tipX) - 50%));
-  transform-origin:bottom center;
-  opacity:0; pointer-events:none; z-index:1;
-  filter:drop-shadow(0 10px 18px rgba(0,0,0,.35));
-}
-#buttonContainer .show-cap .dock-cap{ opacity:1; }
-
-/* Vertikālie novietojumi: etiķete slīd vertikāli un stāv sānis (kupolu slēpjam) */
-#buttonContainer.left  .dock-cap,
-#buttonContainer.right .dock-cap{ display:none; }
-#buttonContainer.left  .dock-label,
-#buttonContainer.right .dock-label{
-  top:0; transform:translateY(calc(var(--tipY) - 50%));
-}
-#buttonContainer.left  .dock-label{ left:100%; margin-left:12px; }
-#buttonContainer.right .dock-label{ right:100%; left:auto; margin-right:12px; }
-
-/* Pogu stils #buttonContainer iekšienē (pārraksta globālo “button” izskatu tikai šeit) */
-#buttonContainer .dock-shell > button{
-  position:relative; background:transparent !important; color:var(--dock-icon);
-  border:none; border-radius:50%;
-  width:64px; height:64px; /* mobilajam var samazināt ar @media */
-  display:grid; place-items:center; cursor:pointer; outline:none;
-  -webkit-tap-highlight-color:transparent;
-}
-#buttonContainer .dock-shell > button::before{
-  content:""; position:absolute; inset:0; border-radius:50%;
-  border:3px solid var(--dock-ring); box-shadow:0 6px 16px rgba(210,34,34,.35);
-  transition:transform .18s ease, opacity .18s ease, border-color .18s ease, box-shadow .18s ease;
-}
-#buttonContainer .dock-shell > button:active::before{ transform:scale(.95); opacity:.9; }
-#buttonContainer .dock-shell > button img{
-  width:78%; height:78%; object-fit:contain; display:block; margin:auto; pointer-events:none;
-}
-/* Aktīvajām (Tavā kodā tiek pievienota .active) – neliels izcelums */
-#buttonContainer .dock-shell > button.active::before{
-  border-color:#ff4d4d; box-shadow:0 0 0 4px rgba(255,77,77,.12);
-}
-/* “Touch-only” pogas paliek kā ir – tikai izmērs/dizains vienots */
-#buttonContainer .dock-shell > .touch-only{ display:none; }
 @media (pointer:coarse){
-  #buttonContainer .dock-shell > .touch-only{ display:grid; }
+  #buttonContainer{ --handle-size: 52px; }
 }
 
-/* Mazi skatlogi */
-@media (max-width:540px){
-  #buttonContainer .dock-shell{ gap:16px; padding:12px 14px; }
-  #buttonContainer .dock-shell > button{ width:58px; height:58px; }
+#buttonContainer .dock-handle{
+  position:absolute;
+  width: var(--handle-size);
+  height: var(--handle-size);
+  display:none;                 /* redzams tikai dokētā režīmā */
+  align-items:center;
+  justify-content:center;
+  background: linear-gradient(180deg, #d22, #b01616);
+  color:#fff;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius:10px;
+  box-shadow:0 8px 18px rgba(0,0,0,.35);
+  border:1px solid rgba(255,255,255,.25);
+  cursor:pointer;
+  pointer-events:auto;
+  user-select:none;
 }
+
+/* Kad dokēts — rokturis parādās */
+#buttonContainer.docked .dock-handle{ display:flex; }
+
+/* Roktura novietojums atkarībā no orientācijas */
+#buttonContainer.bottom .dock-handle{
+  top:0; left:50%; transform: translate(-50%, -100%);   /* ārpus augšējās malas */
+  border-radius:10px 10px 0 0;
+}
+#buttonContainer.left .dock-handle{
+  top:50%; right:0; transform: translate(100%, -50%);   /* ārpus labās malas */
+  border-radius:0 10px 10px 0;
+}
+#buttonContainer.right .dock-handle{
+  top:50%; left:0; transform: translate(-100%, -50%);   /* ārpus kreisās malas */
+  border-radius:10px 0 0 10px;
+}
+
+/* Paslēpšana ar “atvilkni”: atstāj redzamu tikai rokturi */
+#buttonContainer.docked.bottom{ transform: translateY(calc(100% - var(--handle-size))); }
+#buttonContainer.docked.left {  transform: translateX(calc(-100% + var(--handle-size))); }
+#buttonContainer.docked.right{  transform: translateX(calc(100%  - var(--handle-size))); }
+
+
+
+
+
+
+
+
 
 						</style>
 					</head>
@@ -3155,6 +3198,100 @@ updateButtonContainerPosition(initial);
 
 // 🔹 Tagad __fitDock noteikti ir definēts — pielāgo mērlogu uzreiz
 window.__fitDock && window.__fitDock();
+
+
+
+
+
+
+(function(){
+  const bc = document.getElementById('buttonContainer');
+  if(!bc) return;
+
+  /* — ROKTURIS — */
+  const handle = document.createElement('div');
+  handle.className = 'dock-handle';
+  handle.setAttribute('title','Parādīt pogas');
+  bc.appendChild(handle);
+
+  function setHandleGlyph(){
+    // ▲ / ▶ / ◀ pēc novietojuma
+    if (bc.classList.contains('bottom')) handle.textContent = '▲';
+    else if (bc.classList.contains('left')) handle.textContent = '▶';
+    else if (bc.classList.contains('right')) handle.textContent = '◀';
+  }
+  setHandleGlyph();
+
+  /* — PUBLISKĀS FUNKCIJAS — */
+  function dockButtons(){ bc.classList.add('docked'); }
+  function showButtons(){ bc.classList.remove('docked'); window.__fitDock && window.__fitDock(); }
+
+  // Piesienam rokturim
+  handle.addEventListener('click', showButtons);
+
+  // Ja maina novietojumu ar taviem selectiem — nomainām roktura simbolu
+  const leftSel  = document.getElementById('positionSelectLeft');
+  const rightSel = document.getElementById('positionSelect');
+  function refreshBySelect(){ setHandleGlyph(); window.__fitDock && window.__fitDock(); }
+  leftSel  && leftSel.addEventListener('change', refreshBySelect);
+  rightSel && rightSel.addEventListener('change', refreshBySelect);
+
+  // Ielāpam tavu updateButtonContainerPosition, lai rokturis sekotu līdzi
+  if (window.updateButtonContainerPosition) {
+    const _old = window.updateButtonContainerPosition;
+    window.updateButtonContainerPosition = function(pos){
+      _old(pos);
+      setHandleGlyph();
+      // ja bija dokēts, paliek dokēts; rokturis vienmēr pareizā vietā
+    };
+  }
+
+  /* — AUTOMĀTISKĀ DOKĒŠANA, kad sāc “darbu ar saturu” — */
+  const map     = document.getElementById('mapCanvas');
+  const compass = document.getElementById('compassContainer');
+
+  // Ja lietotājs sāk kustināt karti/kompasu – paslēpjam pogas atvilknē
+  const autoDockEvts = ['pointerdown','mousedown','touchstart'];
+  autoDockEvts.forEach(ev => {
+    map     && map.addEventListener(ev, dockButtons,    {passive:true});
+    compass && compass.addEventListener(ev, dockButtons, {passive:true});
+  });
+
+  // Ja lietotājs atkal atver atvilkni – rokturis to izdara (click uz roktura)
+  // Papildus: ja kāds nospiež bultiņu taustiņu vai ESC – nevajag neko īpašu
+
+  // Pēc loga/virtuālā viewport izmaiņām pielāgo mērogu, lai rokturis “nepazūd”
+  function onViewportChange(){ window.__fitDock && window.__fitDock(); }
+  window.addEventListener('resize', onViewportChange);
+  if (window.visualViewport){
+    window.visualViewport.addEventListener('resize', onViewportChange);
+    window.visualViewport.addEventListener('scroll', onViewportChange);
+  }
+
+  // (neobligāti) – ja gribi, var automātiski dokēt pēc X sekundēm neaktivitātes:
+  /*
+  let idleT;
+  function armIdle(){
+    clearTimeout(idleT);
+    idleT = setTimeout(dockButtons, 7000);
+  }
+  ['mousemove','pointermove','touchmove','keydown'].forEach(e => {
+    window.addEventListener(e, armIdle, {passive:true});
+  });
+  armIdle();
+  */
+
+})();
+
+
+
+
+
+
+
+
+
+
 
                 `;
                 interactiveWindow.document.body.appendChild(script);
