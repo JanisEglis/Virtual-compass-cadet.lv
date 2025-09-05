@@ -1516,8 +1516,20 @@
   box-shadow:0 2px 6px rgba(0,0,0,.35);
 }
 
+#buttonContainer.left .dock-shell,
+#buttonContainer.right .dock-shell{
+  grid-auto-flow: row dense; /* ļauj vēlāk ieliktu dimmeri salikt augšā bez caurumiem */
+}
 
-
+#buttonContainer .dock-dimmer{ 
+  align-self: stretch; 
+  min-height: 0;              /* Safari 100% augstuma fix */
+}
+#buttonContainer.left  .dock-dimmer input[type=range],
+#buttonContainer.right .dock-dimmer input[type=range]{
+  height: calc(100% - 16px);  /* 16px = 8px top + 8px bottom padding */
+  min-height: 0;
+}
 
 
 						</style>
@@ -3135,7 +3147,7 @@ function drawImage() {
   dimWrap.innerHTML =
     '<input id="mapDimmerRange" type="range" min="0" max="80" step="1">' +
     '<span class="value" id="mapDimmerValue"></span>';
-  shell.appendChild(dimWrap);
+  shell.insertBefore(dimWrap, shell.firstChild);
   
 // Tooltipam un fokusam (tāpat kā pogām)
 dimWrap.setAttribute('data-title', 'Tumšināt karti');
