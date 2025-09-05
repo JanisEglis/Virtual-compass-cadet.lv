@@ -1650,28 +1650,18 @@
 
 
 
-/* ====== FIREFOX RESET + VERTIKĀLĀ ORIENTĀCIJA ====== */
+/* ===== Firefox reset/slīpējums bez izkārtojuma maiņas ===== */
 #buttonContainer .dock-dimmer input[type=range]{
   appearance: none;
   -moz-appearance: none;
   background: transparent;
-  /* lai FF nerāda default “ielāpus” */
   border: 0;
   outline: 0;
 }
 
-/* Kad konteiners ir sānos — slīdnis IR vertikāls un augsts */
-#buttonContainer.left  .dock-dimmer input[type=range],
-#buttonContainer.right .dock-dimmer input[type=range]{
-  width: 28px;             /* “trases” platums */
-  height: 100%;            /* aizņem visu kolonnas augstumu */
-  min-height: 260px;       /* neļaujam kļūt pārāk īsam */
-}
-
-/* FF: trase un aizpildījums */
+/* FF trase/aizpildījums/īkšķis */
 #buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
-  width: 8px;
-  height: 100%;
+  height: 8px;
   background: var(--unfill);
   border-radius: 999px;
   border: 1px solid rgba(255,255,255,.06);
@@ -1680,42 +1670,53 @@
   background: var(--fill);
   border-radius: 999px;
 }
-
-/* FF: īkšķis */
 #buttonContainer .dock-dimmer input[type=range]::-moz-range-thumb{
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #eef2f7;
-  border: 3px solid var(--dock-ring);
+  background: var(--rng-thumb-bg, #eef2f7);
+  border: 3px solid var(--rng-thumb-ring, var(--dock-ring));
   box-shadow: 0 2px 6px rgba(0,0,0,.35);
 }
 
-/* Sānu izkārtojums – čaula ir īsts GRID: slīdnis aizņem VISAS rindas */
-#buttonContainer.left  .dock-shell,
-#buttonContainer.right .dock-shell{
-  display: grid;
-  grid-template-columns: auto auto;    /* kolonna: slīdnis | pogas (vai otrādi) */
-  grid-auto-rows: max-content;
-  align-items: stretch;
-}
+/* ===== Vertikālais režīms, ja konteiners ir malās — BEZ čaulas pārkārtošanas ===== */
 #buttonContainer.left  .dock-dimmer,
 #buttonContainer.right .dock-dimmer{
-  grid-column: 1;            /* kreisā kolonna (ja vajag otrādi – pārslēdz uz 2) */
-  grid-row: 1 / -1;          /* span visām pogu rindām */
+  /* lai slīdņa kastei ir vieta – nepadarām to par kolonnu/gridu */
   align-self: stretch;
+  min-height: 260px;             /* ja vajag, pacel līdz 320px */
 }
 
-/* Fallback Chrome/Edge gadījumam, ja nav vertikālā slīdņa atbalsta */
+#buttonContainer.left  .dock-dimmer input[type=range],
+#buttonContainer.right .dock-dimmer input[type=range]{
+  /* vertikālais slīdnis: */
+  width: 28px;                    /* sliedes platums */
+  height: var(--dock-dimmer-h, 320px); /* augstums iestādāms ar JS, noklus. 320px */
+  writing-mode: bt-lr;            /* WebKit fallbackiem */
+  -webkit-appearance: slider-vertical;
+}
+
+/* WebKit vertikālā aizpildījuma vizuālais virziens (jau ir pie tevis, bet atgādnei) */
+.dock-dimmer .range-vertical::-webkit-slider-runnable-track{
+  background:
+    linear-gradient(to top,
+      var(--fill) 0,
+      var(--fill) calc(var(--p)*1%),
+      var(--unfill) calc(var(--p)*1%),
+      var(--unfill) 100%);
+}
+
+/* Fallback, ja kāds pārlūks neprot vertikālu range: pagriežam pašu slīdni */
 @supports not (-webkit-appearance: slider-vertical){
   #buttonContainer.left  .dock-dimmer input[type=range],
   #buttonContainer.right .dock-dimmer input[type=range]{
-    width: 100%;
-    height: 28px;
     transform: rotate(-90deg);
     transform-origin: center;
+    width: 100%;
+    height: 28px;
   }
 }
+
 
 
 
