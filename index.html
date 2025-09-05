@@ -3625,7 +3625,7 @@ window.__updateDimmerWidth && window.__updateDimmerWidth();
     );
 
     // Uzliekam precīzu span
-    dim.style.gridRow = side ? '1 / -1' : '';
+    dim.style.gridRow = '1 / span ' + rows;
   }
 
   // 3) Wrapperis – vispirms notīra, tad uzstāda span
@@ -3678,6 +3678,7 @@ window.__updateDimmerWidth && window.__updateDimmerWidth();
   // palaist uzreiz
   run();
 })();
+
 
 
 
