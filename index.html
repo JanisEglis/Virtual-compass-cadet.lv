@@ -1409,20 +1409,22 @@
   align-items:center;
 }
 
-/* Apakšā – centrējam un dodam slīdnim precīzu platumu */
+/* Apakšā – čaula vairs nestiepjas, “aptver” pogas cieši */
 #buttonContainer.bottom .dock-shell{
-  display:inline-flex;      /* nevis block flex */
+  display:inline-flex;          /* nevis block-flex */
   flex-wrap:wrap;
   justify-content:center;
-  width:auto;               /* neizstiepjamies */
-  max-width:calc(100% - 24px); /* drošības mala mazā ekrānā */
-  margin:0 auto;            /* centrēšana wrapperī */
+  width:auto;                   /* neizstiepjamies */
+  max-width:calc(100% - 24px);  /* drošības mala mazā ekrānā */
+  margin:0 auto;                /* centrēšana wrapperī */
+  padding:12px 14px;            /* ↓ mazāki sāni (samazina “tukšumus”) */
 }
 
+/* Slīdnis: platums = 1. rindas pogu platumam, nevis 100% */
 #buttonContainer.bottom .dock-dimmer{
-  order:2;                                  /* uz 2. rindu */
+  order:2;                          /* uz 2. rindu */
   flex:0 0 auto;
-  width:min(var(--rowW, 100%), 100%);       /* platums = izmērītā pogu rindas platuma */
+  width:min(var(--rowW, 100%), 100%);
   max-width:100%;
 }
 
