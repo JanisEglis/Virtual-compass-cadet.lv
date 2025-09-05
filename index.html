@@ -1411,11 +1411,12 @@
 
 /* Apakšā – centrējam un dodam slīdnim precīzu platumu */
 #buttonContainer.bottom .dock-shell{
-  display:flex;
+  display:inline-flex;      /* nevis block flex */
   flex-wrap:wrap;
-  justify-content:center;   /* centrē pogu rindu */
-  gap:22px;
-  align-items:center;
+  justify-content:center;
+  width:auto;               /* neizstiepjamies */
+  max-width:calc(100% - 24px); /* drošības mala mazā ekrānā */
+  margin:0 auto;            /* centrēšana wrapperī */
 }
 
 #buttonContainer.bottom .dock-dimmer{
