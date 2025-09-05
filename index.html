@@ -1717,13 +1717,7 @@
 }
 .dock-dimmer input[type="range"]::-moz-focus-outer{ border:0; }
 
-/* ===== Legacy Edge / IE ===== */
-.dock-dimmer input[type="range"]::-ms-track{
-  height: var(--rng-track);
-  background: transparent;
-  border-color: transparent;
-  color: transparent;
-}
+
 .dock-dimmer input[type="range"]::-ms-fill-lower,
 .dock-dimmer input[type="range"]::-ms-fill-upper{
   background: var(--rng-track-bg);
@@ -1759,28 +1753,6 @@
 .dock-dimmer .range-vertical[orient="vertical"]{ /* tikai signāls Firefoxam */ }
 .dock-dimmer .range-vertical::-moz-range-track{ width: var(--rng-track); }
 
-/* Legacy Edge/IE vertikāli */
-.dock-dimmer .range-vertical::-ms-track{ width: var(--rng-track); }
-
-/* Nedaudz lielāka ķepa skārienierīcēm */
-@media (pointer: coarse){
-  :root{ --rng-thumb: 22px; }
-}
-
-
-
-/* sānos pats slīdnis – šaurāks korpuss + pilns augstums */
-#buttonContainer.left  .dock-dimmer input[type=range],
-#buttonContainer.right .dock-dimmer input[type=range]{
-  width: 28px !important;
-  height: calc(100% - 16px);
-}
-
-/* (papildus FF) trases “resnumu” piesaistām mainīgajam */
-#buttonContainer.left  .dock-dimmer input[type=range]::-moz-range-track,
-#buttonContainer.right .dock-dimmer input[type=range]::-moz-range-track{
-  width: var(--rng-track);
-}
 
 
 /* 🔧 VERTIKĀLA RANGE korekcija visos pārlūkos */
@@ -1799,37 +1771,7 @@
   height: 100%;
 }
 
-/* Firefox vertikālajam track (drošībai) */
-.dock-dimmer .range-vertical::-moz-range-track{
-  width: var(--rng-track);
-  height: 100%;
-}
 
-/* Ja izmanto left/right konteinerus WebKitā – vēl stingrāk */
-#buttonContainer.left  .dock-dimmer input[type=range]::-webkit-slider-runnable-track,
-#buttonContainer.right .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
-  height: 100%;
-}
-
-
-/* --- PATCH: slīdņa bumbiņas izlīdzināšana WebKit/Chromium --- */
-/* horizontāli – bumbiņu centrējam ar margin-top; vertikālajam to NELIEKAM */
-#buttonContainer .dock-dimmer input[type="range"]:not(.range-vertical)::-webkit-slider-thumb{
-  margin-top: calc((var(--rng-track) - var(--rng-thumb)) / 2);
-}
-#buttonContainer .dock-dimmer .range-vertical::-webkit-slider-thumb{
-  margin-top: 0 !important;  /* pārraksta agrāk ielikto -5px no horizontālā varianta */
-}
-
-/* --- PATCH: Firefox vertikālā orientācija (nepieciešams orient="vertical") --- */
-#buttonContainer .dock-dimmer input[type="range"][orient="vertical"]{
-  appearance: none;        /* FF */
-  writing-mode: bt-lr;     /* FF vertikālais “track” */
-}
-
-/* drošībai: vertikālā “track” platums un aizpildījums */
-#buttonContainer .dock-dimmer .range-vertical::-webkit-slider-runnable-track{ width: var(--rng-track); }
-#buttonContainer .dock-dimmer .range-vertical::-moz-range-track{ width: var(--rng-track); }
 
 
 
