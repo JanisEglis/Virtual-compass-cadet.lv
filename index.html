@@ -1887,28 +1887,36 @@
 							}
 
 							/**
-							 * Funkcija, kas parāda visas pogas ar klasi .touch-only.
-							 */
-							function showTouchOnlyButtons() {
-								const touchOnlyElements = document.querySelectorAll('.touch-only');
-								touchOnlyElements.forEach(element => {
-									element.classList.add('touch-visible');
-									element.style.display = 'inline-block';
-								});
-								console.log('✅ Skārienjūtīgās pogas ir redzamas.');
-							}
+function showTouchOnlyButtons() {
+  const touchOnlyElements = document.querySelectorAll('.touch-only');
+  touchOnlyElements.forEach(el => {
+    el.classList.add('touch-visible');
+    el.style.display = 'inline-block';
+  });
 
-							/**
-							 * Funkcija, kas paslēpj visas pogas ar klasi .touch-only.
-							 */
-							function hideTouchOnlyButtons() {
-								const touchOnlyElements = document.querySelectorAll('.touch-only');
-								touchOnlyElements.forEach(element => {
-									element.classList.remove('touch-visible');
-									element.style.display = 'none';
-								});
-								console.log('❌ Skārienjūtīgās pogas ir paslēptas.');
-							}
+  // pārrēķina slīdņa “span” pēc pogu skaita
+  window.__updateDimmerWidth && window.__updateDimmerWidth();
+  // (neobligāti) pielāgo arī doka mērogu
+  window.__fitDock && window.__fitDock();
+
+  console.log('✅ Skārienjūtīgās pogas ir redzamas.');
+}
+
+function hideTouchOnlyButtons() {
+  const touchOnlyElements = document.querySelectorAll('.touch-only');
+  touchOnlyElements.forEach(el => {
+    el.classList.remove('touch-visible');
+    el.style.display = 'none';
+  });
+
+  // pārrēķina slīdņa “span” pēc pogu skaita
+  window.__updateDimmerWidth && window.__updateDimmerWidth();
+  // (neobligāti) pielāgo arī doka mērogu
+  window.__fitDock && window.__fitDock();
+
+  console.log('❌ Skārienjūtīgās pogas ir paslēptas.');
+}
+
 
 							/**
 							 * Funkcija, kas uzsāk pārbaudi ik pēc 1 sekundes, vai ir pievienota skārienjūtīga ierīce.
@@ -2077,6 +2085,7 @@
 
  				 			// uzreiz piemeklē mērogu
 						  	window.__fitDock && window.__fitDock();
+		 					window.__updateDimmerWidth && window.__updateDimmerWidth(); // ⬅️ jaunais zvans
 						}
 
 
@@ -3151,7 +3160,8 @@ dimWrap.id = 'mapDimmer'; // ne obligāti, bet noderīgi
     drawImage();                   // pārzīmē kanvu ar jaunu tumšumu
   });
 
-
+// ⬇️ Pievieno šo — sākotnēji iestata pareizu pārklājumu (span)
+window.__updateDimmerWidth && window.__updateDimmerWidth();
 
 
  
@@ -3374,6 +3384,55 @@ dimWrap.id = 'mapDimmer'; // ne obligāti, bet noderīgi
 							
 							// 🔹 Tagad __fitDock noteikti ir definēts — pielāgo mērlogu uzreiz
 							window.__fitDock && window.__fitDock();
+
+
+
+
+(function(){
+  function updateDimmerWidth(){
+    const bc = document.getElementById('buttonContainer');
+    if(!bc) return;
+    const shell = bc.querySelector('.dock-shell');
+    const dim  = shell && shell.querySelector('.dock-dimmer');
+    if(!shell || !dim) return;
+
+    // redzamo pogu skaits (izlaižam display:none, t.sk. touch-only uz desktop)
+    const buttons = Array.from(shell.children)
+      .filter(el => el.tagName === 'BUTTON' && getComputedStyle(el).display !== 'none');
+    const n = buttons.length || 1;
+
+    if (bc.classList.contains('bottom')){
+      // slīdnis 2. rindā un "span n" kolonnas (precīzi tik, cik ir pogas)
+      dim.style.gridRow = '2';
+      dim.style.gridColumn = '1 / span ' + n;
+      dim.style.width = '100%';
+      dim.style.maxWidth = '100%';
+    } else if (bc.classList.contains('left')){
+      // kreisajā pusē slīdnis 1. kolonnā, stiepjas pāri visam pogu augstumam
+      dim.style.gridRow = '1 / -1';
+      dim.style.gridColumn = '1';
+      dim.style.width = '';
+      dim.style.maxWidth = '';
+    } else { // right
+      dim.style.gridRow = '1 / -1';
+      dim.style.gridColumn = '2';
+      dim.style.width = '';
+      dim.style.maxWidth = '';
+    }
+  }
+
+  // padarām pieejamu citur
+  window.__updateDimmerWidth = updateDimmerWidth;
+
+  // sākotnēji + uz loga izmēra maiņām
+  window.addEventListener('load', updateDimmerWidth);
+  window.addEventListener('resize', updateDimmerWidth);
+})();
+
+
+
+
+
 
 							(function () {
 							  // ── nodrošinām, ka ir konteiners ─────────────────────────────────────────────
