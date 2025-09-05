@@ -1411,25 +1411,32 @@
 
 /* Apakšā — čaula vairs nestiepjas un nepievieno malas */
 #buttonContainer.bottom .dock-shell{
-  display: inline-flex;      /* nevis block-flex */
-  flex-wrap: wrap;
-  justify-content: center;
-  width: auto;               /* neizstiepjamies */
-  max-width: 100%;           /* nekādu -24px */
-  margin: 0 auto;            /* centrēšana */
-  padding: 0;                /* ← noņemam liekos 6px/8px */
-  gap: 12px;                 /* vari samazināt, ja gribi vēl ciešāk */
-  box-sizing: border-box;
+  display:inline-flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  width:auto;
+  max-width:100%;
+  margin:0 auto;
+  padding:0;
+  gap:12px;           /* pēc vajadzības vari samazināt */
+  box-sizing:border-box;
 }
 
-/* Slīdnis: tieši tik plats, cik 1. rindas pogas */
-#buttonContainer.bottom .dock-dimmer{
-  order: 2;                  /* uz 2. rindu */
-  flex: 0 0 auto;
-  width: var(--rowW, auto);  /* nevis min(...,100%) */
-  max-width: 100%;
-  box-sizing: border-box;    /* lai border/padding nepaplašina */
+/* Visas pogas – 1. rinda */
+#buttonContainer.bottom .dock-shell > button{
+  order:1;
 }
+
+/* Slīdnis – vienmēr atsevišķā, 2. rindā (zem pogām) */
+#buttonContainer.bottom .dock-dimmer{
+  order:2;
+  flex:0 0 100%;               /* ← piespiež jaunu rindu */
+  width:var(--rowW, auto);     /* tieši 1. rindas pogu platums */
+  max-width:100%;
+  margin:4px auto 0;           /* neliela atstarpe virs slīdņa */
+  box-sizing:border-box;
+}
+
 
 
 /* Sāni: 2 kolonnas – slīdnis | pogas (vai otrādi) */
