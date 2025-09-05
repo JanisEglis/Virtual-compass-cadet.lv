@@ -1399,116 +1399,121 @@
 
 
 
-/* === DIMMER (slīdnis) — precīzs izvietojums + vienots dizains === */
+/* === DIMMER (slīdnis) — izkārtojums un izmēri === */
 
-/* === Apakša: pogas vienā rindā, slīdnis pilnā platumā zem tām === */
-#buttonContainer.bottom .dock-shell{
-  display:flex;
-  flex-wrap:wrap;              /* ļauj otrajai rindai salūst zem pogām */
+/* Kopā lietojam GRID – tas ļauj slīdnim sānā izstiepties tieši tik augstu, cik aizņem pogas */
+#buttonContainer .dock-shell{
+  display:inline-grid;
+  grid-column-gap:22px;
+  grid-row-gap:12px;
   align-items:center;
-  gap:22px;                    /* tas pats “dok” gaps */
 }
-#buttonContainer.bottom .dock-shell > button{
-  flex:0 0 auto;               /* pogas pēc satura */
+
+/* Apakša: pogas 1. rindā, slīdnis 2. rindā un platumā = tieši tik, cik plata ir pogu rinda */
+#buttonContainer.bottom .dock-shell{
+  grid-auto-flow:column;
+  grid-auto-columns:max-content;   /* kolonnas pēc satura (pogas) */
 }
+#buttonContainer.bottom .dock-shell > button{ grid-row:1; }
 #buttonContainer.bottom .dock-dimmer{
-  order:2;                     /* lai slīdnis vienmēr ir ZEM pogām */
-  flex:1 1 100%;               /* pilna rinda, pilns platums */
+  grid-column:1 / -1;
+  grid-row:2;
   width:100%;
   max-width:100%;
 }
 
-/* Kreisā/labā mala: 2 kolonnas (pogas + vertikālais slīdnis) */
+/* Sāni: 2 kolonnas – slīdnis + pogas. Slīdnis stiepjas pāri VISĀ pogu kolonnas augstumā */
 #buttonContainer.left .dock-shell,
 #buttonContainer.right .dock-shell{
-  display:grid;
-  grid-template-columns:auto auto;   /* pogu kolonna + slīdņa kolonna */
-  align-items:stretch;
-  grid-row-gap:12px;
-  grid-column-gap:22px;
+  grid-auto-flow:row;
+  grid-auto-rows:max-content;      /* katra pogas rinda pēc satura */
+  grid-template-columns:auto auto; /* slīdnis | pogas (vai otrādi) */
+  align-items:start;
 }
-#buttonContainer.left  .dock-shell > button{ grid-column:2; }
-#buttonContainer.left  .dock-dimmer{ grid-column:1; grid-row:1 / -1; align-self:stretch; }
-#buttonContainer.right .dock-shell > button{ grid-column:1; }
-#buttonContainer.right .dock-dimmer{ grid-column:2; grid-row:1 / -1; align-self:stretch; }
 
-/* Dimmera korpuss – tāds pats “dok” stils */
+/* Kreiso/labo pusi samainām vietām kā prasīji */
+#buttonContainer.left  .dock-dimmer{ grid-column:1; grid-row:1 / -1; align-self:stretch; height:100%; }
+#buttonContainer.left  .dock-shell > button{ grid-column:2; }
+
+#buttonContainer.right .dock-shell > button{ grid-column:1; }
+#buttonContainer.right .dock-dimmer{ grid-column:2; grid-row:1 / -1; align-self:stretch; height:100%; }
+
+/* Dimmera “kaste” ar to pašu stilu kā dokam */
 #buttonContainer .dock-dimmer{
+  box-sizing:border-box;
   display:flex;
+  flex-direction:row;
   align-items:center;
   gap:10px;
   padding:8px 10px;
-  background: linear-gradient(180deg, var(--dock1), var(--dock2));
+  background:linear-gradient(180deg, var(--dock1), var(--dock2));
   border:1px solid rgba(255,255,255,.06);
   border-radius:18px;
-  box-shadow: var(--dock-shadow);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  box-shadow:var(--dock-shadow);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
   max-width:100%;
   pointer-events:auto;
 }
 
-/* Vertikālajās malās – kolonnas izkārtojums */
+/* Vertikālajās malās iekšā liekam kolonnu, lai “range” var izstiepties */
 #buttonContainer.left  .dock-dimmer,
 #buttonContainer.right .dock-dimmer{
   flex-direction:column;
   justify-content:center;
 }
 
-/* Noņemam slīdņa uzrakstu (label) – kā prasīji */
+/* Slēpjam iekšējos uzrakstus (vērtību/label) – tooltips rādīsies ārpusē */
 #buttonContainer .dock-dimmer label,
-#buttonContainer .dock-dimmer .dimmer-label{
-  display:none !important;
-}
+#buttonContainer .dock-dimmer .dimmer-label,
+#buttonContainer .dock-dimmer .value{ display:none !important; }
 
-/* Slīdnis: apakšā — 100% platumā; sānos — vertikāls un NE garāks par pogu kolonnu */
+/* Range: apakšā – 100% platumā */
 #buttonContainer .dock-dimmer input[type=range]{ width:100%; max-width:100%; }
+
+/* Range: sānos – vertikāls un vizuāli tik garš, cik augsta ir pogu kolonna */
 #buttonContainer.left  .dock-dimmer input[type=range],
 #buttonContainer.right .dock-dimmer input[type=range]{
-  height:100%;
+  height:calc(100% - 16px);  /* atņemam dimmera 8px+8px vertikālos paddingus */
   width:28px;
-  writing-mode: bt-lr;
-  -webkit-appearance: slider-vertical;
+  writing-mode:bt-lr;
+  -webkit-appearance:slider-vertical;
 }
-@supports not (-webkit-appearance: slider-vertical) {
+
+@supports not (-webkit-appearance: slider-vertical){
   #buttonContainer.left  .dock-dimmer input[type=range],
   #buttonContainer.right .dock-dimmer input[type=range]{
     height:28px;
     width:100%;
-    transform: rotate(-90deg);
+    transform:rotate(-90deg);
     transform-origin:center;
   }
 }
 
-/* Track/Thumb – vienā ģimenē ar doku/pogām */
+/* Vienotais track/thumb dizains */
 #buttonContainer .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
-  height:8px; border-radius:999px;
-  background: linear-gradient(180deg, var(--dock1), var(--dock2));
+  height:8px;border-radius:999px;
+  background:linear-gradient(180deg,var(--dock1),var(--dock2));
   border:1px solid rgba(255,255,255,.06);
 }
 #buttonContainer .dock-dimmer input[type=range]::-webkit-slider-thumb{
   -webkit-appearance:none;
-  width:18px; height:18px; border-radius:50%;
-  background: var(--dock-icon);
+  width:18px;height:18px;border-radius:50%;
+  background:var(--dock-icon);
   border:3px solid var(--dock-ring);
   box-shadow:0 2px 6px rgba(0,0,0,.35);
   margin-top:-5px;
 }
 #buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
-  height:8px; border-radius:999px;
-  background: linear-gradient(180deg, var(--dock1), var(--dock2));
+  height:8px;border-radius:999px;
+  background:linear-gradient(180deg,var(--dock1),var(--dock2));
   border:1px solid rgba(255,255,255,.06);
 }
 #buttonContainer .dock-dimmer input[type=range]::-moz-range-thumb{
-  width:18px; height:18px; border-radius:50%;
-  background: var(--dock-icon);
+  width:18px;height:18px;border-radius:50%;
+  background:var(--dock-icon);
   border:3px solid var(--dock-ring);
   box-shadow:0 2px 6px rgba(0,0,0,.35);
-}
-
-#buttonContainer .dock-dimmer label,
-#buttonContainer .dock-dimmer .value{
-  display:none !important;
 }
 
 
@@ -3122,6 +3127,12 @@ function drawImage() {
     '<input id="mapDimmerRange" type="range" min="0" max="80" step="1">' +
     '<span class="value" id="mapDimmerValue"></span>';
   shell.appendChild(dimWrap);
+  
+// Tooltipam un fokusam (tāpat kā pogām)
+dimWrap.setAttribute('data-title', 'Tumšināt karti');
+dimWrap.setAttribute('aria-label', 'Tumšināt karti');
+dimWrap.setAttribute('tabindex', '0');
+dimWrap.id = 'mapDimmer'; // ne obligāti, bet noderīgi
 
   // sasaistām ar mainīgo + localStorage
   var dimRange = dimWrap.querySelector('#mapDimmerRange');
