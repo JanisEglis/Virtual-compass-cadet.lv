@@ -3334,63 +3334,52 @@ window.__updateDimmerWidth && window.__updateDimmerWidth();
 							
 							// === Auto-fit dokam (#buttonContainer .dock-shell) — ar apakšējās joslas korekciju ===
 							(function(){
-							  function fitDock(){
-							    var bc = document.getElementById('buttonContainer');
-							    if(!bc) return;
-							    var shell = bc.querySelector('.dock-shell');
-							    if(!shell) return;
-							
-							    var about = document.getElementById('about');
-							    var ah = about ? (about.getBoundingClientRect().height || 0) : 0;
-							
-							    var isVertical = bc.classList.contains('left') || bc.classList.contains('right');
-							    var isBottom   = bc.classList.contains('bottom');
-							
-							    // 1) Novietojums: bottom režīmā pārbīdam virs #about
-							    if (isBottom) {
-							      var baseBottom = Math.round(window.innerHeight * 0.05); // ~5vh
-							      var minBottom  = Math.ceil(ah + 12);                    // droša atstarpe virs about
-							      bc.style.bottom = Math.max(baseBottom, minBottom) + 'px';
-							    } else {
-							      // ļaujam CSS kontrolēt (left/right)
-							      bc.style.bottom = '';
-							    }
-							
-							    // 2) Mērogs: nomēram “dabisko” izmēru bez skalas
-							    var prevTransform = shell.style.transform;
-							    shell.style.transform = 'none';
-							    var natural = shell.getBoundingClientRect();
-							    shell.style.transform = prevTransform;
-							
-							    // pieejamie izmēri
-							    var maxW = window.innerWidth * 0.96;
-							    var maxH = window.innerHeight * 0.90;
-							
-							    // vertical režīmā atņemam #about augstumu (lai kolonnu nesaplacina)
-							    if (isVertical) {
-							      maxH = Math.max(120, maxH - ah);
-							    }
-							
-							    // aprēķinām scale
-							    var scale = isVertical
-							      ? Math.min(1, maxH / natural.height)
-							      : Math.min(1, maxW / natural.width);
-							
-							    // tikai samazinām, nepalielinām (ar saprātīgu minimumu)
-							    scale = Math.max(0.35, Math.min(1, scale));
-							    shell.style.transform = 'scale(' + scale + ')';
-							  }
-							
-							  // padaram pieejamu citur
-							  window.__fitDock = fitDock;
-							
-							  // palaižam un klausāmies izmēru izmaiņas
-							  var t;
-							  function queue(){ clearTimeout(t); t = setTimeout(fitDock, 100); }
-							  window.addEventListener('load', fitDock);
-							  window.addEventListener('resize', queue);
-							  window.addEventListener('orientationchange', queue);
-							})();
+  function fitDock(){
+    const bc = document.getElementById('buttonContainer');
+    if(!bc) return;
+    const shell = bc.querySelector('.dock-shell');
+    if(!shell) return;
+
+    const about = document.getElementById('about');
+    const ah = about ? (about.getBoundingClientRect().height || 0) : 0;
+
+    const isBottom   = bc.classList.contains('bottom');
+    const isVertical = bc.classList.contains('left') || bc.classList.contains('right');
+
+    /* ❗ NEKĀDUS inline bottom */
+    bc.style.removeProperty('bottom');
+
+    /* Apakšā – tikai tik, lai nepārklātos ar #about (vai 8px) */
+    if (isBottom) {
+      const gap = Math.max(8, ah + 8);
+      document.documentElement.style.setProperty('--dock-bottom', gap + 'px');
+    }
+
+    /* Mērogs – tikai samazinām, nestiepjam malas */
+    const prev = shell.style.transform;
+    shell.style.transform = 'none';
+    const natural = shell.getBoundingClientRect();
+    shell.style.transform = prev;
+
+    let maxW = window.innerWidth * 0.98;
+    let maxH = window.innerHeight * 0.94;
+    if (isVertical) maxH = Math.max(120, maxH - ah);
+
+    let scale = isVertical
+      ? Math.min(1, maxH / natural.height)
+      : Math.min(1, maxW / natural.width);
+
+    scale = Math.max(0.35, Math.min(1, scale));
+    shell.style.transform = 'scale(' + scale + ')';
+  }
+
+  window.__fitDock = fitDock;
+  const queue = () => setTimeout(fitDock, 50);
+  window.addEventListener('load', fitDock);
+  window.addEventListener('resize', queue);
+  window.addEventListener('orientationchange', queue);
+})();
+
 							
 							
 							// 🔹 Tagad __fitDock noteikti ir definēts — pielāgo mērlogu uzreiz
