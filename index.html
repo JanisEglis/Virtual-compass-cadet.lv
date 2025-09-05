@@ -3443,42 +3443,6 @@ window.__fitDock && window.__fitDock();
 
 
 
-
-  
-  
-// Tooltipam un fokusam (tāpat kā pogām)
-dimWrap.setAttribute('data-title', 'Tumšināt karti');
-dimWrap.setAttribute('aria-label', 'Tumšināt karti');
-dimWrap.setAttribute('tabindex', '0');
-dimWrap.id = 'mapDimmer'; // ne obligāti, bet noderīgi
-
-  // sasaistām ar mainīgo + localStorage
-  var dimRange = dimWrap.querySelector('#mapDimmerRange');
-  var dimValue = dimWrap.querySelector('#mapDimmerValue');
-
-  var stored = +(localStorage.getItem('mapDarken') || 0);
-  mapDarken = stored / 100;        // izmanto globālo mainīgo no 2. soļa
-  dimRange.value = stored;
-  dimValue.textContent = stored + '%';
-
-  dimRange.addEventListener('input', function(e){
-    var v = +e.target.value;       // 0..80
-    mapDarken = v / 100;           // 0..0.8
-    localStorage.setItem('mapDarken', v);
-    dimValue.textContent = v + '%';
-    drawImage();                   // pārzīmē kanvu ar jaunu tumšumu
-  });
-
-
-
-
-
-
-
-
-
-
-
 function setRangeFill(el){
   const min = +el.min || 0, max = +el.max || 100, val = +el.value || 0;
   const p = (val - min) * 100 / (max - min); // 0..100
