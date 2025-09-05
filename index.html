@@ -1397,6 +1397,60 @@
 							  transform: translateX(calc(100% - var(--expose-right)));
 							}
 
+
+
+/* — Dimmera bloks dokā — */
+#buttonContainer .dock-dimmer{
+  display:flex; align-items:center; gap:10px;
+  padding:6px 8px;
+  background:rgba(22,25,30,.85);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:12px;
+}
+
+/* Apakšā: pogu rinda + dimmers zem tās */
+#buttonContainer.bottom .dock-shell{ flex-wrap: wrap; }
+#buttonContainer.bottom .dock-dimmer{
+  flex-basis:100%; justify-content:center; margin-top:6px;
+}
+
+/* Sānos: kolonna + vertikāls slīdnis */
+#buttonContainer.left .dock-dimmer,
+#buttonContainer.right .dock-dimmer{
+  flex-direction:column; gap:8px; align-items:center;
+}
+
+#buttonContainer .dock-dimmer label{
+  font-size:12px; color:rgba(255,255,255,.85);
+}
+#buttonContainer .dock-dimmer .value{
+  font-size:12px; color:rgba(255,255,255,.7); min-width:32px; text-align:center;
+}
+
+/* Horizontālais (apakšā) */
+#buttonContainer .dock-dimmer input[type=range]{ width:180px; }
+
+/* Vertikālais (sānos) */
+#buttonContainer.left  .dock-dimmer input[type=range],
+#buttonContainer.right .dock-dimmer input[type=range]{
+  writing-mode: bt-lr;
+  -webkit-appearance: slider-vertical;
+  width:26px; height:160px;
+}
+
+/* Rezerves variants, ja nav slider-vertical atbalsta */
+@supports not (-webkit-appearance: slider-vertical) {
+  #buttonContainer.left  .dock-dimmer input[type=range],
+  #buttonContainer.right .dock-dimmer input[type=range]{
+    transform: rotate(-90deg);
+    width:160px; height:26px;
+  }
+}
+
+
+
+
+
 						</style>
 					</head>
 						<body>
@@ -1993,6 +2047,12 @@
 						let lastTouchDistance = 0;
 						const initialScale = 0.9;
 
+// Tumšošanas intensitāte (0..0.8), glabājam % localStorage (0..80)
+let mapDarken = (+(localStorage.getItem('mapDarken') || 0)) / 100;
+
+
+
+
 						const resizeHandle = document.getElementById('resizeHandle');
 						resizeHandle.style.display = 'block';
 						resizeHandle.style.position = 'absolute'; // Nodrošina, ka rokturis tiek pozicionēts attiecībā pret attēlu, nevis fiksēti uz ekrāna.
@@ -2258,17 +2318,29 @@
 
 
 
-						function drawImage() {
-							ctx.clearRect(0, 0, canvas.width, canvas.height); // Notīra visu
-							ctx.drawImage(img, imgX, imgY, imgWidth * imgScale, imgHeight * imgScale); // Attēlo attēlu
+function drawImage() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-							// PIEVIENO APMALI PĒC ATTĒLA ZĪMĒŠANAS
-							ctx.lineWidth = 2; // Apmales biezums
-							ctx.strokeStyle = "red"; // Apmales krāsa
-							ctx.strokeRect(imgX, imgY, imgWidth * imgScale, imgHeight * imgScale); // Zīmē apmali
+  // 1) Karte
+  ctx.drawImage(img, imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
 
-							positionResizeHandle(); // Pārvieto izmēru maiņas rokturi
-						}
+  // 2) Tumšošanas pārklājums tikai kartes laukumam
+  if (mapDarken > 0) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,' + mapDarken + ')'; // 0..0.8
+    ctx.fillRect(imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
+    ctx.restore();
+  }
+
+  // 3) Sarkanais rāmis virs pārklājuma
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "red";
+  ctx.strokeRect(imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
+
+  // 4) Roktura pozīcija
+  positionResizeHandle();
+}
+
 
 
 
@@ -2977,7 +3049,38 @@
 							  bc.appendChild(shell);
 							  shell.appendChild(dockCap);
 							  shell.appendChild(dockLabel);
-							
+
+
+  /* — DIMMERA UI — */
+  var dimWrap = document.createElement('div');
+  dimWrap.className = 'dock-dimmer';
+  dimWrap.innerHTML =
+    '<label for="mapDimmerRange">Tumšināt karti</label>' +
+    '<input id="mapDimmerRange" type="range" min="0" max="80" step="1">' +
+    '<span class="value" id="mapDimmerValue"></span>';
+  shell.appendChild(dimWrap);
+
+  // sasaistām ar mainīgo + localStorage
+  var dimRange = dimWrap.querySelector('#mapDimmerRange');
+  var dimValue = dimWrap.querySelector('#mapDimmerValue');
+
+  var stored = +(localStorage.getItem('mapDarken') || 0);
+  mapDarken = stored / 100;        // izmanto globālo mainīgo no 2. soļa
+  dimRange.value = stored;
+  dimValue.textContent = stored + '%';
+
+  dimRange.addEventListener('input', function(e){
+    var v = +e.target.value;       // 0..80
+    mapDarken = v / 100;           // 0..0.8
+    localStorage.setItem('mapDarken', v);
+    dimValue.textContent = v + '%';
+    drawImage();                   // pārzīmē kanvu ar jaunu tumšumu
+  });
+
+
+
+
+ 
 							  /* 2) Pievieno etiķešu tekstus (ja nav), saglabājot Tavu ID loģiku */
 							  var titlesById = {
 							    resetMap:        'Restartēt karti',
