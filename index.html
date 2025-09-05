@@ -3391,7 +3391,35 @@ dimRange.addEventListener('input', e => setRangeFill(e.target));
 
 
 
+/* Piemet vertikālo/horizontālo režīmu slīdnim visos pārlūkos */
+(function(){
+  function setRangeOrientation(pos){
+    var r = document.getElementById('mapDimmerRange');
+    if(!r) return;
+    if(pos === 'left' || pos === 'right'){
+      r.classList.add('range-vertical');
+      r.setAttribute('orient','vertical'); // Firefox
+    }else{
+      r.classList.remove('range-vertical');
+      r.removeAttribute('orient');
+    }
+  }
 
+  // palaist sākumā
+  setRangeOrientation((localStorage.getItem('buttonPosition')||'bottom'));
+
+  // integrējamies tavā funkcijā, kas jau pārslēdz doka pozīciju
+  if (window.updateButtonContainerPosition){
+    var _old = window.updateButtonContainerPosition;
+    window.updateButtonContainerPosition = function(position){
+      _old(position);
+      setRangeOrientation(position);
+      // pēc orientācijas maiņas pārrēķinām dimmera ģeometriju
+      window.__updateDimmerWidth && window.__updateDimmerWidth();
+      window.__fitDock && window.__fitDock();
+    };
+  }
+})();
 
 
 
