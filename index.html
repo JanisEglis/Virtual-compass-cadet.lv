@@ -1409,32 +1409,43 @@
   align-items:center;
 }
 
-/* Apakšā — čaula “aptver” tieši 1. rindas pogu platumu */
+/* APakšā: piespied flex-rindu un atiestati grid */
 #buttonContainer.bottom .dock-shell{
-  display:inline-flex;
+  display:inline-flex !important;
+  flex-direction:row;
   flex-wrap:wrap;
   gap:12px;
-  width:min(var(--rowW, 100%), 100%); /* ← čaulas platums = izmērītā 1. rindas pogu platums */
+
+  width:min(var(--rowW, 100%), 100%);
   max-width:100%;
   margin:0 auto;
   padding:0;
   box-sizing:border-box;
+
+  /* resetē, lai grid iestatījumi neiedarbotos */
+  grid-auto-flow:unset;
+  grid-template-columns:unset;
+  grid-auto-rows:unset;
 }
 
-/* Pogas vienmēr 1. rindā */
-#buttonContainer.bottom .dock-shell > button{
-  order:1;
+/* bērni lai neklausa grid kolonnām/rindām */
+#buttonContainer.bottom .dock-shell > button,
+#buttonContainer.bottom .dock-shell > .dock-dimmer{
+  grid-column:auto !important;
+  grid-row:auto !important;
 }
 
-/* Slīdnis vienmēr zem pogām un tik plats, cik čaula (t.i., = pogu rinda) */
+/* Slīdnis – vienmēr 2. rindā un tik plats, cik čaula (pogu rinda) */
+#buttonContainer.bottom .dock-shell > button{ order:1; }
 #buttonContainer.bottom .dock-dimmer{
   order:2;
-  flex:0 0 auto;      /* neliekam 100%, lai neizstieptu čaulu */
-  width:100%;         /* 100% no .dock-shell = --rowW */
+  flex:0 0 auto;
+  width:100%;
   max-width:100%;
   margin:4px auto 0;
   box-sizing:border-box;
 }
+
 
 
 
