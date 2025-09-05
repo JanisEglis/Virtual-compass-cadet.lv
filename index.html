@@ -1409,41 +1409,46 @@
   align-items:center;
 }
 
-/* APakšā: piespied flex-rindu un atiestati grid */
+/* APakšā: pati čaula ir flex-rinda, bez fiksēta platuma */
 #buttonContainer.bottom .dock-shell{
-  display:inline-flex !important;
-  flex-direction:row;
-  flex-wrap:wrap;
+  display:flex !important;
+  flex-flow: row wrap;
+  align-items:center;
+  justify-content:center;
   gap:12px;
 
-  width:min(var(--rowW, 100%), 100%);
-  max-width:100%;
+  /* NEKONSTRIĒJAM pēc --rowW, ļaujam saturam noteikt platumu */
+  width:auto !important;
+  max-width:calc(100% - 24px);
   margin:0 auto;
   padding:0;
   box-sizing:border-box;
 
-  /* resetē, lai grid iestatījumi neiedarbotos */
+  /* notīram grid mantojumu */
   grid-auto-flow:unset;
   grid-template-columns:unset;
   grid-auto-rows:unset;
 }
 
-/* bērni lai neklausa grid kolonnām/rindām */
-#buttonContainer.bottom .dock-shell > button,
-#buttonContainer.bottom .dock-shell > .dock-dimmer{
+/* Pogu bērni – fiksēts satura izmērs, lai nerautos pa 100% */
+#buttonContainer.bottom .dock-shell > button{
+  order:1;
+  flex:0 0 auto !important;
   grid-column:auto !important;
   grid-row:auto !important;
 }
 
-/* Slīdnis – vienmēr 2. rindā un tik plats, cik čaula (pogu rinda) */
-#buttonContainer.bottom .dock-shell > button{ order:1; }
+/* Slīdnis – otrajā rindā un tieši tik plats, cik 1. rindas pogu rinda */
 #buttonContainer.bottom .dock-dimmer{
   order:2;
-  flex:0 0 auto;
-  width:100%;
+  flex:0 1 auto;
+  width:min(var(--rowW, 100%), 100%); /* --rowW iedod JS mērījums */
   max-width:100%;
-  margin:4px auto 0;
+  margin:6px auto 0;
   box-sizing:border-box;
+
+  grid-column:auto !important;
+  grid-row:auto !important;
 }
 
 
