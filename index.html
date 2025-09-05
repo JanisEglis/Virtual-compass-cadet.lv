@@ -1577,6 +1577,39 @@
 
 
 
+
+
+
+/* čaula ir 2 kolonnas: slīdnis | pogas (vai otrādi) */
+#buttonContainer.left  .dock-shell,
+#buttonContainer.right .dock-shell{
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-auto-rows: max-content;
+  align-items: start;
+}
+
+/* slīdnis aizņem **visas rindas** */
+#buttonContainer.left  .dock-dimmer,
+#buttonContainer.right .dock-dimmer{
+  grid-row: 1 / -1;
+  align-self: stretch;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 :root{
   --fill: #ff4747;               /* aizpildītā daļa */
   --unfill: rgba(255,255,255,.12); /* neaizpildītā daļa */
