@@ -3327,7 +3327,21 @@ function drawImage() {
     '<span class="value" id="mapDimmerValue"></span>';
   shell.insertBefore(dimWrap, shell.firstChild);
 
+/* ✅ PIELIEC ŠO: paņem elementus, ieliec sākuma vērtību un sasien notikumus */
+const dimRange = dimWrap.querySelector('#mapDimmerRange');
+const dimValue = dimWrap.querySelector('#mapDimmerValue');
 
+dimRange.value = localStorage.getItem('mapDarken') ?? 0; // glabājam 0..80
+setRangeFill(dimRange);                                   // uzkrāso track
+
+// piesien loģiku tumšošanai (0..80 → 0..0.8)
+dimRange.addEventListener('input', (e) => {
+  const v = +e.target.value;
+  localStorage.setItem('mapDarken', v);
+  mapDarken = v / 100;     // 0..0.8
+  if (dimValue) dimValue.textContent = v + '%';
+  drawImage();
+});
 
 
 
