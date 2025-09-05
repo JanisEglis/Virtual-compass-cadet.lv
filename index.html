@@ -1428,7 +1428,6 @@
   max-width:100%;
 }
 
-
 /* Sāni: 2 kolonnas – slīdnis | pogas (vai otrādi) */
 #buttonContainer.left .dock-shell,
 #buttonContainer.right .dock-shell{
@@ -1483,10 +1482,10 @@
 #buttonContainer .dock-dimmer .dimmer-label,
 #buttonContainer .dock-dimmer .value{ display:none !important; }
 
-/* Range: apakšā – 100% platumā */
+/* Range: apakšā – 100% platumā (iekš dimmera) */
 #buttonContainer .dock-dimmer input[type=range]{ width:100%; max-width:100%; }
 
-/* Range: sānos – vertikāls un tik garš, cik augsta ir kolonna (to nodrošinās align-self:stretch) */
+/* Range: sānos – vertikāls un tik garš, cik augsta ir kolonna */
 #buttonContainer.left  .dock-dimmer input[type=range],
 #buttonContainer.right .dock-dimmer input[type=range]{
   height:calc(100% - 16px);
