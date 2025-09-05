@@ -1409,25 +1409,22 @@
   align-items:center;
 }
 
-/* Apakšā: flex-wrap – pogas 1. rindā, dimmeris 2. rindā uz pilnu platumu */
+/* Apakšā – centrējam un dodam slīdnim precīzu platumu */
 #buttonContainer.bottom .dock-shell{
   display:flex;
   flex-wrap:wrap;
+  justify-content:center;   /* centrē pogu rindu */
   gap:22px;
   align-items:center;
 }
 
-#buttonContainer.bottom .dock-shell > button{
-  order:1;           /* pirmajā rindā */
+#buttonContainer.bottom .dock-dimmer{
+  order:2;                                  /* uz 2. rindu */
   flex:0 0 auto;
+  width:min(var(--rowW, 100%), 100%);       /* platums = izmērītā pogu rindas platuma */
+  max-width:100%;
 }
 
-#buttonContainer.bottom .dock-dimmer{
-  order:2;           /* uz nākamo rindu */
-  flex:1 0 100%;     /* pilna platuma sliede */
-  width:100%;
-  max-width:none;
-}
 
 /* Sāni: 2 kolonnas – slīdnis | pogas (vai otrādi) */
 #buttonContainer.left .dock-shell,
