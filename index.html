@@ -3342,27 +3342,29 @@ function drawImage() {
     '<input id="mapDimmerRange" type="range" min="0" max="80" step="1">' +
     '<span class="value" id="mapDimmerValue"></span>';
   shell.insertBefore(dimWrap, shell.firstChild);
+  
+// Tooltipam un fokusam (tāpat kā pogām)
+dimWrap.setAttribute('data-title', 'Tumšināt karti');
+dimWrap.setAttribute('aria-label', 'Tumšināt karti');
+dimWrap.setAttribute('tabindex', '0');
+dimWrap.id = 'mapDimmer'; // ne obligāti, bet noderīgi
 
-/* ✅ PIELIEC ŠO: paņem elementus, ieliec sākuma vērtību un sasien notikumus */
-const dimRange = dimWrap.querySelector('#mapDimmerRange');
-const dimValue = dimWrap.querySelector('#mapDimmerValue');
+  // sasaistām ar mainīgo + localStorage
+  var dimRange = dimWrap.querySelector('#mapDimmerRange');
+  var dimValue = dimWrap.querySelector('#mapDimmerValue');
 
-dimRange.value = localStorage.getItem('mapDarken') ?? 0; // glabājam 0..80
-setRangeFill(dimRange);                                   // uzkrāso track
+  var stored = +(localStorage.getItem('mapDarken') || 0);
+  mapDarken = stored / 100;        // izmanto globālo mainīgo no 2. soļa
+  dimRange.value = stored;
+  dimValue.textContent = stored + '%';
 
-// piesien loģiku tumšošanai (0..80 → 0..0.8)
-dimRange.addEventListener('input', (e) => {
-  const v = +e.target.value;
-  localStorage.setItem('mapDarken', v);
-  mapDarken = v / 100;     // 0..0.8
-  if (dimValue) dimValue.textContent = v + '%';
-  drawImage();
-});
-
-
-
-
-
+  dimRange.addEventListener('input', function(e){
+    var v = +e.target.value;       // 0..80
+    mapDarken = v / 100;           // 0..0.8
+    localStorage.setItem('mapDarken', v);
+    dimValue.textContent = v + '%';
+    drawImage();                   // pārzīmē kanvu ar jaunu tumšumu
+  });
 
 function setRangeFill(el){
   const min = +el.min || 0, max = +el.max || 100, val = +el.value || 0;
@@ -3371,15 +3373,6 @@ function setRangeFill(el){
 }
 setRangeFill(dimRange);
 dimRange.addEventListener('input', e => setRangeFill(e.target));
-
-
-
-
-
-
-
-
-
 
 
 
