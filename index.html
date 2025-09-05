@@ -1557,6 +1557,20 @@
 							}
 
 
+/* Sānu novietojumos – slīdnis aizņem visas rindas */
+#buttonContainer.left  .dock-dimmer,
+#buttonContainer.right .dock-dimmer{
+  grid-row: 1 / -1;      /* SPAN visām rindām */
+  align-self: stretch;   /* izstiepjas pa kolonnas augstumu */
+}
+
+/* Pārliecinies, ka čaulā tiešām ir režģis ar 2 kolonnām */
+#buttonContainer.left  .dock-shell,
+#buttonContainer.right .dock-shell{
+  display: grid;
+  grid-template-columns: auto auto;   /* slīdnis | pogas (vai otrādi) */
+  grid-auto-rows: max-content;
+}
 
 
 
@@ -1646,27 +1660,6 @@
 
 
 
-
-
-
-
-
-
-/* FIX: lai slīdnis nepaliek pie 1. pogas sānos */
-#buttonContainer.left  .dock-dimmer,
-#buttonContainer.right .dock-dimmer{
-  grid-row: 1 / -1 !important;  /* aizņem visas rindas */
-  align-self: stretch;
-}
-
-/* drošībai – malās čaula noteikti ir GRID */
-#buttonContainer.left  .dock-shell,
-#buttonContainer.right .dock-shell{
-  display: grid !important;
-  grid-auto-flow: row dense;
-  grid-auto-rows: max-content;
-  grid-template-columns: auto auto; /* slīdnis | pogas */
-}
 
 
 
