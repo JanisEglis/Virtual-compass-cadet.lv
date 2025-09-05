@@ -1556,6 +1556,9 @@
 							  box-shadow:0 2px 6px rgba(0,0,0,.35);
 							}
 
+:root{
+  --dimmer-fill: #ff3b30;   /* ← TE maini pildījuma krāsu */
+}
 
 
 
@@ -1651,6 +1654,42 @@
 
 
 
+/* kopīgie mainīgie slīdnim */
+#buttonContainer .dock-dimmer input[type=range]{
+  --fill: var(--dimmer-fill);
+  --trackA: var(--dock1);
+  --trackB: var(--dock2);
+  --val: 0%;                 /* JS ieliks procentu vērtību */
+}
+
+/* WebKit (Chrome/Safari/Android/iOS): krāsots “pildījums” kā overlejis uz track */
+#buttonContainer .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
+  height:8px;border-radius:999px;
+  background:
+    linear-gradient(to right, var(--fill) 0 var(--val), transparent 0) no-repeat,
+    linear-gradient(180deg,var(--trackA),var(--trackB));
+  background-size: var(--val) 100%, 100% 100%;
+  border:1px solid rgba(255,255,255,.06);
+}
+
+/* Firefox: pildījums ir atsevišķs pseido-elements */
+#buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
+  height:8px;border-radius:999px;
+  background:linear-gradient(180deg,var(--trackA),var(--trackB));
+  border:1px solid rgba(255,255,255,.06);
+}
+#buttonContainer .dock-dimmer input[type=range]::-moz-range-progress{
+  height:8px;border-radius:999px;
+  background:var(--fill);
+}
+
+/* Vecais Edge/IE, ja vajag */
+#buttonContainer .dock-dimmer input[type=range]::-ms-fill-upper{
+  background:linear-gradient(180deg,var(--trackA),var(--trackB));
+}
+#buttonContainer .dock-dimmer input[type=range]::-ms-fill-lower{
+  background:var(--fill);
+}
 
 
 
@@ -3295,6 +3334,16 @@ dimWrap.id = 'mapDimmer'; // ne obligāti, bet noderīgi
     dimValue.textContent = v + '%';
     drawImage();                   // pārzīmē kanvu ar jaunu tumšumu
   });
+
+function setRangeFill(el){
+  const min = +el.min || 0, max = +el.max || 100, val = +el.value || 0;
+  el.style.setProperty('--val', ((val - min) * 100 / (max - min)) + '%');
+}
+setRangeFill(dimRange);
+dimRange.addEventListener('input', e => setRangeFill(e.target));
+
+
+
 
 // ⬇️ Pievieno šo — sākotnēji iestata pareizu pārklājumu (span)
 window.__updateDimmerWidth && window.__updateDimmerWidth();
