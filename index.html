@@ -1652,6 +1652,21 @@
 
 
 
+/* FIX: lai slīdnis nepaliek pie 1. pogas sānos */
+#buttonContainer.left  .dock-dimmer,
+#buttonContainer.right .dock-dimmer{
+  grid-row: 1 / -1 !important;  /* aizņem visas rindas */
+  align-self: stretch;
+}
+
+/* drošībai – malās čaula noteikti ir GRID */
+#buttonContainer.left  .dock-shell,
+#buttonContainer.right .dock-shell{
+  display: grid !important;
+  grid-auto-flow: row dense;
+  grid-auto-rows: max-content;
+  grid-template-columns: auto auto; /* slīdnis | pogas */
+}
 
 
 
