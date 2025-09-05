@@ -1783,6 +1783,33 @@
 }
 
 
+/* 🔧 VERTIKĀLA RANGE korekcija visos pārlūkos */
+.dock-dimmer .range-vertical{
+  writing-mode: bt-lr;                 /* standarts */
+  -webkit-appearance: slider-vertical; /* Chrome/Edge/Safari */
+  -moz-appearance: slider-vertical;    /* Firefox */
+  width: 28px;
+  height: calc(100% - 16px);
+  min-height: 0;
+}
+
+/* WebKit vertikālajam track: lai nav “8px čīkā” */
+.dock-dimmer .range-vertical::-webkit-slider-runnable-track{
+  width: var(--rng-track);
+  height: 100%;
+}
+
+/* Firefox vertikālajam track (drošībai) */
+.dock-dimmer .range-vertical::-moz-range-track{
+  width: var(--rng-track);
+  height: 100%;
+}
+
+/* Ja izmanto left/right konteinerus WebKitā – vēl stingrāk */
+#buttonContainer.left  .dock-dimmer input[type=range]::-webkit-slider-runnable-track,
+#buttonContainer.right .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
+  height: 100%;
+}
 
 
 
@@ -3442,6 +3469,21 @@ function drawImage() {
     '<input id="mapDimmerRange" type="range" min="0" max="80" step="1">' +
     '<span class="value" id="mapDimmerValue"></span>';
   shell.insertBefore(dimWrap, shell.firstChild);
+
+
+
+
+
+if (typeof syncRangeOrientation === 'function') syncRangeOrientation();
+window.__updateDimmerWidth && window.__updateDimmerWidth();
+window.__fitDock && window.__fitDock();
+
+
+
+
+
+
+  
   
 // Tooltipam un fokusam (tāpat kā pogām)
 dimWrap.setAttribute('data-title', 'Tumšināt karti');
