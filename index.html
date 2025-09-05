@@ -1558,6 +1558,178 @@
 
 
 
+
+
+
+
+
+:root{
+  --fill: #ff4747;               /* aizpildītā daļa */
+  --unfill: rgba(255,255,255,.12); /* neaizpildītā daļa */
+}
+
+/* WebKit/Chromium – horizontāls */
+.dock-dimmer input[type=range]::-webkit-slider-runnable-track{
+  background:
+    linear-gradient(to right,
+      var(--fill) 0,
+      var(--fill) calc(var(--p)*1%),
+      var(--unfill) calc(var(--p)*1%),
+      var(--unfill) 100%);
+}
+
+/* WebKit/Chromium – vertikāls */
+.dock-dimmer .range-vertical::-webkit-slider-runnable-track{
+  background:
+    linear-gradient(to top,
+      var(--fill) 0,
+      var(--fill) calc(var(--p)*1%),
+      var(--unfill) calc(var(--p)*1%),
+      var(--unfill) 100%);
+}
+
+/* Firefox */
+.dock-dimmer input[type=range]::-moz-range-track{    background: var(--unfill); }
+.dock-dimmer input[type=range]::-moz-range-progress{ background: var(--fill); }
+
+/* Legacy Edge/IE */
+.dock-dimmer input[type=range]::-ms-fill-upper{ background: var(--unfill); }
+.dock-dimmer input[type=range]::-ms-fill-lower{ background: var(--fill); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ===== Universālie mainīgie slīdnim ===== */
+:root{
+  --rng-track: 8px;             /* trases biezums */
+  --rng-thumb: 18px;            /* ķepas diametrs */
+  --rng-track-bg: linear-gradient(180deg, var(--dock1), var(--dock2));
+  --rng-track-border: 1px solid rgba(255,255,255,.06);
+  --rng-thumb-bg: #eef2f7;
+  --rng-thumb-ring: var(--dock-ring);
+  --rng-thumb-shadow: 0 2px 6px rgba(0,0,0,.35);
+}
+
+/* ===== Bāzes reseti ===== */
+.dock-dimmer input[type="range"]{
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  width: 100%;
+  height: 28px;           /* horizontāli */
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* ===== WebKit / Chromium ===== */
+.dock-dimmer input[type="range"]::-webkit-slider-runnable-track{
+  height: var(--rng-track);
+  border-radius: 999px;
+  background: var(--rng-track-bg);
+  border: var(--rng-track-border);
+}
+.dock-dimmer input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance: none;
+  width: var(--rng-thumb);
+  height: var(--rng-thumb);
+  border-radius: 50%;
+  background: var(--rng-thumb-bg);
+  border: 3px solid var(--rng-thumb-ring);
+  box-shadow: var(--rng-thumb-shadow);
+  /* centrējam uz trases */
+  margin-top: calc((var(--rng-track) - var(--rng-thumb)) / 2);
+}
+
+/* ===== Firefox ===== */
+.dock-dimmer input[type="range"]::-moz-range-track{
+  height: var(--rng-track);
+  border-radius: 999px;
+  background: var(--rng-track-bg);
+  border: var(--rng-track-border);
+}
+.dock-dimmer input[type="range"]::-moz-range-thumb{
+  width: var(--rng-thumb);
+  height: var(--rng-thumb);
+  border-radius: 50%;
+  background: var(--rng-thumb-bg);
+  border: 3px solid var(--rng-thumb-ring);
+  box-shadow: var(--rng-thumb-shadow);
+}
+.dock-dimmer input[type="range"]::-moz-focus-outer{ border:0; }
+
+/* ===== Legacy Edge / IE ===== */
+.dock-dimmer input[type="range"]::-ms-track{
+  height: var(--rng-track);
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+.dock-dimmer input[type="range"]::-ms-fill-lower,
+.dock-dimmer input[type="range"]::-ms-fill-upper{
+  background: var(--rng-track-bg);
+  border: var(--rng-track-border);
+  border-radius: 999px;
+}
+.dock-dimmer input[type="range"]::-ms-thumb{
+  width: var(--rng-thumb);
+  height: var(--rng-thumb);
+  border-radius: 50%;
+  background: var(--rng-thumb-bg);
+  border: 3px solid var(--rng-thumb-ring);
+  box-shadow: var(--rng-thumb-shadow);
+}
+
+/* ===== Vertikālais variants (vienota klase) ===== */
+.dock-dimmer .range-vertical{
+  writing-mode: bt-lr;                 /* standarts + Firefox orient=vertical zemāk */
+  -webkit-appearance: slider-vertical; /* WebKit/Chromium */
+  width: 28px;                         /* kolonnas platums */
+  height: calc(100% - 16px);           /* lai aizpilda dimmera augstumu */
+  min-height: 0;
+}
+
+/* WebKit vertikālajam track jānorāda platums (nevis augstums) */
+.dock-dimmer .range-vertical::-webkit-slider-runnable-track{ width: var(--rng-track); }
+.dock-dimmer .range-vertical::-webkit-slider-thumb{
+  /* vertikāli vairs nelabojam margin-top; WebKit pats centrē */
+  margin-top: 0;
+}
+
+/* Firefox vertikāli: orient atribūts + trases platums */
+.dock-dimmer .range-vertical[orient="vertical"]{ /* tikai signāls Firefoxam */ }
+.dock-dimmer .range-vertical::-moz-range-track{ width: var(--rng-track); }
+
+/* Legacy Edge/IE vertikāli */
+.dock-dimmer .range-vertical::-ms-track{ width: var(--rng-track); }
+
+/* Nedaudz lielāka ķepa skārienierīcēm */
+@media (pointer: coarse){
+  :root{ --rng-thumb: 22px; }
+}
+
+
+
+
+
+
+
+
+
+
 						</style>
 					</head>
 						<body>
@@ -3197,6 +3369,16 @@ dimWrap.id = 'mapDimmer'; // ne obligāti, bet noderīgi
     drawImage();                   // pārzīmē kanvu ar jaunu tumšumu
   });
 
+
+
+
+
+
+
+
+
+
+
 function setRangeFill(el){
   const min = +el.min || 0, max = +el.max || 100, val = +el.value || 0;
   const p = (val - min) * 100 / (max - min); // 0..100
@@ -3204,6 +3386,19 @@ function setRangeFill(el){
 }
 setRangeFill(dimRange);
 dimRange.addEventListener('input', e => setRangeFill(e.target));
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
