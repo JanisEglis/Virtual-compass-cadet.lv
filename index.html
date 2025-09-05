@@ -1317,97 +1317,85 @@
 							  #buttonContainer .dock-shell > button{ width:58px; height:58px; }
 							}
 
-
-
-
-/* === REGULATORI vienuviet === */
-:root{
-  /* cik liela strēmele paliek redzama, kad paslēpts */
-  --expose-bottom: 28px; /* apakša */
-  --expose-left:   -2vw;  /* kreisā mala */
-  --expose-right:  -2vw;  /* labā mala */
-
-  /* kad KONTEINERS ir atvērts apakšā – atstarpe no ekrāna malas */
-  --bottom-offset: 50px;
-}
-
-/* === DRAWER/ROKTURIS priekš #buttonContainer === */
-#buttonContainer{
-  --handle-w: 45px;  /* roktura platums */
-  --handle-h: 45px;  /* roktura augstums */
-  transition: transform .28s ease;
-  z-index: 3;
-}
-@media (pointer:coarse){
-  #buttonContainer{ --handle-w: 52px; --handle-h: 52px; }
-}
-
-#buttonContainer .dock-handle{
-  position:absolute;
-  width: var(--handle-w);
-  height: var(--handle-h);
-  display:none; /* redzams tikai dokētā režīmā */
-  align-items:center;
-  justify-content:center;
-  background: linear-gradient(180deg, #dd2222a1, #b01616);
-  color:#fff;
-  font-size: 0;           /* ikonai lietosim SVG, nevis tekstu */
-  border-radius:10px;
-  box-shadow:0 8px 18px rgba(0,0,0,.35);
-  border:1px solid rgba(255,255,255,.25);
-  cursor:pointer;
-  pointer-events:auto;
-  user-select:none;
-}
-
-/* pēc roktura izmēra: */
-#buttonContainer .dock-handle svg{
-  width:  calc(var(--handle-w) * .74);
-  height: calc(var(--handle-h) * .74);
-}
-
-
-/* Kad dokēts — rokturis parādās */
-#buttonContainer.docked .dock-handle{ display:flex; }
-
-/* Roktura novietojums atkarībā no orientācijas */
-#buttonContainer.bottom .dock-handle{
-  top:0; left:50%; transform: translate(-50%, -100%);
-  border-radius:10px 10px 0 0;
-}
-#buttonContainer.left .dock-handle{
-  top:50%; right:0; transform: translate(100%, -50%);
-  border-radius:0 10px 10px 0;
-}
-#buttonContainer.right .dock-handle{
-  top:50%; left:0; transform: translate(-100%, -50%);
-  border-radius:10px 0 0 10px;
-}
-
-/* Apakšā atvērts – pārspēj inline style="bottom: 43px" */
-.button-container.bottom{
-  bottom: var(--bottom-offset) !important;
-}
-
-/* Paslēpšana ar “atvilkni”: atstāj redzamu tieši expose-* */
-#buttonContainer.docked.bottom{
-  transform: translateY(calc(100% + var(--bottom-offset) - var(--expose-bottom)));
-}
-#buttonContainer.docked.left{
-  transform: translateX(calc(-100% + var(--expose-left)));
-}
-#buttonContainer.docked.right{
-  transform: translateX(calc(100% - var(--expose-right)));
-}
-
-
-
-
-
-
-
-
-
+							/* === REGULATORI vienuviet === */
+							:root{
+							  /* cik liela strēmele paliek redzama, kad paslēpts */
+							  --expose-bottom: 28px; /* apakša */
+							  --expose-left:   -2vw;  /* kreisā mala */
+							  --expose-right:  -2vw;  /* labā mala */
+							
+							  /* kad KONTEINERS ir atvērts apakšā – atstarpe no ekrāna malas */
+							  --bottom-offset: 50px;
+							}
+							
+							/* === DRAWER/ROKTURIS priekš #buttonContainer === */
+							#buttonContainer{
+							  --handle-w: 45px;  /* roktura platums */
+							  --handle-h: 45px;  /* roktura augstums */
+							  transition: transform .28s ease;
+							  z-index: 3;
+							}
+							@media (pointer:coarse){
+							  #buttonContainer{ --handle-w: 52px; --handle-h: 52px; }
+							}
+							
+							#buttonContainer .dock-handle{
+							  position:absolute;
+							  width: var(--handle-w);
+							  height: var(--handle-h);
+							  display:none; /* redzams tikai dokētā režīmā */
+							  align-items:center;
+							  justify-content:center;
+							  background: linear-gradient(180deg, #dd2222a1, #b01616);
+							  color:#fff;
+							  font-size: 0;           /* ikonai lietosim SVG, nevis tekstu */
+							  border-radius:10px;
+							  box-shadow:0 8px 18px rgba(0,0,0,.35);
+							  border:1px solid rgba(255,255,255,.25);
+							  cursor:pointer;
+							  pointer-events:auto;
+							  user-select:none;
+							}
+							
+							/* pēc roktura izmēra: */
+							#buttonContainer .dock-handle svg{
+							  width:  calc(var(--handle-w) * .74);
+							  height: calc(var(--handle-h) * .74);
+							}
+							
+							
+							/* Kad dokēts — rokturis parādās */
+							#buttonContainer.docked .dock-handle{ display:flex; }
+							
+							/* Roktura novietojums atkarībā no orientācijas */
+							#buttonContainer.bottom .dock-handle{
+							  top:0; left:50%; transform: translate(-50%, -100%);
+							  border-radius:10px 10px 0 0;
+							}
+							#buttonContainer.left .dock-handle{
+							  top:50%; right:0; transform: translate(100%, -50%);
+							  border-radius:0 10px 10px 0;
+							}
+							#buttonContainer.right .dock-handle{
+							  top:50%; left:0; transform: translate(-100%, -50%);
+							  border-radius:10px 0 0 10px;
+							}
+							
+							/* Apakšā atvērts – pārspēj inline style="bottom: 43px" */
+							.button-container.bottom{
+							  bottom: var(--bottom-offset) !important;
+							}
+							
+							/* Paslēpšana ar “atvilkni”: atstāj redzamu tieši expose-* */
+							#buttonContainer.docked.bottom{
+							  transform: translateY(calc(100% + var(--bottom-offset) - var(--expose-bottom)));
+							}
+							#buttonContainer.docked.left{
+							  transform: translateX(calc(-100% + var(--expose-left)));
+							}
+							#buttonContainer.docked.right{
+							  transform: translateX(calc(100% - var(--expose-right)));
+							}
 
 						</style>
 					</head>
@@ -1498,45 +1486,37 @@
 								 ">
 							</div>						
 							
-							
-							
-							
-							
-<div class="dropdown-container">
-        <div class="top-bar">
-            <span class="dropdown-toggle" id="toggleInstruction">Lietotāja ceļvedis ⬇</span>
-            <span class="dropdown-toggle" id="toggleMaterials">Mācību materiāli ⬇</span>
-        </div>
 
-        <div class="dropdown-menu" id="dropdownInstruction">
-            <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/lietotaja-celvedis/page/">DARBAM AR DATORU</a>
-            <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/lietotaja-celvedis/page-1/">DARBAM AR SKĀRIENJŪTĪGĀM IERĪCĒM</a>
-			<a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/lietotaja-celvedis/page-2/">LIETOŠANAS NOTEIKUMI</a>
-           <iframe id="instructionFrame" name="contentFrame" style="width: 100%; height: 85vh; border: none;"></iframe>  
-            
-        </div>
+							<div class="dropdown-container">
+							        <div class="top-bar">
+							            <span class="dropdown-toggle" id="toggleInstruction">Lietotāja ceļvedis ⬇</span>
+							            <span class="dropdown-toggle" id="toggleMaterials">Mācību materiāli ⬇</span>
+							        </div>
+							
+							        <div class="dropdown-menu" id="dropdownInstruction">
+							            <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/lietotaja-celvedis/page/">DARBAM AR DATORU</a>
+							            <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/lietotaja-celvedis/page-1/">DARBAM AR SKĀRIENJŪTĪGĀM IERĪCĒM</a>
+										<a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/lietotaja-celvedis/page-2/">LIETOŠANAS NOTEIKUMI</a>
+							           <iframe id="instructionFrame" name="contentFrame" style="width: 100%; height: 85vh; border: none;"></iframe>  
+							            
+							        </div>
+							
+							        <div class="dropdown-menu" id="dropdownMaterials">
+							        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/topografiskas-kartes/" class="dropdown-link">TOPOGRĀFISKĀS KARTES</a>
+							        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/merogs-un-attalumi/" class="dropdown-link">MĒROGS UN ATTĀLUMI</a>
+							        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/apzimejumi-kartes/" class="dropdown-link">APZĪMĒJUMI KARTĒS</a>
+							        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/direkcijas-lenkis-un-azimuts/" class="dropdown-link">DIREKCIJAS LEŅĶIS UN AZIMUTS</a>
+							        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/koordinates/" class="dropdown-link">KOORDINĀTES</a>
+							        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/citi/" class="dropdown-link">CITI</a>
+									
+									 
+							 <iframe id="contentFrame" name="contentFrame" style="width: 100%; height: 75vh; border: none;"></iframe>
+							        </div>
+									 			
+														
+							</div>	
+														
 
-        <div class="dropdown-menu" id="dropdownMaterials">
-        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/topografiskas-kartes/" class="dropdown-link">TOPOGRĀFISKĀS KARTES</a>
-        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/merogs-un-attalumi/" class="dropdown-link">MĒROGS UN ATTĀLUMI</a>
-        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/apzimejumi-kartes/" class="dropdown-link">APZĪMĒJUMI KARTĒS</a>
-        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/direkcijas-lenkis-un-azimuts/" class="dropdown-link">DIREKCIJAS LEŅĶIS UN AZIMUTS</a>
-        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/koordinates/" class="dropdown-link">KOORDINĀTES</a>
-        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/citi/" class="dropdown-link">CITI</a>
-		
-		 
- <iframe id="contentFrame" name="contentFrame" style="width: 100%; height: 75vh; border: none;"></iframe>
-        </div>
-		 			
-							
-</div>	
-							
-							
-							
-							
-							
-							
-							
 							 <!-- Izvēlne konteineram -->
 							 <!-- Izvēlne konteineram LABAJĀ pusē -->
 							<div class="position-selector-container">
@@ -1661,50 +1641,50 @@
 					script.textContent = `
 
 
-function debounce(func, wait = 50) {
-  let timeout;
-  return function (...args) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
-  };
-}
-
-// Izmanto vizuālo viewport (adreses joslas “elpošana”)
-function updateViewportHeight() {
-  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  document.documentElement.style.setProperty('--vh', (h * 0.01) + 'px');
-}
-
-// Arī loga izmēra pārbaude laiž caur vizuālo viewport
-function checkWindowSize() {
-  const fullscreenMessage = document.getElementById('fullscreenMessage');
-  const w = window.innerWidth;
-  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-
-  if (w >= 1024 && h >= 700) {
-    fullscreenMessage.classList.add('hidden');
-  } else {
-    fullscreenMessage.classList.remove('hidden');
-  }
-}
-
-function handleResize() {
-  updateViewportHeight();
-  checkWindowSize();
-  // pārrēķini doku uzreiz (lai nepārklājas ar #about)
-  window.__fitDock && window.__fitDock();
-}
-
-// Sākotnējais un klasiskie notikumi
-window.addEventListener('load', handleResize);
-window.addEventListener('resize', debounce(handleResize, 50));
-window.addEventListener('orientationchange', handleResize);
-
-// Papildu notikumi, kas reaģē uz adreses joslas parādīšanos/paslēpšanos
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', debounce(handleResize, 50));
-  window.visualViewport.addEventListener('scroll', debounce(handleResize, 50));
-}
+						function debounce(func, wait = 50) {
+						  let timeout;
+						  return function (...args) {
+						    clearTimeout(timeout);
+						    timeout = setTimeout(() => func.apply(this, args), wait);
+						  };
+						}
+						
+						// Izmanto vizuālo viewport (adreses joslas “elpošana”)
+						function updateViewportHeight() {
+						  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+						  document.documentElement.style.setProperty('--vh', (h * 0.01) + 'px');
+						}
+						
+						// Arī loga izmēra pārbaude laiž caur vizuālo viewport
+						function checkWindowSize() {
+						  const fullscreenMessage = document.getElementById('fullscreenMessage');
+						  const w = window.innerWidth;
+						  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+						
+						  if (w >= 1024 && h >= 700) {
+						    fullscreenMessage.classList.add('hidden');
+						  } else {
+						    fullscreenMessage.classList.remove('hidden');
+						  }
+						}
+						
+						function handleResize() {
+						  updateViewportHeight();
+						  checkWindowSize();
+						  // pārrēķini doku uzreiz (lai nepārklājas ar #about)
+						  window.__fitDock && window.__fitDock();
+						}
+						
+						// Sākotnējais un klasiskie notikumi
+						window.addEventListener('load', handleResize);
+						window.addEventListener('resize', debounce(handleResize, 50));
+						window.addEventListener('orientationchange', handleResize);
+						
+						// Papildu notikumi, kas reaģē uz adreses joslas parādīšanos/paslēpšanos
+						if (window.visualViewport) {
+						  window.visualViewport.addEventListener('resize', debounce(handleResize, 50));
+						  window.visualViewport.addEventListener('scroll', debounce(handleResize, 50));
+						}
 
 
                         // Dinamiskās pogas konfigurācija: katrai pogai sākuma un alternatīvie attēli
@@ -1955,15 +1935,12 @@ if (window.visualViewport) {
 						});
 
 
-const savedPosition = localStorage.getItem('buttonPosition');
-const valid = ['bottom', 'left', 'right'];
-const initial = valid.includes(savedPosition) ? savedPosition : 'bottom';
-
-syncSelectOptions(initial);
-updateButtonContainerPosition(initial);
-
-
-
+						const savedPosition = localStorage.getItem('buttonPosition');
+						const valid = ['bottom', 'left', 'right'];
+						const initial = valid.includes(savedPosition) ? savedPosition : 'bottom';
+						
+						syncSelectOptions(initial);
+						updateButtonContainerPosition(initial);
 
 
 						// Funkcija, kas atjaunina pogas konteinera novietojumu atkarībā no izvēlētās vērtības
@@ -2239,9 +2216,6 @@ updateButtonContainerPosition(initial);
 						}
 
 
-
-
-
 						// Attēla augšupielāde
 						const uploadBtn = document.getElementById('uploadMap');
 						if (uploadBtn) {
@@ -2266,17 +2240,11 @@ updateButtonContainerPosition(initial);
 
 
 
-
-
 						// Kad attēls ir ielādēts, pievieno apmali, bet saglabā funkcionalitāti
 						img.onload = function () {
 							adjustImageSize(); // Nodrošina sākotnējo attēla novietojumu
 							drawImage(); // Uzzīmē attēlu
 							
-							
-
-	
-	
 
 						// PIEVIENO APMALI UZ CANVAS
 						ctx.lineWidth = 2; // Apmales biezums
@@ -2807,7 +2775,7 @@ updateButtonContainerPosition(initial);
 							});
 
 
-	//ATVER IFRAME MACIBU MATERIALI
+							//ATVER IFRAME MACIBU MATERIALI
 							document.querySelectorAll('.dropdown-menu a').forEach(link => {
 								link.addEventListener('click', function(event) {
 									event.preventDefault();
@@ -2982,329 +2950,314 @@ updateButtonContainerPosition(initial);
 
 
 
-(function(){
-  var bc = document.getElementById('buttonContainer');
-  if(!bc) return;
+							(function(){
+							  var bc = document.getElementById('buttonContainer');
+							  if(!bc) return;
+							
+							  /* 1) Izveido “čaulu” un ieliek visas esošās pogas iekšā,
+							        + pievieno etiķeti un kupola SVG */
+							  var shell = document.createElement('div');
+							  shell.className = 'dock-shell';
+							
+							  // savācam tikai tiešos bērnus, kas ir pogas:
+							  var btns = [];
+							  for (var i = bc.children.length - 1; i >= 0; i--) {
+							    var el = bc.children[i];
+							    if (el.tagName === 'BUTTON') btns.push(el);
+							  }
+							  btns.reverse().forEach(function(b){ shell.appendChild(b); });
+							
+							  // izveido label + cap
+							  var dockLabel = document.createElement('div');
+							  dockLabel.className = 'dock-label';
+							  var dockCap = document.createElement('svg');
+							  dockCap.className = 'dock-cap'; dockCap.setAttribute('aria-hidden','true');
+							
+							  // ieliekam shell un pēc tam label+cap (būt bērni “shell”, lai ģeometrija būtu relatīva)
+							  bc.appendChild(shell);
+							  shell.appendChild(dockCap);
+							  shell.appendChild(dockLabel);
+							
+							  /* 2) Pievieno etiķešu tekstus (ja nav), saglabājot Tavu ID loģiku */
+							  var titlesById = {
+							    resetMap:        'Restartēt karti',
+							    uploadMap:       'Augšupielādēt karti',
+							    resetCompass:    'Restartēt kompasu',
+							    toggleRotationMode: 'Griezt bāzi / skalu',
+							    lockRotationMode:   'Bloķēt rotāciju',
+							    rotateCompass90: 'Tīklveida režīms',
+							    toggleFullscreen:'Pilnekrāna režīms'
+							  };
+							  var allButtons = shell.querySelectorAll('button');
+							  allButtons.forEach ? allButtons.forEach(setTitle) : [].slice.call(allButtons).forEach(setTitle);
+							  function setTitle(b){
+							    var id=b.id||'';
+							    if(!b.getAttribute('data-title') && titlesById[id]) b.setAttribute('data-title', titlesById[id]);
+							    if(!b.getAttribute('aria-label') && titlesById[id]) b.setAttribute('aria-label', titlesById[id]);
+							  }
+							
+							  /* 3) Kupola ģeometrija (horizontālam izvietojumam) */
+							  function updateCapGeometry(){
+							    var cs = getComputedStyle(shell);
+							    var labelW = parseFloat(cs.getPropertyValue('--labelW')) || 0;
+							    var extra  = parseFloat(cs.getPropertyValue('--capExtraW')) || 0;
+							    var w = labelW + 22 + extra;
+							    var h = parseFloat(cs.getPropertyValue('--capH')) || 0;
+							    var inset = parseFloat(cs.getPropertyValue('--capSkew')) || 0;
+							    var r = parseFloat(cs.getPropertyValue('--capR')) || 0;
+							    if(!w || !h) return;
+							
+							    var TLx = inset + r, TRx = w - inset - r;
+							    var LEx = inset, LEy = r;
+							    var REx = w - inset, REy = r;
+							
+							    var sideMidY = r + (h - r) * 0.45;
+							    var rightCP1x = REx + (w - REx) * 0.18, rightCP1y = sideMidY;
+							    var rightCP2x = w, rightCP2y = r + (h - r) * 0.82;
+							    var leftCP2x  = 0,  leftCP2y  = r + (h - r) * 0.82;
+							    var leftCP1x  = LEx - (LEx - 0) * 0.18, leftCP1y  = sideMidY;
+							
+							    dockCap.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+							    dockCap.setAttribute('width', w);
+							    dockCap.setAttribute('height', h);
+							    dockCap.innerHTML =
+							      '<defs>' +
+							        '<linearGradient id="capFill" x1="0" y1="0" x2="0" y2="1">' +
+							          '<stop offset="0%"  stop-color="rgba(40,44,52,.96)"/>' +
+							          '<stop offset="100%" stop-color="rgba(30,33,40,.96)"/>' +
+							        '</linearGradient>' +
+							        '<radialGradient id="capShine" cx="50%" cy="-30%" r="120%">' +
+							          '<stop offset="0%" stop-color="rgba(255,255,255,.18)"/>' +
+							          '<stop offset="60%" stop-color="rgba(255,255,255,0)"/>' +
+							        '</radialGradient>' +
+							      '</defs>' +
+							      '<path d="' +
+							        'M ' + TLx + ',0 H ' + TRx + ' A ' + r + ',' + r + ' 0 0 1 ' + REx + ',' + REy + ' ' +
+							        'C ' + rightCP1x + ',' + rightCP1y + ' ' + rightCP2x + ',' + rightCP2y + ' ' + w + ',' + h + ' ' +
+							        'L 0,' + h + ' C ' + leftCP2x + ',' + leftCP2y + ' ' + leftCP1x + ',' + leftCP1y + ' ' + LEx + ',' + LEy + ' ' +
+							        'A ' + r + ',' + r + ' 0 0 1 ' + TLx + ',0 Z" fill="url(#capFill)" stroke="rgba(210,34,34,.38)" stroke-width="1" />' +
+							      '<path d="' +
+							        'M ' + TLx + ',0 H ' + TRx + ' A ' + r + ',' + r + ' 0 0 1 ' + REx + ',' + REy + ' ' +
+							        'C ' + rightCP1x + ',' + rightCP1y + ' ' + rightCP2x + ',' + rightCP2y + ' ' + w + ',' + h + ' ' +
+							        'L 0,' + h + ' C ' + leftCP2x + ',' + leftCP2y + ' ' + leftCP1x + ',' + leftCP1y + ' ' + LEx + ',' + LEy + ' ' +
+							        'A ' + r + ',' + r + ' 0 0 1 ' + TLx + ',0 Z" fill="url(#capShine)" />';
+							  }
+							
+							  /* 4) Kustība — gluds X horizontāli; Y vertikāli */
+							  var raf=null, targetX=null, currentX=null;
+							  function setTipX(px){
+							    targetX = px;
+							    if(currentX == null) currentX = px;
+							    if(raf) return;
+							    function step(){
+							      currentX += (targetX - currentX) * 0.25;
+							      shell.style.setProperty('--tipX', currentX + 'px');
+							      if(Math.abs(targetX - currentX) > 0.5){ raf = requestAnimationFrame(step); }
+							      else { shell.style.setProperty('--tipX', targetX + 'px'); raf=null; }
+							    }
+							    raf = requestAnimationFrame(step);
+							  }
+							  function setTipY(py){ shell.style.setProperty('--tipY', py + 'px'); }
+							
+							  function isVertical(){
+							    return bc.classList.contains('left') || bc.classList.contains('right');
+							  }
+							
+							  function showFor(btn){
+							    var rShell = shell.getBoundingClientRect();
+							    var rBtn   = btn.getBoundingClientRect();
+							    var title  = btn.getAttribute('data-title') || btn.getAttribute('aria-label') || '';
+							
+							    dockLabel.textContent = title || '';
+							    // lai izmērītu īsto platumu/augstumu pirms ģeometrijas:
+							    dockLabel.style.opacity = '0.001'; // gandrīz neredzams uz mirkli
+							    dockLabel.style.pointerEvents = 'none';
+							
+							    // pieslēdzam klasei animācijas stāvokli
+							    shell.classList.add('show-label');
+							
+							    // pēc nākamā frame izmēram platumu/augstumu un atjauninām kupolu (horizontāliem)
+							    requestAnimationFrame(function(){
+							      var lw = Math.min(dockLabel.scrollWidth + 2, rShell.width - 40);
+							      shell.style.setProperty('--labelW', lw + 'px');
+							      shell.style.setProperty('--capH', (dockLabel.offsetHeight + 2) + 'px');
+							
+							      if(!isVertical()){
+							        // horizontāli: kupols redzams
+							        shell.classList.add('show-cap');
+							        // centrs X:
+							        var cx = rBtn.left + rBtn.width/2 - rShell.left;
+							        setTipX(cx);
+							        updateCapGeometry();
+							      }else{
+							        // vertikāli: slēpjam kupolu, slīdam pa Y
+							        shell.classList.remove('show-cap');
+							        var cy = rBtn.top + rBtn.height/2 - rShell.top;
+							        setTipY(cy);
+							      }
+							      dockLabel.style.opacity = '1';
+							    });
+							  }
+							  function hideTip(){ shell.classList.remove('show-label','show-cap'); }
+							
+							  /* 5) Notikumi – tikai uz īstajām pogām, lai neskartu Tavu esošo loģiku */
+							  var hideT=null;
+							  function arm(btn){
+							    btn.addEventListener('mouseenter', function(){
+							      if(hideT) clearTimeout(hideT);
+							      showFor(btn);
+							    });
+							    btn.addEventListener('focus', function(){
+							      showFor(btn);
+							    });
+							    btn.addEventListener('mouseleave', function(){
+							      if(hideT) clearTimeout(hideT);
+							      hideT = setTimeout(hideTip, 180);
+							    });
+							    // touch — ātri parādam un pēc 1.6s paslēpjam
+							    btn.addEventListener('touchstart', function(){
+							      if(hideT) clearTimeout(hideT);
+							      showFor(btn);
+							      hideT = setTimeout(hideTip, 1600);
+							    }, {passive:true});
+							  }
+							  [].slice.call(allButtons).forEach(arm);
+							
+							  // Uz loga izmēru maiņas – paslēpjam
+							  window.addEventListener('resize', hideTip);
+							
+							  // Sākotnējais stāvoklis: ja vertical, kupolu neredzam
+							  if(isVertical()) shell.classList.remove('show-cap');
+							  window.__fitDock && window.__fitDock();
+							})();
+							
+							
+							// === Auto-fit dokam (#buttonContainer .dock-shell) — ar apakšējās joslas korekciju ===
+							(function(){
+							  function fitDock(){
+							    var bc = document.getElementById('buttonContainer');
+							    if(!bc) return;
+							    var shell = bc.querySelector('.dock-shell');
+							    if(!shell) return;
+							
+							    var about = document.getElementById('about');
+							    var ah = about ? (about.getBoundingClientRect().height || 0) : 0;
+							
+							    var isVertical = bc.classList.contains('left') || bc.classList.contains('right');
+							    var isBottom   = bc.classList.contains('bottom');
+							
+							    // 1) Novietojums: bottom režīmā pārbīdam virs #about
+							    if (isBottom) {
+							      var baseBottom = Math.round(window.innerHeight * 0.05); // ~5vh
+							      var minBottom  = Math.ceil(ah + 12);                    // droša atstarpe virs about
+							      bc.style.bottom = Math.max(baseBottom, minBottom) + 'px';
+							    } else {
+							      // ļaujam CSS kontrolēt (left/right)
+							      bc.style.bottom = '';
+							    }
+							
+							    // 2) Mērogs: nomēram “dabisko” izmēru bez skalas
+							    var prevTransform = shell.style.transform;
+							    shell.style.transform = 'none';
+							    var natural = shell.getBoundingClientRect();
+							    shell.style.transform = prevTransform;
+							
+							    // pieejamie izmēri
+							    var maxW = window.innerWidth * 0.96;
+							    var maxH = window.innerHeight * 0.90;
+							
+							    // vertical režīmā atņemam #about augstumu (lai kolonnu nesaplacina)
+							    if (isVertical) {
+							      maxH = Math.max(120, maxH - ah);
+							    }
+							
+							    // aprēķinām scale
+							    var scale = isVertical
+							      ? Math.min(1, maxH / natural.height)
+							      : Math.min(1, maxW / natural.width);
+							
+							    // tikai samazinām, nepalielinām (ar saprātīgu minimumu)
+							    scale = Math.max(0.35, Math.min(1, scale));
+							    shell.style.transform = 'scale(' + scale + ')';
+							  }
+							
+							  // padaram pieejamu citur
+							  window.__fitDock = fitDock;
+							
+							  // palaižam un klausāmies izmēru izmaiņas
+							  var t;
+							  function queue(){ clearTimeout(t); t = setTimeout(fitDock, 100); }
+							  window.addEventListener('load', fitDock);
+							  window.addEventListener('resize', queue);
+							  window.addEventListener('orientationchange', queue);
+							})();
+							
+							
+							// 🔹 Tagad __fitDock noteikti ir definēts — pielāgo mērlogu uzreiz
+							window.__fitDock && window.__fitDock();
 
-  /* 1) Izveido “čaulu” un ieliek visas esošās pogas iekšā,
-        + pievieno etiķeti un kupola SVG */
-  var shell = document.createElement('div');
-  shell.className = 'dock-shell';
-
-  // savācam tikai tiešos bērnus, kas ir pogas:
-  var btns = [];
-  for (var i = bc.children.length - 1; i >= 0; i--) {
-    var el = bc.children[i];
-    if (el.tagName === 'BUTTON') btns.push(el);
-  }
-  btns.reverse().forEach(function(b){ shell.appendChild(b); });
-
-  // izveido label + cap
-  var dockLabel = document.createElement('div');
-  dockLabel.className = 'dock-label';
-  var dockCap = document.createElement('svg');
-  dockCap.className = 'dock-cap'; dockCap.setAttribute('aria-hidden','true');
-
-  // ieliekam shell un pēc tam label+cap (būt bērni “shell”, lai ģeometrija būtu relatīva)
-  bc.appendChild(shell);
-  shell.appendChild(dockCap);
-  shell.appendChild(dockLabel);
-
-  /* 2) Pievieno etiķešu tekstus (ja nav), saglabājot Tavu ID loģiku */
-  var titlesById = {
-    resetMap:        'Restartēt karti',
-    uploadMap:       'Augšupielādēt karti',
-    resetCompass:    'Restartēt kompasu',
-    toggleRotationMode: 'Griezt bāzi / skalu',
-    lockRotationMode:   'Bloķēt rotāciju',
-    rotateCompass90: 'Tīklveida režīms',
-    toggleFullscreen:'Pilnekrāna režīms'
-  };
-  var allButtons = shell.querySelectorAll('button');
-  allButtons.forEach ? allButtons.forEach(setTitle) : [].slice.call(allButtons).forEach(setTitle);
-  function setTitle(b){
-    var id=b.id||'';
-    if(!b.getAttribute('data-title') && titlesById[id]) b.setAttribute('data-title', titlesById[id]);
-    if(!b.getAttribute('aria-label') && titlesById[id]) b.setAttribute('aria-label', titlesById[id]);
-  }
-
-  /* 3) Kupola ģeometrija (horizontālam izvietojumam) */
-  function updateCapGeometry(){
-    var cs = getComputedStyle(shell);
-    var labelW = parseFloat(cs.getPropertyValue('--labelW')) || 0;
-    var extra  = parseFloat(cs.getPropertyValue('--capExtraW')) || 0;
-    var w = labelW + 22 + extra;
-    var h = parseFloat(cs.getPropertyValue('--capH')) || 0;
-    var inset = parseFloat(cs.getPropertyValue('--capSkew')) || 0;
-    var r = parseFloat(cs.getPropertyValue('--capR')) || 0;
-    if(!w || !h) return;
-
-    var TLx = inset + r, TRx = w - inset - r;
-    var LEx = inset, LEy = r;
-    var REx = w - inset, REy = r;
-
-    var sideMidY = r + (h - r) * 0.45;
-    var rightCP1x = REx + (w - REx) * 0.18, rightCP1y = sideMidY;
-    var rightCP2x = w, rightCP2y = r + (h - r) * 0.82;
-    var leftCP2x  = 0,  leftCP2y  = r + (h - r) * 0.82;
-    var leftCP1x  = LEx - (LEx - 0) * 0.18, leftCP1y  = sideMidY;
-
-    dockCap.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
-    dockCap.setAttribute('width', w);
-    dockCap.setAttribute('height', h);
-    dockCap.innerHTML =
-      '<defs>' +
-        '<linearGradient id="capFill" x1="0" y1="0" x2="0" y2="1">' +
-          '<stop offset="0%"  stop-color="rgba(40,44,52,.96)"/>' +
-          '<stop offset="100%" stop-color="rgba(30,33,40,.96)"/>' +
-        '</linearGradient>' +
-        '<radialGradient id="capShine" cx="50%" cy="-30%" r="120%">' +
-          '<stop offset="0%" stop-color="rgba(255,255,255,.18)"/>' +
-          '<stop offset="60%" stop-color="rgba(255,255,255,0)"/>' +
-        '</radialGradient>' +
-      '</defs>' +
-      '<path d="' +
-        'M ' + TLx + ',0 H ' + TRx + ' A ' + r + ',' + r + ' 0 0 1 ' + REx + ',' + REy + ' ' +
-        'C ' + rightCP1x + ',' + rightCP1y + ' ' + rightCP2x + ',' + rightCP2y + ' ' + w + ',' + h + ' ' +
-        'L 0,' + h + ' C ' + leftCP2x + ',' + leftCP2y + ' ' + leftCP1x + ',' + leftCP1y + ' ' + LEx + ',' + LEy + ' ' +
-        'A ' + r + ',' + r + ' 0 0 1 ' + TLx + ',0 Z" fill="url(#capFill)" stroke="rgba(210,34,34,.38)" stroke-width="1" />' +
-      '<path d="' +
-        'M ' + TLx + ',0 H ' + TRx + ' A ' + r + ',' + r + ' 0 0 1 ' + REx + ',' + REy + ' ' +
-        'C ' + rightCP1x + ',' + rightCP1y + ' ' + rightCP2x + ',' + rightCP2y + ' ' + w + ',' + h + ' ' +
-        'L 0,' + h + ' C ' + leftCP2x + ',' + leftCP2y + ' ' + leftCP1x + ',' + leftCP1y + ' ' + LEx + ',' + LEy + ' ' +
-        'A ' + r + ',' + r + ' 0 0 1 ' + TLx + ',0 Z" fill="url(#capShine)" />';
-  }
-
-  /* 4) Kustība — gluds X horizontāli; Y vertikāli */
-  var raf=null, targetX=null, currentX=null;
-  function setTipX(px){
-    targetX = px;
-    if(currentX == null) currentX = px;
-    if(raf) return;
-    function step(){
-      currentX += (targetX - currentX) * 0.25;
-      shell.style.setProperty('--tipX', currentX + 'px');
-      if(Math.abs(targetX - currentX) > 0.5){ raf = requestAnimationFrame(step); }
-      else { shell.style.setProperty('--tipX', targetX + 'px'); raf=null; }
-    }
-    raf = requestAnimationFrame(step);
-  }
-  function setTipY(py){ shell.style.setProperty('--tipY', py + 'px'); }
-
-  function isVertical(){
-    return bc.classList.contains('left') || bc.classList.contains('right');
-  }
-
-  function showFor(btn){
-    var rShell = shell.getBoundingClientRect();
-    var rBtn   = btn.getBoundingClientRect();
-    var title  = btn.getAttribute('data-title') || btn.getAttribute('aria-label') || '';
-
-    dockLabel.textContent = title || '';
-    // lai izmērītu īsto platumu/augstumu pirms ģeometrijas:
-    dockLabel.style.opacity = '0.001'; // gandrīz neredzams uz mirkli
-    dockLabel.style.pointerEvents = 'none';
-
-    // pieslēdzam klasei animācijas stāvokli
-    shell.classList.add('show-label');
-
-    // pēc nākamā frame izmēram platumu/augstumu un atjauninām kupolu (horizontāliem)
-    requestAnimationFrame(function(){
-      var lw = Math.min(dockLabel.scrollWidth + 2, rShell.width - 40);
-      shell.style.setProperty('--labelW', lw + 'px');
-      shell.style.setProperty('--capH', (dockLabel.offsetHeight + 2) + 'px');
-
-      if(!isVertical()){
-        // horizontāli: kupols redzams
-        shell.classList.add('show-cap');
-        // centrs X:
-        var cx = rBtn.left + rBtn.width/2 - rShell.left;
-        setTipX(cx);
-        updateCapGeometry();
-      }else{
-        // vertikāli: slēpjam kupolu, slīdam pa Y
-        shell.classList.remove('show-cap');
-        var cy = rBtn.top + rBtn.height/2 - rShell.top;
-        setTipY(cy);
-      }
-      dockLabel.style.opacity = '1';
-    });
-  }
-  function hideTip(){ shell.classList.remove('show-label','show-cap'); }
-
-  /* 5) Notikumi – tikai uz īstajām pogām, lai neskartu Tavu esošo loģiku */
-  var hideT=null;
-  function arm(btn){
-    btn.addEventListener('mouseenter', function(){
-      if(hideT) clearTimeout(hideT);
-      showFor(btn);
-    });
-    btn.addEventListener('focus', function(){
-      showFor(btn);
-    });
-    btn.addEventListener('mouseleave', function(){
-      if(hideT) clearTimeout(hideT);
-      hideT = setTimeout(hideTip, 180);
-    });
-    // touch — ātri parādam un pēc 1.6s paslēpjam
-    btn.addEventListener('touchstart', function(){
-      if(hideT) clearTimeout(hideT);
-      showFor(btn);
-      hideT = setTimeout(hideTip, 1600);
-    }, {passive:true});
-  }
-  [].slice.call(allButtons).forEach(arm);
-
-  // Uz loga izmēru maiņas – paslēpjam
-  window.addEventListener('resize', hideTip);
-
-  // Sākotnējais stāvoklis: ja vertical, kupolu neredzam
-  if(isVertical()) shell.classList.remove('show-cap');
-  window.__fitDock && window.__fitDock();
-})();
-
-
-// === Auto-fit dokam (#buttonContainer .dock-shell) — ar apakšējās joslas korekciju ===
-(function(){
-  function fitDock(){
-    var bc = document.getElementById('buttonContainer');
-    if(!bc) return;
-    var shell = bc.querySelector('.dock-shell');
-    if(!shell) return;
-
-    var about = document.getElementById('about');
-    var ah = about ? (about.getBoundingClientRect().height || 0) : 0;
-
-    var isVertical = bc.classList.contains('left') || bc.classList.contains('right');
-    var isBottom   = bc.classList.contains('bottom');
-
-    // 1) Novietojums: bottom režīmā pārbīdam virs #about
-    if (isBottom) {
-      var baseBottom = Math.round(window.innerHeight * 0.05); // ~5vh
-      var minBottom  = Math.ceil(ah + 12);                    // droša atstarpe virs about
-      bc.style.bottom = Math.max(baseBottom, minBottom) + 'px';
-    } else {
-      // ļaujam CSS kontrolēt (left/right)
-      bc.style.bottom = '';
-    }
-
-    // 2) Mērogs: nomēram “dabisko” izmēru bez skalas
-    var prevTransform = shell.style.transform;
-    shell.style.transform = 'none';
-    var natural = shell.getBoundingClientRect();
-    shell.style.transform = prevTransform;
-
-    // pieejamie izmēri
-    var maxW = window.innerWidth * 0.96;
-    var maxH = window.innerHeight * 0.90;
-
-    // vertical režīmā atņemam #about augstumu (lai kolonnu nesaplacina)
-    if (isVertical) {
-      maxH = Math.max(120, maxH - ah);
-    }
-
-    // aprēķinām scale
-    var scale = isVertical
-      ? Math.min(1, maxH / natural.height)
-      : Math.min(1, maxW / natural.width);
-
-    // tikai samazinām, nepalielinām (ar saprātīgu minimumu)
-    scale = Math.max(0.35, Math.min(1, scale));
-    shell.style.transform = 'scale(' + scale + ')';
-  }
-
-  // padaram pieejamu citur
-  window.__fitDock = fitDock;
-
-  // palaižam un klausāmies izmēru izmaiņas
-  var t;
-  function queue(){ clearTimeout(t); t = setTimeout(fitDock, 100); }
-  window.addEventListener('load', fitDock);
-  window.addEventListener('resize', queue);
-  window.addEventListener('orientationchange', queue);
-})();
-
-
-// 🔹 Tagad __fitDock noteikti ir definēts — pielāgo mērlogu uzreiz
-window.__fitDock && window.__fitDock();
-
-
-
-
-
-
-(function () {
-  // ── nodrošinām, ka ir konteiners ─────────────────────────────────────────────
-  const bc = document.getElementById('buttonContainer');
-  if (!bc) return;
-
-  // ── SVG ikona (backticki aizsargāti ar \`) ───────────────────────────────────
-  const GRID_ICON = \`
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
-          <rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect>
-        </svg>
-  \`;
-
-  /* — ROKTURIS — */
-  const handle = document.createElement('div');
-  handle.className = 'dock-handle';
-  handle.setAttribute('title', 'Parādīt pogas');
-  handle.setAttribute('aria-label', 'Parādīt pogas');
-  handle.innerHTML = GRID_ICON; // uzreiz ieliekam SVG
-  bc.appendChild(handle);
-
-  /* — PUBLISKĀS FUNKCIJAS — */
-  function dockButtons() { bc.classList.add('docked'); }
-  function showButtons() { bc.classList.remove('docked'); window.__fitDock && window.__fitDock(); }
-
-  // Piesienam rokturim
-  handle.addEventListener('click', showButtons);
-
-  // Ja maina novietojumu ar selectiem — atjaunojam un pārrēķinām izkārtojumu
-  const leftSel  = document.getElementById('positionSelectLeft');
-  const rightSel = document.getElementById('positionSelect');
-  function refreshBySelect() { handle.innerHTML = GRID_ICON; window.__fitDock && window.__fitDock(); }
-  leftSel  && leftSel.addEventListener('change', refreshBySelect);
-  rightSel && rightSel.addEventListener('change', refreshBySelect);
-
-  // Ielāpam updateButtonContainerPosition, lai rokturis sekotu
-  if (window.updateButtonContainerPosition) {
-    const _old = window.updateButtonContainerPosition;
-    window.updateButtonContainerPosition = function (pos) {
-      _old(pos);
-      refreshBySelect();
-      // ja bija dokēts, saglabājas; rokturis vienmēr pareizā vietā
-    };
-  }
-
-  /* — AUTOMĀTISKĀ DOKĒŠANA, kad sāc “darbu ar saturu” — */
-  const map     = document.getElementById('mapCanvas');
-  const compass = document.getElementById('compassContainer');
-
-  ['pointerdown', 'mousedown', 'touchstart'].forEach(ev => {
-    map     && map.addEventListener(ev, dockButtons,    { passive: true });
-    compass && compass.addEventListener(ev, dockButtons, { passive: true });
-  });
-
-  // Pēc loga/virtuālā viewport izmaiņām pielāgo mērogu
-  function onViewportChange() { window.__fitDock && window.__fitDock(); }
-  window.addEventListener('resize', onViewportChange);
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', onViewportChange);
-    window.visualViewport.addEventListener('scroll', onViewportChange);
-  }
-})();
-
-
-
-
-
-
-
-
-
-
+							(function () {
+							  // ── nodrošinām, ka ir konteiners ─────────────────────────────────────────────
+							  const bc = document.getElementById('buttonContainer');
+							  if (!bc) return;
+							
+							  // ── SVG ikona (backticki aizsargāti ar \`) ───────────────────────────────────
+							  const GRID_ICON = \`
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+							          <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
+							          <rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect>
+							        </svg>
+							  \`;
+							
+							  /* — ROKTURIS — */
+							  const handle = document.createElement('div');
+							  handle.className = 'dock-handle';
+							  handle.setAttribute('title', 'Parādīt pogas');
+							  handle.setAttribute('aria-label', 'Parādīt pogas');
+							  handle.innerHTML = GRID_ICON; // uzreiz ieliekam SVG
+							  bc.appendChild(handle);
+							
+							  /* — PUBLISKĀS FUNKCIJAS — */
+							  function dockButtons() { bc.classList.add('docked'); }
+							  function showButtons() { bc.classList.remove('docked'); window.__fitDock && window.__fitDock(); }
+							
+							  // Piesienam rokturim
+							  handle.addEventListener('click', showButtons);
+							
+							  // Ja maina novietojumu ar selectiem — atjaunojam un pārrēķinām izkārtojumu
+							  const leftSel  = document.getElementById('positionSelectLeft');
+							  const rightSel = document.getElementById('positionSelect');
+							  function refreshBySelect() { handle.innerHTML = GRID_ICON; window.__fitDock && window.__fitDock(); }
+							  leftSel  && leftSel.addEventListener('change', refreshBySelect);
+							  rightSel && rightSel.addEventListener('change', refreshBySelect);
+							
+							  // Ielāpam updateButtonContainerPosition, lai rokturis sekotu
+							  if (window.updateButtonContainerPosition) {
+							    const _old = window.updateButtonContainerPosition;
+							    window.updateButtonContainerPosition = function (pos) {
+							      _old(pos);
+							      refreshBySelect();
+							      // ja bija dokēts, saglabājas; rokturis vienmēr pareizā vietā
+							    };
+							  }
+							
+							  /* — AUTOMĀTISKĀ DOKĒŠANA, kad sāc “darbu ar saturu” — */
+							  const map     = document.getElementById('mapCanvas');
+							  const compass = document.getElementById('compassContainer');
+							
+							  ['pointerdown', 'mousedown', 'touchstart'].forEach(ev => {
+							    map     && map.addEventListener(ev, dockButtons,    { passive: true });
+							    compass && compass.addEventListener(ev, dockButtons, { passive: true });
+							  });
+							
+							  // Pēc loga/virtuālā viewport izmaiņām pielāgo mērogu
+							  function onViewportChange() { window.__fitDock && window.__fitDock(); }
+							  window.addEventListener('resize', onViewportChange);
+							  if (window.visualViewport) {
+							    window.visualViewport.addEventListener('resize', onViewportChange);
+							    window.visualViewport.addEventListener('scroll', onViewportChange);
+							  }
+							})();
 
 
                 `;
