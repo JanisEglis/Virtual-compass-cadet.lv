@@ -1409,17 +1409,24 @@
   align-items:center;
 }
 
-/* Apakša: pogas 1. rindā, slīdnis 2. rindā pa visu platumu */
+/* Apakšā: flex-wrap – pogas 1. rindā, dimmeris 2. rindā uz pilnu platumu */
 #buttonContainer.bottom .dock-shell{
-  grid-auto-flow:column;
-  grid-auto-columns:max-content;   /* kolonnas pēc satura (pogas) */
+  display:flex;
+  flex-wrap:wrap;
+  gap:22px;
+  align-items:center;
 }
-#buttonContainer.bottom .dock-shell > button{ grid-row:1; }
+
+#buttonContainer.bottom .dock-shell > button{
+  order:1;           /* pirmajā rindā */
+  flex:0 0 auto;
+}
+
 #buttonContainer.bottom .dock-dimmer{
-  grid-column:1 / -1;
-  grid-row:2;
+  order:2;           /* uz nākamo rindu */
+  flex:1 0 100%;     /* pilna platuma sliede */
   width:100%;
-  max-width:100%;
+  max-width:none;
 }
 
 /* Sāni: 2 kolonnas – slīdnis | pogas (vai otrādi) */
