@@ -1401,136 +1401,115 @@
 
 /* === DIMMER (slīdnis) — precīzs izvietojums + vienots dizains === */
 
-/* Izvietojumam izmantojam GRID iekš .dock-shell */
-#buttonContainer .dock-shell{
-  /* grid pārņem izkārtojumu, bet saglabā Tavu vizuālo dizainu */
-  display: grid;
-  grid-column-gap: 22px;
-  grid-row-gap: 12px;
-  align-items: center;
+/* === Apakša: pogas vienā rindā, slīdnis pilnā platumā zem tām === */
+#buttonContainer.bottom .dock-shell{
+  display:flex;
+  flex-wrap:wrap;              /* ļauj otrajai rindai salūst zem pogām */
+  align-items:center;
+  gap:22px;                    /* tas pats “dok” gaps */
 }
-
-/* Apakša: pogas 1. rindā, slīdnis zem tām pilnā platumā */
-#buttonContainer.bottom .dock-shell{ grid-auto-flow: column; }
-#buttonContainer.bottom .dock-shell > button{ grid-row: 1; }
+#buttonContainer.bottom .dock-shell > button{
+  flex:0 0 auto;               /* pogas pēc satura */
+}
 #buttonContainer.bottom .dock-dimmer{
-  grid-column: 1 / -1; /* izstiepjas pāri visām kolonnām */
-  grid-row: 2;
-  width: 100%;
+  order:2;                     /* lai slīdnis vienmēr ir ZEM pogām */
+  flex:1 1 100%;               /* pilna rinda, pilns platums */
+  width:100%;
+  max-width:100%;
 }
 
-/* Sāni: 2 kolonnas (pogas + slīdnis) */
+/* Kreisā/labā mala: 2 kolonnas (pogas + vertikālais slīdnis) */
 #buttonContainer.left .dock-shell,
 #buttonContainer.right .dock-shell{
-  grid-auto-flow: row;
-  grid-template-columns: auto auto;
-  align-items: stretch; /* lai slīdnis var izstiepties pilnā augstumā */
+  display:grid;
+  grid-template-columns:auto auto;   /* pogu kolonna + slīdņa kolonna */
+  align-items:stretch;
+  grid-row-gap:12px;
+  grid-column-gap:22px;
 }
+#buttonContainer.left  .dock-shell > button{ grid-column:2; }
+#buttonContainer.left  .dock-dimmer{ grid-column:1; grid-row:1 / -1; align-self:stretch; }
+#buttonContainer.right .dock-shell > button{ grid-column:1; }
+#buttonContainer.right .dock-dimmer{ grid-column:2; grid-row:1 / -1; align-self:stretch; }
 
-/* Kreisā puse: slīdnis pa kreisi, pogas pa labi */
-#buttonContainer.left .dock-dimmer{ grid-column: 1; grid-row: 1 / -1; align-self: stretch; }
-#buttonContainer.left .dock-shell > button{ grid-column: 2; }
-
-/* Labā puse: pogas pa kreisi, slīdnis pa labi */
-#buttonContainer.right .dock-shell > button{ grid-column: 1; }
-#buttonContainer.right .dock-dimmer{ grid-column: 2; grid-row: 1 / -1; align-self: stretch; }
-
-/* — Dimmera “kaste” ar to pašu dizainu, kas dokam/pogām — */
+/* Dimmera korpuss – tāds pats “dok” stils */
 #buttonContainer .dock-dimmer{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 10px;
   background: linear-gradient(180deg, var(--dock1), var(--dock2));
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 18px;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:18px;
   box-shadow: var(--dock-shadow);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  max-width: 100%;       /* nekad neplatāks par konteineru */
-  pointer-events: auto;  /* lai var vilkt slīdni */
+  max-width:100%;
+  pointer-events:auto;
 }
 
-/* Vertikāli — sakārtojam elementus kolonnā */
+/* Vertikālajās malās – kolonnas izkārtojums */
 #buttonContainer.left  .dock-dimmer,
 #buttonContainer.right .dock-dimmer{
-  flex-direction: column;
-  justify-content: center;
+  flex-direction:column;
+  justify-content:center;
 }
 
-/* Mazie uzraksti */
-#buttonContainer .dock-dimmer label{
-  font-size: 12px; color: rgba(255,255,255,.85);
-}
-#buttonContainer .dock-dimmer .value{
-  font-size: 12px; color: rgba(255,255,255,.7);
-  min-width: 34px; text-align: center;
+/* Noņemam slīdņa uzrakstu (label) – kā prasīji */
+#buttonContainer .dock-dimmer label,
+#buttonContainer .dock-dimmer .dimmer-label{
+  display:none !important;
 }
 
-/* Slīdņa izmēri: apakšā — 100% no dimmera platuma; sānos — 100% no dimmera augstuma */
-#buttonContainer .dock-dimmer input[type=range]{ width: 100%; max-width: 100%; }
-
-/* Vertikālais slīdnis (WebKit) — augstums = pogu kolonnas augstums */
+/* Slīdnis: apakšā — 100% platumā; sānos — vertikāls un NE garāks par pogu kolonnu */
+#buttonContainer .dock-dimmer input[type=range]{ width:100%; max-width:100%; }
 #buttonContainer.left  .dock-dimmer input[type=range],
 #buttonContainer.right .dock-dimmer input[type=range]{
-  height: 100%;                 /* NEKAD garāks par pogu kopējo augstumu */
-  width: 28px;
+  height:100%;
+  width:28px;
   writing-mode: bt-lr;
   -webkit-appearance: slider-vertical;
 }
-
-/* Rezerves variants, ja nav slider-vertical atbalsta (rotējam) */
 @supports not (-webkit-appearance: slider-vertical) {
   #buttonContainer.left  .dock-dimmer input[type=range],
   #buttonContainer.right .dock-dimmer input[type=range]{
-    height: 28px;
-    width: 100%;
+    height:28px;
+    width:100%;
     transform: rotate(-90deg);
-    transform-origin: center;
+    transform-origin:center;
   }
 }
 
-/* — Vienots slīdņa track/thumb dizains ar dokam/pogām — */
-
-/* WebKit */
+/* Track/Thumb – vienā ģimenē ar doku/pogām */
 #buttonContainer .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
-  height: 8px; border-radius: 999px;
+  height:8px; border-radius:999px;
   background: linear-gradient(180deg, var(--dock1), var(--dock2));
-  border: 1px solid rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.06);
 }
 #buttonContainer .dock-dimmer input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance: none;
-  width: 18px; height: 18px; border-radius: 50%;
+  -webkit-appearance:none;
+  width:18px; height:18px; border-radius:50%;
   background: var(--dock-icon);
-  border: 3px solid var(--dock-ring);
-  box-shadow: 0 2px 6px rgba(0,0,0,.35);
-  margin-top: -5px; /* centrē uz 8px track */
+  border:3px solid var(--dock-ring);
+  box-shadow:0 2px 6px rgba(0,0,0,.35);
+  margin-top:-5px;
 }
-
-/* Firefox */
 #buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
-  height: 8px; border-radius: 999px;
+  height:8px; border-radius:999px;
   background: linear-gradient(180deg, var(--dock1), var(--dock2));
-  border: 1px solid rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.06);
 }
 #buttonContainer .dock-dimmer input[type=range]::-moz-range-thumb{
-  width: 18px; height: 18px; border-radius: 50%;
+  width:18px; height:18px; border-radius:50%;
   background: var(--dock-icon);
-  border: 3px solid var(--dock-ring);
-  box-shadow: 0 2px 6px rgba(0,0,0,.35);
+  border:3px solid var(--dock-ring);
+  box-shadow:0 2px 6px rgba(0,0,0,.35);
 }
 
-/* Edge/IE (pamatdizains) */
-#buttonContainer .dock-dimmer input[type=range]::-ms-track{
-  height: 8px; border-radius: 999px; border: none; color: transparent;
-  background: linear-gradient(180deg, var(--dock1), var(--dock2));
+#buttonContainer .dock-dimmer label,
+#buttonContainer .dock-dimmer .value{
+  display:none !important;
 }
-#buttonContainer .dock-dimmer input[type=range]::-ms-thumb{
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--dock-icon);
-  border: 3px solid var(--dock-ring);
-}
-
 
 
 
@@ -3140,7 +3119,6 @@ function drawImage() {
   var dimWrap = document.createElement('div');
   dimWrap.className = 'dock-dimmer';
   dimWrap.innerHTML =
-    '<label for="mapDimmerRange">Tumšināt karti</label>' +
     '<input id="mapDimmerRange" type="range" min="0" max="80" step="1">' +
     '<span class="value" id="mapDimmerValue"></span>';
   shell.appendChild(dimWrap);
@@ -3176,8 +3154,9 @@ function drawImage() {
 							    rotateCompass90: 'Tīklveida režīms',
 							    toggleFullscreen:'Pilnekrāna režīms'
 							  };
-							  var allButtons = shell.querySelectorAll('button');
-							  allButtons.forEach ? allButtons.forEach(setTitle) : [].slice.call(allButtons).forEach(setTitle);
+							 var allTriggers = shell.querySelectorAll('button, .dock-dimmer');
+							 allTriggers.forEach ? allTriggers.forEach(setTitle) : [].slice.call(allTriggers).forEach(setTitle);
+
 							  function setTitle(b){
 							    var id=b.id||'';
 							    if(!b.getAttribute('data-title') && titlesById[id]) b.setAttribute('data-title', titlesById[id]);
@@ -3309,7 +3288,8 @@ function drawImage() {
 							      hideT = setTimeout(hideTip, 1600);
 							    }, {passive:true});
 							  }
-							  [].slice.call(allButtons).forEach(arm);
+							  [].slice.call(allTriggers).forEach(arm);
+
 							
 							  // Uz loga izmēru maiņas – paslēpjam
 							  window.addEventListener('resize', hideTip);
