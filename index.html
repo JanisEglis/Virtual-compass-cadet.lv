@@ -1530,6 +1530,25 @@
   height: calc(100% - 16px);  /* 16px = 8px top + 8px bottom padding */
   min-height: 0;
 }
+/* sānus saliekam “dense”, lai spraugu nav */
+#buttonContainer.left .dock-shell,
+#buttonContainer.right .dock-shell{
+  grid-auto-flow: row dense;
+}
+
+/* garantējam, ka dimmera kaste aizņem visu piešķirto laukumu */
+#buttonContainer.left  .dock-dimmer,
+#buttonContainer.right .dock-dimmer{
+  align-self: stretch;
+  min-height: 0;     /* svarīgi WebKit/Safari */
+}
+
+/* pats range aizpilda kasti pilnā augstumā */
+#buttonContainer.left  .dock-dimmer input[type=range],
+#buttonContainer.right .dock-dimmer input[type=range]{
+  height: calc(100% - 16px); /* 8px top + 8px bottom padding */
+  min-height: 0;
+}
 
 
 						</style>
@@ -2087,18 +2106,17 @@ function hideTouchOnlyButtons() {
 
 
 						// Funkcija, kas atjaunina pogas konteinera novietojumu atkarībā no izvēlētās vērtības
-						function updateButtonContainerPosition(position) {
-						  	const buttonContainer = document.getElementById('buttonContainer');
- 						 	buttonContainer.classList.remove('bottom', 'right', 'left');
-  							buttonContainer.classList.add(position);
+function updateButtonContainerPosition(position){
+  const buttonContainer = document.getElementById('buttonContainer');
+  buttonContainer.classList.remove('bottom','right','left');
+  buttonContainer.classList.add(position);
 
-  							// saglabā izvēli
-  							localStorage.setItem('buttonPosition', position);
+  localStorage.setItem('buttonPosition', position);
 
- 				 			// uzreiz piemeklē mērogu
-						  	window.__fitDock && window.__fitDock();
-		 					window.__updateDimmerWidth && window.__updateDimmerWidth(); // ⬅️ jaunais zvans
-						}
+  window.__fitDock && window.__fitDock();
+  window.__updateDimmerWidth && window.__updateDimmerWidth(); // ← paliek
+}
+
 
 
 						document.addEventListener('DOMContentLoaded', () => {
@@ -3401,45 +3419,27 @@ window.__updateDimmerWidth && window.__updateDimmerWidth();
 
 
 (function(){
-  function updateDimmerWidth(){
-    const bc = document.getElementById('buttonContainer');
-    if(!bc) return;
-    const shell = bc.querySelector('.dock-shell');
-    const dim  = shell && shell.querySelector('.dock-dimmer');
-    if(!shell || !dim) return;
+  function updateDimmerPlacement(){
+    const bc   = document.getElementById('buttonContainer');
+    const dim  = bc?.querySelector('.dock-dimmer');
+    if(!bc || !dim) return;
 
-    // redzamo pogu skaits (izlaižam display:none, t.sk. touch-only uz desktop)
-    const buttons = Array.from(shell.children)
-      .filter(el => el.tagName === 'BUTTON' && getComputedStyle(el).display !== 'none');
-    const n = buttons.length || 1;
-
-    if (bc.classList.contains('bottom')){
-      // slīdnis 2. rindā un "span n" kolonnas (precīzi tik, cik ir pogas)
-      dim.style.gridRow = '2';
-      dim.style.gridColumn = '1 / span ' + n;
-      dim.style.width = '100%';
-      dim.style.maxWidth = '100%';
-    } else if (bc.classList.contains('left')){
-      // kreisajā pusē slīdnis 1. kolonnā, stiepjas pāri visam pogu augstumam
-      dim.style.gridRow = '1 / -1';
-      dim.style.gridColumn = '1';
-      dim.style.width = '';
-      dim.style.maxWidth = '';
-    } else { // right
-      dim.style.gridRow = '1 / -1';
-      dim.style.gridColumn = '2';
-      dim.style.width = '';
-      dim.style.maxWidth = '';
-    }
+    // Notīrām visus iepriekš ieliktos inline parametrus,
+    // lai strādā CSS noteikumi atkarībā no .bottom/.left/.right
+    dim.style.gridRow = '';
+    dim.style.gridColumn = '';
+    dim.style.width = '';
+    dim.style.maxWidth = '';
   }
 
-  // padarām pieejamu citur
-  window.__updateDimmerWidth = updateDimmerWidth;
+  // publiski
+  window.__updateDimmerWidth = updateDimmerPlacement;
 
-  // sākotnēji + uz loga izmēra maiņām
-  window.addEventListener('load', updateDimmerWidth);
-  window.addEventListener('resize', updateDimmerWidth);
+  // palaidam sākumā un uz izmēru izmaiņām
+  window.addEventListener('load', updateDimmerPlacement);
+  window.addEventListener('resize', updateDimmerPlacement);
 })();
+
 
 
 
