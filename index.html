@@ -1409,33 +1409,33 @@
   align-items:center;
 }
 
-/* Apakšā — čaula vairs nestiepjas un nepievieno malas */
+/* Apakšā — čaula “aptver” tieši 1. rindas pogu platumu */
 #buttonContainer.bottom .dock-shell{
   display:inline-flex;
   flex-wrap:wrap;
-  justify-content:center;
-  width:auto;
+  gap:12px;
+  width:min(var(--rowW, 100%), 100%); /* ← čaulas platums = izmērītā 1. rindas pogu platums */
   max-width:100%;
   margin:0 auto;
   padding:0;
-  gap:12px;           /* pēc vajadzības vari samazināt */
   box-sizing:border-box;
 }
 
-/* Visas pogas – 1. rinda */
+/* Pogas vienmēr 1. rindā */
 #buttonContainer.bottom .dock-shell > button{
   order:1;
 }
 
-/* Slīdnis – vienmēr atsevišķā, 2. rindā (zem pogām) */
+/* Slīdnis vienmēr zem pogām un tik plats, cik čaula (t.i., = pogu rinda) */
 #buttonContainer.bottom .dock-dimmer{
   order:2;
-  flex:0 0 100%;               /* ← piespiež jaunu rindu */
-  width:var(--rowW, auto);     /* tieši 1. rindas pogu platums */
+  flex:0 0 auto;      /* neliekam 100%, lai neizstieptu čaulu */
+  width:100%;         /* 100% no .dock-shell = --rowW */
   max-width:100%;
-  margin:4px auto 0;           /* neliela atstarpe virs slīdņa */
+  margin:4px auto 0;
   box-sizing:border-box;
 }
+
 
 
 
