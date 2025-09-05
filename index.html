@@ -1812,6 +1812,24 @@
 }
 
 
+/* --- PATCH: slīdņa bumbiņas izlīdzināšana WebKit/Chromium --- */
+/* horizontāli – bumbiņu centrējam ar margin-top; vertikālajam to NELIEKAM */
+#buttonContainer .dock-dimmer input[type="range"]:not(.range-vertical)::-webkit-slider-thumb{
+  margin-top: calc((var(--rng-track) - var(--rng-thumb)) / 2);
+}
+#buttonContainer .dock-dimmer .range-vertical::-webkit-slider-thumb{
+  margin-top: 0 !important;  /* pārraksta agrāk ielikto -5px no horizontālā varianta */
+}
+
+/* --- PATCH: Firefox vertikālā orientācija (nepieciešams orient="vertical") --- */
+#buttonContainer .dock-dimmer input[type="range"][orient="vertical"]{
+  appearance: none;        /* FF */
+  writing-mode: bt-lr;     /* FF vertikālais “track” */
+}
+
+/* drošībai: vertikālā “track” platums un aizpildījums */
+#buttonContainer .dock-dimmer .range-vertical::-webkit-slider-runnable-track{ width: var(--rng-track); }
+#buttonContainer .dock-dimmer .range-vertical::-moz-range-track{ width: var(--rng-track); }
 
 
 
@@ -2395,13 +2413,14 @@ function syncRangeOrientation(){
   const side = bc.classList.contains('left') || bc.classList.contains('right');
 
   if(side){
-    range.classList.add('range-vertical');     // lai nostrādā Tavi vertikālie CSS selektori
-    range.setAttribute('orient','vertical');   // Firefox vertikālajam variantam
+    range.classList.add('range-vertical');       // CSS hakiem (Chrome/Edge)
+    range.setAttribute('orient','vertical');     // Firefoxam obligāti
   }else{
     range.classList.remove('range-vertical');
     range.removeAttribute('orient');
   }
 }
+
 
 // izsauc uzreiz un katru reizi pēc pozīcijas maiņas
 syncRangeOrientation();
