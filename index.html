@@ -1687,59 +1687,6 @@
 
 
 
-
-
-
-
-
-
-
-/* === VERTIKĀLĀ SLĪDŅA FIX — lai aizņem visu kolonnas augstumu === */
-#buttonContainer.left  .dock-dimmer,
-#buttonContainer.right .dock-dimmer{
-  display: flex;            /* jau ir, bet drošībai */
-  flex-direction: column;
-  align-self: stretch;
-  gap: 0;                   /* lai nekas “neapgrauž” augstumu */
-  padding-block: 8px;
-}
-
-#buttonContainer.left  .dock-dimmer input[type="range"],
-#buttonContainer.right .dock-dimmer input[type="range"]{
-  /* galvenais: ļaujam flexam izstiept pa galveno asi */
-  flex: 1 1 auto;
-  min-height: 0;
-  height: auto;             /* pārraksta iepriekšējo calc(100% - 16px) */
-  width: 28px;
-
-  /* modernā vertikālā orientācija (bez rotate hackiem) */
-  -webkit-appearance: none; /* atslēdz deprecated slider-vertical */
-  writing-mode: vertical-lr;
-  direction: rtl;
-
-  /* ja kur palicis vecais transform — notīrām */
-  transform: none !important;
-}
-
-/* noņemam iepriekš definēto @supports rotate fallback ietekmi, ja tā stāv augstāk */
-@supports not (-webkit-appearance: slider-vertical){
-  #buttonContainer.left  .dock-dimmer input[type="range"],
-  #buttonContainer.right .dock-dimmer input[type="range"]{
-    height: auto;
-    width: 28px;
-    transform: none;
-  }
-}
-
-
-
-
-
-
-
-
-
-
 						</style>
 					</head>
 						<body>
