@@ -1892,7 +1892,7 @@
 								}, 5000); // Parāda ziņojumu 5 sekundes
 							}
 
-							/**
+/** Palīgfunkcijas touch-only pogām */						
 function showTouchOnlyButtons() {
   const touchOnlyElements = document.querySelectorAll('.touch-only');
   touchOnlyElements.forEach(el => {
@@ -3425,7 +3425,7 @@ window.__updateDimmerWidth && window.__updateDimmerWidth();
     );
 
     // Uzliekam precīzu span
-    dim.style.gridRow = `1 / span ${rows}`;
+    dim.style.gridRow = '1 / span ' + rows;
   }
 
   // 3) Wrapperis – vispirms notīra, tad uzstāda span
