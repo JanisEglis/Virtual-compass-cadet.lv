@@ -1425,18 +1425,27 @@
 /* Sāni: 2 kolonnas – slīdnis + pogas. Slīdnis stiepjas pāri VISĀ pogu kolonnas augstumā */
 #buttonContainer.left .dock-shell,
 #buttonContainer.right .dock-shell{
-  grid-auto-flow:row;
-  grid-auto-rows:max-content;      /* katra pogas rinda pēc satura */
-  grid-template-columns:auto auto; /* slīdnis | pogas (vai otrādi) */
+  display:grid;
+  grid-auto-flow:row dense;          /* bez spraugām */
+  grid-auto-rows:max-content;        /* katra pogas rinda pēc satura */
+  grid-template-columns:auto auto;   /* slīdnis | pogas (vai otrādi) */
   align-items:start;
 }
 
-/* Kreiso/labo pusi samainām vietām kā prasīji */
-#buttonContainer.left  .dock-dimmer{ grid-column:1; grid-row:1 / -1; align-self:stretch; height:100%; }
+/* Kreiso/labo pusi samainām vietām kā prasīji — FIX: span 999, nevis -1 */
+#buttonContainer.left  .dock-dimmer{
+  grid-column:1;
+  grid-row:1 / span 999;   /* <-- svarīgi, lai nosegtu arī implicitās rindas */
+  align-self:stretch;
+}
 #buttonContainer.left  .dock-shell > button{ grid-column:2; }
 
 #buttonContainer.right .dock-shell > button{ grid-column:1; }
-#buttonContainer.right .dock-dimmer{ grid-column:2; grid-row:1 / -1; align-self:stretch; height:100%; }
+#buttonContainer.right .dock-dimmer{
+  grid-column:2;
+  grid-row:1 / span 999;   /* <-- svarīgi, lai nosegtu arī implicitās rindas */
+  align-self:stretch;
+}
 
 /* Dimmera “kaste” ar to pašu stilu kā dokam */
 #buttonContainer .dock-dimmer{
@@ -1454,6 +1463,7 @@
   -webkit-backdrop-filter:blur(6px);
   max-width:100%;
   pointer-events:auto;
+  min-height:0;               /* Safari 100% augstuma fix */
 }
 
 /* Vertikālajās malās iekšā liekam kolonnu, lai “range” var izstiepties */
@@ -1466,7 +1476,9 @@
 /* Slēpjam iekšējos uzrakstus (vērtību/label) – tooltips rādīsies ārpusē */
 #buttonContainer .dock-dimmer label,
 #buttonContainer .dock-dimmer .dimmer-label,
-#buttonContainer .dock-dimmer .value{ display:none !important; }
+#buttonContainer .dock-dimmer .value{
+  display:none !important;
+}
 
 /* Range: apakšā – 100% platumā */
 #buttonContainer .dock-dimmer input[type=range]{ width:100%; max-width:100%; }
@@ -1474,7 +1486,8 @@
 /* Range: sānos – vertikāls un vizuāli tik garš, cik augsta ir pogu kolonna */
 #buttonContainer.left  .dock-dimmer input[type=range],
 #buttonContainer.right .dock-dimmer input[type=range]{
-  height:calc(100% - 16px);  /* atņemam dimmera 8px+8px vertikālos paddingus */
+  height:calc(100% - 16px);  /* 8px top + 8px bottom padding */
+  min-height:0;
   width:28px;
   writing-mode:bt-lr;
   -webkit-appearance:slider-vertical;
@@ -1514,40 +1527,6 @@
   background:var(--dock-icon);
   border:3px solid var(--dock-ring);
   box-shadow:0 2px 6px rgba(0,0,0,.35);
-}
-
-#buttonContainer.left .dock-shell,
-#buttonContainer.right .dock-shell{
-  grid-auto-flow: row dense; /* ļauj vēlāk ieliktu dimmeri salikt augšā bez caurumiem */
-}
-
-#buttonContainer .dock-dimmer{ 
-  align-self: stretch; 
-  min-height: 0;              /* Safari 100% augstuma fix */
-}
-#buttonContainer.left  .dock-dimmer input[type=range],
-#buttonContainer.right .dock-dimmer input[type=range]{
-  height: calc(100% - 16px);  /* 16px = 8px top + 8px bottom padding */
-  min-height: 0;
-}
-/* sānus saliekam “dense”, lai spraugu nav */
-#buttonContainer.left .dock-shell,
-#buttonContainer.right .dock-shell{
-  grid-auto-flow: row dense;
-}
-
-/* garantējam, ka dimmera kaste aizņem visu piešķirto laukumu */
-#buttonContainer.left  .dock-dimmer,
-#buttonContainer.right .dock-dimmer{
-  align-self: stretch;
-  min-height: 0;     /* svarīgi WebKit/Safari */
-}
-
-/* pats range aizpilda kasti pilnā augstumā */
-#buttonContainer.left  .dock-dimmer input[type=range],
-#buttonContainer.right .dock-dimmer input[type=range]{
-  height: calc(100% - 16px); /* 8px top + 8px bottom padding */
-  min-height: 0;
 }
 
 
