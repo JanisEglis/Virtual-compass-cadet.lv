@@ -1557,130 +1557,165 @@
 							}
 
 
-/* Sānu novietojumos – slīdnis aizņem visas rindas */
-#buttonContainer.left  .dock-dimmer,
-#buttonContainer.right .dock-dimmer{
-  grid-row: 1 / -1;      /* SPAN visām rindām */
-  align-self: stretch;   /* izstiepjas pa kolonnas augstumu */
+							/* Sānu novietojumos – slīdnis aizņem visas rindas */
+							#buttonContainer.left  .dock-dimmer,
+							#buttonContainer.right .dock-dimmer{
+							  grid-row: 1 / -1;      /* SPAN visām rindām */
+							  align-self: stretch;   /* izstiepjas pa kolonnas augstumu */
+							}
+							
+							/* Pārliecinies, ka čaulā tiešām ir režģis ar 2 kolonnām */
+							#buttonContainer.left  .dock-shell,
+							#buttonContainer.right .dock-shell{
+							  display: grid;
+							  grid-template-columns: auto auto;   /* slīdnis | pogas (vai otrādi) */
+							  grid-auto-rows: max-content;
+							}
+
+
+
+							/* čaula ir 2 kolonnas: slīdnis | pogas (vai otrādi) */
+							#buttonContainer.left  .dock-shell,
+							#buttonContainer.right .dock-shell{
+							  display: grid;
+							  grid-template-columns: auto auto;
+							  grid-auto-rows: max-content;
+							  align-items: start;
+							}
+							
+							/* slīdnis aizņem **visas rindas** */
+							#buttonContainer.left  .dock-dimmer,
+							#buttonContainer.right .dock-dimmer{
+							  grid-row: 1 / -1;
+							  align-self: stretch;
+							}
+
+
+
+
+							:root{
+							  --fill: #ff4747;               /* aizpildītā daļa */
+							  --unfill: rgba(255,255,255,.12); /* neaizpildītā daļa */
+							}
+							
+							/* WebKit/Chromium – horizontāls */
+							.dock-dimmer input[type=range]::-webkit-slider-runnable-track{
+							  background:
+							    linear-gradient(to right,
+							      var(--fill) 0,
+							      var(--fill) calc(var(--p)*1%),
+							      var(--unfill) calc(var(--p)*1%),
+							      var(--unfill) 100%);
+							}
+							
+							/* WebKit/Chromium – vertikāls */
+							.dock-dimmer .range-vertical::-webkit-slider-runnable-track{
+							  background:
+							    linear-gradient(to top,
+							      var(--fill) 0,
+							      var(--fill) calc(var(--p)*1%),
+							      var(--unfill) calc(var(--p)*1%),
+							      var(--unfill) 100%);
+							}
+							
+							/* Firefox */
+							.dock-dimmer input[type=range]::-moz-range-track{    background: var(--unfill); }
+							.dock-dimmer input[type=range]::-moz-range-progress{ background: var(--fill); }
+							
+							/* Legacy Edge/IE */
+							.dock-dimmer input[type=range]::-ms-fill-upper{ background: var(--unfill); }
+							.dock-dimmer input[type=range]::-ms-fill-lower{ background: var(--fill); }
+
+
+							:root{
+							  --fill: #ff0000;                 /* tīri sarkans */
+							  --unfill: rgba(255,255,255,.12);
+							}
+							
+							/* lai UI noklusētais “accent” arī ir sarkans (Android/Chrome gadījumam) */
+							.dock-dimmer input[type=range]{ accent-color: var(--fill); }
+
+
+							/* ===== Universālie mainīgie slīdnim ===== */
+							:root{
+							  --rng-track: 8px;             /* trases biezums */
+							  --rng-thumb: 18px;            /* ķepas diametrs */
+							  --rng-track-bg: linear-gradient(180deg, var(--dock1), var(--dock2));
+							  --rng-track-border: 1px solid rgba(255,255,255,.06);
+							  --rng-thumb-bg: #eef2f7;
+							  --rng-thumb-ring: var(--dock-ring);
+							  --rng-thumb-shadow: 0 2px 6px rgba(0,0,0,.35);
+							}
+
+
+
+
+/* ====== FIREFOX RESET + VERTIKĀLĀ ORIENTĀCIJA ====== */
+#buttonContainer .dock-dimmer input[type=range]{
+  appearance: none;
+  -moz-appearance: none;
+  background: transparent;
+  /* lai FF nerāda default “ielāpus” */
+  border: 0;
+  outline: 0;
 }
 
-/* Pārliecinies, ka čaulā tiešām ir režģis ar 2 kolonnām */
+/* Kad konteiners ir sānos — slīdnis IR vertikāls un augsts */
+#buttonContainer.left  .dock-dimmer input[type=range],
+#buttonContainer.right .dock-dimmer input[type=range]{
+  width: 28px;             /* “trases” platums */
+  height: 100%;            /* aizņem visu kolonnas augstumu */
+  min-height: 260px;       /* neļaujam kļūt pārāk īsam */
+}
+
+/* FF: trase un aizpildījums */
+#buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
+  width: 8px;
+  height: 100%;
+  background: var(--unfill);
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.06);
+}
+#buttonContainer .dock-dimmer input[type=range]::-moz-range-progress{
+  background: var(--fill);
+  border-radius: 999px;
+}
+
+/* FF: īkšķis */
+#buttonContainer .dock-dimmer input[type=range]::-moz-range-thumb{
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #eef2f7;
+  border: 3px solid var(--dock-ring);
+  box-shadow: 0 2px 6px rgba(0,0,0,.35);
+}
+
+/* Sānu izkārtojums – čaula ir īsts GRID: slīdnis aizņem VISAS rindas */
 #buttonContainer.left  .dock-shell,
 #buttonContainer.right .dock-shell{
   display: grid;
-  grid-template-columns: auto auto;   /* slīdnis | pogas (vai otrādi) */
+  grid-template-columns: auto auto;    /* kolonna: slīdnis | pogas (vai otrādi) */
   grid-auto-rows: max-content;
+  align-items: stretch;
 }
-
-
-
-
-
-
-
-
-
-/* čaula ir 2 kolonnas: slīdnis | pogas (vai otrādi) */
-#buttonContainer.left  .dock-shell,
-#buttonContainer.right .dock-shell{
-  display: grid;
-  grid-template-columns: auto auto;
-  grid-auto-rows: max-content;
-  align-items: start;
-}
-
-/* slīdnis aizņem **visas rindas** */
 #buttonContainer.left  .dock-dimmer,
 #buttonContainer.right .dock-dimmer{
-  grid-row: 1 / -1;
+  grid-column: 1;            /* kreisā kolonna (ja vajag otrādi – pārslēdz uz 2) */
+  grid-row: 1 / -1;          /* span visām pogu rindām */
   align-self: stretch;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-:root{
-  --fill: #ff4747;               /* aizpildītā daļa */
-  --unfill: rgba(255,255,255,.12); /* neaizpildītā daļa */
+/* Fallback Chrome/Edge gadījumam, ja nav vertikālā slīdņa atbalsta */
+@supports not (-webkit-appearance: slider-vertical){
+  #buttonContainer.left  .dock-dimmer input[type=range],
+  #buttonContainer.right .dock-dimmer input[type=range]{
+    width: 100%;
+    height: 28px;
+    transform: rotate(-90deg);
+    transform-origin: center;
+  }
 }
-
-/* WebKit/Chromium – horizontāls */
-.dock-dimmer input[type=range]::-webkit-slider-runnable-track{
-  background:
-    linear-gradient(to right,
-      var(--fill) 0,
-      var(--fill) calc(var(--p)*1%),
-      var(--unfill) calc(var(--p)*1%),
-      var(--unfill) 100%);
-}
-
-/* WebKit/Chromium – vertikāls */
-.dock-dimmer .range-vertical::-webkit-slider-runnable-track{
-  background:
-    linear-gradient(to top,
-      var(--fill) 0,
-      var(--fill) calc(var(--p)*1%),
-      var(--unfill) calc(var(--p)*1%),
-      var(--unfill) 100%);
-}
-
-/* Firefox */
-.dock-dimmer input[type=range]::-moz-range-track{    background: var(--unfill); }
-.dock-dimmer input[type=range]::-moz-range-progress{ background: var(--fill); }
-
-/* Legacy Edge/IE */
-.dock-dimmer input[type=range]::-ms-fill-upper{ background: var(--unfill); }
-.dock-dimmer input[type=range]::-ms-fill-lower{ background: var(--fill); }
-
-
-
-
-
-
-
-
-
-
-
-:root{
-  --fill: #ff0000;                 /* tīri sarkans */
-  --unfill: rgba(255,255,255,.12);
-}
-
-/* lai UI noklusētais “accent” arī ir sarkans (Android/Chrome gadījumam) */
-.dock-dimmer input[type=range]{ accent-color: var(--fill); }
-
-
-
-
-
-
-
-/* ===== Universālie mainīgie slīdnim ===== */
-:root{
-  --rng-track: 8px;             /* trases biezums */
-  --rng-thumb: 18px;            /* ķepas diametrs */
-  --rng-track-bg: linear-gradient(180deg, var(--dock1), var(--dock2));
-  --rng-track-border: 1px solid rgba(255,255,255,.06);
-  --rng-thumb-bg: #eef2f7;
-  --rng-thumb-ring: var(--dock-ring);
-  --rng-thumb-shadow: 0 2px 6px rgba(0,0,0,.35);
-}
-
-
-
-
 
 
 
@@ -2053,37 +2088,37 @@
 								}, 5000); // Parāda ziņojumu 5 sekundes
 							}
 
-/** Palīgfunkcijas touch-only pogām */						
-function showTouchOnlyButtons() {
-  const touchOnlyElements = document.querySelectorAll('.touch-only');
-  touchOnlyElements.forEach(el => {
-    el.classList.add('touch-visible');
-    el.style.display = 'inline-block';
-  });
-
-  // pārrēķina slīdņa “span” pēc pogu skaita
-  window.__updateDimmerWidth && window.__updateDimmerWidth();
-  // (neobligāti) pielāgo arī doka mērogu
-  window.__fitDock && window.__fitDock();
-
-  console.log('✅ Skārienjūtīgās pogas ir redzamas.');
-}
-
-function hideTouchOnlyButtons() {
-  const touchOnlyElements = document.querySelectorAll('.touch-only');
-  touchOnlyElements.forEach(el => {
-    el.classList.remove('touch-visible');
-    el.style.display = 'none';
-  });
-
-  // pārrēķina slīdņa “span” pēc pogu skaita
-  window.__updateDimmerWidth && window.__updateDimmerWidth();
-  // (neobligāti) pielāgo arī doka mērogu
-  window.__fitDock && window.__fitDock();
-
-  console.log('❌ Skārienjūtīgās pogas ir paslēptas.');
-}
-
+							/** Palīgfunkcijas touch-only pogām */						
+							function showTouchOnlyButtons() {
+							  const touchOnlyElements = document.querySelectorAll('.touch-only');
+							  touchOnlyElements.forEach(el => {
+							    el.classList.add('touch-visible');
+							    el.style.display = 'inline-block';
+							  });
+							
+							  // pārrēķina slīdņa “span” pēc pogu skaita
+							  window.__updateDimmerWidth && window.__updateDimmerWidth();
+							  // (neobligāti) pielāgo arī doka mērogu
+							  window.__fitDock && window.__fitDock();
+							
+							  console.log('✅ Skārienjūtīgās pogas ir redzamas.');
+							}
+							
+							function hideTouchOnlyButtons() {
+							  const touchOnlyElements = document.querySelectorAll('.touch-only');
+							  touchOnlyElements.forEach(el => {
+							    el.classList.remove('touch-visible');
+							    el.style.display = 'none';
+							  });
+							
+							  // pārrēķina slīdņa “span” pēc pogu skaita
+							  window.__updateDimmerWidth && window.__updateDimmerWidth();
+							  // (neobligāti) pielāgo arī doka mērogu
+							  window.__fitDock && window.__fitDock();
+							
+							  console.log('❌ Skārienjūtīgās pogas ir paslēptas.');
+							}
+							
 
 							/**
 							 * Funkcija, kas uzsāk pārbaudi ik pēc 1 sekundes, vai ir pievienota skārienjūtīga ierīce.
@@ -2241,57 +2276,47 @@ function hideTouchOnlyButtons() {
 						updateButtonContainerPosition(initial);
 
 
-// Funkcija, kas atjaunina pogas konteinera novietojumu atkarībā no izvēlētās vērtības
-function updateButtonContainerPosition(position){
-  const buttonContainer = document.getElementById('buttonContainer');
-  buttonContainer.classList.remove('bottom','right','left');
-  buttonContainer.classList.add(position);
-
-  localStorage.setItem('buttonPosition', position);
-
-  window.__fitDock && window.__fitDock();
-  window.__updateDimmerWidth && window.__updateDimmerWidth(); // ← paliek
-}
-
-
+						// Funkcija, kas atjaunina pogas konteinera novietojumu atkarībā no izvēlētās vērtības
+						function updateButtonContainerPosition(position){
+						  const buttonContainer = document.getElementById('buttonContainer');
+						  buttonContainer.classList.remove('bottom','right','left');
+						  buttonContainer.classList.add(position);
+						
+						  localStorage.setItem('buttonPosition', position);
+						
+						  window.__fitDock && window.__fitDock();
+						  window.__updateDimmerWidth && window.__updateDimmerWidth(); // ← paliek
+						}
 
 
 
-
-
-function syncRangeOrientation(){
-  const bc    = document.getElementById('buttonContainer');
-  const range = document.getElementById('mapDimmerRange');
-  if(!bc || !range) return;
-
-  const side = bc.classList.contains('left') || bc.classList.contains('right');
-
-  if(side){
-    range.classList.add('range-vertical');       // CSS hakiem (Chrome/Edge)
-    range.setAttribute('orient','vertical');     // Firefoxam obligāti
-  }else{
-    range.classList.remove('range-vertical');
-    range.removeAttribute('orient');
-  }
-}
-
-
-// izsauc uzreiz un katru reizi pēc pozīcijas maiņas
-syncRangeOrientation();
-
-const _oldUpdatePos = updateButtonContainerPosition;
-updateButtonContainerPosition = function(position){
-  _oldUpdatePos(position);
-  syncRangeOrientation();
-  window.__updateDimmerWidth && window.__updateDimmerWidth();
-  window.__fitDock && window.__fitDock();
-};
-
-
-
-
-
-
+						function syncRangeOrientation(){
+						  const bc    = document.getElementById('buttonContainer');
+						  const range = document.getElementById('mapDimmerRange');
+						  if(!bc || !range) return;
+						
+						  const side = bc.classList.contains('left') || bc.classList.contains('right');
+						
+						  if(side){
+						    range.classList.add('range-vertical');       // CSS hakiem (Chrome/Edge)
+						    range.setAttribute('orient','vertical');     // Firefoxam obligāti
+						  }else{
+						    range.classList.remove('range-vertical');
+						    range.removeAttribute('orient');
+						  }
+						}
+						
+						
+						// izsauc uzreiz un katru reizi pēc pozīcijas maiņas
+						syncRangeOrientation();
+						
+						const _oldUpdatePos = updateButtonContainerPosition;
+						updateButtonContainerPosition = function(position){
+						  _oldUpdatePos(position);
+						  syncRangeOrientation();
+						  window.__updateDimmerWidth && window.__updateDimmerWidth();
+						  window.__fitDock && window.__fitDock();
+						};
 
 
 
@@ -2331,9 +2356,9 @@ updateButtonContainerPosition = function(position){
 						let lastTouchDistance = 0;
 						const initialScale = 0.9;
 
-// Tumšošanas intensitāte (0..0.8), glabājam % localStorage (0..80)
-let mapDarken = (+(localStorage.getItem('mapDarken') || 0)) / 100;
-
+						// Tumšošanas intensitāte (0..0.8), glabājam % localStorage (0..80)
+						let mapDarken = (+(localStorage.getItem('mapDarken') || 0)) / 100;
+						
 
 
 
@@ -2602,29 +2627,29 @@ let mapDarken = (+(localStorage.getItem('mapDarken') || 0)) / 100;
 
 
 
-function drawImage() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // 1) Karte
-  ctx.drawImage(img, imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
-
-  // 2) Tumšošanas pārklājums tikai kartes laukumam
-  if (mapDarken > 0) {
-    ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,' + mapDarken + ')'; // 0..0.8
-    ctx.fillRect(imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
-    ctx.restore();
-  }
-
-  // 3) Sarkanais rāmis virs pārklājuma
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "red";
-  ctx.strokeRect(imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
-
-  // 4) Roktura pozīcija
-  positionResizeHandle();
-}
-
+						function drawImage() {
+						  ctx.clearRect(0, 0, canvas.width, canvas.height);
+						
+						  // 1) Karte
+						  ctx.drawImage(img, imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
+						
+						  // 2) Tumšošanas pārklājums tikai kartes laukumam
+						  if (mapDarken > 0) {
+						    ctx.save();
+						    ctx.fillStyle = 'rgba(0,0,0,' + mapDarken + ')'; // 0..0.8
+						    ctx.fillRect(imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
+						    ctx.restore();
+						  }
+						
+						  // 3) Sarkanais rāmis virs pārklājuma
+						  ctx.lineWidth = 2;
+						  ctx.strokeStyle = "red";
+						  ctx.strokeRect(imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
+						
+						  // 4) Roktura pozīcija
+						  positionResizeHandle();
+						}
+						
 
 
 
@@ -3334,50 +3359,50 @@ function drawImage() {
 							  shell.appendChild(dockCap);
 							  shell.appendChild(dockLabel);
 
-
-  /* — DIMMERA UI — */
-  var dimWrap = document.createElement('div');
-  dimWrap.className = 'dock-dimmer';
-  dimWrap.innerHTML =
-    '<input id="mapDimmerRange" type="range" min="0" max="80" step="1">' +
-    '<span class="value" id="mapDimmerValue"></span>';
-  shell.insertBefore(dimWrap, shell.firstChild);
-  
-// Tooltipam un fokusam (tāpat kā pogām)
-dimWrap.setAttribute('data-title', 'Tumšināt karti');
-dimWrap.setAttribute('aria-label', 'Tumšināt karti');
-dimWrap.setAttribute('tabindex', '0');
-dimWrap.id = 'mapDimmer'; // ne obligāti, bet noderīgi
-
-  // sasaistām ar mainīgo + localStorage
-  var dimRange = dimWrap.querySelector('#mapDimmerRange');
-  var dimValue = dimWrap.querySelector('#mapDimmerValue');
-
-  var stored = +(localStorage.getItem('mapDarken') || 0);
-  mapDarken = stored / 100;        // izmanto globālo mainīgo no 2. soļa
-  dimRange.value = stored;
-  dimValue.textContent = stored + '%';
-
-  dimRange.addEventListener('input', function(e){
-    var v = +e.target.value;       // 0..80
-    mapDarken = v / 100;           // 0..0.8
-    localStorage.setItem('mapDarken', v);
-    dimValue.textContent = v + '%';
-    drawImage();                   // pārzīmē kanvu ar jaunu tumšumu
-  });
-
-function setRangeFill(el){
-  const min = +el.min || 0, max = +el.max || 100, val = +el.value || 0;
-  const p = (val - min) * 100 / (max - min); // 0..100
-  el.style.setProperty('--p', p);
-}
-setRangeFill(dimRange);
-dimRange.addEventListener('input', e => setRangeFill(e.target));
-
-
-
-// ⬇️ Pievieno šo — sākotnēji iestata pareizu pārklājumu (span)
-window.__updateDimmerWidth && window.__updateDimmerWidth();
+							
+							  /* — DIMMERA UI — */
+							  var dimWrap = document.createElement('div');
+							  dimWrap.className = 'dock-dimmer';
+							  dimWrap.innerHTML =
+							    '<input id="mapDimmerRange" type="range" min="0" max="80" step="1">' +
+							    '<span class="value" id="mapDimmerValue"></span>';
+							  shell.insertBefore(dimWrap, shell.firstChild);
+							  
+								// Tooltipam un fokusam (tāpat kā pogām)
+								dimWrap.setAttribute('data-title', 'Tumšināt karti');
+								dimWrap.setAttribute('aria-label', 'Tumšināt karti');
+								dimWrap.setAttribute('tabindex', '0');
+								dimWrap.id = 'mapDimmer'; // ne obligāti, bet noderīgi
+								
+								  // sasaistām ar mainīgo + localStorage
+								  var dimRange = dimWrap.querySelector('#mapDimmerRange');
+								  var dimValue = dimWrap.querySelector('#mapDimmerValue');
+								
+								  var stored = +(localStorage.getItem('mapDarken') || 0);
+								  mapDarken = stored / 100;        // izmanto globālo mainīgo no 2. soļa
+								  dimRange.value = stored;
+								  dimValue.textContent = stored + '%';
+								
+								  dimRange.addEventListener('input', function(e){
+								    var v = +e.target.value;       // 0..80
+								    mapDarken = v / 100;           // 0..0.8
+								    localStorage.setItem('mapDarken', v);
+								    dimValue.textContent = v + '%';
+								    drawImage();                   // pārzīmē kanvu ar jaunu tumšumu
+								  });
+							
+								function setRangeFill(el){
+								  const min = +el.min || 0, max = +el.max || 100, val = +el.value || 0;
+								  const p = (val - min) * 100 / (max - min); // 0..100
+								  el.style.setProperty('--p', p);
+								}
+								setRangeFill(dimRange);
+								dimRange.addEventListener('input', e => setRangeFill(e.target));
+								
+								
+								
+								// ⬇️ Pievieno šo — sākotnēji iestata pareizu pārklājumu (span)
+								window.__updateDimmerWidth && window.__updateDimmerWidth();
 
 
  
@@ -3539,53 +3564,52 @@ window.__updateDimmerWidth && window.__updateDimmerWidth();
 							
 							// === Auto-fit dokam (#buttonContainer .dock-shell) — ar apakšējās joslas korekciju ===
 							(function(){
- function fitDock(){
-    const bc = document.getElementById('buttonContainer');
-    if(!bc) return;
-    const shell = bc.querySelector('.dock-shell');
-    if(!shell) return;
-
-    const about = document.getElementById('about');
-    const ah = about ? (about.getBoundingClientRect().height || 0) : 0;
-
-    const isBottom   = bc.classList.contains('bottom');
-    const isVertical = bc.classList.contains('left') || bc.classList.contains('right');
-
-    /* ❗ NEKĀDUS inline bottom */
-    bc.style.removeProperty('bottom');
-
-    /* Apakšā – tikai tik, lai nepārklātos ar #about (vai 8px) */
-    if (isBottom) {
-      const gap = Math.max(8, ah + 8);
-      document.documentElement.style.setProperty('--dock-bottom', gap + 'px');
-    }
-
-    /* Mērogs – tikai samazinām, nestiepjam malas */
-    const prev = shell.style.transform;
-    shell.style.transform = 'none';
-    const natural = shell.getBoundingClientRect();
-    shell.style.transform = prev;
-
-    let maxW = window.innerWidth * 0.98;
-    let maxH = window.innerHeight * 0.94;
-    if (isVertical) maxH = Math.max(120, maxH - ah);
-
-    let scale = isVertical
-      ? Math.min(1, maxH / natural.height)
-      : Math.min(1, maxW / natural.width);
-
-    scale = Math.max(0.35, Math.min(1, scale));
-    shell.style.transform = 'scale(' + scale + ')';
-  }
-
-  window.__fitDock = fitDock;
-  const queue = () => setTimeout(fitDock, 50);
-  window.addEventListener('load', fitDock);
-  window.addEventListener('resize', queue);
-  window.addEventListener('orientationchange', queue);
-})();
-
+							 function fitDock(){
+							    const bc = document.getElementById('buttonContainer');
+							    if(!bc) return;
+							    const shell = bc.querySelector('.dock-shell');
+							    if(!shell) return;
 							
+							    const about = document.getElementById('about');
+							    const ah = about ? (about.getBoundingClientRect().height || 0) : 0;
+							
+							    const isBottom   = bc.classList.contains('bottom');
+							    const isVertical = bc.classList.contains('left') || bc.classList.contains('right');
+							
+							    /* ❗ NEKĀDUS inline bottom */
+							    bc.style.removeProperty('bottom');
+							
+							    /* Apakšā – tikai tik, lai nepārklātos ar #about (vai 8px) */
+							    if (isBottom) {
+							      const gap = Math.max(8, ah + 8);
+							      document.documentElement.style.setProperty('--dock-bottom', gap + 'px');
+							    }
+							
+							    /* Mērogs – tikai samazinām, nestiepjam malas */
+							    const prev = shell.style.transform;
+							    shell.style.transform = 'none';
+							    const natural = shell.getBoundingClientRect();
+							    shell.style.transform = prev;
+							
+							    let maxW = window.innerWidth * 0.98;
+							    let maxH = window.innerHeight * 0.94;
+							    if (isVertical) maxH = Math.max(120, maxH - ah);
+							
+							    let scale = isVertical
+							      ? Math.min(1, maxH / natural.height)
+							      : Math.min(1, maxW / natural.width);
+							
+							    scale = Math.max(0.35, Math.min(1, scale));
+							    shell.style.transform = 'scale(' + scale + ')';
+							  }
+							
+							  window.__fitDock = fitDock;
+							  const queue = () => setTimeout(fitDock, 50);
+							  window.addEventListener('load', fitDock);
+							  window.addEventListener('resize', queue);
+							  window.addEventListener('orientationchange', queue);
+							})();
+
 							
 							// 🔹 Tagad __fitDock noteikti ir definēts — pielāgo mērlogu uzreiz
 							window.__fitDock && window.__fitDock();
@@ -3593,96 +3617,92 @@ window.__updateDimmerWidth && window.__updateDimmerWidth();
 
 
 
-(function(){
-  // 1) Tavs esošais – notīra inline stilus,
-  //    lai .bottom/.left/.right CSS var stāties spēkā
-  function updateDimmerPlacement(){
-    const bc   = document.getElementById('buttonContainer');
-    const dim  = bc?.querySelector('.dock-dimmer');
-    if(!bc || !dim) return;
-
-    dim.style.gridRow = '';
-    dim.style.gridColumn = '';
-    dim.style.width = '';
-    dim.style.maxWidth = '';
-  }
-
-  // 2) Jauns – uzliek precīzu rindu “span” sānā
-  function updateDimmerSpan(){
-    const bc    = document.getElementById('buttonContainer');
-    const shell = bc?.querySelector('.dock-shell');
-    const dim   = shell?.querySelector('.dock-dimmer');
-    if(!bc || !shell || !dim) return;
-
-    // Apakšā span nav vajadzīgs
-    const side = bc.classList.contains('left') || bc.classList.contains('right');
-    if (!side) { dim.style.gridRow = ''; return; }
-
-    // Saskaitām redzamās pogas (ignorējam paslēptās)
-    const rows = Math.max(
-      1,
-      [...shell.children].filter(el => el.tagName === 'BUTTON' && el.offsetParent !== null).length
-    );
-
-    // Uzliekam precīzu span
-    dim.style.gridRow = '1 / span ' + rows;
-  }
-
-  // 3) Wrapperis – vispirms notīra, tad uzstāda span
-  function updateDimmerAll(){
-    updateDimmerPlacement();
-    updateDimmerSpan();
-  }
-
-  // Publiski un klausītāji
-  window.__updateDimmerWidth = updateDimmerAll;
-  window.addEventListener('load',  updateDimmerAll);
-  window.addEventListener('resize',updateDimmerAll);
-})();
-
-(function(){
-  // Paplašinām esošo updateri: 1) sānā nosaka "row span", 2) apakšā izmēra pogu rindas platumu
-  const prevUpdate = window.__updateDimmerWidth || function(){};
-
-  function measureBottomRowWidth(){
-    const bc = document.getElementById('buttonContainer');
-    if(!bc || !bc.classList.contains('bottom')) return;
-    const shell = bc.querySelector('.dock-shell');
-    if(!shell) return;
-
-    // paņem tikai redzamās pogas un nosaka 1. rindas kreiso/labo malu
-    const btns = [...shell.children].filter(el => el.tagName === 'BUTTON' && el.offsetParent !== null);
-    if(!btns.length) return;
-    const top0 = Math.min(...btns.map(b => b.offsetTop));
-    const firstLine = btns.filter(b => Math.abs(b.offsetTop - top0) < 2);
-    const rects = firstLine.map(b => b.getBoundingClientRect());
-    const minL = Math.min(...rects.map(r => r.left));
-    const maxR = Math.max(...rects.map(r => r.right));
-    const w = Math.round(maxR - minL);
-
-    // pierakstām CSS mainīgo uz .dock-shell
-    shell.style.setProperty('--rowW', w + 'px');
-  }
-
-  window.__updateDimmerWidth = function(){
-    prevUpdate();            // saglabā Tavu sāniskā "span" loģiku
-    measureBottomRowWidth(); // + precīzs platums apakšā
-  };
-
-  // Droši pārsienam notikumus uz jauno updateri
-  const run = () => window.__updateDimmerWidth && window.__updateDimmerWidth();
-  window.addEventListener('load', run);
-  window.addEventListener('resize', run);
-  window.addEventListener('orientationchange', run);
-
-  // palaist uzreiz
-  run();
-})();
-
-
-
-
-
+							(function(){
+							  // 1) Tavs esošais – notīra inline stilus,
+							  //    lai .bottom/.left/.right CSS var stāties spēkā
+							  function updateDimmerPlacement(){
+							    const bc   = document.getElementById('buttonContainer');
+							    const dim  = bc?.querySelector('.dock-dimmer');
+							    if(!bc || !dim) return;
+							
+							    dim.style.gridRow = '';
+							    dim.style.gridColumn = '';
+							    dim.style.width = '';
+							    dim.style.maxWidth = '';
+							  }
+							
+							  // 2) Jauns – uzliek precīzu rindu “span” sānā
+							  function updateDimmerSpan(){
+							    const bc    = document.getElementById('buttonContainer');
+							    const shell = bc?.querySelector('.dock-shell');
+							    const dim   = shell?.querySelector('.dock-dimmer');
+							    if(!bc || !shell || !dim) return;
+							
+							    // Apakšā span nav vajadzīgs
+							    const side = bc.classList.contains('left') || bc.classList.contains('right');
+							    if (!side) { dim.style.gridRow = ''; return; }
+							
+							    // Saskaitām redzamās pogas (ignorējam paslēptās)
+							    const rows = Math.max(
+							      1,
+							      [...shell.children].filter(el => el.tagName === 'BUTTON' && el.offsetParent !== null).length
+							    );
+							
+							    // Uzliekam precīzu span
+							    dim.style.gridRow = '1 / span ' + rows;
+							  }
+							
+							  // 3) Wrapperis – vispirms notīra, tad uzstāda span
+							  function updateDimmerAll(){
+							    updateDimmerPlacement();
+							    updateDimmerSpan();
+							  }
+							
+							  // Publiski un klausītāji
+							  window.__updateDimmerWidth = updateDimmerAll;
+							  window.addEventListener('load',  updateDimmerAll);
+							  window.addEventListener('resize',updateDimmerAll);
+							})();
+							
+							(function(){
+							  // Paplašinām esošo updateri: 1) sānā nosaka "row span", 2) apakšā izmēra pogu rindas platumu
+							  const prevUpdate = window.__updateDimmerWidth || function(){};
+							
+							  function measureBottomRowWidth(){
+							    const bc = document.getElementById('buttonContainer');
+							    if(!bc || !bc.classList.contains('bottom')) return;
+							    const shell = bc.querySelector('.dock-shell');
+							    if(!shell) return;
+							
+							    // paņem tikai redzamās pogas un nosaka 1. rindas kreiso/labo malu
+							    const btns = [...shell.children].filter(el => el.tagName === 'BUTTON' && el.offsetParent !== null);
+							    if(!btns.length) return;
+							    const top0 = Math.min(...btns.map(b => b.offsetTop));
+							    const firstLine = btns.filter(b => Math.abs(b.offsetTop - top0) < 2);
+							    const rects = firstLine.map(b => b.getBoundingClientRect());
+							    const minL = Math.min(...rects.map(r => r.left));
+							    const maxR = Math.max(...rects.map(r => r.right));
+							    const w = Math.round(maxR - minL);
+							
+							    // pierakstām CSS mainīgo uz .dock-shell
+							    shell.style.setProperty('--rowW', w + 'px');
+							  }
+							
+							  window.__updateDimmerWidth = function(){
+							    prevUpdate();            // saglabā Tavu sāniskā "span" loģiku
+							    measureBottomRowWidth(); // + precīzs platums apakšā
+							  };
+							
+							  // Droši pārsienam notikumus uz jauno updateri
+							  const run = () => window.__updateDimmerWidth && window.__updateDimmerWidth();
+							  window.addEventListener('load', run);
+							  window.addEventListener('resize', run);
+							  window.addEventListener('orientationchange', run);
+							
+							  // palaist uzreiz
+							  run();
+							})();
+							
 
 
 							(function () {
