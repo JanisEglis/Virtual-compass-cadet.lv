@@ -1556,139 +1556,110 @@
 							  box-shadow:0 2px 6px rgba(0,0,0,.35);
 							}
 
+/* === DIMMER skin + korekts pildījums līdz bumbiņas centram === */
 :root{
-  --dimmer-fill: #ff3b30;   /* ← TE maini pildījuma krāsu */
+  --dimmer-fill:#ff3b30; /* pildījuma krāsa */
 }
 
-
-
-/* ===== Vienots “skin” visām ierīcēm ===== */
 #buttonContainer .dock-dimmer input[type=range]{
-  -webkit-appearance:none;  /* kill default iOS/Android skins */
+  -webkit-appearance:none;
   appearance:none;
   background:transparent;
-  accent-color: var(--dock-ring); /* ja kaut kur tomēr būs fallback, lai nav zilais */
+  accent-color:var(--dock-ring);
   outline:none;
+
+  /* mainīgie pildījuma aprēķinam */
+  --fill:   var(--dimmer-fill);
+  --trackA: var(--dock1);
+  --trackB: var(--dock2);
+  --p: 0;            /* 0..100 – JS ieliek procentu SKAITLI */
+  --thumb: 24px;     /* 18px thumb + 2×3px border = 24px */
 }
 
-/* Track/Thumb – WebKit */
+/* ==== WebKit (Chrome/Safari/Android/iOS) ==== */
 #buttonContainer .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
-  height:8px;
-  border-radius:999px;
-  background:linear-gradient(180deg,var(--dock1),var(--dock2));
+  height:8px; border-radius:999px;
+  background:
+    /* pildījuma slānis līdz bumbiņas CENTRAM */
+    linear-gradient(to right, var(--fill) 0 0) no-repeat,
+    /* pats track */
+    linear-gradient(180deg,var(--trackA),var(--trackB));
+  background-size:
+    calc((var(--p) * 1%) * (100% - var(--thumb)) + var(--thumb)/2) 100%,
+    100% 100%;
   border:1px solid rgba(255,255,255,.06);
 }
 #buttonContainer .dock-dimmer input[type=range]::-webkit-slider-thumb{
   -webkit-appearance:none;
-  width:18px;height:18px;border-radius:50%;
+  width:18px; height:18px; border-radius:50%;
   background:var(--dock-icon);
   border:3px solid var(--dock-ring);
   box-shadow:0 2px 6px rgba(0,0,0,.35);
-  margin-top:-5px;  /* izlīdzina vertikāli uz track */
+  margin-top:-5px; /* centrē pret 8px track */
 }
 
-/* Track/Thumb – Firefox */
+/* ==== Firefox ==== */
 #buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
-  height:8px;border-radius:999px;
-  background:linear-gradient(180deg,var(--dock1),var(--dock2));
+  height:8px; border-radius:999px;
+  background:linear-gradient(180deg,var(--trackA),var(--trackB));
   border:1px solid rgba(255,255,255,.06);
 }
+#buttonContainer .dock-dimmer input[type=range]::-moz-range-progress{
+  height:8px; border-radius:999px;
+  background:var(--fill);
+}
 #buttonContainer .dock-dimmer input[type=range]::-moz-range-thumb{
-  width:18px;height:18px;border-radius:50%;
+  width:18px; height:18px; border-radius:50%;
   background:var(--dock-icon);
   border:3px solid var(--dock-ring);
   box-shadow:0 2px 6px rgba(0,0,0,.35);
 }
 
-/* Edge/IE (ja vajag) */
+/* ==== Vecais Edge/IE (ja vajag) ==== */
 #buttonContainer .dock-dimmer input[type=range]::-ms-track{
-  height:8px;border-color:transparent;background:transparent;color:transparent;
+  height:8px; border-color:transparent; background:transparent; color:transparent;
 }
 #buttonContainer .dock-dimmer input[type=range]::-ms-fill-lower,
 #buttonContainer .dock-dimmer input[type=range]::-ms-fill-upper{
-  background:linear-gradient(180deg,var(--dock1),var(--dock2));
+  background:linear-gradient(180deg,var(--trackA),var(--trackB));
   border:1px solid rgba(255,255,255,.06);
   border-radius:999px;
 }
+#buttonContainer .dock-dimmer input[type=range]::-ms-fill-lower{ background:var(--fill); }
 #buttonContainer .dock-dimmer input[type=range]::-ms-thumb{
-  width:18px;height:18px;border-radius:50%;
+  width:18px; height:18px; border-radius:50%;
   background:var(--dock-icon);
   border:3px solid var(--dock-ring);
   box-shadow:0 2px 6px rgba(0,0,0,.35);
 }
 
-/* ===== Vertikālās malas (planšetes/telefoni) – bez “slider-vertical” ===== */
+/* ==== Vertikālās malas (rotējam, bet skin paliek) ==== */
 #buttonContainer.left  .dock-dimmer,
 #buttonContainer.right .dock-dimmer{
-  flex-direction:column;
-  justify-content:center;
+  flex-direction:column; justify-content:center;
 }
-
-@media (pointer:coarse){ /* skārienierīces */
-  /* WebKit (iOS/Android) – griežam horizontālo slīdni par 90°,
-     saglabājot to pašu skinu */
+@media (pointer:coarse){
   #buttonContainer.left  .dock-dimmer input[type=range],
   #buttonContainer.right .dock-dimmer input[type=range]{
-    -webkit-appearance:none;  /* ← svarīgi, lai nekļūst par default vertikālo */
+    -webkit-appearance:none;
     appearance:none;
     width:28px;
     height:calc(100% - 16px);
-    writing-mode: horizontal-tb;   /* neļaujam WebKit mēģināt vertikālo */
-    transform: rotate(-90deg);
+    writing-mode:horizontal-tb;
+    transform:rotate(-90deg);
     transform-origin:center;
   }
 }
-
-/* Ja vēlies arī bez @media (t.i., vienmēr sānos vertikāli) – vari izmantot šo: */
+/* vienmēr vertikāls varianta atbalsts (ja gribi arī bez @media) */
 #buttonContainer.left  .dock-dimmer input[type=range],
 #buttonContainer.right .dock-dimmer input[type=range]{
   -webkit-appearance:none;
   appearance:none;
   width:28px;
   height:calc(100% - 16px);
-  writing-mode: bt-lr;             /* Firefox vertikālais layout */
-  transform: rotate(-90deg);       /* WebKit vertikālais layout ar custom skinu */
+  writing-mode:bt-lr;        /* Firefox */
+  transform:rotate(-90deg);  /* WebKit */
   transform-origin:center;
-}
-
-
-
-
-/* kopīgie mainīgie slīdnim */
-#buttonContainer .dock-dimmer input[type=range]{
-  --fill: var(--dimmer-fill);
-  --trackA: var(--dock1);
-  --trackB: var(--dock2);
-  --val: 0%;                 /* JS ieliks procentu vērtību */
-}
-
-/* WebKit (Chrome/Safari/Android/iOS): krāsots “pildījums” kā overlejis uz track */
-#buttonContainer .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
-  height:8px;border-radius:999px;
-  background:
-    linear-gradient(to right, var(--fill) 0 var(--val), transparent 0) no-repeat,
-    linear-gradient(180deg,var(--trackA),var(--trackB));
-  background-size: var(--val) 100%, 100% 100%;
-  border:1px solid rgba(255,255,255,.06);
-}
-
-/* Firefox: pildījums ir atsevišķs pseido-elements */
-#buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
-  height:8px;border-radius:999px;
-  background:linear-gradient(180deg,var(--trackA),var(--trackB));
-  border:1px solid rgba(255,255,255,.06);
-}
-#buttonContainer .dock-dimmer input[type=range]::-moz-range-progress{
-  height:8px;border-radius:999px;
-  background:var(--fill);
-}
-
-/* Vecais Edge/IE, ja vajag */
-#buttonContainer .dock-dimmer input[type=range]::-ms-fill-upper{
-  background:linear-gradient(180deg,var(--trackA),var(--trackB));
-}
-#buttonContainer .dock-dimmer input[type=range]::-ms-fill-lower{
-  background:var(--fill);
 }
 
 
@@ -3337,11 +3308,11 @@ dimWrap.id = 'mapDimmer'; // ne obligāti, bet noderīgi
 
 function setRangeFill(el){
   const min = +el.min || 0, max = +el.max || 100, val = +el.value || 0;
-  el.style.setProperty('--val', ((val - min) * 100 / (max - min)) + '%');
+  const p = (val - min) * 100 / (max - min); // 0..100
+  el.style.setProperty('--p', p);
 }
 setRangeFill(dimRange);
 dimRange.addEventListener('input', e => setRangeFill(e.target));
-
 
 
 
