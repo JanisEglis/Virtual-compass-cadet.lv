@@ -1399,9 +1399,9 @@
 
 
 
-/* === DIMMER (slīdnis) — izkārtojums un izmēri === */
+/* === DIMMER (slīdnis) — izkārtojums un izmēri (PATCH) === */
 
-/* Kopā lietojam GRID – tas ļauj slīdnim sānā izstiepties tieši tik augstu, cik aizņem pogas */
+/* GRID čaula */
 #buttonContainer .dock-shell{
   display:inline-grid;
   grid-column-gap:22px;
@@ -1409,7 +1409,7 @@
   align-items:center;
 }
 
-/* Apakša: pogas 1. rindā, slīdnis 2. rindā un platumā = tieši tik, cik plata ir pogu rinda */
+/* Apakša: pogas 1. rindā, slīdnis 2. rindā pa visu platumu */
 #buttonContainer.bottom .dock-shell{
   grid-auto-flow:column;
   grid-auto-columns:max-content;   /* kolonnas pēc satura (pogas) */
@@ -1422,20 +1422,19 @@
   max-width:100%;
 }
 
-/* Sāni: 2 kolonnas – slīdnis + pogas. Slīdnis stiepjas pāri VISĀ pogu kolonnas augstumā */
+/* Sāni: 2 kolonnas – slīdnis | pogas (vai otrādi) */
 #buttonContainer.left .dock-shell,
 #buttonContainer.right .dock-shell{
   display:grid;
   grid-auto-flow:row dense;          /* bez spraugām */
   grid-auto-rows:max-content;        /* katra pogas rinda pēc satura */
-  grid-template-columns:auto auto;   /* slīdnis | pogas (vai otrādi) */
+  grid-template-columns:auto auto;   /* slīdnis | pogas */
   align-items:start;
 }
 
-/* Kreiso/labo pusi samainām vietām kā prasīji — FIX: span 999, nevis -1 */
+/* Dimmera kolonna – rindu spanu iedos JS (skat. zemāk) */
 #buttonContainer.left  .dock-dimmer{
   grid-column:1;
-  grid-row:1 / span 999;   /* <-- svarīgi, lai nosegtu arī implicitās rindas */
   align-self:stretch;
 }
 #buttonContainer.left  .dock-shell > button{ grid-column:2; }
@@ -1443,11 +1442,10 @@
 #buttonContainer.right .dock-shell > button{ grid-column:1; }
 #buttonContainer.right .dock-dimmer{
   grid-column:2;
-  grid-row:1 / span 999;   /* <-- svarīgi, lai nosegtu arī implicitās rindas */
   align-self:stretch;
 }
 
-/* Dimmera “kaste” ar to pašu stilu kā dokam */
+/* Dimmera “kaste” */
 #buttonContainer .dock-dimmer{
   box-sizing:border-box;
   display:flex;
@@ -1466,33 +1464,30 @@
   min-height:0;               /* Safari 100% augstuma fix */
 }
 
-/* Vertikālajās malās iekšā liekam kolonnu, lai “range” var izstiepties */
+/* Vertikālajās malās range vertikāls */
 #buttonContainer.left  .dock-dimmer,
 #buttonContainer.right .dock-dimmer{
   flex-direction:column;
   justify-content:center;
 }
 
-/* Slēpjam iekšējos uzrakstus (vērtību/label) – tooltips rādīsies ārpusē */
+/* Slēpjam iekšējos uzrakstus */
 #buttonContainer .dock-dimmer label,
 #buttonContainer .dock-dimmer .dimmer-label,
-#buttonContainer .dock-dimmer .value{
-  display:none !important;
-}
+#buttonContainer .dock-dimmer .value{ display:none !important; }
 
 /* Range: apakšā – 100% platumā */
 #buttonContainer .dock-dimmer input[type=range]{ width:100%; max-width:100%; }
 
-/* Range: sānos – vertikāls un vizuāli tik garš, cik augsta ir pogu kolonna */
+/* Range: sānos – vertikāls un tik garš, cik augsta ir kolonna (to nodrošinās align-self:stretch) */
 #buttonContainer.left  .dock-dimmer input[type=range],
 #buttonContainer.right .dock-dimmer input[type=range]{
-  height:calc(100% - 16px);  /* 8px top + 8px bottom padding */
+  height:calc(100% - 16px);
   min-height:0;
   width:28px;
   writing-mode:bt-lr;
   -webkit-appearance:slider-vertical;
 }
-
 @supports not (-webkit-appearance: slider-vertical){
   #buttonContainer.left  .dock-dimmer input[type=range],
   #buttonContainer.right .dock-dimmer input[type=range]{
@@ -1528,6 +1523,7 @@
   border:3px solid var(--dock-ring);
   box-shadow:0 2px 6px rgba(0,0,0,.35);
 }
+
 
 
 						</style>
@@ -3398,25 +3394,50 @@ window.__updateDimmerWidth && window.__updateDimmerWidth();
 
 
 (function(){
+  // 1) Tavs esošais – notīra inline stilus,
+  //    lai .bottom/.left/.right CSS var stāties spēkā
   function updateDimmerPlacement(){
     const bc   = document.getElementById('buttonContainer');
     const dim  = bc?.querySelector('.dock-dimmer');
     if(!bc || !dim) return;
 
-    // Notīrām visus iepriekš ieliktos inline parametrus,
-    // lai strādā CSS noteikumi atkarībā no .bottom/.left/.right
     dim.style.gridRow = '';
     dim.style.gridColumn = '';
     dim.style.width = '';
     dim.style.maxWidth = '';
   }
 
-  // publiski
-  window.__updateDimmerWidth = updateDimmerPlacement;
+  // 2) Jauns – uzliek precīzu rindu “span” sānā
+  function updateDimmerSpan(){
+    const bc    = document.getElementById('buttonContainer');
+    const shell = bc?.querySelector('.dock-shell');
+    const dim   = shell?.querySelector('.dock-dimmer');
+    if(!bc || !shell || !dim) return;
 
-  // palaidam sākumā un uz izmēru izmaiņām
-  window.addEventListener('load', updateDimmerPlacement);
-  window.addEventListener('resize', updateDimmerPlacement);
+    // Apakšā span nav vajadzīgs
+    const side = bc.classList.contains('left') || bc.classList.contains('right');
+    if (!side) { dim.style.gridRow = ''; return; }
+
+    // Saskaitām redzamās pogas (ignorējam paslēptās)
+    const rows = Math.max(
+      1,
+      [...shell.children].filter(el => el.tagName === 'BUTTON' && el.offsetParent !== null).length
+    );
+
+    // Uzliekam precīzu span
+    dim.style.gridRow = `1 / span ${rows}`;
+  }
+
+  // 3) Wrapperis – vispirms notīra, tad uzstāda span
+  function updateDimmerAll(){
+    updateDimmerPlacement();
+    updateDimmerSpan();
+  }
+
+  // Publiski un klausītāji
+  window.__updateDimmerWidth = updateDimmerAll;
+  window.addEventListener('load',  updateDimmerAll);
+  window.addEventListener('resize',updateDimmerAll);
 })();
 
 
