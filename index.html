@@ -1381,10 +1381,10 @@
 							  border-radius:10px 0 0 10px;
 							}
 							
-							/* Apakšā atvērts – pārspēj inline style="bottom: 43px" */
-							.button-container.bottom{
-							  bottom: var(--bottom-offset) !important;
+							.button-container.bottom {
+							  bottom: calc(var(--vh) * 5); /* optional fallback */
 							}
+
 							
 							/* Paslēpšana ar “atvilkni”: atstāj redzamu tieši expose-* */
 							#buttonContainer.docked.bottom{
