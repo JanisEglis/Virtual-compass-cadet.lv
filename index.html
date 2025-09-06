@@ -2503,6 +2503,253 @@ function startApp(){
 
 
 
+/* === ONLINE KARTES MODULIS (drop-in) — nekonfliktē ar pārējo === */
+(function(){
+  'use strict';
+  var d = document, w = window;
+
+  var mapDiv   = d.getElementById('onlineMap');
+  var mapDim   = d.getElementById('onlineMapDim');
+  var btn      = d.getElementById('toggleOnlineMap');
+  var canvas   = d.getElementById('mapCanvas');
+  var resizeH  = d.getElementById('resizeHandle');
+  var dimRange = d.getElementById('mapDimmerRange');
+
+  if (!mapDiv || !mapDim || !canvas) return;
+
+  var map = null, inited = false;
+
+  // — Popup CSS (bez backtickiem)
+  (function(){
+    var css = [
+      '.leaflet-container .coord-popup{min-width:320px;padding:10px 12px;}',
+      '.leaflet-container .coord-row{display:flex;align-items:center;gap:8px;margin:6px 0;color:#fff;font:14px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}',
+      '.leaflet-container .coord-row .label{color:#cfd6e4;opacity:.9;min-width:72px;}',
+      '.leaflet-container .coord-row .value{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:#fff;}',
+      '.leaflet-container .copy-btn{flex:0 0 auto;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;background:linear-gradient(180deg,#1b1f25,#490000a8);border:1px solid rgba(255,255,255,.06);box-shadow:0 6px 16px rgba(0,0,0,.35);color:#eef2f7;cursor:pointer;transition:transform .12s ease;}',
+      '.leaflet-container .copy-btn:hover{transform:scale(1.06);} .leaflet-container .copy-btn:active{transform:scale(.95);}',
+      '.leaflet-container .copy-btn svg{width:18px;height:18px;display:block;}',
+      '.leaflet-container .copy-btn.copied{background:#1f7a36;border-color:#2bd169;}',
+      '.leaflet-container .copied-msg{margin-left:4px;font-size:12px;color:#2bd169;opacity:0;transition:opacity .2s;}',
+      '.leaflet-container .copied-msg.show{opacity:1;}',
+      '.leaflet-popup-content-wrapper{background:linear-gradient(180deg,#1b1f25,#2a0f0faa);color:#fff;border-radius:16px;border:1px solid rgba(255,255,255,.06);box-shadow:0 12px 28px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.35);}',
+      '.leaflet-popup-tip{background:linear-gradient(180deg,#1b1f25,#2a0f0faa);border:1px solid rgba(255,255,255,.06);}',
+      '.leaflet-control{z-index:500;}'
+    ].join('\n');
+    var el = d.createElement('style');
+    el.textContent = css;
+    d.head.appendChild(el);
+  })();
+
+  /* === MGRS (8 cip.) — lokāls nosaukumu prefikss, lai nesakristu === */
+  var OM_a=6378137.0, OM_f=1/298.257223563, OM_k0=0.9996;
+  var OM_e2 = OM_f*(2-OM_f), OM_ep2 = OM_e2/(1-OM_e2);
+  function OM_rad(x){ return x*Math.PI/180; }
+  function OM_zone(lon){ return Math.floor((lon+180)/6)+1; }
+  function OM_zoneSpec(lat,lon,z){
+    if (lat>=56 && lat<64 && lon>=3 && lon<12) return 32;
+    if (lat>=72 && lat<84){
+      if (lon>=0 && lon<9) return 31;
+      if (lon>=9 && lon<21) return 33;
+      if (lon>=21 && lon<33) return 35;
+      if (lon>=33 && lon<42) return 37;
+    }
+    return z;
+  }
+  function OM_band(lat){
+    var bands='CDEFGHJKLMNPQRSTUVWX';
+    var i=Math.floor((lat+80)/8);
+    if (i<0) return 'C'; if (i>19) return 'X'; return bands[i];
+  }
+  function OM_ll2utm(lat,lon){
+    var z=OM_zone(lon); z=OM_zoneSpec(lat,lon,z);
+    var phi=OM_rad(lat), lam=OM_rad(lon), lam0=OM_rad((z-1)*6-180+3);
+    var sin=Math.sin, cos=Math.cos, tan=Math.tan;
+    var N=OM_a/Math.sqrt(1-OM_e2*sin(phi)*sin(phi));
+    var T=tan(phi)*tan(phi), C=OM_ep2*cos(phi)*cos(phi), A=cos(phi)*(lam-lam0);
+    var M=OM_a*((1-OM_e2/4-3*OM_e2*OM_e2/64-5*OM_e2*OM_e2*OM_e2/256)*phi
+      -(3*OM_e2/8+3*OM_e2*OM_e2/32+45*OM_e2*OM_e2*OM_e2/1024)*sin(2*phi)
+      +(15*OM_e2*OM_e2/256+45*OM_e2*OM_e2*OM_e2/1024)*sin(4*phi)
+      -(35*OM_e2*OM_e2*OM_e2/3072)*sin(6*phi));
+    var easting = OM_k0*N*(A+(1-T+C)*Math.pow(A,3)/6+(5-18*T+T*T+72*C-58*OM_ep2)*Math.pow(A,5)/120)+500000.0;
+    var northing= OM_k0*(M+N*tan(phi)*(A*A/2+(5-T+9*C+4*C*C)*Math.pow(A,4)/24+(61-58*T+T*T+600*C-330*OM_ep2)*Math.pow(A,6)/720));
+    var hemi = (lat>=0)?'N':'S'; if (lat<0) northing+=10000000.0;
+    return {zone:z, hemi:hemi, easting:easting, northing:northing, band:OM_band(lat)};
+  }
+  var OM_COL=['A','J','S','A','J','S'], OM_ROW=['A','F','A','F','A','F'];
+  function OM_set(z){ return (z-1)%6; }
+  function OM_step(ch,steps,isRow){
+    function skip(c){ return c==='I'||c==='O'; }
+    var code=ch.charCodeAt(0);
+    for(var i=0;i<steps;i++){
+      code++; var s=String.fromCharCode(code); if (skip(s)) code++;
+      if (isRow){ if (code>'V'.charCodeAt(0)) code='A'.charCodeAt(0); }
+      else { if (code>'Z'.charCodeAt(0)) code='A'.charCodeAt(0); }
+    }
+    return String.fromCharCode(code);
+  }
+  function OM_100k(e,n,z){
+    var set=OM_set(z), eI=Math.floor(e/100000), nI=Math.floor(n/100000);
+    var col=OM_step(OM_COL[set], eI-1, false);
+    var row=OM_step(OM_ROW[set], nI%20, true);
+    return col+row;
+  }
+  function OM_pad(n,sz){ n=String(n); while(n.length<sz) n='0'+n; return n; }
+  function OM_toMGRS8(lat,lon){
+    var u=OM_ll2utm(lat,lon), grid=OM_100k(u.easting,u.northing,u.zone);
+    var eR=Math.floor(u.easting%100000), nR=Math.floor(u.northing%100000);
+    return String(u.zone)+u.band+' '+grid+' '+OM_pad(Math.floor(eR/10),4)+' '+OM_pad(Math.floor(nR/10),4);
+  }
+
+  function initMap(){
+    if (inited) return true;
+    if (!w.L){ console.warn('Leaflet nav ielādēts'); return false; }
+
+    map = L.map(mapDiv, {zoomControl:true, attributionControl:true});
+    var osm  = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'© OpenStreetMap'}).addTo(map);
+    var topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {maxZoom:17, attribution:'© OpenTopoMap'});
+    var esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, attribution:'Tiles © Esri'});
+    var hot  = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {maxZoom:20, attribution:'© OSM, HOT'});
+    var cyclo= L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {maxZoom:20, attribution:'© OSM, CyclOSM'});
+
+    L.control.layers({'OSM':osm,'OpenTopoMap':topo,'Esri satelīts':esri,'OSM HOT':hot,'CyclOSM':cyclo}, {}, {collapsed:true, position:'topright'}).addTo(map);
+    map.setView([56.9496, 24.1052], 13);
+
+    L.control.scale({imperial:false, metric:true, maxWidth:200}).addTo(map);
+
+    var ratioCtl = L.control({position:'bottomleft'});
+    ratioCtl.onAdd = function(){
+      var div=L.DomUtil.create('div','leaflet-control-attribution');
+      div.style.background='rgba(0,0,0,.5)'; div.style.color='#fff';
+      div.style.padding='2px 6px'; div.style.borderRadius='4px'; div.style.font='12px/1.2 system-ui,sans-serif'; div.style.marginTop='4px';
+      div.id='scaleRatioCtl'; div.textContent='Mērogs: —'; return div;
+    };
+    ratioCtl.addTo(map);
+
+    function updScale(){
+      var c=map.getCenter(), z=map.getZoom();
+      var mpp=156543.03392*Math.cos(c.lat*Math.PI/180)/Math.pow(2,z);
+      var sc=Math.round(mpp/0.00028);
+      var el=d.getElementById('scaleRatioCtl'); if (el) el.textContent='Mērogs: 1:'+sc.toLocaleString('lv-LV');
+    }
+    map.on('moveend zoomend', updScale); updScale();
+
+    var posCtl = L.control({position:'bottomleft'});
+    posCtl.onAdd = function(){
+      var div=L.DomUtil.create('div','leaflet-control-attribution');
+      div.style.background='rgba(0,0,0,.5)'; div.style.color='#fff'; div.style.padding='2px 6px';
+      div.style.borderRadius='4px'; div.style.font='12px/1.2 system-ui,sans-serif'; div.style.marginTop='4px'; div.style.cursor='pointer';
+      div.id='mousePosCtl'; div.title='Noklikšķini, lai kopētu MGRS'; div.textContent='Lat,Lng: —';
+      div.addEventListener('click', function(){ var v=div.getAttribute('data-mgrs')||''; if (v && navigator.clipboard) navigator.clipboard.writeText(v); });
+      return div;
+    };
+    posCtl.addTo(map);
+
+    map.on('mousemove', function(e){
+      var lat=e.latlng.lat, lon=e.latlng.lng;
+      var mgrs=OM_toMGRS8(lat,lon);
+      var s=lat.toFixed(6)+', '+lon.toFixed(6)+'  |  '+mgrs;
+      var el=d.getElementById('mousePosCtl'); if (el){ el.textContent=s; el.setAttribute('data-mgrs', mgrs); }
+    });
+
+    map.on('contextmenu', function(e){
+      var lat=e.latlng.lat, lon=e.latlng.lng;
+      var ll=lat.toFixed(6)+', '+lon.toFixed(6);
+      var mgrs=OM_toMGRS8(lat,lon);
+      var svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="10" height="12" rx="2"></rect><rect x="5" y="3" width="10" height="12" rx="2"></rect></svg>';
+      var html =
+        '<div class="coord-popup">'+
+          '<div class="coord-row"><span class="label">Lat,Lng</span><span class="value" id="llVal">'+ll+
+          '</span><button class="copy-btn" id="copyLL" title="Kopēt Lat,Lng" aria-label="Kopēt Lat,Lng">'+svg+
+          '</button><span class="copied-msg" id="copiedLL">Nokopēts!</span></div>'+
+          '<div class="coord-row"><span class="label">MGRS</span><span class="value" id="mgrsVal">'+mgrs+
+          '</span><button class="copy-btn" id="copyMGRS" title="Kopēt MGRS" aria-label="Kopēt MGRS">'+svg+
+          '</button><span class="copied-msg" id="copiedMGRS">Nokopēts!</span></div>'+
+        '</div>';
+      L.popup({maxWidth:480}).setLatLng(e.latlng).setContent(html).openOn(map);
+      setTimeout(function(){
+        function bind(btnId, txtId, msgId){
+          var b=d.getElementById(btnId), t=d.getElementById(txtId), m=d.getElementById(msgId);
+          if(!b||!t) return;
+          b.addEventListener('click', function(){
+            if (navigator.clipboard) navigator.clipboard.writeText(t.textContent||'');
+            b.classList.add('copied'); if (m) m.classList.add('show');
+            setTimeout(function(){ b.classList.remove('copied'); if (m) m.classList.remove('show'); }, 2000);
+          });
+        }
+        bind('copyLL','llVal','copiedLL');
+        bind('copyMGRS','mgrsVal','copiedMGRS');
+      },0);
+    });
+
+    inited = true;
+    return true;
+  }
+
+  function syncDimOverlay(){
+    if (!dimRange) return;
+    var v = +dimRange.value || 0;  // 0..80
+    var a = Math.min(0.8, Math.max(0, v/100));
+    mapDim.style.background = 'rgba(0,0,0,'+a+')';
+  }
+
+  function showOnlineMap(){
+    mapDiv.style.display='block';
+    if (!mapDiv.offsetWidth || !mapDiv.offsetHeight){
+      var p=mapDiv.parentElement;
+      mapDiv.style.width = ((p && p.clientWidth)  || w.innerWidth)  + 'px';
+      mapDiv.style.height= ((p && p.clientHeight) || w.innerHeight) + 'px';
+    }
+    mapDim.style.display='block';
+    canvas.style.display='none';
+    if (resizeH) resizeH.style.display='none';
+
+    if (!initMap()){
+      mapDiv.style.display='none';
+      mapDim.style.display='none';
+      canvas.style.display='block';
+      if (resizeH && w.img && w.img.src) resizeH.style.display='block';
+      localStorage.setItem('onlineMapActive','0');
+      alert('Leaflet nav ielādējies — tiešsaistes karte izslēgta.');
+      return;
+    }
+    setTimeout(function(){ if(map) map.invalidateSize(true); }, 0);
+    setTimeout(function(){ if(map) map.invalidateSize(true); }, 100);
+
+    if (btn) btn.classList.add('active');
+    localStorage.setItem('onlineMapActive','1');
+
+    syncDimOverlay();
+    if (w.__updateDimmerWidth) w.__updateDimmerWidth();
+    if (w.__fitDock) w.__fitDock();
+  }
+
+  function hideOnlineMap(){
+    mapDiv.style.display='none';
+    mapDim.style.display='none';
+    canvas.style.display='block';
+    if (resizeH && w.img && w.img.src) resizeH.style.display='block';
+    if (btn) btn.classList.remove('active');
+    localStorage.setItem('onlineMapActive','0');
+    if (w.__updateDimmerWidth) w.__updateDimmerWidth();
+    if (w.__fitDock) w.__fitDock();
+  }
+
+  if (btn){
+    btn.addEventListener('click', function(){
+      var on = mapDiv.style.display==='block';
+      if (on) hideOnlineMap(); else showOnlineMap();
+    });
+  }
+
+  if (localStorage.getItem('onlineMapActive') === '1'){ showOnlineMap(); }
+  w.addEventListener('resize', function(){ if(map) map.invalidateSize(); });
+
+  if (dimRange){
+    dimRange.addEventListener('input', syncDimOverlay);
+    syncDimOverlay();
+  }
+})();
 
 
 
