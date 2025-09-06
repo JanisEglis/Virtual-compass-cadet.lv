@@ -1697,15 +1697,20 @@
 
 
 /* Online kartes konteiners zem kompasa (virs fona) */
-/* Tiešsaistes karte */
-#onlineMap{
-  position:absolute;
-  inset:0;
-  width:100%; height:100%;
-  display:none;
-  z-index: 200;          /* pašai kartei pietiek */
-  background:#000;
+/* SAFE AREAS Leaflet kontrolei */
+#onlineMap { 
+  --map-top-safe: 0px;                 /* tiks rēķināts ar JS */
+  --map-bottom-safe: var(--dock-bottom, 8px); /* jau rēķini ar __fitDock */
 }
+#onlineMap .leaflet-top    { top: var(--map-top-safe); }
+#onlineMap .leaflet-bottom { bottom: var(--map-bottom-safe); }
+
+/* drošībai nedaudz iekšmala un z-indekss */
+#onlineMap .leaflet-right { right: 6px; }
+#onlineMap .leaflet-left  { left:  6px; }
+#onlineMap .leaflet-control { z-index: 500; }
+#onlineMap .leaflet-popup   { z-index: 600; }
+
 
 /* Tumšošanas pārklājums virs kartes, bet zem kontroles/popup */
 #onlineMapDim{
