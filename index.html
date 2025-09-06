@@ -1690,13 +1690,36 @@
     transform-origin: center !important;
   }
 
-  /* Apakšā paliek horizontāls, bez rotācijas un ar pilnu platumu */
+/* APakšā – nolīdzinām visu, kas “pielipa” no sāniskā režīma */
+  #buttonContainer.bottom .dock-dimmer{
+    /* atjauno kompaktu kasti */
+    padding-block: var(--rng-pad-bottom, 4px) !important;
+    padding-inline: 10px !important;
+    align-items: center !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important; /* lai 18px īkšķis nediktētu kastes augstumu */
+  }
+
   #buttonContainer.bottom .dock-dimmer input[type=range]{
+    /* skaidri atpakaļ uz horizontālo, bez rotācijām */
     -moz-appearance: none !important;
     writing-mode: horizontal-tb !important;
-    inline-size: 100% !important;
-    block-size: var(--rng-track, 8px) !important;
     transform: none !important;
+
+    /* plāna sliede */
+    inline-size: 100% !important;
+    block-size: var(--rng-track-bottom, 6px) !important;
+    height: var(--rng-track-bottom, 6px) !important; /* drošībai */
+
+    /* noņemam jebkādas “atlikušās” atstarpes */
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* pašas trases augstums FF */
+  #buttonContainer.bottom .dock-dimmer input[type=range]::-moz-range-track{
+    height: var(--rng-track-bottom, 6px) !important;
   }
 }
 
