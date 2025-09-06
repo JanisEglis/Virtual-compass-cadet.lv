@@ -145,7 +145,17 @@
 								}
 							}
 
-						
+						.button-container.bottom {
+								position: fixed;
+								bottom: calc(var(--vh) * 6); /* Koriģēts, lai vienmēr būtu 5% no faktiskā viewport */
+								display: flex;
+								gap: 1vw;
+								justify-content: center;
+								width: 100%;
+								z-index: 3;
+								pointer-events: none;
+								transition: all 0.20s ease-in-out;
+							}
 
 							.button-container.left {
 								position: fixed;
