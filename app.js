@@ -441,6 +441,87 @@ function setDarkness(percent){
 
   let map, inited = false;
 
+
+
+/* === SAFE AREAS kalkulācija kartes kontrolēm (augša/apakša) === */
+(function(){
+  // pielāgo šeit sarakstu ar Taviem TOP elementiem, kas aizņem vietu virs kartes
+  const topSelectors = [
+    '#fullscreenMessage:not(.fs-message-hidden)',
+    '.position-selector:not(.hidden)',
+    '.position-selector-left:not(.hidden-left)'
+  ];
+
+  // pielāgo šeit BOTTOM elementus, kas paceļ apakšu (jau ņem vērā #about caur --dock-bottom)
+  const bottomSelectors = [
+    '#iframeContainerAbout',
+    '#iframeContainerQR'
+  ];
+
+  function visibleRectBottom(el){
+    const st = getComputedStyle(el);
+    if (st.display === 'none' || st.visibility === 'hidden' || el.offsetParent === null) return 0;
+    const r = el.getBoundingClientRect();
+    return r.height > 1 ? r.bottom : 0;
+  }
+
+  function getTopSafePx(){
+    // max apakšmala no visiem top elementiem
+    let maxBottom = 0;
+    topSelectors.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => { maxBottom = Math.max(maxBottom, visibleRectBottom(el)); });
+    });
+    return Math.round(maxBottom); // px
+  }
+
+  function getBottomSafePx(){
+    // startējam ar __fitDock ielikto apakšu (—dock-bottom)
+    const css = getComputedStyle(document.documentElement);
+    let base = parseFloat(css.getPropertyValue('--dock-bottom')) || 8;
+
+    // + jebkuri atvērtie apakšējie overlaji
+    bottomSelectors.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        const st = getComputedStyle(el);
+        if (st.display === 'none' || st.visibility === 'hidden') return;
+        const r = el.getBoundingClientRect();
+        if (r.height > 1){
+          const gap = Math.max(8, Math.round(window.innerHeight - r.top + 8));
+          base = Math.max(base, gap);
+        }
+      });
+    });
+    return base; // px
+  }
+
+  function updateMapSafeAreas(){
+    const topPx    = getTopSafePx();
+    const bottomPx = getBottomSafePx();
+    document.documentElement.style.setProperty('--map-top-safe',    topPx + 'px');
+    document.documentElement.style.setProperty('--map-bottom-safe', bottomPx + 'px');
+
+    // pārrēķini Leaflet iekšējo izkārtojumu
+    try { map && map.invalidateSize(true); } catch(e){}
+  }
+
+  // padari pieejamu
+  window.__updateMapSafeAreas = updateMapSafeAreas;
+
+  // sinhronizē uzreiz un uz izmēru/virtuālā viewport izmaiņām
+  const call = () => setTimeout(updateMapSafeAreas, 0);
+  window.addEventListener('load', call);
+  window.addEventListener('resize', call);
+  window.addEventListener('orientationchange', call);
+  if (window.visualViewport){
+    window.visualViewport.addEventListener('resize', call);
+    window.visualViewport.addEventListener('scroll', call);
+  }
+})();
+
+
+
+	
+
   /* ---------- POPUP STILS (pielāgo “dock-shell” vizuālam) ---------- */
   (function injectPopupCSS(){
     const css = `
