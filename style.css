@@ -1696,21 +1696,47 @@
 
 
 
-/* Online kartes konteiners zem kompasa (virs fona) */
-/* Online kartes rāmis starp drošajām zonām */
+/* ====== Mainīgie ====== */
+/* JS (__updateMapSafeAreas) uzraksta --map-top-safe / --map-bottom-safe (px) */
+:root{
+  --map-top-safe: 0px;
+  --map-bottom-safe: 0px;
+
+  /* papildus OS/iOS safe-area */
+  --map-top-gap:    calc(var(--map-top-safe) + env(safe-area-inset-top));
+  --map-bottom-gap: calc(var(--map-bottom-safe) + env(safe-area-inset-bottom));
+
+  /* Leaflet kontroļu atstatumi no paša #onlineMap iekšējām malām */
+  --leaflet-top-offset: 50px; /* ja vajag – nomaini uz citu */
+  --leaflet-bottom-offset: 10px; /* ← tavais “vajag 10px” */
+}
+
+/* vecāks iOS (constant()) */
+@supports (bottom: constant(safe-area-inset-bottom)) {
+  :root{
+    --map-top-gap:    calc(var(--map-top-safe) + constant(safe-area-inset-top));
+    --map-bottom-gap: calc(var(--map-bottom-safe) + constant(safe-area-inset-bottom));
+  }
+}
+
+/* ====== Online kartes rāmis starp drošajām zonām ====== */
 #onlineMap,
 #onlineMapDim{
   position: fixed;
   left: 0;
   right: 0;
-  top: var(--map-top-gap, 0px);
-  bottom: var(--map-bottom-gap, 0px);
+  top: var(--map-top-gap);
+  bottom: var(--map-bottom-gap);
 }
-#onlineMap .leaflet-bottom { bottom: 10px; }
-/* pārklājums lai nenoķertu peles/skārienu */
+
+/* Kontroles iekš #onlineMap – cik tālu no malas */
+#onlineMap .leaflet-top    { top:    var(--leaflet-top-offset); }
+#onlineMap .leaflet-bottom { bottom: var(--leaflet-bottom-offset); }
+
+/* Pārklājums, lai nenoķertu klikus */
 #onlineMapDim{ pointer-events: none; }
 
-/* Kontroles paliek virs flīzēm */
+/* Kontroles/popup virs flīzēm */
 #onlineMap .leaflet-control { z-index: 500; }
 #onlineMap .leaflet-popup   { z-index: 600; }
 /* Lai inline SVG ikonām būtu tāds pats “fit” kā <img> */
