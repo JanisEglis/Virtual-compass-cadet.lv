@@ -451,7 +451,7 @@ function setDarkness(percent){
     '.position-selector:not(.hidden)',
     '.position-selector-left:not(.hidden-left)'
 	'#toggleInstruction',   // ⟵ jaunais
-    '#toggleMaterials'      // ⟵ jaunais
+    '#toggleMaterials',     // ⟵ jaunais
   ];
 
 
@@ -583,8 +583,8 @@ function setDarkness(percent){
 
       /* lai slāņu kontrole noteikti ir redzama virs kartes */
       .leaflet-control{ z-index: 500; }
-	  /* nolaižam vadības par 50px un paceļam z-index */
-#onlineMap .leaflet-top { top: 50px; }
+#onlineMap .leaflet-top    { top:    calc(var(--map-top-safe, 0px) + 10px); }
+#onlineMap .leaflet-bottom { bottom: calc(var(--map-bottom-safe, 0px) + 10px); }
 #onlineMap .leaflet-control { z-index: 500; }
 #onlineMap .leaflet-popup   { z-index: 600; }
     `;
