@@ -1777,13 +1777,22 @@
 
 /* Online kartes konteiners zem kompasa (virs fona) */
 #onlineMap{
-  position:absolute; inset:0; display:none; z-index:1;
+  position:absolute;
+  top:0; right:0; bottom:0; left:0;
+  width:100%; height:100%;
+  display:none;
+  z-index:1;
 }
 
 /* Tumšošanas pārklājums tiešsaistes kartei (sinhronizēs ar Tavu slīdni) */
 #onlineMapDim{
-  position:absolute; inset:0; display:none; z-index:2; pointer-events:none;
-  background: rgba(0,0,0,0); /* tiks mainīts ar slīdni */
+  position:absolute;
+  top:0; right:0; bottom:0; left:0;
+  width:100%; height:100%;
+  display:none;
+  z-index:2;
+  pointer-events:none;
+  background: rgba(0,0,0,0);
 }
 
 /* Lai inline SVG ikonām būtu tāds pats “fit” kā <img> */
@@ -2485,14 +2494,15 @@
   const btn      = document.getElementById('toggleOnlineMap');
   const canvas   = document.getElementById('mapCanvas');
   const resizeH  = document.getElementById('resizeHandle');
-  const dimRange = document.getElementById('mapDimmerRange'); // Tavs slīdnis
+  const dimRange = document.getElementById('mapDimmerRange'); // slīdnis (var būt vēl nav)
 
-  let map, osm, topo;
+  let map, osm, topo, inited = false;
 
-  function ensureMap(){
-    if (map) return;
-   if (!window.L) { setTimeout(ensureMap, 60); return; } // gaidi līdz Leaflet ielādējas
-  map = L.map(mapDiv, { zoomControl:true, attributionControl:true });
+  function initMap(){
+    if (inited) return;
+    if (!window.L) { console.warn('Leaflet vēl nav ielādējies'); return; }
+
+    map = L.map(mapDiv, { zoomControl:true, attributionControl:true });
 
     osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -2506,10 +2516,9 @@
 
     osm.addTo(map);
     L.control.layers({ 'OSM': osm, 'OpenTopoMap': topo }, {}).addTo(map);
-
-    // Noklusējuma skats – Rīga
     map.setView([56.9496, 24.1052], 13);
-    requestAnimationFrame(()=> map.invalidateSize());
+
+    inited = true;
   }
 
   function syncDimOverlay(){
@@ -2519,49 +2528,65 @@
     mapDim.style.background = 'rgba(0,0,0,' + a + ')';
   }
 
-  function setOnlineMapActive(on){
-    if (on){
-      ensureMap();
-      mapDiv.style.display = 'block';
-      mapDim.style.display = 'block';
-      canvas.style.display = 'none';
-      if (resizeH) resizeH.style.display = 'none';
-      btn.classList.add('active');
-      localStorage.setItem('onlineMapActive','1');
-      setTimeout(()=> map && map.invalidateSize(), 60);
-    } else {
-      mapDiv.style.display = 'none';
-      mapDim.style.display = 'none';
-      canvas.style.display = 'block';
-      if (resizeH && (typeof img !== 'undefined') && img && img.src) resizeH.style.display = 'block';
-      btn.classList.remove('active');
-      localStorage.setItem('onlineMapActive','0');
-    }
-    // saglabā Tava doka izkārtojumu
+  function showOnlineMap(){
+    // 1) Parādi konteineru
+    mapDiv.style.display = 'block';
+    mapDim.style.display = 'block';
+    canvas.style.display = 'none';
+    if (resizeH) resizeH.style.display = 'none';
+
+    // 2) Inicializē Leaflet tikai tagad (kad konteineram ir izmērs)
+    initMap();
+
+    // 3) Drošībai iedod dažus invalidateSize (reizēm UI ir vēl animācijā)
+    requestAnimationFrame(()=> map && map.invalidateSize(true));
+    setTimeout(()=> map && map.invalidateSize(true), 100);
+
+    btn.classList.add('active');
+    localStorage.setItem('onlineMapActive','1');
+
+    // ja slīdnis jau ir, sinhronizē tumšošanu
+    syncDimOverlay();
+
+    // atjauno doka izmēru
     window.__updateDimmerWidth && window.__updateDimmerWidth();
     window.__fitDock && window.__fitDock();
   }
 
-  // Poga
+  function hideOnlineMap(){
+    mapDiv.style.display = 'none';
+    mapDim.style.display = 'none';
+    canvas.style.display = 'block';
+    if (resizeH && (typeof img !== 'undefined') && img && img.src) resizeH.style.display = 'block';
+
+    btn.classList.remove('active');
+    localStorage.setItem('onlineMapActive','0');
+
+    window.__updateDimmerWidth && window.__updateDimmerWidth();
+    window.__fitDock && window.__fitDock();
+  }
+
   btn && btn.addEventListener('click', () => {
     const isOn = mapDiv.style.display === 'block';
-    setOnlineMapActive(!isOn);
+    if (isOn) hideOnlineMap();
+    else showOnlineMap();
   });
 
   // Atjauno stāvokli no localStorage
   if (localStorage.getItem('onlineMapActive') === '1'){
-    setOnlineMapActive(true);
+    showOnlineMap();
   }
 
   // Pārizmērs
   window.addEventListener('resize', ()=> map && map.invalidateSize());
 
-  // Tumšošanas slīdņa sinhronizācija ar tiešsaistes karti
+  // Tumšošanas slīdnis var parādīties vēlāk — ja eksistē, savieno
   if (dimRange){
     dimRange.addEventListener('input', syncDimOverlay);
     syncDimOverlay();
   }
 })();
+
 
 
 
