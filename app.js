@@ -776,6 +776,108 @@ function utmToLL(E, N, zone, hemi){
     };
 
 
+
+
+
+
+
+
+
+
+// === Mēroga izvēlne (1:10k..1:100k) ===
+const SCALE_OPTIONS = [10000, 25000, 50000, 75000, 100000];
+
+// palīdzfunkcijas: aktuālais mērogs un nepieciešamais zoom izvēlētam mērogam
+function getCurrentScale(){
+  const c   = map.getCenter(), z = map.getZoom();
+  const mpp = 156543.03392 * Math.cos(c.lat*Math.PI/180) / Math.pow(2, z);
+  return Math.round(mpp / 0.00028); // “1:xxxx”
+}
+function zoomForScale(scale){
+  const lat = map.getCenter().lat * Math.PI/180;
+  const mppTarget = scale * 0.00028; // m/pixel pie 0.28mm pikseļa
+  return Math.log2(156543.03392 * Math.cos(lat) / mppTarget);
+}
+
+// pašas kontroles UI
+const scalePickCtl = L.control({position:'bottomleft'});
+scalePickCtl.onAdd = function(){
+  const wrap = L.DomUtil.create('div', 'leaflet-control-attribution');
+  Object.assign(wrap.style, {
+    background:'rgba(0,0,0,.5)', color:'#fff', padding:'4px 6px',
+    borderRadius:'4px', font:'12px/1.2 system-ui, sans-serif', marginTop:'4px'
+  });
+  wrap.title = 'Izvēlies mērogu';
+
+  const label = document.createElement('span');
+  label.textContent = 'Mērogs: ';
+  label.style.marginRight = '6px';
+
+  const select = document.createElement('select');
+  select.id = 'scalePicker';
+  Object.assign(select.style, {
+    background:'rgba(0,0,0,.3)', color:'#fff',
+    border:'1px solid rgba(255,255,255,.2)', borderRadius:'4px',
+    padding:'2px 4px', font:'12px/1.2 system-ui, sans-serif'
+  });
+
+  SCALE_OPTIONS.forEach(s=>{
+    const opt = document.createElement('option');
+    opt.value = String(s);
+    opt.textContent = '1: ' + s.toLocaleString('lv-LV');
+    select.appendChild(opt);
+  });
+
+  select.addEventListener('change', ()=>{
+    const targetScale = +select.value;
+    // atļaujam frakcionētu zoom, lai mērogs sanāk precīzāks
+    map.options.zoomSnap = 0;
+    map.options.zoomDelta = 0.25;
+    map.setZoom( zoomForScale(targetScale), {animate:true} );
+    updateRatio();     // atjauno “Mērogs: 1:xxxx” rādītāju
+    syncScalePicker(); // pielāgo izvēlnes value, ja vajag
+  });
+
+  wrap.appendChild(label);
+  wrap.appendChild(select);
+
+  // neļaujam šai kontrolei “sastrīdēties” ar kartes drag/zoom
+  L.DomEvent.disableClickPropagation(wrap);
+  L.DomEvent.disableScrollPropagation(wrap);
+
+  // sākumā iestata izvēlnes vērtību tuvākajam mērogam
+  setTimeout(()=> syncScalePicker(), 0);
+  return wrap;
+};
+scalePickCtl.addTo(map);
+
+// sinhronizē izvēlnes value ar pašreizējo mērogu (tuvākais no saraksta)
+function syncScalePicker(){
+  const el = document.getElementById('scalePicker');
+  if(!el) return;
+  const cur = getCurrentScale();
+  let best = SCALE_OPTIONS[0], diff = Infinity;
+  SCALE_OPTIONS.forEach(s=>{
+    const d = Math.abs(s - cur);
+    if(d < diff){ diff = d; best = s; }
+  });
+  el.value = String(best);
+}
+
+// jau esošo rādītāju atjauno + sinhronizē arī izvēlni
+map.on('moveend zoomend', ()=>{ updateRatio(); syncScalePicker(); });
+
+
+
+
+
+
+
+
+
+
+	  
+
 function createUTMGridLayer(){
   const g = L.layerGroup();
 
