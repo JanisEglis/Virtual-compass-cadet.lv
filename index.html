@@ -1700,6 +1700,9 @@
 
     /* AUGSTUMS (inline-axis) = kolonnas garums */
     inline-size: calc(var(--colH, 100%) - 16px) !important;
+	 /* ⬅️ apgriežam virzienu, lai “augstāka vērtība = augstāk ekrānā” */
+    transform: scaleY(-1) !important;
+    transform-origin: center !important;
 
     /* PLATUMS/BIEZUMS (block-axis) = šaurs */
     block-size: var(--rng-vert-w, 28px) !important;
@@ -1708,10 +1711,7 @@
     display:block !important;
     margin:0 auto !important;
 
-    /* nekādas rotācijas Firefoxā */
-    transform:none !important;
-    transform-origin:center !important;
-  }
+   
 
 
 
