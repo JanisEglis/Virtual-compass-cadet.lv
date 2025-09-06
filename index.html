@@ -1510,23 +1510,35 @@
 							#buttonContainer .dock-dimmer input[type=range]{ width:100%; max-width:100%; }
 							
 							/* Range: sānos – vertikāls un tik garš, cik augsta ir kolonna */
-							#buttonContainer.left  .dock-dimmer input[type=range],
-							#buttonContainer.right .dock-dimmer input[type=range]{
-							  height:calc(100% - 16px);
-							  min-height:0;
-							  width:28px;
-							  writing-mode:bt-lr;
-							  -webkit-appearance:slider-vertical;
-							}
-							@supports not (-webkit-appearance: slider-vertical){
-							  #buttonContainer.left  .dock-dimmer input[type=range],
-							  #buttonContainer.right .dock-dimmer input[type=range]{
-							    height:28px;
-							    width:100%;
-							    transform:rotate(-90deg);
-							    transform-origin:center;
-							  }
-							}
+/* Range: sānos – vertikāls un tik garš, cik augsta ir kolonna */
+#buttonContainer.left  .dock-dimmer input[type=range],
+#buttonContainer.right .dock-dimmer input[type=range],
+#buttonContainer .dock-dimmer input[type=range].range-vertical,
+#buttonContainer .dock-dimmer input[type=range][orient="vertical"] {
+  /* vertikāls bez deprecated API */
+  writing-mode: vertical-lr;
+  direction: rtl;              /* lai lielākas vērtības ir “augšā” */
+  inline-size: 28px;           /* “platums” vertikālajam slīdnim */
+  block-size: calc(100% - 16px); /* “augstums” kolonnā */
+  min-block-size: 0;
+  appearance: none;            /* noņemam pārlūka noklusēto */
+  -webkit-appearance: none;    /* droši, bet ne 'slider-vertical' */
+}
+
+/* Fallbacks, ja writing-mode nav pieejams (ļoti veci motori) */
+@supports not (writing-mode: vertical-lr) {
+  #buttonContainer.left  .dock-dimmer input[type=range],
+  #buttonContainer.right .dock-dimmer input[type=range],
+  #buttonContainer .dock-dimmer input[type=range].range-vertical,
+  #buttonContainer .dock-dimmer input[type=range][orient="vertical"] {
+    writing-mode: horizontal-tb;
+    direction: ltr;
+    transform: rotate(-90deg);
+    transform-origin: center;
+    inline-size: calc(100% - 16px); /* tagad “platums” = kolonnas garums */
+    block-size: 28px;               /* “augstums” = slīdņa biezums */
+  }
+}
 							
 							/* Vienotais track/thumb dizains */
 							#buttonContainer .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
