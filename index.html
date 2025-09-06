@@ -1714,7 +1714,21 @@
   }
 }
 
+  #buttonContainer.bottom .dock-dimmer input[type=range]{
+    /* skaidri atpakaļ uz horizontālo, bez rotācijām */
+    -moz-appearance: none !important;
+    writing-mode: horizontal-tb !important;
+    transform: none !important;
 
+    /* plāna sliede */
+    inline-size: 100% !important;
+    block-size: var(--rng-track-bottom, 6px) !important;
+    height: var(--rng-track-bottom, 6px) !important; /* drošībai */
+
+    /* noņemam jebkādas “atlikušās” atstarpes */
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 
 
 
