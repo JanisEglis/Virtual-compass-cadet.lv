@@ -2513,14 +2513,45 @@ function startApp(){
 
   let map, osm, topo, inited = false;
 
-  // Ielāpījam drošas malas Leaflet kontrolēm (bez backtickiem)
+  // Drošas malas Leaflet kontrolēm
   (function injectLeafletSafeMargins(){
     const st = document.createElement('style');
     st.textContent =
       '#onlineMap .leaflet-left{left:10px;}' +
-      '#onlineMap .leaflet-right{right:10px;}';
+      '#onlineMap .leaflet-right{right:10px;}' +
+      /* MGRS “pill” stils */
+      '#mgrsCtl{display:flex;gap:6px;align-items:center;}' +
+      '#mgrsText{white-space:nowrap;}' +
+      '#mgrsCopy{width:24px;height:24px;display:grid;place-items:center;background:#2b2f36;border-radius:6px;border:1px solid rgba(255,255,255,.15);cursor:pointer;}' +
+      '#mgrsCopy svg{width:14px;height:14px;opacity:.9;}' +
+      '#mgrsWrap{background:rgba(0,0,0,.55);color:#fff;padding:4px 6px;border-radius:6px;font:12px/1.2 system-ui,sans-serif;display:flex;align-items:center;gap:6px;}' +
+      '#mgrsWrap.copied{background:#1b5e20 !important;}' + /* zaļš, kad nokopēts */
+      '#mgrsHint{opacity:.85;font-weight:600;}';
     document.head.appendChild(st);
   })();
+
+  // Neliels ielādētājs MGRS bibliotēkai (vienreiz)
+  let mgrsReady = null;
+  function ensureMgrs(){
+    if (window.mgrs && window.mgrs.forward) return Promise.resolve();
+    if (mgrsReady) return mgrsReady;
+    mgrsReady = new Promise(function(resolve){
+      const urls = [
+        'https://unpkg.com/mgrs@1.0.0/dist/mgrs.min.js',
+        'https://unpkg.com/mgrs@1.0.0/mgrs.js',
+        'https://cdn.jsdelivr.net/npm/mgrs@1.0.0/dist/mgrs.min.js'
+      ];
+      (function loadNext(){
+        const u = urls.shift(); if(!u){ resolve(); return; }
+        const s = document.createElement('script');
+        s.src = u; s.defer = true;
+        s.onload = function(){ resolve(); };
+        s.onerror = loadNext;
+        document.head.appendChild(s);
+      })();
+    });
+    return mgrsReady;
+  }
 
   function initMap(){
     if (inited) return true;
@@ -2555,14 +2586,11 @@ function startApp(){
       'CyclOSM': cyclo
     };
     const overlays = {};
-
     L.control.layers(baseLayers, overlays, { collapsed: true }).addTo(map);
     map.setView([56.9496, 24.1052], 13);
 
-    // Mēroga josla
+    // Mēroga josla + 1:xxxxx
     L.control.scale({ imperial:false, metric:true, maxWidth:200 }).addTo(map);
-
-    // “1:xxxxx” mēroga indikators
     const ratioCtl = L.control({ position:'bottomleft' });
     ratioCtl.onAdd = function(){
       const div = L.DomUtil.create('div', 'leaflet-control-attribution');
@@ -2576,18 +2604,17 @@ function startApp(){
       return div;
     };
     ratioCtl.addTo(map);
-
     function updateRatio(){
       const c = map.getCenter(), z = map.getZoom();
       const metersPerPixel = 156543.03392 * Math.cos(c.lat*Math.PI/180) / Math.pow(2, z);
-      const scale = Math.round(metersPerPixel / 0.00028); // ~0.28mm/px
+      const scale = Math.round(metersPerPixel / 0.00028);
       const el = document.getElementById('scaleRatioCtl');
       if (el) el.textContent = 'Mērogs: 1:' + scale.toLocaleString('lv-LV');
     }
     map.on('moveend zoomend', updateRatio);
     updateRatio();
 
-    // Koordinātes + kopēšana
+    // Lat/Lng (pelēkais info)
     const posCtl = L.control({ position:'bottomleft' });
     posCtl.onAdd = function(){
       const div = L.DomUtil.create('div', 'leaflet-control-attribution');
@@ -2597,14 +2624,8 @@ function startApp(){
       div.style.borderRadius = '4px';
       div.style.font = '12px/1.2 system-ui, sans-serif';
       div.style.marginTop = '4px';
-      div.style.cursor = 'pointer';
-      div.title = 'Noklikšķini, lai kopētu koordinātes';
       div.id = 'mousePosCtl';
       div.textContent = 'Lat, Lng: —';
-      div.addEventListener('click', function(){
-        const t = div.textContent.replace('Lat, Lng: ', '');
-        if (navigator.clipboard) navigator.clipboard.writeText(t);
-      });
       return div;
     };
     posCtl.addTo(map);
@@ -2613,31 +2634,38 @@ function startApp(){
       const s = e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5);
       const el = document.getElementById('mousePosCtl');
       if (el) el.textContent = 'Lat, Lng: ' + s;
+      updateMgrs(e.latlng.lat, e.latlng.lng);
     });
 
-    // ar labo klikšķi – popup + “Kopēt”
+    // Konteksta izvēlne ar kopēšanu (lat/lng + MGRS)
     map.on('contextmenu', function(e){
-      const txt = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
-      L.popup().setLatLng(e.latlng)
-        .setContent('Koordinātes:<br>' + txt + '<br><button id="copyLL">Kopēt</button>')
-        .openOn(map);
+      const llTxt = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
+      let mgrsTxt = '—';
+      if (window.mgrs && window.mgrs.forward){
+        try {
+          mgrsTxt = formatMGRS(e.latlng.lat, e.latlng.lng);
+        } catch(_){}
+      }
+      const html =
+        '<div style="font:12px/1.3 system-ui,sans-serif">' +
+          '<div><b>Lat,Lng:</b> '+ llTxt +' <button id="cpyLL" style="margin-left:6px">📋</button></div>' +
+          '<div style="margin-top:6px"><b>MGRS:</b> '+ mgrsTxt +' <button id="cpyM" style="margin-left:6px">📋</button></div>' +
+        '</div>';
+      L.popup().setLatLng(e.latlng).setContent(html).openOn(map);
       setTimeout(function(){
-        const b = document.getElementById('copyLL');
-        if (b) b.addEventListener('click', function(){
-          if (navigator.clipboard) navigator.clipboard.writeText(txt);
-        });
-      }, 0);
+        const b1 = document.getElementById('cpyLL');
+        const b2 = document.getElementById('cpyM');
+        b1 && b1.addEventListener('click', function(){ navigator.clipboard && navigator.clipboard.writeText(llTxt); });
+        b2 && b2.addEventListener('click', function(){ navigator.clipboard && navigator.clipboard.writeText(mgrsTxt); });
+      },0);
     });
 
-    // 📍 "Atrast mani"
+    // 📍 Atrast mani
     const locateCtl = L.control({ position:'topleft' });
     locateCtl.onAdd = function(){
       const container = L.DomUtil.create('div', 'leaflet-bar');
       const a = L.DomUtil.create('a', '', container);
-      a.href = '#';
-      a.title = 'Atrast manu atrašanās vietu';
-      a.innerText = '📍';
-      a.style.lineHeight = '26px';
+      a.href = '#'; a.title = 'Atrast manu atrašanās vietu'; a.innerText = '📍'; a.style.lineHeight = '26px';
       L.DomEvent.on(a, 'click', function(ev){
         L.DomEvent.stop(ev);
         map.locate({ setView:true, maxZoom:16, enableHighAccuracy:true });
@@ -2653,16 +2681,13 @@ function startApp(){
     });
     map.on('locationerror', function(e){ alert('Neizdevās noteikt atrašanās vietu: ' + e.message); });
 
-    // 📏 Attāluma mērītājs
+    // 📏 Attāluma mērītājs (klikšķini kartē; Esc atceļ)
     var measuring = false, measureLine, measurePts = [], measureTip;
     const measureCtl = L.control({ position:'topleft' });
     measureCtl.onAdd = function(){
       const container = L.DomUtil.create('div', 'leaflet-bar');
       const a = L.DomUtil.create('a', '', container);
-      a.href = '#';
-      a.title = 'Mērīt attālumu (klikšķini kartē; Esc – atcelt)';
-      a.innerText = '📏';
-      a.style.lineHeight = '26px';
+      a.href = '#'; a.title = 'Mērīt attālumu (klikšķini kartē; Esc – atcelt)'; a.innerText = '📏'; a.style.lineHeight = '26px';
       L.DomEvent.on(a, 'click', function(ev){
         L.DomEvent.stop(ev);
         measuring = !measuring;
@@ -2673,17 +2698,13 @@ function startApp(){
       return container;
     };
     measureCtl.addTo(map);
-
     function clearMeasure(){
       measurePts = [];
       if (measureLine) { map.removeLayer(measureLine); measureLine = null; }
       if (measureTip)  { map.removeLayer(measureTip);  measureTip  = null; }
     }
-    function totalLen(latlngs){
-      var s = 0; for (var i=1;i<latlngs.length;i++) s += latlngs[i-1].distanceTo(latlngs[i]); return s;
-    }
+    function totalLen(latlngs){ var s=0; for (var i=1;i<latlngs.length;i++) s+=latlngs[i-1].distanceTo(latlngs[i]); return s; }
     function fmt(m){ return (m<1000) ? (m.toFixed(0)+' m') : ((m/1000).toFixed(2)+' km'); }
-
     map.on('click', function(e){
       if (!measuring) return;
       measurePts.push(e.latlng);
@@ -2702,7 +2723,7 @@ function startApp(){
       if (e.key === 'Escape' && measuring) { measuring=false; map.doubleClickZoom.enable(); clearMeasure(); }
     });
 
-    // ⚙️ Pārbīda Leaflet kontrolus prom no top-bar/apakšējās joslas
+    // ⚙️ Pārbīda kontrolus prom no Tavas top-bar un #about
     function repositionLeafletControls(){
       const topBar = document.querySelector('.top-bar');
       const about  = document.getElementById('about');
@@ -2717,28 +2738,91 @@ function startApp(){
     window.addEventListener('resize', repositionLeafletControls);
     window.addEventListener('orientationchange', repositionLeafletControls);
 
+    // === MGRS kontrole (ar modernu kopēšanas ikonu + “kopēts” efektu) ===
+    const mgrsCtl = L.control({ position:'bottomleft' });
+    mgrsCtl.onAdd = function(){
+      const wrap = L.DomUtil.create('div', 'leaflet-control-attribution');
+      wrap.id = 'mgrsWrap';
+      wrap.innerHTML =
+        '<div id="mgrsCtl" aria-label="MGRS">' +
+          '<span id="mgrsHint">MGRS:</span>' +
+          '<span id="mgrsText">—</span>' +
+          '<button id="mgrsCopy" title="Kopēt" aria-label="Kopēt" type="button">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+              '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>' +
+              '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>' +
+            '</svg>' +
+          '</button>' +
+        '</div>';
+      // klikšķis
+      setTimeout(function(){
+        const btn = document.getElementById('mgrsCopy');
+        btn && btn.addEventListener('click', function(){
+          const t = document.getElementById('mgrsText')?.textContent || '';
+          if (t && t !== '—' && navigator.clipboard){
+            navigator.clipboard.writeText(t);
+            const w = document.getElementById('mgrsWrap');
+            if (w){
+              const old = w.innerHTML;
+              w.classList.add('copied');
+              w.innerHTML = '<div id="mgrsCtl"><span id="mgrsHint">Nokopēts</span></div>';
+              setTimeout(function(){ w.classList.remove('copied'); w.innerHTML = old; attachCopyAgain(); }, 1100);
+            }
+          }
+        });
+        function attachCopyAgain(){
+          const btn2 = document.getElementById('mgrsCopy');
+          btn2 && btn2.addEventListener('click', function(){
+            const t = document.getElementById('mgrsText')?.textContent || '';
+            if (t && t !== '—' && navigator.clipboard){ navigator.clipboard.writeText(t); }
+          });
+        }
+      },0);
+      return wrap;
+    };
+    mgrsCtl.addTo(map);
+
+    // Regulāri atjaunina MGRS (peles kustībā jau tiek saukts; te – drošībai arī uz “moveend”)
+    map.on('moveend', function(){
+      const c = map.getCenter();
+      updateMgrs(c.lat, c.lng);
+    });
+
     inited = true;
     return true;
   }
 
+  function formatMGRS(lat, lng){
+    // 8-ciparu = 4+4 (≈10 m precizitāte)
+    const raw = window.mgrs.forward([lng, lat], 4); // piemēram: "34VEH01230979"
+    // Ievieto atstarpes: "34V EH 0123 0979"
+    return raw.replace(/^(\d{1,2}[C-X])([A-HJ-NP-Z]{2})(\d{4})(\d{4})$/, '$1 $2 $3 $4');
+  }
+
+  function updateMgrs(lat, lng){
+    if (!(window.mgrs && window.mgrs.forward)) return; // gaidām, kamēr ielādēsies
+    try{
+      const txt = formatMGRS(lat, lng);
+      const el  = document.getElementById('mgrsText');
+      if (el) el.textContent = txt;
+    }catch(_){}
+  }
+
   function syncDimOverlay(){
-    const range = document.getElementById('mapDimmerRange'); // slīdnis tiek ielikts vēlāk ar Tavu doku
+    const range = document.getElementById('mapDimmerRange');
     if (!range) return;
-    const v = +range.value || 0;                   // 0..80
-    const a = Math.min(0.8, Math.max(0, v/100));   // 0..0.8
+    const v = +range.value || 0;
+    const a = Math.min(0.8, Math.max(0, v/100));
     mapDim.style.background = 'rgba(0,0,0,' + a + ')';
   }
 
   function showOnlineMap(){
     mapDiv.style.display = 'block';
-
-    // drošība: ja CSS nav iedevis izmēru
     if (!mapDiv.offsetWidth || !mapDiv.offsetHeight){
       const p = mapDiv.parentElement;
       mapDiv.style.width  = ((p && p.clientWidth)  || window.innerWidth ) + 'px';
       mapDiv.style.height = ((p && p.clientHeight) || window.innerHeight) + 'px';
     }
-
     mapDim.style.display = 'block';
     canvas.style.display = 'none';
     if (resizeH) resizeH.style.display = 'none';
@@ -2753,16 +2837,17 @@ function startApp(){
       return;
     }
 
+    // Pēc atvēršanas
     requestAnimationFrame(function(){ if (map) map.invalidateSize(true); });
     setTimeout(function(){ if (map) map.invalidateSize(true); }, 100);
 
-    // pabīdam kontrolus pēc atvēršanas
-    setTimeout(function(){
-      const evt = new Event('resize');
-      window.dispatchEvent(evt);
-    }, 0);
+    // ielādē MGRS bibliotēku fonā
+    ensureMgrs().then(function(){
+      const c = map.getCenter();
+      updateMgrs(c.lat, c.lng);
+    });
 
-    btn && btn.classList.add('active');
+    if (btn) btn.classList.add('active');
     localStorage.setItem('onlineMapActive','1');
 
     syncDimOverlay();
@@ -2775,10 +2860,8 @@ function startApp(){
     mapDim.style.display = 'none';
     canvas.style.display = 'block';
     if (resizeH && typeof img !== 'undefined' && img && img.src) resizeH.style.display = 'block';
-
-    btn && btn.classList.remove('active');
+    if (btn) btn.classList.remove('active');
     localStorage.setItem('onlineMapActive','0');
-
     if (window.__updateDimmerWidth) window.__updateDimmerWidth();
     if (window.__fitDock) window.__fitDock();
   }
@@ -2794,11 +2877,12 @@ function startApp(){
 
   window.addEventListener('resize', function(){ if (map) map.invalidateSize(); });
 
-  // tumšošanas slīdnis var ielikties vēlāk — reaģē globāli
+  // Tumšošanas slīdnis (ja parādās vēlāk)
   document.addEventListener('input', function(e){
     if (e && e.target && e.target.id === 'mapDimmerRange') syncDimOverlay();
   });
 })();
+
 
 
 
