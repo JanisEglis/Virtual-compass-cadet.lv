@@ -898,7 +898,18 @@ map.on('popupopen', ev=>{
   doCopy('#copyLL',   '#llVal',   '#copiedLL');
   doCopy('#copyMGRS', '#mgrsVal', '#copiedMGRS');
 });
+// kad sāk kustēties – aizver popup un iedokē pogas
+map.on('movestart zoomstart dragstart', () => {
+  map.closePopup();
+  const bc = document.getElementById('buttonContainer');
+  bc && bc.classList.add('docked');
+});
 
+// ja gribi arī uz jebkura pieskāriena uz kartes
+map.getContainer().addEventListener('pointerdown', () => {
+  const bc = document.getElementById('buttonContainer');
+  bc && bc.classList.add('docked');
+}, {passive:true});
     inited = true;
     return true;
   }
@@ -910,7 +921,14 @@ map.on('popupopen', ev=>{
     const a = Math.min(0.8, Math.max(0, v/100));
     mapDim.style.background = 'rgba(0,0,0,' + a + ')';
   }
-
+// padarām pieejamu “binderi”, ja slīdnis parādās vēlāk
+window.__bindOnlineMapDimmer = function(inputEl){
+  if (!inputEl) return;
+  // atvienojam vecos klausītājus, ja bija
+  inputEl.removeEventListener('input', syncDimOverlay);
+  inputEl.addEventListener('input', syncDimOverlay);
+  syncDimOverlay(); // uzreiz piemēro aktuālo vērtību
+};
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
   function showOnlineMap(){
     mapDiv.style.display = 'block';
@@ -966,7 +984,7 @@ map.on('popupopen', ev=>{
   if (localStorage.getItem('onlineMapActive') === '1'){ showOnlineMap(); }
 
   window.addEventListener('resize', ()=> map && map.invalidateSize());
-  if (dimRange){ dimRange.addEventListener('input', syncDimOverlay); syncDimOverlay(); }
+if (dimRange){ window.__bindOnlineMapDimmer(dimRange); }
 })();
 
 
@@ -2012,6 +2030,7 @@ map.on('popupopen', ev=>{
 								
 								  // sasaistām ar mainīgo + localStorage
 								  var dimRange = dimWrap.querySelector('#mapDimmerRange');
+								window.__bindOnlineMapDimmer && window.__bindOnlineMapDimmer(dimRange);
 								  var dimValue = dimWrap.querySelector('#mapDimmerValue');
 								
 								  var stored = +(localStorage.getItem('mapDarken') || 0);
