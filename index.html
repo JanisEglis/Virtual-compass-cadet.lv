@@ -54,8 +54,6 @@
 
                         <title>CADET.LV Interaktīvais kompass ©Jānis Eglis</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
 
 
                         
@@ -1512,35 +1510,23 @@
 							#buttonContainer .dock-dimmer input[type=range]{ width:100%; max-width:100%; }
 							
 							/* Range: sānos – vertikāls un tik garš, cik augsta ir kolonna */
-/* Range: sānos – vertikāls un tik garš, cik augsta ir kolonna */
-#buttonContainer.left  .dock-dimmer input[type=range],
-#buttonContainer.right .dock-dimmer input[type=range],
-#buttonContainer .dock-dimmer input[type=range].range-vertical,
-#buttonContainer .dock-dimmer input[type=range][orient="vertical"] {
-  /* vertikāls bez deprecated API */
-  writing-mode: vertical-lr;
-  direction: rtl;              /* lai lielākas vērtības ir “augšā” */
-  inline-size: 28px;           /* “platums” vertikālajam slīdnim */
-  block-size: calc(100% - 16px); /* “augstums” kolonnā */
-  min-block-size: 0;
-  appearance: none;            /* noņemam pārlūka noklusēto */
-  -webkit-appearance: none;    /* droši, bet ne 'slider-vertical' */
-}
-
-/* Fallbacks, ja writing-mode nav pieejams (ļoti veci motori) */
-@supports not (writing-mode: vertical-lr) {
-  #buttonContainer.left  .dock-dimmer input[type=range],
-  #buttonContainer.right .dock-dimmer input[type=range],
-  #buttonContainer .dock-dimmer input[type=range].range-vertical,
-  #buttonContainer .dock-dimmer input[type=range][orient="vertical"] {
-    writing-mode: horizontal-tb;
-    direction: ltr;
-    transform: rotate(-90deg);
-    transform-origin: center;
-    inline-size: calc(100% - 16px); /* tagad “platums” = kolonnas garums */
-    block-size: 28px;               /* “augstums” = slīdņa biezums */
-  }
-}
+							#buttonContainer.left  .dock-dimmer input[type=range],
+							#buttonContainer.right .dock-dimmer input[type=range]{
+							  height:calc(100% - 16px);
+							  min-height:0;
+							  width:28px;
+							  writing-mode:bt-lr;
+							  -webkit-appearance:slider-vertical;
+							}
+							@supports not (-webkit-appearance: slider-vertical){
+							  #buttonContainer.left  .dock-dimmer input[type=range],
+							  #buttonContainer.right .dock-dimmer input[type=range]{
+							    height:28px;
+							    width:100%;
+							    transform:rotate(-90deg);
+							    transform-origin:center;
+							  }
+							}
 							
 							/* Vienotais track/thumb dizains */
 							#buttonContainer .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
@@ -2076,11 +2062,37 @@
 									<img id="compassNeedle" src="https://site-710050.mozfiles.com/files/710050/VIRTUALAIS_KOMPASS_ADATA_CADET_LV_PV4.png" alt="Compass Needle">  
 								</div>
 							</div>
+						</body>
+                    </html>
+                `);
+                interactiveWindow.document.close();
+
+					// Dinamiska funkcionalitātes pievienošana
+// 1) ielādē Leaflet CSS
+const leafletCss = interactiveWindow.document.createElement('link');
+leafletCss.rel = 'stylesheet';
+leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+interactiveWindow.document.head.appendChild(leafletCss);
+
+// 2) drošs JS ielādētājs ar rezerves CDN
+function loadScriptSequential(urls, onOk, onFail){
+  const url = urls.shift();
+  if(!url){ onFail && onFail(); return; }
+  const s = interactiveWindow.document.createElement('script');
+  s.src = url;
+  s.defer = true;
+  s.onload = () => onOk && onOk();
+  s.onerror = () => loadScriptSequential(urls, onOk, onFail);
+  interactiveWindow.document.head.appendChild(s);
+}
+
+// 3) Kad Leaflet ielādēts, tikai tad injicē Tavu app skriptu
+function startApp(){
+  const app = interactiveWindow.document.createElement('script');
+  app.textContent = `
 
 
-<script>
-
-	function debounce(func, wait = 50) {
+						function debounce(func, wait = 50) {
 						  let timeout;
 						  return function (...args) {
 						    clearTimeout(timeout);
@@ -2473,8 +2485,6 @@
 						// Tumšošanas intensitāte (0..0.8), glabājam % localStorage (0..80)
 						let mapDarken = (+(localStorage.getItem('mapDarken') || 0)) / 100;
 						
-// izmantots pinch-rotācijā, tev trūka deklarācijas
-let lastRotation = 0;
 
 
 
@@ -2492,6 +2502,127 @@ let lastRotation = 0;
 
 
 
+
+
+
+(function(){
+  const mapDiv   = document.getElementById('onlineMap');
+  const mapDim   = document.getElementById('onlineMapDim');
+  const btn      = document.getElementById('toggleOnlineMap');
+  const canvas   = document.getElementById('mapCanvas');
+  const resizeH  = document.getElementById('resizeHandle');
+  const dimRange = document.getElementById('mapDimmerRange'); // slīdnis (var būt vēl nav)
+
+  let map, osm, topo, inited = false;
+
+function initMap(){
+  if (inited) return true;
+  if (!window.L) {                   // Leaflet vēl nav?
+    console.warn('Leaflet vēl nav ielādējies');
+    return false;
+  }
+
+  map = L.map(mapDiv, { zoomControl:true, attributionControl:true });
+
+  osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  });
+
+  topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    maxZoom: 17,
+    attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)'
+  });
+
+  osm.addTo(map);
+  L.control.layers({ 'OSM': osm, 'OpenTopoMap': topo }, {}).addTo(map);
+  map.setView([56.9496, 24.1052], 13);
+
+  inited = true;
+  return true;
+}
+
+
+  function syncDimOverlay(){
+    if (!dimRange) return;
+    const v = +dimRange.value || 0;            // 0..80
+    const a = Math.min(0.8, Math.max(0, v/100));
+    mapDim.style.background = 'rgba(0,0,0,' + a + ')';
+  }
+
+ function showOnlineMap(){
+  // parādi konteineru, paslēp kanvu
+  mapDiv.style.display = 'block';
+
+// ja kaut kas ar CSS nošauj garām, piešķir izmēru ar roku
+if (!mapDiv.offsetWidth || !mapDiv.offsetHeight){
+  const p = mapDiv.parentElement;
+  mapDiv.style.width  = (p?.clientWidth  || window.innerWidth)  + 'px';
+  mapDiv.style.height = (p?.clientHeight || window.innerHeight) + 'px';
+}
+
+  
+  mapDim.style.display = 'block';
+  canvas.style.display = 'none';
+  if (resizeH) resizeH.style.display = 'none';
+
+  // inicializē; ja Leaflet nav ielādējies, atkāpjamies
+  if (!initMap()){
+    mapDiv.style.display = 'none';
+    mapDim.style.display = 'none';
+    canvas.style.display = 'block';
+    if (resizeH && (typeof img !== 'undefined') && img && img.src) resizeH.style.display = 'block';
+    localStorage.setItem('onlineMapActive','0');
+    alert('Leaflet nav ielādējies — tiešsaistes karte izslēgta.');
+    return;
+  }
+
+  // invalide size pēc ielikšanas DOM
+  requestAnimationFrame(() => map && map.invalidateSize(true));
+  setTimeout(() => map && map.invalidateSize(true), 100);
+
+  btn.classList.add('active');
+  localStorage.setItem('onlineMapActive','1');
+
+  syncDimOverlay();
+  window.__updateDimmerWidth && window.__updateDimmerWidth();
+  window.__fitDock && window.__fitDock();
+}
+
+
+  function hideOnlineMap(){
+    mapDiv.style.display = 'none';
+    mapDim.style.display = 'none';
+    canvas.style.display = 'block';
+    if (resizeH && (typeof img !== 'undefined') && img && img.src) resizeH.style.display = 'block';
+
+    btn.classList.remove('active');
+    localStorage.setItem('onlineMapActive','0');
+
+    window.__updateDimmerWidth && window.__updateDimmerWidth();
+    window.__fitDock && window.__fitDock();
+  }
+
+  btn && btn.addEventListener('click', () => {
+    const isOn = mapDiv.style.display === 'block';
+    if (isOn) hideOnlineMap();
+    else showOnlineMap();
+  });
+
+  // Atjauno stāvokli no localStorage
+  if (localStorage.getItem('onlineMapActive') === '1'){
+    showOnlineMap();
+  }
+
+  // Pārizmērs
+  window.addEventListener('resize', ()=> map && map.invalidateSize());
+
+  // Tumšošanas slīdnis var parādīties vēlāk — ja eksistē, savieno
+  if (dimRange){
+    dimRange.addEventListener('input', syncDimOverlay);
+    syncDimOverlay();
+  }
+})();
 
 
 
@@ -3394,8 +3525,6 @@ let lastRotation = 0;
 									display: computedStyle.display,
 									bottom: computedStyle.bottom
 								});
-window.toggleIframeAbout = toggleIframeAbout;
-window.toggleIframeQR = toggleIframeQR;
 
 								if (computedStyle.display === "none" || computedStyle.bottom === "-620px") {
 									console.log("Atveram iframe...");
@@ -3949,13 +4078,25 @@ window.toggleIframeQR = toggleIframeQR;
 							})();
 
 
-<\/script>
-</body>
-</html>
-`);
-interactiveWindow.document.close();
+                `;                                   // ← beidzas app.textContent iekšējais template string
+  interactiveWindow.document.body.appendChild(app);
+}                                       // ← beidzas function startApp()
 
-				
+// 4) Ja Leaflet nevar ielādēt (vēl joprojām iekš if (interactiveWindow) {...})
+function showLeafletError(){
+  interactiveWindow.document.body.insertAdjacentHTML(
+    'beforeend',
+    '<div style="position:fixed;top:0;left:0;right:0;padding:12px;background:#b00020;color:#fff;z-index:9999">Neizdevās ielādēt kartes bibliotēku (Leaflet). Pārbaudiet tīklu / CDN.</div>'
+  );
+}
+
+// 5) Ielādē Leaflet no vairākiem CDN un pēc tam startē app
+loadScriptSequential([
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js'
+], startApp, showLeafletError);
+
 } else {                                // ← te nu beidzot nāk else par to pašu if (interactiveWindow)
   alert('Pārlūks bloķē jaunus logus. Lūdzu, atļaujiet pārlūkam atvērt logus.');
 }
