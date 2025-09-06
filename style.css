@@ -1721,13 +1721,23 @@
 
 /* ====== Online kartes rāmis starp drošajām zonām ====== */
 /* Online kartes konteiners starp drošajām zonām */
-#onlineMap,
+#onlineMap{
+  position: fixed;
+  inset: 0;
+  z-index: 2;          /* virs canvasa (kuram tev ir z-index:1) */
+  display: none;       /* ieslēdz ar JS showOnlineMap() */
+}
+
+
+
+	
 #onlineMapDim{
   position: fixed;
-  left: 0;
-  right: 0;
-  top: var(--map-top-safe, 0px);
-  bottom: var(--map-bottom-safe, 0px);
+  inset: 0;
+  z-index: 3;          /* virs kartes, zem dokiem/pogām */
+  pointer-events: none;/* lai var vilkt karti cauri */
+  background: rgba(0,0,0,0);
+  display: none;
 }
 
 /* Leaflet kontroles lai nesakrīt ar augšu/apakšu */
