@@ -1720,25 +1720,27 @@
 }
 
 /* ====== Online kartes rāmis starp drošajām zonām ====== */
+/* Online kartes konteiners starp drošajām zonām */
 #onlineMap,
 #onlineMapDim{
   position: fixed;
   left: 0;
   right: 0;
-  top: var(--map-top-gap);
-  bottom: var(--map-bottom-gap);
+  top: var(--map-top-safe, 0px);
+  bottom: var(--map-bottom-safe, 0px);
 }
 
-/* Kontroles iekš #onlineMap – cik tālu no malas */
-#onlineMap .leaflet-top    { top:    var(--leaflet-top-offset); }
-#onlineMap .leaflet-bottom { bottom: var(--leaflet-bottom-offset); }
+/* Leaflet kontroles lai nesakrīt ar augšu/apakšu */
+#onlineMap .leaflet-top    { top:    calc(var(--map-top-safe, 0px) + 10px); }
+#onlineMap .leaflet-bottom { bottom: calc(var(--map-bottom-safe, 0px) + 10px); }
 
-/* Pārklājums, lai nenoķertu klikus */
+/* pārklājums, kas netraucē klikus */
 #onlineMapDim{ pointer-events: none; }
 
-/* Kontroles/popup virs flīzēm */
+/* drošībai virs flīzēm */
 #onlineMap .leaflet-control { z-index: 500; }
 #onlineMap .leaflet-popup   { z-index: 600; }
+
 /* Lai inline SVG ikonām būtu tāds pats “fit” kā <img> */
 #buttonContainer .dock-shell > button svg{
   width:78%; height:78%; display:block; margin:auto; pointer-events:none;
