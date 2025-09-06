@@ -445,72 +445,71 @@ function setDarkness(percent){
 
 /* === SAFE AREAS kalkulācija kartes kontrolēm (augša/apakša) === */
 (function(){
-  // pielāgo šeit sarakstu ar Taviem TOP elementiem, kas aizņem vietu virs kartes
   const topSelectors = [
     '#fullscreenMessage:not(.fs-message-hidden)',
     '.position-selector:not(.hidden)',
     '.position-selector-left:not(.hidden-left)',
-    '.top-bar',                         // augšējā josla
-    '.dropdown-menu.visible',           // atvērtās izvēlnes
-    '#contentFrame.active',             // atvērts mācību materiālu iframe
-    '#instructionFrame.active',         // atvērts lietotāja ceļveža iframe
-    '#toggleInstruction',               // pašas pogas (ja vajag nelielu rezervi)
+    '.top-bar',
+    '.dropdown-menu.visible',
+    '#contentFrame.active',
+    '#instructionFrame.active',
+    '#toggleInstruction',
     '#toggleMaterials'
   ];
 
-
- // Apakšā — ieskaiti patieso “About” joslu + slīdošos paneļus
   const bottomSelectors = [
     '#about',
     '#iframeContainerAbout',
     '#iframeContainerQR'
   ];
 
-	
-  // pielāgo šeit BOTTOM elementus, kas paceļ apakšu (jau ņem vērā #about caur --dock-bottom)
-  const bottomSelectors = [
-    '#iframeContainerAbout',
-    '#iframeContainerQR'
-  ];
+  function visibleOverlapTop(el){
+    const st = getComputedStyle(el);
+    if (st.display === 'none' || st.visibility === 'hidden' || el.offsetParent === null) return 0;
+    const r = el.getBoundingClientRect();
+    const TOP_BAND = Math.min(180, Math.round(window.innerHeight * 0.22));
+    const intersects = r.top < TOP_BAND && r.bottom > 0;
+    if (!intersects) return 0;
+    return Math.max(0, Math.min(r.bottom, TOP_BAND));
+  }
 
- function visibleRectBottom(el){
-  const st = getComputedStyle(el);
-  if (st.display === 'none' || st.visibility === 'hidden' || el.offsetParent === null) return 0;
+  function visibleOverlapBottom(el){
+    const st = getComputedStyle(el);
+    if (st.display === 'none' || st.visibility === 'hidden' || el.offsetParent === null) return 0;
+    const r = el.getBoundingClientRect();
+    const H = window.innerHeight;
+    const BOTTOM_BAND = Math.min(220, Math.round(H * 0.28)); // var pielāgot
+    const intersects = r.bottom > (H - BOTTOM_BAND) && r.top < H;
+    if (!intersects) return 0;
+    return Math.max(0, Math.min(r.bottom, H) - Math.max(r.top, H - BOTTOM_BAND));
+  }
 
-  const r = el.getBoundingClientRect();
-  const TOP_BAND = Math.min(180, Math.round(window.innerHeight * 0.22)); // max 180px vai 22% no ekrāna
-
-  // ņemam vērā tikai elementus, kas reāli “skar” augšējo joslu
-  const intersectsTop = r.top < TOP_BAND && r.bottom > 0;
-  if (!intersectsTop) return 0;
-
-  // neļaujam vienam elementam atstumt vairāk par TOP_BAND
-  return Math.max(0, Math.min(r.bottom, TOP_BAND));
-}
-
-function getTopSafePx(){
-  let maxBottom = 0;
-  topSelectors.forEach(sel => {
-    document.querySelectorAll(sel).forEach(el => {
-      maxBottom = Math.max(maxBottom, visibleRectBottom(el));
+  function getTopSafePx(){
+    let px = 0;
+    topSelectors.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => { px = Math.max(px, visibleOverlapTop(el)); });
     });
-  });
-  return Math.round(maxBottom);
-}
+    return Math.round(px);
+  }
+
+  function getBottomSafePx(){
+    let px = 0;
+    bottomSelectors.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => { px = Math.max(px, visibleOverlapBottom(el)); });
+    });
+    return Math.round(px);
+  }
+
   function updateMapSafeAreas(){
     const topPx    = getTopSafePx();
     const bottomPx = getBottomSafePx();
     document.documentElement.style.setProperty('--map-top-safe',    topPx + 'px');
     document.documentElement.style.setProperty('--map-bottom-safe', bottomPx + 'px');
-
-    // pārrēķini Leaflet iekšējo izkārtojumu
-    try { map && map.invalidateSize(true); } catch(e){}
+    try { window.L && window.L.Map && window.L && map && map.invalidateSize(true); } catch(e){}
   }
 
-  // padari pieejamu
   window.__updateMapSafeAreas = updateMapSafeAreas;
 
-  // sinhronizē uzreiz un uz izmēru/virtuālā viewport izmaiņām
   const call = () => setTimeout(updateMapSafeAreas, 0);
   window.addEventListener('load', call);
   window.addEventListener('resize', call);
