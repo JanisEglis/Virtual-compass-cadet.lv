@@ -1926,12 +1926,14 @@ if (!mapDiv.offsetWidth || !mapDiv.offsetHeight){
 							  if (!bc) return;
 							
 							  // ── SVG ikona (backticki aizsargāti ar \`) ───────────────────────────────────
-							  const GRID_ICON = \`
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-							          <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
-							          <rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect>
-							        </svg>
-							  \`;
+							  const GRID_ICON = `
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="3" y="3" width="7" height="7"></rect>
+  <rect x="14" y="3" width="7" height="7"></rect>
+  <rect x="3" y="14" width="7" height="7"></rect>
+  <rect x="14" y="14" width="7" height="7"></rect>
+</svg>
+`;
 							
 							  /* — ROKTURIS — */
 							  const handle = document.createElement('div');
