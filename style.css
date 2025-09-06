@@ -1436,22 +1436,23 @@
 							
 							/* Range: sānos – vertikāls un tik garš, cik augsta ir kolonna */
 							#buttonContainer.left  .dock-dimmer input[type=range],
-#buttonContainer.right .dock-dimmer input[type=range]{
-  height:calc(100% - 16px);
-  min-height:0;
-  width:28px;
-  writing-mode:bt-lr;
-  -webkit-appearance:slider-vertical;
-}
-@supports not (-webkit-appearance: slider-vertical){
-  #buttonContainer.left  .dock-dimmer input[type=range],
-  #buttonContainer.right .dock-dimmer input[type=range]{
-    height:28px;
-    width:100%;
-    transform:rotate(-90deg);
-    transform-origin:center;
-  }
-}
+							#buttonContainer.left  .dock-dimmer input[type=range],
+							#buttonContainer.right .dock-dimmer input[type=range]{
+							  height:calc(100% - 16px);
+							  min-height:0;
+							  width:28px;
+							  writing-mode:bt-lr;
+							  -webkit-appearance:slider-vertical;
+							}
+							@supports not (-webkit-appearance: slider-vertical){
+							  #buttonContainer.left  .dock-dimmer input[type=range],
+							  #buttonContainer.right .dock-dimmer input[type=range]{
+							    height:28px;
+							    width:100%;
+							    transform:rotate(-90deg);
+							    transform-origin:center;
+							  }
+							}
 							
 							/* Vienotais track/thumb dizains */
 							#buttonContainer .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
