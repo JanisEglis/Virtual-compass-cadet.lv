@@ -411,7 +411,7 @@
 
 
 
-<script>
+
 (function(){
   const mapDiv   = document.getElementById('onlineMap');
   const mapDim   = document.getElementById('onlineMapDim');
@@ -809,7 +809,7 @@
   window.addEventListener('resize', ()=> map && map.invalidateSize());
   if (dimRange){ dimRange.addEventListener('input', syncDimOverlay); syncDimOverlay(); }
 })();
-</script>
+
 
 
 
