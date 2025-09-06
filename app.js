@@ -450,8 +450,38 @@ function setDarkness(percent){
     '#fullscreenMessage:not(.fs-message-hidden)',
     '.position-selector:not(.hidden)',
     '.position-selector-left:not(.hidden-left)'
+	'#toggleInstruction',   // ⟵ jaunais
+    '#toggleMaterials'      // ⟵ jaunais
   ];
 
+
+function resyncSafeAreasSoon(){
+  setTimeout(()=> window.__updateMapSafeAreas && window.__updateMapSafeAreas(), 0);
+}
+
+// pēc “Lietotāja ceļvedis” / “Mācību materiāli” klikšķiem
+document.getElementById("toggleInstruction")?.addEventListener("click", resyncSafeAreasSoon);
+document.getElementById("toggleMaterials")?.addEventListener("click",  resyncSafeAreasSoon);
+
+// kad atver/aizver iframe konteinerus
+["iframeContainerAbout","iframeContainerQR"].forEach(id=>{
+  const el = document.getElementById(id);
+  if(!el) return;
+  const obs = new MutationObserver(resyncSafeAreasSoon);
+  obs.observe(el, { attributes:true, attributeFilter:["style","class"] });
+});
+
+
+
+
+
+
+
+
+
+
+
+	
   // pielāgo šeit BOTTOM elementus, kas paceļ apakšu (jau ņem vērā #about caur --dock-bottom)
   const bottomSelectors = [
     '#iframeContainerAbout',
