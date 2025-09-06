@@ -1697,26 +1697,30 @@
 
 
 /* Online kartes konteiners zem kompasa (virs fona) */
+/* Tiešsaistes karte */
 #onlineMap{
   position:absolute;
-  top:0; right:0; bottom:0; left:0;
+  inset:0;
   width:100%; height:100%;
   display:none;
-  z-index:1;
+  z-index: 200;          /* pašai kartei pietiek */
+  background:#000;
 }
 
-#onlineMap { background:#000; }  /* melns fons, kamēr flīzes ielādējas */
-
-/* Tumšošanas pārklājums tiešsaistes kartei (sinhronizēs ar Tavu slīdni) */
+/* Tumšošanas pārklājums virs kartes, bet zem kontroles/popup */
 #onlineMapDim{
   position:absolute;
-  top:0; right:0; bottom:0; left:0;
+  inset:0;
   width:100%; height:100%;
-  display:none;
-  z-index:2;
+  display:none;          /* JS ieslēdz uz 'block' */
+  z-index: 450;          /* >>> galvenais labojums <<< */
   pointer-events:none;
   background: rgba(0,0,0,0);
 }
+
+/* lai Leaflet pogas/popup būtu virs tumšā pārklājuma */
+#onlineMap .leaflet-control { z-index: 500; }
+#onlineMap .leaflet-popup   { z-index: 600; }
 
 /* Lai inline SVG ikonām būtu tāds pats “fit” kā <img> */
 #buttonContainer .dock-shell > button svg{
