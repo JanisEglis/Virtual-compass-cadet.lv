@@ -4,80 +4,244 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
   <title>CADET.LV Interaktīvais kompass © Jānis Eglis</title>
-
   <!-- Stili -->
   <link rel="stylesheet" href="style.css">
-
   <!-- Leaflet (ja nelieto tiešsaistes karti, vari izdzēst šīs 2 rindas) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-
   <!-- Galvenais skripts -->
   <script type="module" src="app.js" defer></script>
 </head>
 <body>
-  <!-- Orientācijas pārklājums mobilajām ierīcēm -->
-  <div id="orientationOverlay" class="overlay hidden" aria-hidden="true">
-    <div class="overlay-card">
-      <div class="overlay-title">Pagriez ierīci ainavas režīmā</div>
-      <div class="overlay-sub">Labākai pieredzei izmanto horizontālo skatu</div>
-    </div>
-  </div>
+   	<!-- Brīdinājuma pārklājums viedtālruņiem -->
+							<div id="mobile-warning" style="display: none;">
+								<div class="warning-content">
+									<p>Lūdzu, izmantojiet lielāku ekrānu šīs lietotnes darbībai.</p>
+									<img style="width:100px; height:auto;" src="https://site-710050.mozfiles.com/files/710050/fullscreen-11-xxl.png" alt="Nepietiekams ekrāna izmērs" style="width: 80%; margin-top: 20px;">
+									<p>INTERAKTĪVAIS KOMPASS</p>
+									<p style="color: rgba(255, 255, 255, 0.5);">CADET.LV | © Jānis Eglis</p>
+								</div>
+							</div>
 
-  <!-- Pilnekrāna paziņojums (ja vajag) -->
-  <div id="fullscreenHint" class="overlay hidden" aria-hidden="true">
-    <div class="overlay-card">
-      <div class="overlay-title">Ieslēdz pilnekrānu (F11)</div>
-      <div class="overlay-sub">Vairāk vietas darbam ar kompasu un karti</div>
-    </div>
-  </div>
+							<!-- Pārklājums mobilajām ierīcēm vertikālā režīmā -->
+							<div id="orientation-overlay">
+								<h1><img src="https://site-710050.mozfiles.com/files/710050/medium/Rotate_V5-2.jpg" alt="Pagrieziet ierīci"></h1>
+							</div>						
 
-  <!-- Pamatkonteiners -->
-  <div id="canvasContainer" role="application" aria-label="Interaktīvā karte un kompass">
-    <!-- Kanva (tīklojums/atskaitei vai foniem) -->
-    <canvas id="mapCanvas" width="1920" height="1080"></canvas>
+							<div id="fullscreenMessage" class="fs-message-hidden">
+								<div class="arrow"></div>
+								<p id="fullscreenMessagetext">
+									<span class="highlight-title">Lūdzu, iestatiet logu pilnā izmērā, lai sāktu darbu.</span>
+									<br>
+									Varat izmantot F11, lai logu darbinātu pilnekrāna režīmā vai palielināt logu līdz ekrāna izmēram spiežot simbolu "𖧵" pārlūka galvenē.<br><br>
+									<a href="https://cadet.lv" target="_blank" style="color: white; font-weight: bold;">CADET.LV</a>
+									<br>
+									<span style="color: " class="copyright">CADET.LV | © Jānis Eglis</span>
+								</p>
+							</div> 
+							
+							<div id="touchscreenPopup"></div>
+							
+							<div id="fullscreenPopup"></div>
 
-    <!-- Tiešsaistes karte + tumšošanas pārklājums -->
-    <div id="onlineMap" aria-label="Tiešsaistes karte" hidden></div>
-    <div id="onlineMapDim" aria-hidden="true"></div>
+													
+							<div id="canvasContainer" 
+								 style="position: fixed; 
+										width: 1920px; 
+										height: 1080px;">
 
-    <!-- Kompass (SVG, bez bildēm) -->
-    <div id="compassContainer" aria-label="Kompass">
-      <svg id="compassSVG" viewBox="0 0 300 300" role="img" aria-label="Kompass">
-        <!-- Mērskala -->
-        <g id="compassScaleGroup"></g>
-        <!-- Adata -->
-        <g id="compassNeedle" transform="translate(150,150)">
-          <polygon points="0,-110 8,0 0,18 -8,0" class="needle"/>
-          <circle r="6" class="needle-cap"></circle>
-        </g>
-        <!-- Centrs -->
-        <circle cx="150" cy="150" r="4" class="center-dot"/>
-      </svg>
-    </div>
-  </div>
+							  <!-- kanva kartei -->
+							  <canvas id="mapCanvas" width="1920" height="1080" style="display:block; width:100%; height:100%;"></canvas>
 
-  <!-- Apakšējais DOCK ar pogām (nav sākuma pogas) -->
-  <div id="dock" class="dock">
-    <button id="toggleOnlineMap" class="dock-btn" title="Tiešsaistes karte ON/OFF" aria-pressed="false">
-      <!-- Ikona: karte -->
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 2-6-2v12l6 2 6-2 6 2V8l-6-2zm0 2v10l-6 2V10l6-2z"/></svg>
-    </button>
 
-    <button id="rotateCompass90" class="dock-btn" title="Pagriezt kompasu +90°">
-      <!-- Ikona: rotācija -->
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 11-5-5z"/></svg>
-    </button>
 
-    <button id="toggleFullscreen" class="dock-btn" title="Pilnekrāns">
-      <!-- Ikona: pilnekrāns -->
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h4V5H5v6h2V7zm6 0h4v4h2V5h-6v2zm4 10h-4v2h6v-6h-2v4zM7 13H5v6h6v-2H7v-4z"/></svg>
-    </button>
+                <!-- Tiešsaistes karte (Leaflet) + tumšošanas pārklājums -->
+                <div id="onlineMap"></div>
+                <div id="onlineMapDim"></div>
 
-    <div class="dock-slider">
-      <label for="opacityRange">Karte tumšums</label>
-      <input id="opacityRange" type="range" min="0" max="100" value="0" step="1" />
-    </div>
-  </div>
+
+
+								
+							  <!-- Jaunais <img>, kur glabāt augšupielādēto attēlu -->
+							  <img id="uploadedImg" 
+								   src="" 
+								   alt="Augšupielādētais attēls"
+								   style="
+									 position: absolute;
+									 top: 0;
+									 left: 0;
+									 display: none; /* Slēpts līdz augšupielādē attēlu */
+									 cursor: move;  /* Ja vēlaties, var padarīt arī pārvietojamu */
+									  
+									 ">
+									 
+
+							  <!-- MapResize rokturis -->
+								<div id="resizeHandle">
+									<img src="https://site-710050.mozfiles.com/files/710050/resize_map__1_.png" alt="Resize">
+								</div>
+							</div>
+
+																			
+							<!-- MapResize Papildu elements attēlam -->
+							<img id="newUploadedImg" 
+								 style="
+								   position: absolute; 
+								   top: 50px; 
+								   left: 50px; 
+								   display: none;
+								   cursor: move;
+								   
+								 " 
+								 alt="Augšupielādētais attēls">
+
+							<!-- MapResize rokturis -->
+							<div id="newResizeHandle"
+								 style="
+								   display: none;
+								   width: 30px;
+								   height: 30px;
+								   position: absolute;
+								   cursor: se-resize;
+								   z-index: 9;
+								 ">
+							</div>						
+							
+
+							<div class="dropdown-container">
+							        <div class="top-bar">
+							            <span class="dropdown-toggle" id="toggleInstruction">Lietotāja ceļvedis ⬇</span>
+							            <span class="dropdown-toggle" id="toggleMaterials">Mācību materiāli ⬇</span>
+							        </div>
+							
+							        <div class="dropdown-menu" id="dropdownInstruction">
+							            <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/lietotaja-celvedis/page/">DARBAM AR DATORU</a>
+							            <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/lietotaja-celvedis/page-1/">DARBAM AR SKĀRIENJŪTĪGĀM IERĪCĒM</a>
+										<a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/lietotaja-celvedis/page-2/">LIETOŠANAS NOTEIKUMI</a>
+							           <iframe id="instructionFrame" name="contentFrame" style="width: 100%; height: 85vh; border: none;"></iframe>  
+							            
+							        </div>
+							
+							        <div class="dropdown-menu" id="dropdownMaterials">
+							        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/topografiskas-kartes/" class="dropdown-link">TOPOGRĀFISKĀS KARTES</a>
+							        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/merogs-un-attalumi/" class="dropdown-link">MĒROGS UN ATTĀLUMI</a>
+							        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/apzimejumi-kartes/" class="dropdown-link">APZĪMĒJUMI KARTĒS</a>
+							        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/direkcijas-lenkis-un-azimuts/" class="dropdown-link">DIREKCIJAS LEŅĶIS UN AZIMUTS</a>
+							        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/koordinates/" class="dropdown-link">KOORDINĀTES</a>
+							        <a href="https://cadet.mozello.lv/virtualais-kompass-macibu-materiali-un-instrukcija/macibu-materiali/citi/" class="dropdown-link">CITI</a>
+									
+									 
+							 <iframe id="contentFrame" name="contentFrame" style="width: 100%; height: 75vh; border: none;"></iframe>
+							        </div>
+									 			
+														
+							</div>	
+														
+
+							 <!-- Izvēlne konteineram -->
+							 <!-- Izvēlne konteineram LABAJĀ pusē -->
+							<div class="position-selector-container">
+								<div class="position-selector">
+									<button class="toggle-selector">❯</button>
+									<select id="positionSelect">
+										<option disabled selected>Izvēlies pogas novietojumu:</option>
+										<option value="bottom">Apakšā (noklusējums)</option>
+										<option value="right">Labajā pusē</option>
+										<option value="left">Kreisajā pusē</option>
+									</select>
+								</div>
+							</div>
+
+							<!-- Izvēlne konteineram KREISAJĀ pusē -->
+							<div class="position-selector-container-left">
+								<div class="position-selector-left">
+									<button class="toggle-selector-left">❯</button>
+									<select id="positionSelectLeft">
+										<option disabled selected>Izvēlies pogas novietojumu:</option>
+										<option value="bottom">Apakšā (noklusējums)</option>
+										<option value="right">Labajā pusē</option>
+										<option value="left">Kreisajā pusē</option>
+									</select>
+								</div>
+							</div>
+
+							<!-- Popup grid view -->
+							<div id="popupMenu" style="display: none;">
+								<h3>Izvēlieties noteikšanas metodi</h3>
+								<div class="button-row">
+									<button id="popupOption1" class="popup-button">
+										<img src="https://site-710050.mozfiles.com/files/710050/GRID_VIEW_1_1.png" alt="Funkcija 1">
+									</button>
+									<button id="popupOption2" class="popup-button">
+										<img src="https://site-710050.mozfiles.com/files/710050/GRID_VIEW_2.png" alt="Funkcija 2">
+									</button>
+								</div>
+								<button id="popupClose" class="popup-close">Aizvērt</button>
+							</div>
+
+							<!-- Pogas konteiners -->
+							<div class="button-container bottom" id="buttonContainer">
+								<button id="resetMap">
+									<img src="https://site-710050.mozfiles.com/files/710050/RESER_MAPS_Cropped-Photoroom.png" alt="Reset Map">
+								</button>
+								<button id="uploadMap">
+									<img src="https://site-710050.mozfiles.com/files/710050/UPLOAD_MAPS_Cropped-Photoroom.png" alt="Upload Map">
+								</button>
+                <button id="toggleOnlineMap" data-title="Tiešsaistes karte" aria-label="Tiešsaistes karte">
+                  <img alt="Tiešsaistes karte"
+                       src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21 3,6'/%3E%3Cline x1='9' y1='3' x2='9' y2='18'/%3E%3Cline x1='15' y1='6' x2='15' y2='21'/%3E%3C/svg%3E">
+                </button>
+								<button id="resetCompass">
+									<img src="https://site-710050.mozfiles.com/files/710050/RESET_COMPASS_Cropped-Photoroom.png" alt="Reset Compass">
+								</button>
+								<button class="touch-only" id="toggleRotationMode">
+									<img src="https://site-710050.mozfiles.com/files/710050/ROTATE_COMPASS_BASE__1__Cropped-Photoroom.png" alt="Toggle Rotation">
+								</button>			
+								<button class="touch-only" id="lockRotationMode">
+									<img src="https://site-710050.mozfiles.com/files/710050/COMPASS_ROTATE_LOCK_OPEN__1__Cropped-Photoroom.png" alt="Lock Rotation">
+								</button>	
+								<button id="rotateCompass90">
+									<img src="https://site-710050.mozfiles.com/files/710050/GRID_VIEW_Cropped-Photoroom.png" alt="Rotate 90° and Lock">
+								</button>
+								<button id="toggleFullscreen">
+								<img id="fullscreenIcon" src="https://site-710050.mozfiles.com/files/710050/icon_fullscreen_enter.png" alt="Pilnkrāna Ieslēgšana">
+								</button>
+							</div>
+							
+							<div id="about">
+							<a href="javascript:void(0);" class="qrLink" onclick="toggleIframeQR(event)">KOPLIETOT</a>
+								<span class="abouttext">CADET.LV</span>
+								<span class="abouttext" >INTERAKTĪVAIS KOMPASS</span> 
+								<span class="abouttext">© JĀNIS EGLIS</span>
+								<a href="javascript:void(0);" class="aboutlink" onclick="toggleIframeAbout(event)">ATSAUKSME / ZIŅOT</a>
+							</div>
+							
+							
+							<!-- IFRAME KONTEINERS (SĀKOTNĒJI PASLĒPTS) -->
+							<div id="iframeContainerAbout">
+								<iframe id="feedbackIframe" src="https://docs.google.com/forms/d/e/1FAIpQLSdflr72km2RpI7hdn05AmH5gRZgBk69y7UCz0sCJ37ujOyQ3Q/viewform?embedded=true" frameborder="0"></iframe>
+								<button id="closeIframeAbout" onclick="toggleIframeAbout(event)">✖</button>
+							</div>						
+							
+							<!-- QR kods konteineris (SĀKOTNĒJI PASLĒPTS) -->
+							<div id="iframeContainerQR">
+								<div id="qrCodeContent">
+									<p class="qrTitle">KOPLIETOŠANAS QR KODS AUDITORIJAI</p>
+									<img id="qrCodeImage" src="https://site-710050.mozfiles.com/files/710050/DOC_ERROR_AR_KRUSTU_PNG-1.png" alt="QR Code">
+								</div>
+								<button id="closeIframeQR" onclick="toggleIframeQR(event)">✖</button>
+							</div>
+
+							<div id="compassContainer">
+								<div id="compassScaleContainer">
+									<div id="compassInner">
+										<img id="compassBase" src="https://site-710050.mozfiles.com/files/710050/VIRTUALAIS_KOMPASS_PAMATNE_PV6.png" alt="Compass Base">
+									</div>  
+									<div id="compassScaleInner">
+										<img id="compassScale" src="https://site-710050.mozfiles.com/files/710050/KOMPASA_SKALA_CADET_LV_PV6_V3.png" alt="Compass Scale">
+									</div>      
+									<img id="compassNeedle" src="https://site-710050.mozfiles.com/files/710050/VIRTUALAIS_KOMPASS_ADATA_CADET_LV_PV4.png" alt="Compass Needle">  
+								</div>
+							</div>
 </body>
 </html>
