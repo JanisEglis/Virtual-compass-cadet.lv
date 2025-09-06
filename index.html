@@ -3740,6 +3740,12 @@ setTimeout(function () {
 							    dim.style.gridColumn = '';
 							    dim.style.width = '';
 							    dim.style.maxWidth = '';
+
+  dim.style.height = '';                 // ⇦ notīrām
+  dim.style.removeProperty('--colH');    // ⇦ notīrām
+
+
+  
 							  }
 							
 							  // 2) Jauns – uzliek precīzu rindu “span” sānā
