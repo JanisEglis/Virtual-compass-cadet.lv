@@ -70,13 +70,23 @@
 						}
 
 						// Pievienojam notikumus pogām
-						document.getElementById('toggleRotationMode').addEventListener('click', () => {
-							toggleButtonImage('toggleRotationMode');
-						});
+						if (toggleRotationModeButton) {
+  toggleRotationModeButton.addEventListener('click', () => {
+    toggleButtonImage('toggleRotationMode'); // saglabā arī ikonu maiņu
+    activeRotationTarget = (activeRotationTarget === 'compassInner')
+      ? 'compassScaleInner' : 'compassInner';
+    toggleRotationModeButton.style.backgroundColor =
+      activeRotationTarget === 'compassInner' ? 'rgba(91,16,16,0.8)' : 'rgb(187,1,1)';
+  });
+}
 
-						document.getElementById('lockRotationMode').addEventListener('click', () => {
-							toggleButtonImage('lockRotationMode');
-						});
+if (lockRotationModeButton) {
+  lockRotationModeButton.addEventListener('click', () => {
+    isRotationLocked = !isRotationLocked;
+    toggleButtonImage('lockRotationMode'); // saglabā ikonu maiņu
+    lockRotationModeButton.classList.toggle('active', isRotationLocked);
+  });
+}
 
 
 						(function() {
@@ -390,7 +400,25 @@
 
 						// Tumšošanas intensitāte (0..0.8), glabājam % localStorage (0..80)
 						let mapDarken = (+(localStorage.getItem('mapDarken') || 0)) / 100;
-						
+		// Tumšuma vērtība (%) → saglabā, uzliek canvas un onlineMap
+function setDarkness(percent){
+  // 0..80 (%), canvas izmantos 0..0.8
+  const p = Math.max(0, Math.min(80, +percent || 0));
+  localStorage.setItem('mapDarken', String(p));
+  mapDarken = p / 100;
+
+  // onlineMap pārklājums
+  const dim = document.getElementById('onlineMapDim');
+  if (dim) dim.style.background = 'rgba(0,0,0,' + Math.min(0.8, mapDarken) + ')';
+
+  // ja ir slīdnis — atjauno CSS progresu (tavs CSS lieto --p)
+  const rng = document.getElementById('mapDimmerRange');
+  if (rng) rng.style.setProperty('--p', p);
+
+  // pārzzīmējam kanvu (tumšums uz attēla)
+  if (typeof drawImage === 'function') drawImage();
+}
+				
 
 
 
@@ -926,12 +954,13 @@ map.getContainer().addEventListener('pointerdown', () => {
     mapDim.style.background = 'rgba(0,0,0,' + a + ')';
   }
 // padarām pieejamu “binderi”, ja slīdnis parādās vēlāk
-window.__bindOnlineMapDimmer = function(inputEl){
-  if (!inputEl) return;
-  // atvienojam vecos klausītājus, ja bija
-  inputEl.removeEventListener('input', syncDimOverlay);
-  inputEl.addEventListener('input', syncDimOverlay);
-  syncDimOverlay(); // uzreiz piemēro aktuālo vērtību
+// Sasien slīdni ar vienoto iestatītāju
+window.__bindDimmer = function(inputEl){
+  if(!inputEl) return;
+  const saved = +(localStorage.getItem('mapDarken') || 0);
+  inputEl.value = saved;
+  inputEl.addEventListener('input', () => setDarkness(inputEl.value));
+  setDarkness(saved); // piemēro uzreiz
 };
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
   function showOnlineMap(){
@@ -945,6 +974,9 @@ window.__bindOnlineMapDimmer = function(inputEl){
     }
 
     mapDim.style.display = 'block';
+
+const v = +(localStorage.getItem('mapDarken') || 0);
+setDarkness(v);	  
     canvas.style.display = 'none';
     if (resizeH) resizeH.style.display = 'none';
 
@@ -988,7 +1020,8 @@ window.__bindOnlineMapDimmer = function(inputEl){
   if (localStorage.getItem('onlineMapActive') === '1'){ showOnlineMap(); }
 
   window.addEventListener('resize', ()=> map && map.invalidateSize());
-if (dimRange){ window.__bindOnlineMapDimmer(dimRange); }
+if (dimRange){ window.__bindDimmer(dimRange); }
+
 })();
 
 
@@ -2034,7 +2067,8 @@ if (dimRange){ window.__bindOnlineMapDimmer(dimRange); }
 								
 								  // sasaistām ar mainīgo + localStorage
 								  var dimRange = dimWrap.querySelector('#mapDimmerRange');
-								window.__bindOnlineMapDimmer && window.__bindOnlineMapDimmer(dimRange);
+								window.__bindDimmer && window.__bindDimmer(dimRange);
+
 								  var dimValue = dimWrap.querySelector('#mapDimmerValue');
 								
 								  var stored = +(localStorage.getItem('mapDarken') || 0);
@@ -2043,12 +2077,12 @@ if (dimRange){ window.__bindOnlineMapDimmer(dimRange); }
 								  dimValue.textContent = stored + '%';
 								
 								  dimRange.addEventListener('input', function(e){
-								    var v = +e.target.value;       // 0..80
-								    mapDarken = v / 100;           // 0..0.8
-								    localStorage.setItem('mapDarken', v);
-								    dimValue.textContent = v + '%';
-								    drawImage();                   // pārzīmē kanvu ar jaunu tumšumu
-								  });
+  const v = +e.target.value;
+  setDarkness(v);            // sinhronizē canvas + onlineMap un saglabā localStorage
+  dimValue.textContent = v + '%';
+  setRangeFill(dimRange);    // atjauno CSS progresu
+});
+
 							
 								function setRangeFill(el){
 								  const min = +el.min || 0, max = +el.max || 100, val = +el.value || 0;
