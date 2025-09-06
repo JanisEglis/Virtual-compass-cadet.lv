@@ -1723,7 +1723,7 @@
 							
 							    display:block !important;
 							    margin:0 auto !important;
-
+								}
    
 
 							  /* Apakšā paliek horizontāls, bez rotācijas un ar pilnu platumu */
@@ -2553,6 +2553,15 @@ function initMap(){
  function showOnlineMap(){
   // parādi konteineru, paslēp kanvu
   mapDiv.style.display = 'block';
+
+// ja kaut kas ar CSS nošauj garām, piešķir izmēru ar roku
+if (!mapDiv.offsetWidth || !mapDiv.offsetHeight){
+  const p = mapDiv.parentElement;
+  mapDiv.style.width  = (p?.clientWidth  || window.innerWidth)  + 'px';
+  mapDiv.style.height = (p?.clientHeight || window.innerHeight) + 'px';
+}
+
+  
   mapDim.style.display = 'block';
   canvas.style.display = 'none';
   if (resizeH) resizeH.style.display = 'none';
