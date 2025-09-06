@@ -1636,7 +1636,7 @@
 							.dock-dimmer input[type=range]{ accent-color: var(--fill); }
 
 
-						:root{
+:root{
   /* vispārīgie */
   --rng-track: 8px;                 /* horizont./vert. sliedes biezums, ja kur citur lieto */
   --rng-thumb: 18px;                /* īkšķa diametrs (izmanto arī WebKit centrēšanai) */
@@ -1756,6 +1756,36 @@
   }
 }
 
+/* === WebKit/Chromium pildījuma fiksācija (liekam pašās CSS beigās) === */
+
+/* bāzei – izmērs un robeža; fonu neatstājam te, lai netraucē pildījumam */
+#buttonContainer .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
+  height: var(--rng-track, 8px);
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.06);
+}
+
+/* APakšā (horizontāli): pildījums pa labi -> ar !important lai vienmēr uzvar */
+#buttonContainer.bottom .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
+  background:
+    linear-gradient(to right,
+      var(--fill) 0,
+      var(--fill) calc(var(--p)*1%),
+      var(--unfill) calc(var(--p)*1%),
+      var(--unfill) 100%) !important;
+}
+
+/* Sānos (vertikāli): pildījums uz augšu */
+#buttonContainer.left  .dock-dimmer input[type=range]::-webkit-slider-runnable-track,
+#buttonContainer.right .dock-dimmer input[type=range]::-webkit-slider-runnable-track,
+#buttonContainer .dock-dimmer .range-vertical::-webkit-slider-runnable-track{
+  background:
+    linear-gradient(to top,
+      var(--fill) 0,
+      var(--fill) calc(var(--p)*1%),
+      var(--unfill) calc(var(--p)*1%),
+      var(--unfill) 100%) !important;
+}
 
 
 
