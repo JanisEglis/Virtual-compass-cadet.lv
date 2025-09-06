@@ -1653,48 +1653,37 @@
 /* ==== Tikai Firefox ==== */
 @-moz-document url-prefix() {
 
-  /* reset */
-  #buttonContainer .dock-dimmer input[type=range]{
-    appearance: none;
-    -moz-appearance: none;
-    background: transparent;
-    border: 0;
-    outline: 0;
+  /* ... tavs reset un stils paliek ... */
+
+  /* Sānos: kaste stiepjas un nav sānu paddinga, lai range var būt 100% platumā */
+  #buttonContainer.left  .dock-dimmer,
+  #buttonContainer.right .dock-dimmer{
+    align-items: stretch !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 
-  /* stils */
-  #buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
-    height: 8px;
-    background: var(--unfill);
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,.06);
-  }
-  #buttonContainer .dock-dimmer input[type=range]::-moz-range-progress{
-    background: var(--fill);
-    border-radius: 999px;
-  }
-  #buttonContainer .dock-dimmer input[type=range]::-moz-range-thumb{
-    width: 18px; height: 18px; border-radius: 50%;
-    background: var(--rng-thumb-bg, #eef2f7);
-    border: 3px solid var(--rng-thumb-ring, var(--dock-ring));
-    box-shadow: 0 2px 6px rgba(0,0,0,.35);
-  }
-
-/* MALĀS: vertikāls + apgriezts par 180° */
+  /* Sānos: range aizņem VISU .dock-dimmer platumu un augstumu */
   #buttonContainer.left  .dock-dimmer input[type=range],
   #buttonContainer.right .dock-dimmer input[type=range],
   #buttonContainer .dock-dimmer input[type=range][orient="vertical"]{
     -moz-appearance: slider-vertical !important;
     writing-mode: vertical-lr !important;
-    inline-size: 28px !important;
-    block-size: calc(100% - 16px) !important;
 
-    /* ← apgriežam virzienu */
+    /* aizpilda konteineru */
+    display: block !important;
+    box-sizing: border-box !important;
+    align-self: stretch !important;
+    inline-size: 100% !important;              /* ← viss .dock-dimmer platums */
+    block-size: calc(100% - 16px) !important;  /* ← viss augstums (8px+8px vert. paddings) */
+    margin: 0 !important;
+
+    /* apgriezt virzienu */
     transform: rotate(180deg) !important;
     transform-origin: center !important;
   }
 
-  /* APAKŠĀ: paliek horizontāls, bez rotācijas */
+  /* Apakšā paliek horizontāls, bez rotācijas un ar pilnu platumu */
   #buttonContainer.bottom .dock-dimmer input[type=range]{
     -moz-appearance: none !important;
     writing-mode: horizontal-tb !important;
