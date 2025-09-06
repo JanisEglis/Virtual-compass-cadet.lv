@@ -1650,10 +1650,10 @@
 
 
 
-/* ===== Tikai Firefox (Chrome/Edge/Safari neredz) ===== */
-@supports (-moz-appearance: none) {
+/* ==== Firefox-only (Chrome/Edge/Safari neietekmē) ==== */
+@-moz-document url-prefix() {
 
-  /* Reset FF bez izkārtojuma maiņas */
+  /* Reset – bez izkārtojuma maiņas */
   #buttonContainer .dock-dimmer input[type=range]{
     appearance: none;
     -moz-appearance: none;
@@ -1662,7 +1662,7 @@
     outline: 0;
   }
 
-  /* FF track / progress / thumb */
+  /* Track / progress / thumb (FF) */
   #buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
     height: 8px;
     background: var(--unfill);
@@ -1674,36 +1674,42 @@
     border-radius: 999px;
   }
   #buttonContainer .dock-dimmer input[type=range]::-moz-range-thumb{
-    width: 18px; height: 18px; border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
     background: var(--rng-thumb-bg, #eef2f7);
     border: 3px solid var(--rng-thumb-ring, var(--dock-ring));
     box-shadow: 0 2px 6px rgba(0,0,0,.35);
   }
 
-  /* ── MALĀS: vertikāls un pilna augstuma ───────────────────────── */
-  /* ļauj kastei izstiepties pa visu kolonnas augstumu (pret "mazo gājienu") */
+  /* ── MALĀS: VERTIKĀLS + pilns augstums ───────────────────────── */
+  /* lai “īsais gājiens” nepazustu – kaste stiepjas pa visu kolonnas augstumu */
   #buttonContainer.left  .dock-dimmer,
   #buttonContainer.right .dock-dimmer{
     align-self: stretch;
-    min-height: 0; /* svarīgi gridam, lai drīkst izstiepties */
+    grid-row: 1 / -1;          /* aizņem visas rindas tikai FF pusēs */
+    min-height: 260px;         /* ja vajag, palielini līdz 320px */
   }
 
   #buttonContainer.left  .dock-dimmer input[type=range],
   #buttonContainer.right .dock-dimmer input[type=range]{
-    -moz-appearance: slider-vertical !important; /* piespiež vertikālu FF */
-    writing-mode: bt-lr;                          /* virziens FF */
-    width: 28px;                                  /* “biezums” */
-    height: calc(100% - 16px) !important;         /* 8px+8px padding iekš .dock-dimmer */
-    block-size: calc(100% - 16px) !important;     /* loģiskais ekvivalents */
+    -moz-appearance: slider-vertical !important; /* piespiež vertikālu */
+    writing-mode: bt-lr !important;              /* virziens FF */
+    inline-size: 28px !important;                /* “platums” (loģiskais) */
+    block-size: calc(100% - 16px) !important;    /* aizpilda visu augstumu (ņem vērā 8px+8px paddingu) */
   }
 
-  /* ── APAKŠĀ: vienmēr horizontāls (arī pēc pārslēgšanas) ───────── */
+  /* ── APAKŠĀ: vienmēr HORIZONTĀLS ─────────────────────────────── */
+  #buttonContainer.bottom .dock-dimmer{
+    align-self: auto;
+    grid-row: auto;
+    min-height: 0;
+  }
   #buttonContainer.bottom .dock-dimmer input[type=range]{
     -moz-appearance: none !important;
     writing-mode: horizontal-tb !important;
-    width: 100%;
-    height: 8px;          /* sliedes biezums */
-    block-size: 8px;
+    inline-size: 100% !important;
+    block-size: 8px !important;  /* sliedes biezums */
   }
 }
 
