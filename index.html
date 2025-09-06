@@ -1680,32 +1680,27 @@
     box-shadow: 0 2px 6px rgba(0,0,0,.35);
   }
 
-  /* ── MALĀS: vienmēr vertikāls (pārspēj rotācijas fallbacku) ── */
+/* MALĀS: vertikāls + apgriezts par 180° */
   #buttonContainer.left  .dock-dimmer input[type=range],
   #buttonContainer.right .dock-dimmer input[type=range],
   #buttonContainer .dock-dimmer input[type=range][orient="vertical"]{
     -moz-appearance: slider-vertical !important;
-    writing-mode: vertical-lr !important;        /* nevis bt-lr */
-    width: 28px !important;
-    height: calc(100% - 16px) !important;        /* pielāgo, ja padding cits */
-    transform: none !important;                  /* atceļ rotate fallbacku */
+    writing-mode: vertical-lr !important;
+    inline-size: 28px !important;
+    block-size: calc(100% - 16px) !important;
+
+    /* ← apgriežam virzienu */
+    transform: rotate(180deg) !important;
+    transform-origin: center !important;
   }
 
-  /* ── APAKŠĀ: vienmēr horizontāls ── */
+  /* APAKŠĀ: paliek horizontāls, bez rotācijas */
   #buttonContainer.bottom .dock-dimmer input[type=range]{
     -moz-appearance: none !important;
     writing-mode: horizontal-tb !important;
-    width: 100% !important;
-    height: var(--rng-track, 8px) !important;
+    inline-size: 100% !important;
+    block-size: var(--rng-track, 8px) !important;
     transform: none !important;
-  }
-
-  /* slīdņa “kaste” malās lai stiepjas pa pilnu kolonnas augstumu */
-  #buttonContainer.left  .dock-dimmer,
-  #buttonContainer.right .dock-dimmer{
-    grid-row: 1 / -1;
-    align-self: stretch;
-    min-height: 260px;
   }
 }
 
