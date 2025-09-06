@@ -1658,59 +1658,6 @@
 
 
 
-#buttonContainer.bottom .dock-dimmer input[type=range]{
-  /* skaidri atgriežam horizontāli, bez rotācijām */
-  -webkit-appearance: none !important;
-  appearance: none !important;
-  writing-mode: horizontal-tb !important;
-  transform: none !important;
-
-  /* precīzi izmēri */
-  display: block !important;
-  width: 100% !important;
-  inline-size: 100% !important;
-  height: var(--rng-track-bottom, 6px) !important;
-  block-size: var(--rng-track-bottom, 6px) !important;
-
-  /* noņemam “atliekas” */
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* ==== Tikai Firefox ==== */
-@-moz-document url-prefix() {
-
-  /* Sānos: kaste stiepjas un nav sānu paddinga, lai range var būt 100% platumā */
-  #buttonContainer.left  .dock-dimmer,
-  #buttonContainer.right .dock-dimmer{
-    align-items: stretch !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
-
- /* Sānos: range aizņem VISU .dock-dimmer platumu un augstumu (vertikāli, apgriezts) */
-  #buttonContainer.left  .dock-dimmer input[type=range],
-  #buttonContainer.right .dock-dimmer input[type=range],
-  #buttonContainer .dock-dimmer input[type=range][orient="vertical"]{
-    -moz-appearance: slider-vertical !important;
-    writing-mode: vertical-lr !important;
-
-    display: block !important;
-    box-sizing: border-box !important;
-    align-self: stretch !important;
-    inline-size: 100% !important;              /* viss .dock-dimmer platums */
-    block-size: calc(100% - 16px) !important;  /* viss augstums (8px+8px vert. paddings) */
-    margin: 0 !important;
-
-    /* apgriezt virzienu */
-    transform: rotate(180deg) !important;
-    transform-origin: center !important;
-  }
-
-
-
-
-
 
 
 
@@ -1723,49 +1670,6 @@
 
 
  
-  /* Apakšā (FF): horizontāls, plāns slīdnis čaulas augstumu neietekmē */
-  #buttonContainer.bottom .dock-dimmer{
-    padding-block: var(--rng-pad-bottom, 4px) !important;
-    padding-inline: 10px !important;
-    align-items: center !important;
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-  }
-
-
-
-  /* pašas trases augstums FF */
-  #buttonContainer.bottom .dock-dimmer input[type=range]::-moz-range-track{
-    height: var(--rng-track-bottom, 6px) !important;
-  }
-}
-
-
-
-/* APakšā (horizontāli): pildījums pa labi -> ar !important lai vienmēr uzvar */
-#buttonContainer.bottom .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
-  background:
-    linear-gradient(to right,
-      var(--fill) 0,
-      var(--fill) calc(var(--p)*1%),
-      var(--unfill) calc(var(--p)*1%),
-      var(--unfill) 100%) !important;
-}
-
-/* Sānos (vertikāli): pildījums uz augšu */
-#buttonContainer.left  .dock-dimmer input[type=range]::-webkit-slider-runnable-track,
-#buttonContainer.right .dock-dimmer input[type=range]::-webkit-slider-runnable-track,
-#buttonContainer .dock-dimmer .range-vertical::-webkit-slider-runnable-track{
-  background:
-    linear-gradient(to top,
-      var(--fill) 0,
-      var(--fill) calc(var(--p)*1%),
-      var(--unfill) calc(var(--p)*1%),
-      var(--unfill) 100%) !important;
-}
-
-
 
 
 
