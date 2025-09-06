@@ -1653,7 +1653,7 @@
 /* ==== Firefox-only (Chrome/Edge/Safari neietekmē) ==== */
 @-moz-document url-prefix() {
 
-  /* Reset – bez izkārtojuma maiņas */
+  /* Reset */
   #buttonContainer .dock-dimmer input[type=range]{
     appearance: none;
     -moz-appearance: none;
@@ -1662,7 +1662,7 @@
     outline: 0;
   }
 
-  /* Track / progress / thumb (FF) */
+  /* Vizuālais stils */
   #buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
     height: 8px;
     background: var(--unfill);
@@ -1674,42 +1674,32 @@
     border-radius: 999px;
   }
   #buttonContainer .dock-dimmer input[type=range]::-moz-range-thumb{
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
+    width: 18px; height: 18px; border-radius: 50%;
     background: var(--rng-thumb-bg, #eef2f7);
     border: 3px solid var(--rng-thumb-ring, var(--dock-ring));
     box-shadow: 0 2px 6px rgba(0,0,0,.35);
   }
 
-  /* ── MALĀS: VERTIKĀLS + pilns augstums ───────────────────────── */
-  /* lai “īsais gājiens” nepazustu – kaste stiepjas pa visu kolonnas augstumu */
-  #buttonContainer.left  .dock-dimmer,
-  #buttonContainer.right .dock-dimmer{
-    align-self: stretch;
-    grid-row: 1 / -1;          /* aizņem visas rindas tikai FF pusēs */
-    min-height: 260px;         /* ja vajag, palielini līdz 320px */
+  /* 🔑 Orientāciju nosaka pēc atribūta, nevis pēc klases */
+  #buttonContainer .dock-dimmer input[type=range][orient="vertical"]{
+    -moz-appearance: slider-vertical !important;
+    writing-mode: bt-lr !important;
+    inline-size: 28px !important;                /* “platums” */
+    block-size: calc(100% - 16px) !important;    /* pilns augstums (8px+8px padding) */
   }
-
-  #buttonContainer.left  .dock-dimmer input[type=range],
-  #buttonContainer.right .dock-dimmer input[type=range]{
-    -moz-appearance: slider-vertical !important; /* piespiež vertikālu */
-    writing-mode: bt-lr !important;              /* virziens FF */
-    inline-size: 28px !important;                /* “platums” (loģiskais) */
-    block-size: calc(100% - 16px) !important;    /* aizpilda visu augstumu (ņem vērā 8px+8px paddingu) */
-  }
-
-  /* ── APAKŠĀ: vienmēr HORIZONTĀLS ─────────────────────────────── */
-  #buttonContainer.bottom .dock-dimmer{
-    align-self: auto;
-    grid-row: auto;
-    min-height: 0;
-  }
-  #buttonContainer.bottom .dock-dimmer input[type=range]{
+  #buttonContainer .dock-dimmer input[type=range]:not([orient="vertical"]){
     -moz-appearance: none !important;
     writing-mode: horizontal-tb !important;
     inline-size: 100% !important;
-    block-size: 8px !important;  /* sliedes biezums */
+    block-size: var(--rng-track, 8px) !important;
+  }
+
+  /* Dimmera kolonna sānā = pilns augstums */
+  #buttonContainer.left  .dock-dimmer,
+  #buttonContainer.right .dock-dimmer{
+    grid-row: 1 / -1;
+    align-self: stretch;
+    min-height: 260px;
   }
 }
 
@@ -3367,7 +3357,15 @@
 							    '<input id="mapDimmerRange" type="range" min="0" max="80" step="1">' +
 							    '<span class="value" id="mapDimmerValue"></span>';
 							  shell.insertBefore(dimWrap, shell.firstChild);
-							  
+
+// nodrošinām, ka FF uzreiz saņem pareizo orientāciju
+setTimeout(function () {
+  if (typeof syncRangeOrientation === 'function') syncRangeOrientation();
+}, 0);
+
+
+
+   
 								// Tooltipam un fokusam (tāpat kā pogām)
 								dimWrap.setAttribute('data-title', 'Tumšināt karti');
 								dimWrap.setAttribute('aria-label', 'Tumšināt karti');
