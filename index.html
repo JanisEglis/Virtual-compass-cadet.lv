@@ -1733,18 +1733,7 @@
     overflow: visible !important;
   }
 
-  #buttonContainer.bottom .dock-dimmer input[type=range]{
-    -moz-appearance: none !important;
-    writing-mode: horizontal-tb !important;
-    transform: none !important;
 
-    inline-size: 100% !important;
-    block-size: var(--rng-track-bottom, 6px) !important;
-    height: var(--rng-track-bottom, 6px) !important; /* drošībai */
-
-    margin: 0 !important;
-    padding: 0 !important;
-  }
 
   /* pašas trases augstums FF */
   #buttonContainer.bottom .dock-dimmer input[type=range]::-moz-range-track{
@@ -1752,14 +1741,7 @@
   }
 }
 
-/* === WebKit/Chromium pildījuma fiksācija (liekam pašās CSS beigās) === */
 
-/* bāzei – izmērs un robeža; fonu neatstājam te, lai netraucē pildījumam */
-#buttonContainer .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
-  height: var(--rng-track, 8px);
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.06);
-}
 
 /* APakšā (horizontāli): pildījums pa labi -> ar !important lai vienmēr uzvar */
 #buttonContainer.bottom .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
