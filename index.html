@@ -1,160 +1,83 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="lv">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTML, CSS & JS Savienojuma Tests</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f9ff;
-            color: #333;
-        }
-        
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .test-container {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        
-        .status {
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-weight: bold;
-        }
-        
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .failure {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 5px;
-            transition: background-color 0.3s;
-        }
-        
-        button:hover {
-            background-color: #2980b9;
-        }
-        
-        .interaction-test {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-            border-left: 4px solid #3498db;
-        }
-        
-        #colorBox {
-            width: 100px;
-            height: 100px;
-            margin: 15px 0;
-            background-color: #e74c3c;
-            border-radius: 5px;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>CADET.LV Interaktīvais kompass © Jānis Eglis</title>
+
+  <!-- Stili -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Leaflet (ja nelieto tiešsaistes karti, vari izdzēst šīs 2 rindas) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+
+  <!-- Galvenais skripts -->
+  <script type="module" src="app.js" defer></script>
 </head>
 <body>
-    <h1>HTML, CSS un JS Savienojuma Tests</h1>
-    
-    <div class="test-container">
-        <h2>Statuss</h2>
-        <div id="htmlStatus" class="status">Pārbauda HTML...</div>
-        <div id="cssStatus" class="status">Pārbauda CSS...</div>
-        <div id="jsStatus" class="status">Pārbauda JavaScript...</div>
+  <!-- Orientācijas pārklājums mobilajām ierīcēm -->
+  <div id="orientationOverlay" class="overlay hidden" aria-hidden="true">
+    <div class="overlay-card">
+      <div class="overlay-title">Pagriez ierīci ainavas režīmā</div>
+      <div class="overlay-sub">Labākai pieredzei izmanto horizontālo skatu</div>
     </div>
-    
-    <div class="test-container">
-        <h2>Mijiedarbības tests</h2>
-        <p>Nospiediet pogas, lai pārbaudītu JavaScript funkcionalitāti:</p>
-        
-        <button id="changeColorBtn">Mainīt kastītes krāsu</button>
-        <button id="toggleTextBtn">Rādīt/Paslēpt tekstu</button>
-        
-        <div id="colorBox"></div>
-        
-        <p id="toggleText" class="hidden">Šis teksts tika parādīts ar JavaScript palīdzību!</p>
-        
-        <div class="interaction-test">
-            <h3>CSS stila maiņas tests</h3>
-            <p>Teksta izmērs: <span id="sizeValue">16</span>px</p>
-            <button id="increaseTextBtn">Palielināt tekstu</button>
-            <button id="decreaseTextBtn">Samazināt tekstu</button>
-        </div>
-    </div>
+  </div>
 
-    <script>
-        // Pārbaude, vai JavaScript ir ielādēts un darbojas
-        document.addEventListener('DOMContentLoaded', function() {
-            // Atzīmēt HTML kā ielādētu
-            document.getElementById('htmlStatus').textContent = "HTML ielādēts veiksmīgi";
-            document.getElementById('htmlStatus').className = "status success";
-            
-            // Atzīmēt CSS kā ielādētu (ja lapa ir formatēta, tad CSS strādā)
-            document.getElementById('cssStatus').textContent = "CSS ielādēts veiksmīgi";
-            document.getElementById('cssStatus').className = "status success";
-            
-            // Atzīmēt JavaScript kā ielādētu
-            document.getElementById('jsStatus').textContent = "JavaScript ielādēts veiksmīgi";
-            document.getElementById('jsStatus').className = "status success";
-            
-            // Pievienot notikumu klausītājus testa pogām
-            document.getElementById('changeColorBtn').addEventListener('click', function() {
-                const colorBox = document.getElementById('colorBox');
-                const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6'];
-                const randomColor = colors[Math.floor(Math.random() * colors.length)];
-                colorBox.style.backgroundColor = randomColor;
-            });
-            
-            document.getElementById('toggleTextBtn').addEventListener('click', function() {
-                const toggleText = document.getElementById('toggleText');
-                toggleText.classList.toggle('hidden');
-            });
-            
-            document.getElementById('increaseTextBtn').addEventListener('click', function() {
-                changeTextSize(2);
-            });
-            
-            document.getElementById('decreaseTextBtn').addEventListener('click', function() {
-                changeTextSize(-2);
-            });
-            
-            function changeTextSize(delta) {
-                const currentSize = parseInt(getComputedStyle(document.body).fontSize);
-                document.body.style.fontSize = (currentSize + delta) + 'px';
-                document.getElementById('sizeValue').textContent = currentSize + delta;
-            }
-        });
-    </script>
+  <!-- Pilnekrāna paziņojums (ja vajag) -->
+  <div id="fullscreenHint" class="overlay hidden" aria-hidden="true">
+    <div class="overlay-card">
+      <div class="overlay-title">Ieslēdz pilnekrānu (F11)</div>
+      <div class="overlay-sub">Vairāk vietas darbam ar kompasu un karti</div>
+    </div>
+  </div>
+
+  <!-- Pamatkonteiners -->
+  <div id="canvasContainer" role="application" aria-label="Interaktīvā karte un kompass">
+    <!-- Kanva (tīklojums/atskaitei vai foniem) -->
+    <canvas id="mapCanvas" width="1920" height="1080"></canvas>
+
+    <!-- Tiešsaistes karte + tumšošanas pārklājums -->
+    <div id="onlineMap" aria-label="Tiešsaistes karte" hidden></div>
+    <div id="onlineMapDim" aria-hidden="true"></div>
+
+    <!-- Kompass (SVG, bez bildēm) -->
+    <div id="compassContainer" aria-label="Kompass">
+      <svg id="compassSVG" viewBox="0 0 300 300" role="img" aria-label="Kompass">
+        <!-- Mērskala -->
+        <g id="compassScaleGroup"></g>
+        <!-- Adata -->
+        <g id="compassNeedle" transform="translate(150,150)">
+          <polygon points="0,-110 8,0 0,18 -8,0" class="needle"/>
+          <circle r="6" class="needle-cap"></circle>
+        </g>
+        <!-- Centrs -->
+        <circle cx="150" cy="150" r="4" class="center-dot"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Apakšējais DOCK ar pogām (nav sākuma pogas) -->
+  <div id="dock" class="dock">
+    <button id="toggleOnlineMap" class="dock-btn" title="Tiešsaistes karte ON/OFF" aria-pressed="false">
+      <!-- Ikona: karte -->
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 2-6-2v12l6 2 6-2 6 2V8l-6-2zm0 2v10l-6 2V10l6-2z"/></svg>
+    </button>
+
+    <button id="rotateCompass90" class="dock-btn" title="Pagriezt kompasu +90°">
+      <!-- Ikona: rotācija -->
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 11-5-5z"/></svg>
+    </button>
+
+    <button id="toggleFullscreen" class="dock-btn" title="Pilnekrāns">
+      <!-- Ikona: pilnekrāns -->
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h4V5H5v6h2V7zm6 0h4v4h2V5h-6v2zm4 10h-4v2h6v-6h-2v4zM7 13H5v6h6v-2H7v-4z"/></svg>
+    </button>
+
+    <div class="dock-slider">
+      <label for="opacityRange">Karte tumšums</label>
+      <input id="opacityRange" type="range" min="0" max="100" value="0" step="1" />
+    </div>
+  </div>
 </body>
 </html>
