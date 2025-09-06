@@ -1,246 +1,178 @@
-// Virtuālā kompasa galvenais JavaScript fails
+/* ===== Palīgfunkcijas ===== */
+function setVHVar(){
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+function isTouch(){ return window.matchMedia('(pointer:coarse)').matches; }
+function show(el){ el?.classList.remove('hidden'); }
+function hide(el){ el?.classList.add('hidden'); }
 
-// Galvenie mainīgie
-let canvas, ctx;
-let compassRotation = 0;
-let isDragging = false;
-let dragOffset = { x: 0, y: 0 };
+/* ===== Canvas (vizuāls tīklojums) ===== */
+function initCanvas(){
+  const c = document.getElementById('mapCanvas');
+  const ctx = c.getContext('2d');
+  function resize(){
+    // fiksēts 16:9 buferis skaidram mērogam
+    const target = { w:1920, h:1080 };
+    c.width = target.w; c.height = target.h;
 
-// Dokumenta ielādes notikums
-document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
+    // CSS izmērs mērogots līdz logam
+    const w = window.innerWidth, h = window.innerHeight;
+    const scale = Math.min(w/target.w, h/target.h);
+    c.style.width  = Math.round(target.w*scale) + 'px';
+    c.style.height = Math.round(target.h*scale) + 'px';
+
+    draw();
+  }
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.strokeStyle = 'rgba(255,255,255,.06)';
+
+    for(let x=0;x<c.width;x+=80){
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,c.height); ctx.stroke();
+    }
+    for(let y=0;y<c.height;y+=80){
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(c.width,y); ctx.stroke();
+    }
+  }
+  window.addEventListener('resize', resize);
+  resize();
+}
+
+/* ===== Leaflet online karte ===== */
+let map;
+function initOnlineMap(){
+  const el = document.getElementById('onlineMap');
+  if (!el || typeof L === 'undefined') return;
+  map = L.map(el, { zoomControl: false }).setView([56.9496, 24.1052], 12); // Rīga
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+}
+function toggleOnlineMap(show){
+  const el = document.getElementById('onlineMap');
+  const dim = document.getElementById('onlineMapDim');
+  if (!el || !dim) return;
+  if (show){
+    el.hidden = false;
+    dim.style.display = 'block';
+    setTimeout(()=> map?.invalidateSize(), 50);
+  }else{
+    el.hidden = true;
+    dim.style.display = 'none';
+  }
+}
+function setOnlineMapDim(opacity01){
+  const dim = document.getElementById('onlineMapDim');
+  if (dim) dim.style.background = `rgba(0,0,0,${Math.max(0,Math.min(1,opacity01))})`;
+}
+
+/* ===== Kompass (SVG ģenerēšana) ===== */
+let compassAngle = 0; // grādi
+function initCompass(){
+  const g = document.getElementById('compassScaleGroup');
+  if (!g) return;
+  const cx = 150, cy = 150, rOuter = 120, rInnerMajor = 96, rInnerMinor = 108;
+
+  // Ticks ik pa 5°
+  for(let deg=0; deg<360; deg+=5){
+    const rad = deg * Math.PI/180;
+    const cos = Math.cos(rad), sin = Math.sin(rad);
+    const isCardinal = (deg % 90 === 0);
+    const isTen = (deg % 10 === 0);
+
+    const r1 = isTen ? rInnerMajor : rInnerMinor;
+    const x1 = cx + r1 * cos;
+    const y1 = cy + r1 * sin;
+    const x2 = cx + rOuter * cos;
+    const y2 = cy + rOuter * sin;
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('class', isTen ? 'tick-major' : 'tick-minor');
+    g.appendChild(line);
+
+    // Kardinālie virzieni ar marķējumu
+    if (isCardinal){
+      const lblR = 80;
+      const lx = cx + lblR * cos;
+      const ly = cy + lblR * sin;
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', lx);
+      text.setAttribute('y', ly);
+      text.setAttribute('class', 'label');
+
+      const name = (deg===0?'E':deg===90?'S':deg===180?'W':'N'); // SVG 0° ir uz labo pusi
+      text.textContent = name;
+      g.appendChild(text);
+    }
+  }
+}
+function rotateCompassBy(deg){
+  compassAngle = (compassAngle + deg) % 360;
+  const grp = document.getElementById('compassScaleGroup');
+  if (grp){
+    grp.setAttribute('transform', `rotate(${compassAngle},150,150)`);
+  }
+}
+
+/* ===== Pilnekrāns ===== */
+function toggleFullscreen(){
+  if (!document.fullscreenElement){
+    document.documentElement.requestFullscreen?.();
+  }else{
+    document.exitFullscreen?.();
+  }
+}
+
+/* ===== Mobilā orientācija ===== */
+function setupOrientationOverlay(){
+  const over = document.getElementById('orientationOverlay');
+  const check = () => {
+    if (!isTouch()){ hide(over); return; }
+    const landscape = window.innerWidth > window.innerHeight;
+    landscape ? hide(over) : show(over);
+  };
+  check();
+  window.addEventListener('resize', check);
+  window.addEventListener('orientationchange', check);
+}
+
+/* ===== Notikumi un inicializācija ===== */
+window.addEventListener('DOMContentLoaded', () => {
+  setVHVar();
+  window.addEventListener('resize', setVHVar);
+
+  initCanvas();
+  initOnlineMap();
+  initCompass();
+  setupOrientationOverlay();
+
+  // Pogas
+  const btnMap = document.getElementById('toggleOnlineMap');
+  const btnRot = document.getElementById('rotateCompass90');
+  const btnFS  = document.getElementById('toggleFullscreen');
+  const range  = document.getElementById('opacityRange');
+
+  let mapOn = false;
+  btnMap?.addEventListener('click', () => {
+    mapOn = !mapOn;
+    toggleOnlineMap(mapOn);
+    btnMap.setAttribute('aria-pressed', String(mapOn));
+  });
+
+  btnRot?.addEventListener('click', () => rotateCompassBy(90));
+  btnFS?.addEventListener('click', toggleFullscreen);
+
+  range?.addEventListener('input', (e) => {
+    const v = Number(e.target.value);
+    setOnlineMapDim(v/100);
+  });
+
+  // Papildus: parādi pilnekrāna ieteikumu 1x (pēc 2s), tikai lieliem ekrāniem
+  const hint = document.getElementById('fullscreenHint');
+  if (window.innerWidth >= 1024){
+    setTimeout(()=> { show(hint); setTimeout(()=> hide(hint), 2500); }, 1200);
+  }
 });
-
-// Aplikācijas inicializācija
-function initializeApp() {
-    // Inicializējam kanvu
-    setupCanvas();
-    
-    // Inicializējam kompasu
-    setupCompass();
-    
-    // Pārbaudām ierīci un ekrānu
-    checkDevice();
-    checkScreenSize();
-    
-    // Pielāgojam izmērus
-    resizeApp();
-    
-    // Pievienojam event listenerus
-    setupEventListeners();
-}
-
-// Kanvas iestatīšana
-function setupCanvas() {
-    canvas = document.getElementById('mapCanvas');
-    ctx = canvas.getContext('2d');
-    drawBackground();
-}
-
-// Kompasa iestatīšana
-function setupCompass() {
-    const compassNeedle = document.getElementById('compassNeedle');
-    updateCompassRotation();
-}
-
-// Ierīces pārbaude
-function checkDevice() {
-    // Pārbaudām vai ir mobilā ierīce
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-        checkOrientation();
-    }
-}
-
-// Ekrāna izmēra pārbaude
-function checkScreenSize() {
-    const warningElement = document.getElementById('mobile-warning');
-    if (window.innerWidth < 768 && isMobileDevice()) {
-        warningElement.style.display = 'flex';
-    } else {
-        warningElement.style.display = 'none';
-    }
-}
-
-// Orientācijas pārbaude
-function checkOrientation() {
-    const overlay = document.getElementById('orientation-overlay');
-    if (window.matchMedia("(orientation: portrait)").matches) {
-        overlay.style.display = 'flex';
-    } else {
-        overlay.style.display = 'none';
-    }
-}
-
-// Fona zīmēšana
-function drawBackground() {
-    ctx.fillStyle = '#181818';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Pievienojam ūdens zīmogu
-    const watermark = new Image();
-    watermark.onload = function() {
-        const ratio = watermark.width / watermark.height;
-        const width = canvas.width * 0.7;
-        const height = width / ratio;
-        const x = (canvas.width - width) / 2;
-        const y = (canvas.height - height) / 2;
-        
-        ctx.globalAlpha = 0.3;
-        ctx.drawImage(watermark, x, y, width, height);
-        ctx.globalAlpha = 1.0;
-    };
-    watermark.src = 'https://site-710050.mozfiles.com/files/710050/medium/CADET_TRANSP_.png?1542126381';
-}
-
-// Kompasa rotācijas atjaunināšana
-function updateCompassRotation() {
-    const compassNeedle = document.getElementById('compassNeedle');
-    compassNeedle.style.transform = `translate(-50%, -50%) rotate(${compassRotation}deg)`;
-}
-
-// Pielāgošana izmēram
-function resizeApp() {
-    resizeCanvas();
-    checkScreenSize();
-    checkOrientation();
-}
-
-// Kanvas izmēra maiņa
-function resizeCanvas() {
-    if (!canvas) return;
-    
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    drawBackground();
-}
-
-// Notikumu klausītāju iestatīšana
-function setupEventListeners() {
-    // Loga izmēra maiņa
-    window.addEventListener('resize', resizeApp);
-    
-    // Orientācijas maiņa
-    window.addEventListener('orientationchange', checkOrientation);
-    
-    // Kompasa vilkšana
-    const compassContainer = document.getElementById('compassContainer');
-    if (compassContainer) {
-        compassContainer.addEventListener('mousedown', startDragging);
-        document.addEventListener('mousemove', dragCompass);
-        document.addEventListener('mouseup', stopDragging);
-        
-        // Pieskārienu atbalsts
-        compassContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
-        document.addEventListener('touchmove', handleTouchMove, { passive: false });
-        document.addEventListener('touchend', handleTouchEnd);
-    }
-    
-    // Kontrolu pogas
-    document.getElementById('uploadMap').addEventListener('click', uploadMap);
-    document.getElementById('resetMap').addEventListener('click', resetMap);
-    document.getElementById('resetCompass').addEventListener('click', resetCompass);
-    document.getElementById('toggleFullscreen').addEventListener('click', toggleFullscreen);
-}
-
-// Kompasa vilkšanas funkcijas
-function startDragging(e) {
-    isDragging = true;
-    const rect = compassContainer.getBoundingClientRect();
-    dragOffset.x = e.clientX - rect.left;
-    dragOffset.y = e.clientY - rect.top;
-    compassContainer.style.cursor = 'grabbing';
-}
-
-function dragCompass(e) {
-    if (isDragging) {
-        compassContainer.style.left = (e.clientX - dragOffset.x) + 'px';
-        compassContainer.style.top = (e.clientY - dragOffset.y) + 'px';
-        compassContainer.style.right = 'unset';
-    }
-}
-
-function stopDragging() {
-    isDragging = false;
-    if (compassContainer) {
-        compassContainer.style.cursor = 'grab';
-    }
-}
-
-// Pieskārienu atbalsts
-function handleTouchStart(e) {
-    e.preventDefault();
-    if (e.touches.length === 1) {
-        isDragging = true;
-        const touch = e.touches[0];
-        const rect = compassContainer.getBoundingClientRect();
-        dragOffset.x = touch.clientX - rect.left;
-        dragOffset.y = touch.clientY - rect.top;
-    }
-}
-
-function handleTouchMove(e) {
-    e.preventDefault();
-    if (isDragging && e.touches.length === 1) {
-        const touch = e.touches[0];
-        compassContainer.style.left = (touch.clientX - dragOffset.x) + 'px';
-        compassContainer.style.top = (touch.clientY - dragOffset.y) + 'px';
-        compassContainer.style.right = 'unset';
-    }
-}
-
-function handleTouchEnd() {
-    isDragging = false;
-}
-
-// Kontrolu funkcijas
-function uploadMap() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = handleFileUpload;
-    input.click();
-}
-
-function handleFileUpload(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = new Image();
-            img.onload = function() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-function resetMap() {
-    drawBackground();
-}
-
-function resetCompass() {
-    compassRotation = 0;
-    updateCompassRotation();
-}
-
-function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => {
-            console.error('Nevarēja ieslēgt pilnekrāna režīmu:', err);
-        });
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
-    }
-}
-
-// Palīgfunkcijas
-function isMobileDevice() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
