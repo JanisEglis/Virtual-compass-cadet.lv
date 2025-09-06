@@ -70,22 +70,13 @@
 						}
 
 						// Pievienojam notikumus pogām
-						if (toggleRotationModeButton) {
-  toggleRotationModeButton.addEventListener('click', () => {
-    toggleButtonImage('toggleRotationMode'); // saglabā arī ikonu maiņu
-    activeRotationTarget = (activeRotationTarget === 'compassInner')
-      ? 'compassScaleInner' : 'compassInner';
-    toggleRotationModeButton.style.backgroundColor =
-      activeRotationTarget === 'compassInner' ? 'rgba(91,16,16,0.8)' : 'rgb(187,1,1)';
-  });
-}
+document.getElementById('toggleRotationMode').addEventListener('click', () => {
+							toggleButtonImage('toggleRotationMode');
+						});
 
-if (lockRotationModeButton) {
-  lockRotationModeButton.addEventListener('click', () => {
-    isRotationLocked = !isRotationLocked;
-    toggleButtonImage('lockRotationMode'); // saglabā ikonu maiņu
-    lockRotationModeButton.classList.toggle('active', isRotationLocked);
-  });
+						document.getElementById('lockRotationMode').addEventListener('click', () => {
+							toggleButtonImage('lockRotationMode');
+						});
 
 
 
