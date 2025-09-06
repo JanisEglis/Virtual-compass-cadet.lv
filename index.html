@@ -1648,34 +1648,45 @@
 							}
 
 
-
 /* ==== Sānos: .dock-dimmer augstums = pogu kolonnas augstums (no JS mērījuma) ==== */
 #buttonContainer.left  .dock-dimmer,
 #buttonContainer.right .dock-dimmer{
   height: var(--colH, auto);     /* neplešamies – turamies pie pogu kolonnas augstuma */
 }
-
 /* ==== Tikai Firefox ==== */
 @-moz-document url-prefix() {
 
-  /* Sānos: range aizpilda .dock-dimmer iekšpusi, virziens apgriezts */
+  /* ... tavs reset un stils paliek ... */
+
+  /* Sānos: kaste stiepjas un nav sānu paddinga, lai range var būt 100% platumā */
+  #buttonContainer.left  .dock-dimmer,
+  #buttonContainer.right .dock-dimmer{
+    align-items: stretch !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* Sānos: range aizņem VISU .dock-dimmer platumu un augstumu */
   #buttonContainer.left  .dock-dimmer input[type=range],
   #buttonContainer.right .dock-dimmer input[type=range],
   #buttonContainer .dock-dimmer input[type=range][orient="vertical"]{
     -moz-appearance: slider-vertical !important;
     writing-mode: vertical-lr !important;
 
+    /* aizpilda konteineru */
     display: block !important;
     box-sizing: border-box !important;
-    inline-size: 100% !important;                       /* aizņem visu .dock-dimmer “platumu” */
-    block-size: calc(var(--colH, 100%) - 16px) !important; /* augstums = pogu kolonna - (8px+8px) padding */
+    align-self: stretch !important;
+    inline-size: 100% !important;              /* ← viss .dock-dimmer platums */
+    block-size: calc(100% - 16px) !important;  /* ← viss augstums (8px+8px vert. paddings) */
     margin: 0 !important;
 
+    /* apgriezt virzienu */
     transform: rotate(180deg) !important;
     transform-origin: center !important;
   }
 
-  /* Apakšā paliek horizontāls un plats kā rinda (tev jau tiek dotas --rowW ar JS) */
+  /* Apakšā paliek horizontāls, bez rotācijas un ar pilnu platumu */
   #buttonContainer.bottom .dock-dimmer input[type=range]{
     -moz-appearance: none !important;
     writing-mode: horizontal-tb !important;
@@ -1684,7 +1695,6 @@
     transform: none !important;
   }
 }
-
 
 
 
