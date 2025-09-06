@@ -449,7 +449,6 @@ function setDarkness(percent){
   const topSelectors = [
     '#fullscreenMessage:not(.fs-message-hidden)',
     '.position-selector:not(.hidden)',
-    '.position-selector-left:not(.hidden-left)',
 	'#toggleInstruction',   // ⟵ jaunais
     '#toggleMaterials'     // ⟵ jaunais
   ];
@@ -464,42 +463,30 @@ function setDarkness(percent){
     '#iframeContainerQR'
   ];
 
-  function visibleRectBottom(el){
-    const st = getComputedStyle(el);
-    if (st.display === 'none' || st.visibility === 'hidden' || el.offsetParent === null) return 0;
-    const r = el.getBoundingClientRect();
-    return r.height > 1 ? r.bottom : 0;
-  }
+ function visibleRectBottom(el){
+  const st = getComputedStyle(el);
+  if (st.display === 'none' || st.visibility === 'hidden' || el.offsetParent === null) return 0;
 
-  function getTopSafePx(){
-    // max apakšmala no visiem top elementiem
-    let maxBottom = 0;
-    topSelectors.forEach(sel => {
-      document.querySelectorAll(sel).forEach(el => { maxBottom = Math.max(maxBottom, visibleRectBottom(el)); });
+  const r = el.getBoundingClientRect();
+  const TOP_BAND = Math.min(180, Math.round(window.innerHeight * 0.22)); // max 180px vai 22% no ekrāna
+
+  // ņemam vērā tikai elementus, kas reāli “skar” augšējo joslu
+  const intersectsTop = r.top < TOP_BAND && r.bottom > 0;
+  if (!intersectsTop) return 0;
+
+  // neļaujam vienam elementam atstumt vairāk par TOP_BAND
+  return Math.max(0, Math.min(r.bottom, TOP_BAND));
+}
+
+function getTopSafePx(){
+  let maxBottom = 0;
+  topSelectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      maxBottom = Math.max(maxBottom, visibleRectBottom(el));
     });
-    return Math.round(maxBottom); // px
-  }
-
-  function getBottomSafePx(){
-    // startējam ar __fitDock ielikto apakšu (—dock-bottom)
-    const css = getComputedStyle(document.documentElement);
-    let base = parseFloat(css.getPropertyValue('--dock-bottom')) || 8;
-
-    // + jebkuri atvērtie apakšējie overlaji
-    bottomSelectors.forEach(sel => {
-      document.querySelectorAll(sel).forEach(el => {
-        const st = getComputedStyle(el);
-        if (st.display === 'none' || st.visibility === 'hidden') return;
-        const r = el.getBoundingClientRect();
-        if (r.height > 1){
-          const gap = Math.max(8, Math.round(window.innerHeight - r.top + 8));
-          base = Math.max(base, gap);
-        }
-      });
-    });
-    return base; // px
-  }
-
+  });
+  return Math.round(maxBottom);
+}
   function updateMapSafeAreas(){
     const topPx    = getTopSafePx();
     const bottomPx = getBottomSafePx();
