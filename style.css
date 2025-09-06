@@ -1697,36 +1697,22 @@
 
 
 /* Online kartes konteiners zem kompasa (virs fona) */
-/* SAFE AREAS Leaflet kontrolei */
-#onlineMap { 
-  --map-top-safe: 0px;                 /* tiks rēķināts ar JS */
-  --map-bottom-safe: var(--dock-bottom, 8px); /* jau rēķini ar __fitDock */
-}
-#onlineMap .leaflet-top    { top: var(--map-top-safe); }
-#onlineMap .leaflet-bottom { bottom: var(--map-bottom-safe); }
-
-/* drošībai nedaudz iekšmala un z-indekss */
-#onlineMap .leaflet-right { right: 6px; }
-#onlineMap .leaflet-left  { left:  6px; }
-#onlineMap .leaflet-control { z-index: 500; }
-#onlineMap .leaflet-popup   { z-index: 600; }
-
-
-/* Tumšošanas pārklājums virs kartes, bet zem kontroles/popup */
+/* Online kartes rāmis starp drošajām zonām */
+#onlineMap,
 #onlineMapDim{
-  position:absolute;
-  inset:0;
-  width:100%; height:100%;
-  display:none;          /* JS ieslēdz uz 'block' */
-  z-index: 450;          /* >>> galvenais labojums <<< */
-  pointer-events:none;
-  background: rgba(0,0,0,0);
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--map-top-gap, 0px);
+  bottom: var(--map-bottom-gap, 0px);
 }
 
-/* lai Leaflet pogas/popup būtu virs tumšā pārklājuma */
+/* pārklājums lai nenoķertu peles/skārienu */
+#onlineMapDim{ pointer-events: none; }
+
+/* Kontroles paliek virs flīzēm */
 #onlineMap .leaflet-control { z-index: 500; }
 #onlineMap .leaflet-popup   { z-index: 600; }
-
 /* Lai inline SVG ikonām būtu tāds pats “fit” kā <img> */
 #buttonContainer .dock-shell > button svg{
   width:78%; height:78%; display:block; margin:auto; pointer-events:none;
