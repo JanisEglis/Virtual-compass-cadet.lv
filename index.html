@@ -1636,22 +1636,18 @@
 							.dock-dimmer input[type=range]{ accent-color: var(--fill); }
 
 
-:root{
-  /* vispārīgie */
-  --rng-track: 8px;                 /* horizont./vert. sliedes biezums, ja kur citur lieto */
-  --rng-thumb: 18px;                /* īkšķa diametrs (izmanto arī WebKit centrēšanai) */
 
-  /* apakšas režīmam */
-  --rng-track-bottom: 6px;          /* sliedes biezums apakšā (FF + WebKit) */
-  --rng-pad-bottom:   4px;          /* .dock-dimmer vert. padding apakšā */
+	/* ===== Universālie mainīgie slīdnim ===== */
+							:root{
+							  --rng-track: 8px;             /* trases biezums */
+							  --rng-thumb: 18px;            /* ķepas diametrs */
+							  --rng-track-bg: linear-gradient(180deg, var(--dock1), var(--dock2));
+							  --rng-track-border: 1px solid rgba(255,255,255,.06);
+							  --rng-thumb-bg: #eef2f7;
+							  --rng-thumb-ring: var(--dock-ring);
+							  --rng-thumb-shadow: 0 2px 6px rgba(0,0,0,.35);
+							}
 
-  /* vizuālie */
-  --rng-track-bg: linear-gradient(180deg, var(--dock1), var(--dock2));
-  --rng-track-border: 1px solid rgba(255,255,255,.06);
-  --rng-thumb-bg: #eef2f7;
-  --rng-thumb-ring: var(--dock-ring);
-  --rng-thumb-shadow: 0 2px 6px rgba(0,0,0,.35);
-}
 
 /* ==== Sānos: .dock-dimmer augstums = pogu kolonnas augstums (no JS mērījuma) ==== */
 #buttonContainer.left  .dock-dimmer,
