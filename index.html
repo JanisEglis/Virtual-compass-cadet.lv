@@ -1650,13 +1650,13 @@
 
 
 
-/* ===== FIREFOX-ONLY (nekādas ietekmes uz Chrome/Edge/Safari) ===== */
+/* ===== Tikai Firefox (Chrome/Edge/Safari neredz) ===== */
 @supports (-moz-appearance: none) {
 
-  /* Reset/slīpējums tikai FF */
+  /* Bāzes reset FF, bet NEnosakām virzienu */
   #buttonContainer .dock-dimmer input[type=range]{
     appearance: none;
-    -moz-appearance: none;
+    -moz-appearance: none;     /* horizontālam režīmam ok */
     background: transparent;
     border: 0;
     outline: 0;
@@ -1674,30 +1674,37 @@
     border-radius: 999px;
   }
   #buttonContainer .dock-dimmer input[type=range]::-moz-range-thumb{
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
+    width: 18px; height: 18px; border-radius: 50%;
     background: var(--rng-thumb-bg, #eef2f7);
     border: 3px solid var(--rng-thumb-ring, var(--dock-ring));
     box-shadow: 0 2px 6px rgba(0,0,0,.35);
   }
 
-  /* Vertikālais režīms FF (pogas malās) */
-  #buttonContainer.left  .dock-dimmer,
-  #buttonContainer.right .dock-dimmer{
-    align-self: stretch;
-    min-height: 260px; /* vajag – palielini līdz 320px */
-  }
-
-  /* FF vertikālais range – izmanto orient="vertical" (to pievieno tavs JS) */
-  #buttonContainer.left  .dock-dimmer input[type=range][orient="vertical"],
-  #buttonContainer.right .dock-dimmer input[type=range][orient="vertical"]{
+  /* Malās: PIESPIED vertikālu slideri Firefox */
+  #buttonContainer.left  .dock-dimmer input[type=range],
+  #buttonContainer.right .dock-dimmer input[type=range]{
+    -moz-appearance: slider-vertical !important; /* ← būtiski FF */
+    writing-mode: bt-lr;                         /* virziens FF */
     width: 28px;
     height: var(--dock-dimmer-h, 320px);
   }
 
-  /* Nav nekādu -webkit- noteikumu FF blokā */
+  /* Apakšā: skaidri atpakaļ uz horizontālo */
+  #buttonContainer.bottom .dock-dimmer input[type=range]{
+    -moz-appearance: none !important;
+    writing-mode: horizontal-tb;
+    width: 100%;
+    height: auto;
+  }
+
+  /* Kastei malās dodam augstumu */
+  #buttonContainer.left  .dock-dimmer,
+  #buttonContainer.right .dock-dimmer{
+    align-self: stretch;
+    min-height: 260px; /* ja vajag – palielini līdz 320px */
+  }
 }
+
 
 
 
