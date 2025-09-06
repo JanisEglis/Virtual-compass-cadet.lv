@@ -679,11 +679,11 @@ function utmToLL(E, N, zone, hemi){
 function createUTMGridLayer(){
   const g = L.layerGroup();
 
-  function redraw(){
-    g.clearLayers();
-    if (!map) return;
+function redraw(){
+  if (!map || !map._loaded) return; // <- neļaujam zvanīt pirms centrs/zoom
+  g.clearLayers();
 
-    const z = map.getZoom();
+  const z = map.getZoom();
     // solis km (atkarībā no tālummaiņas)
     const step = (z>=14)?1000 : (z>=12)?2000 : (z>=10)?5000 : (z>=8)?10000 : 20000;
 
@@ -726,7 +726,7 @@ function createUTMGridLayer(){
   }
 
   map.on('moveend zoomend', redraw);
-  redraw();
+  
   return g;
 }
 
@@ -736,12 +736,16 @@ function createUTMGridLayer(){
 
 	  
    // jaunais – pievienojam MGRS/UTM režģi kā pārklājumu
-const utmGrid = createUTMGridLayer();
-const layersCtl = L.control.layers(baseLayers, {'MGRS režģis (1–20 km)': utmGrid}, {collapsed:true, position:'topright'}).addTo(map);
-// pēc vajadzības vari ieslēgt pēc noklusējuma:
-utmGrid.addTo(map);
+// vispirms iedod centru/zoom:
+map.setView([56.9496, 24.1052], 13);
 
-    map.setView([56.9496, 24.1052], 13);
+// režģi un slāņu kontroli veido tikai tad, kad karte tiešām “gatava”
+map.whenReady(() => {
+  const utmGrid = createUTMGridLayer();
+  L.control.layers(baseLayers, { 'MGRS režģis (1–20 km)': utmGrid }, { collapsed:true, position:'topright' }).addTo(map);
+  utmGrid.addTo(map);
+});
+
 
     // klasiskā skala + 1:xxxx
     L.control.scale({imperial:false, metric:true, maxWidth:200}).addTo(map);
