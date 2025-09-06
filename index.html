@@ -1687,22 +1687,19 @@
     padding-right: 0 !important;
   }
 
-  /* Sānos: range aizņem VISU .dock-dimmer platumu un augstumu */
+/* Sānos: range aizpilda .dock-dimmer iekšpusi, virziens apgriezts */
   #buttonContainer.left  .dock-dimmer input[type=range],
   #buttonContainer.right .dock-dimmer input[type=range],
   #buttonContainer .dock-dimmer input[type=range][orient="vertical"]{
     -moz-appearance: slider-vertical !important;
     writing-mode: vertical-lr !important;
 
-    /* aizpilda konteineru */
     display: block !important;
     box-sizing: border-box !important;
-    align-self: stretch !important;
-    inline-size: 100% !important;              /* ← viss .dock-dimmer platums */
-    block-size: calc(100% - 16px) !important;  /* ← viss augstums (8px+8px vert. paddings) */
+    inline-size: 100% !important;                       /* aizņem visu .dock-dimmer “platumu” */
+    block-size: calc(var(--colH, 100%) - 16px) !important; /* augstums = pogu kolonna - (8px+8px) padding */
     margin: 0 !important;
 
-    /* apgriezt virzienu */
     transform: rotate(180deg) !important;
     transform-origin: center !important;
   }
