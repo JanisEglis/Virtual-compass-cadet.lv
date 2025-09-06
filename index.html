@@ -58,14 +58,20 @@
 										width: 1920px; 
 										height: 1080px;">
 
-							  <!-- kanva kartei -->
-							  <canvas id="mapCanvas" width="1920" height="1080" style="display:block; width:100%; height:100%;"></canvas>
+							 
 
 
+<div id="canvasContainer" style="position:fixed;width:1920px;height:1080px;">
+  <!-- 1) Vienīgā kanva (lokālajai bildes kartei) -->
+  <canvas id="mapCanvas" width="1920" height="1080" style="display:block;width:100%;height:100%;"></canvas>
 
-                <!-- Tiešsaistes karte (Leaflet) + tumšošanas pārklājums -->
-                <div id="onlineMap"></div>
-                <div id="onlineMapDim"></div>
+  <!-- 2) Tiešsaistes karte + tumšošanas pārklājums -->
+  <div id="onlineMap">
+    <div id="onlineMapDim"></div> <!-- tumšošanas pārklājums, pirmais bērns -->
+    <!-- te Leaflet iemetīs karti -->
+  </div>
+</div>
+                
 
 
 
