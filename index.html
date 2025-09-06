@@ -2091,19 +2091,7 @@ function startApp(){
   const app = interactiveWindow.document.createElement('script');
   app.textContent = `
 
-loadScriptSequential(
-  [
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-    'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'
-  ],
-  () => { // onOk
-    startApp();
-  },
-  () => { // onFail — palaid app arī tad (tiešsaistes karte pati atslēgsies)
-    console.warn('Leaflet JS neielādējās no abiem CDN. Startēju bez tiešsaistes kartes.');
-    startApp();
-  }
-);
+
 
 						function debounce(func, wait = 50) {
 						  let timeout;
