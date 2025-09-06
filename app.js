@@ -449,12 +449,22 @@ function setDarkness(percent){
   const topSelectors = [
     '#fullscreenMessage:not(.fs-message-hidden)',
     '.position-selector:not(.hidden)',
-	'#toggleInstruction',   // ⟵ jaunais
-    '#toggleMaterials'     // ⟵ jaunais
+    '.position-selector-left:not(.hidden-left)',
+    '.top-bar',                         // augšējā josla
+    '.dropdown-menu.visible',           // atvērtās izvēlnes
+    '#contentFrame.active',             // atvērts mācību materiālu iframe
+    '#instructionFrame.active',         // atvērts lietotāja ceļveža iframe
+    '#toggleInstruction',               // pašas pogas (ja vajag nelielu rezervi)
+    '#toggleMaterials'
   ];
 
 
-
+ // Apakšā — ieskaiti patieso “About” joslu + slīdošos paneļus
+  const bottomSelectors = [
+    '#about',
+    '#iframeContainerAbout',
+    '#iframeContainerQR'
+  ];
 
 	
   // pielāgo šeit BOTTOM elementus, kas paceļ apakšu (jau ņem vērā #about caur --dock-bottom)
