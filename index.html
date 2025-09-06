@@ -2076,38 +2076,11 @@
 									<img id="compassNeedle" src="https://site-710050.mozfiles.com/files/710050/VIRTUALAIS_KOMPASS_ADATA_CADET_LV_PV4.png" alt="Compass Needle">  
 								</div>
 							</div>
-						</body>
-                    </html>
-                `);
-                interactiveWindow.document.close();
-
-					// Dinamiska funkcionalitātes pievienošana
-// 1) ielādē Leaflet CSS
-const leafletCss = interactiveWindow.document.createElement('link');
-leafletCss.rel = 'stylesheet';
-leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-interactiveWindow.document.head.appendChild(leafletCss);
-
-// 2) drošs JS ielādētājs ar rezerves CDN
-function loadScriptSequential(urls, onOk, onFail){
-  const url = urls.shift();
-  if(!url){ onFail && onFail(); return; }
-  const s = interactiveWindow.document.createElement('script');
-  s.src = url;
-  s.defer = true;
-  s.onload = () => onOk && onOk();
-  s.onerror = () => loadScriptSequential(urls, onOk, onFail);
-  interactiveWindow.document.head.appendChild(s);
-}
-
-// 3) Kad Leaflet ielādēts, tikai tad injicē Tavu app skriptu
-function startApp(){
-  const app = interactiveWindow.document.createElement('script');
-  app.textContent = `
 
 
+<script>
 
-						function debounce(func, wait = 50) {
+	function debounce(func, wait = 50) {
 						  let timeout;
 						  return function (...args) {
 						    clearTimeout(timeout);
@@ -2500,6 +2473,8 @@ function startApp(){
 						// Tumšošanas intensitāte (0..0.8), glabājam % localStorage (0..80)
 						let mapDarken = (+(localStorage.getItem('mapDarken') || 0)) / 100;
 						
+// izmantots pinch-rotācijā, tev trūka deklarācijas
+let lastRotation = 0;
 
 
 
@@ -4237,25 +4212,19 @@ window.toggleIframeQR = toggleIframeQR;
 							})();
 
 
-                `;                                   // ← beidzas app.textContent iekšējais template string
-  interactiveWindow.document.body.appendChild(app);
-}                                       // ← beidzas function startApp()
+</script>
 
-// 4) Ja Leaflet nevar ielādēt (vēl joprojām iekš if (interactiveWindow) {...})
-function showLeafletError(){
-  interactiveWindow.document.body.insertAdjacentHTML(
-    'beforeend',
-    '<div style="position:fixed;top:0;left:0;right:0;padding:12px;background:#b00020;color:#fff;z-index:9999">Neizdevās ielādēt kartes bibliotēku (Leaflet). Pārbaudiet tīklu / CDN.</div>'
-  );
-}
 
-// 5) Ielādē Leaflet no vairākiem CDN un pēc tam startē app
-loadScriptSequential([
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-  'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js'
-], startApp, showLeafletError);
 
+
+
+ 
+						</body>
+                    </html>
+                `);
+                interactiveWindow.document.close();
+
+				
 } else {                                // ← te nu beidzot nāk else par to pašu if (interactiveWindow)
   alert('Pārlūks bloķē jaunus logus. Lūdzu, atļaujiet pārlūkam atvērt logus.');
 }
