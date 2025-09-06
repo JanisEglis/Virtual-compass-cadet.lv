@@ -1655,15 +1655,7 @@
   height: var(--colH, auto);     /* neplešamies – turamies pie pogu kolonnas augstuma */
 }
 
-/* ==== APAKŠĀ (VISI PĀRLŪKI) – vienmēr plāns, horizontāls slīdnis un kompakta kaste ==== */
-#buttonContainer.bottom .dock-dimmer{
-  padding-block: var(--rng-pad-bottom, 4px) !important;
-  padding-inline: 10px !important;
-  align-items: center !important;
-  height: auto !important;
-  min-height: 0 !important;
-  overflow: visible !important;   /* lai īkšķis nepalielina kasti */
-}
+
 
 #buttonContainer.bottom .dock-dimmer input[type=range]{
   /* skaidri atgriežam horizontāli, bez rotācijām */
@@ -1684,13 +1676,8 @@
   padding: 0 !important;
 }
 
-/* WebKit/Chromium: trases biezums + īkšķa centrēšana */
-#buttonContainer.bottom .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
-  height: var(--rng-track-bottom, 6px) !important;
-}
-#buttonContainer.bottom .dock-dimmer input[type=range]::-webkit-slider-thumb{
-  margin-top: calc((var(--rng-track-bottom, 6px) - var(--rng-thumb, 18px)) / 2) !important;
-}
+
+
 
 
 /* ==== Tikai Firefox ==== */
