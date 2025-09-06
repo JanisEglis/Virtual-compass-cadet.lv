@@ -1646,6 +1646,8 @@
 							  --rng-thumb-bg: #eef2f7;
 							  --rng-thumb-ring: var(--dock-ring);
 							  --rng-thumb-shadow: 0 2px 6px rgba(0,0,0,.35);
+:root { --rng-vert-w: 28px; }
+
 							}
 
 
@@ -1679,6 +1681,10 @@
     box-shadow: 0 2px 6px rgba(0,0,0,.35);
   }
 
+
+
+
+
    /* Sānos: kaste stiepjas un nav sānu paddinga, lai range var būt 100% platumā */
   #buttonContainer.left  .dock-dimmer,
   #buttonContainer.right .dock-dimmer{
@@ -1687,22 +1693,41 @@
     padding-right: 0 !important;
   }
 
-/* Sānos: range aizpilda .dock-dimmer iekšpusi, virziens apgriezts */
-  #buttonContainer.left  .dock-dimmer input[type=range],
-  #buttonContainer.right .dock-dimmer input[type=range],
-  #buttonContainer .dock-dimmer input[type=range][orient="vertical"]{
-    -moz-appearance: slider-vertical !important;
-    writing-mode: vertical-lr !important;
+/* Sānos: kaste NE-stiepjas, lai range var būt šaurs un centrēts */
+#buttonContainer.left  .dock-dimmer,
+#buttonContainer.right .dock-dimmer{
+  align-items: center !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
 
-    display: block !important;
-    box-sizing: border-box !important;
-                          /* aizņem visu .dock-dimmer “platumu” */
-    block-size: calc(var(--colH, 100%) - 16px) !important; /* augstums = pogu kolonna - (8px+8px) padding */
-    margin: 0 !important;
+/* Sānos: vertikāls range — šaurs, centrēts, augstums = kolonnas garums */
+#buttonContainer.left  .dock-dimmer input[type=range],
+#buttonContainer.right .dock-dimmer input[type=range],
+#buttonContainer .dock-dimmer input[type=range][orient="vertical"]{
+  -moz-appearance: slider-vertical !important;
+  writing-mode: vertical-lr !important;
 
-    transform: rotate(180deg) !important;
-    transform-origin: center !important;
-  }
+  /* šaurums (inline-asis) + centrēšana */
+  inline-size: var(--rng-vert-w, 28px) !important;
+  max-inline-size: var(--rng-vert-w, 28px) !important;
+  margin: 0 auto !important;
+
+  /* augstums = pogu kolonnas kopējais “garums” (JS ieliek --colH), 
+     16px = .dock-dimmer vertikālais padding (8+8) */
+  block-size: calc(var(--colH, 100%) - 16px) !important;
+
+  transform: rotate(180deg) !important;
+  transform-origin: center !important;
+}
+
+
+
+
+
+
+
+
 
   /* Apakšā paliek horizontāls, bez rotācijas un ar pilnu platumu */
   #buttonContainer.bottom .dock-dimmer input[type=range]{
