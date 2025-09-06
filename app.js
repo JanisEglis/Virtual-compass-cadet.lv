@@ -86,7 +86,7 @@ if (lockRotationModeButton) {
     toggleButtonImage('lockRotationMode'); // saglabā ikonu maiņu
     lockRotationModeButton.classList.toggle('active', isRotationLocked);
   });
-}
+
 
 
 						(function() {
