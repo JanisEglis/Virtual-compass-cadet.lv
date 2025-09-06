@@ -1641,11 +1641,11 @@
   /* ģeometrija */
   --rng-track: 8px;
   --rng-thumb: 18px;
-  --rng-track-bottom: 6px;      /* apakšas (horiz.) sliedes biezums */
-  --rng-pad-bottom: 4px;        /* .dock-dimmer vert. padding apakšā */
+  --rng-track-bottom: 6px;   /* apakšas (horiz.) sliedes biezums */
+  --rng-pad-bottom: 4px;     /* .dock-dimmer vert. padding apakšā */
 
   /* krāsas/foni (ar drošiem fallbackiem) */
-  --fill:   #ff0000;
+  --fill: #ff0000;
   --unfill: rgba(255,255,255,.12);
   --rng-track-bg: linear-gradient(180deg, var(--dock1, #1b1f25), var(--dock2, #490000a8));
   --rng-track-border: 1px solid rgba(255,255,255,.06);
@@ -1662,35 +1662,35 @@
 
 /* ====== Apakšā (visi pārlūki): kompakta kaste + plāna sliede ====== */
 #buttonContainer.bottom .dock-dimmer{
-  padding-block: var(--rng-pad-bottom) !important;
-  padding-inline: 10px !important;
-  align-items: center !important;
-  height: auto !important;
-  min-height: 0 !important;
-  overflow: visible !important; /* īkšķis nepalielina kasti */
+  padding-block: var(--rng-pad-bottom);
+  padding-inline: 10px;
+  align-items: center;
+  height: auto;
+  min-height: 0;
+  overflow: visible; /* īkšķis nepalielina kasti */
 }
 #buttonContainer.bottom .dock-dimmer input[type=range]{
-  -webkit-appearance: none !important;
-  appearance: none !important;
-  writing-mode: horizontal-tb !important;
-  transform: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+  writing-mode: horizontal-tb;
+  transform: none;
 
-  display: block !important;
-  width: 100% !important;
-  inline-size: 100% !important;
-  height: var(--rng-track-bottom) !important;
-  block-size: var(--rng-track-bottom) !important;
+  display: block;
+  width: 100%;
+  inline-size: 100%;
+  height: var(--rng-track-bottom);
+  block-size: var(--rng-track-bottom);
 
-  margin: 0 !important;
-  padding: 0 !important;
+  margin: 0;
+  padding: 0;
 }
 
 /* WebKit/Chromium: treka biezums + īkšķa vertikāla centrēšana */
 #buttonContainer.bottom .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
-  height: var(--rng-track-bottom) !important;
+  height: var(--rng-track-bottom);
 }
 #buttonContainer.bottom .dock-dimmer input[type=range]::-webkit-slider-thumb{
-  margin-top: calc((var(--rng-track-bottom) - var(--rng-thumb)) / 2) !important;
+  margin-top: calc((var(--rng-track-bottom) - var(--rng-thumb)) / 2);
 }
 
 /* ====== Tikai Firefox ====== */
@@ -1698,50 +1698,50 @@
   /* Sānos: range aizņem visu .dock-dimmer (vertikāls + apgriezts) */
   #buttonContainer.left  .dock-dimmer,
   #buttonContainer.right .dock-dimmer{
-    align-items: stretch !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
+    align-items: stretch;
+    padding-left: 0;
+    padding-right: 0;
   }
   #buttonContainer.left  .dock-dimmer input[type=range],
   #buttonContainer.right .dock-dimmer input[type=range],
   #buttonContainer .dock-dimmer input[type=range][orient="vertical"]{
-    -moz-appearance: slider-vertical !important;
-    writing-mode: vertical-lr !important;
+    -moz-appearance: slider-vertical;
+    writing-mode: vertical-lr;
 
-    display: block !important;
-    box-sizing: border-box !important;
-    align-self: stretch !important;
-    inline-size: 100% !important;
-    block-size: calc(100% - 16px) !important; /* 8px+8px vert. paddings */
-    margin: 0 !important;
+    display: block;
+    box-sizing: border-box;
+    align-self: stretch;
+    inline-size: 100%;
+    block-size: calc(100% - 16px); /* 8px+8px vert. paddings */
+    margin: 0;
 
-    transform: rotate(180deg) !important;
-    transform-origin: center !important;
+    transform: rotate(180deg);
+    transform-origin: center;
   }
 
   /* Apakšā (FF): horizontāls, plāns, kasti neplēš */
   #buttonContainer.bottom .dock-dimmer{
-    padding-block: var(--rng-pad-bottom) !important;
-    padding-inline: 10px !important;
-    align-items: center !important;
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
+    padding-block: var(--rng-pad-bottom);
+    padding-inline: 10px;
+    align-items: center;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
   }
   #buttonContainer.bottom .dock-dimmer input[type=range]{
-    -moz-appearance: none !important;
-    writing-mode: horizontal-tb !important;
-    transform: none !important;
+    -moz-appearance: none;
+    writing-mode: horizontal-tb;
+    transform: none;
 
-    inline-size: 100% !important;
-    block-size: var(--rng-track-bottom) !important;
-    height: var(--rng-track-bottom) !important;
+    inline-size: 100%;
+    block-size: var(--rng-track-bottom);
+    height: var(--rng-track-bottom);
 
-    margin: 0 !important;
-    padding: 0 !important;
+    margin: 0;
+    padding: 0;
   }
   #buttonContainer.bottom .dock-dimmer input[type=range]::-moz-range-track{
-    height: var(--rng-track-bottom) !important;
+    height: var(--rng-track-bottom);
   }
 }
 
@@ -1760,7 +1760,8 @@
       var(--fill) 0,
       var(--fill) calc(var(--p,0)*1%),
       var(--unfill) calc(var(--p,0)*1%),
-      var(--unfill) 100%) !important;
+      var(--unfill) 100%),
+    var(--rng-track-bg);
 }
 /* sānos (vertikāli): pildījums uz augšu */
 #buttonContainer.left  .dock-dimmer input[type=range]::-webkit-slider-runnable-track,
@@ -1771,16 +1772,13 @@
       var(--fill) 0,
       var(--fill) calc(var(--p,0)*1%),
       var(--unfill) calc(var(--p,0)*1%),
-      var(--unfill) 100%) !important;
+      var(--unfill) 100%),
+    var(--rng-track-bg);
 }
 
 /* ====== Firefox krāsu definīcija (track/progress) ====== */
-#buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
-  background: var(--unfill);
-}
-#buttonContainer .dock-dimmer input[type=range]::-moz-range-progress{
-  background: var(--fill);
-}
+#buttonContainer .dock-dimmer input[type=range]::-moz-range-track{    background: var(--unfill); }
+#buttonContainer .dock-dimmer input[type=range]::-moz-range-progress{ background: var(--fill); }
 
 
 
