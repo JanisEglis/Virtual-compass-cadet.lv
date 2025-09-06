@@ -1637,7 +1637,7 @@
 
 
 
-	/* ===== Universālie mainīgie slīdnim ===== */
+							/* ===== Universālie mainīgie slīdnim ===== */
 							:root{
 							  --rng-track: 8px;             /* trases biezums */
 							  --rng-thumb: 18px;            /* ķepas diametrs */
@@ -1646,8 +1646,6 @@
 							  --rng-thumb-bg: #eef2f7;
 							  --rng-thumb-ring: var(--dock-ring);
 							  --rng-thumb-shadow: 0 2px 6px rgba(0,0,0,.35);
-
-
 							}
 
 
@@ -1685,42 +1683,35 @@
 
 
 
-   /* Sānos: kaste stiepjas un nav sānu paddinga, lai range var būt 100% platumā */
+ /* SĀNOS: centrēta kaste */
   #buttonContainer.left  .dock-dimmer,
   #buttonContainer.right .dock-dimmer{
-    align-items: stretch !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
+    align-items:center !important;
+    padding-left:8px !important;
+    padding-right:8px !important;
   }
 
-/* Sānos: kaste NE-stiepjas, lai range var būt šaurs un centrēts */
-#buttonContainer.left  .dock-dimmer,
-#buttonContainer.right .dock-dimmer{
-  align-items: center !important;
-  padding-left: 8px !important;
-  padding-right: 8px !important;
-}
+  /* SĀNOS: vertikāls range – šaurs, bet tik GARŠ kā pogu kolonna */
+  #buttonContainer.left  .dock-dimmer input[type=range],
+  #buttonContainer.right .dock-dimmer input[type=range],
+  #buttonContainer .dock-dimmer input[type=range][orient="vertical"]{
+    -moz-appearance: slider-vertical !important;
+    writing-mode: vertical-lr !important;
 
-/* Sānos: vertikāls range — šaurs, centrēts, augstums = kolonnas garums */
-#buttonContainer.left  .dock-dimmer input[type=range],
-#buttonContainer.right .dock-dimmer input[type=range],
-#buttonContainer .dock-dimmer input[type=range][orient="vertical"]{
-  -moz-appearance: slider-vertical !important;
-  writing-mode: vertical-lr !important;
+    /* AUGSTUMS (inline-axis) = kolonnas garums */
+    inline-size: calc(var(--colH, 100%) - 16px) !important;
 
-  /* šaurums (inline-asis) + centrēšana */
-  inline-size: var(--rng-vert-w, 28px) !important;
-  max-inline-size: var(--rng-vert-w, 28px) !important;
-  margin: 0 auto !important;
+    /* PLATUMS/BIEZUMS (block-axis) = šaurs */
+    block-size: var(--rng-vert-w, 28px) !important;
+    max-block-size: var(--rng-vert-w, 28px) !important;
 
-  /* augstums = pogu kolonnas kopējais “garums” (JS ieliek --colH), 
-     16px = .dock-dimmer vertikālais padding (8+8) */
-  block-size: calc(var(--colH, 100%) - 16px) !important;
+    display:block !important;
+    margin:0 auto !important;
 
-  transform: rotate(180deg) !important;
-  transform-origin: center !important;
-}
-
+    /* nekādas rotācijas Firefoxā */
+    transform:none !important;
+    transform-origin:center !important;
+  }
 
 
 
