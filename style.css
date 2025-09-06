@@ -1695,10 +1695,7 @@
 
 
 
-:root{
-  /* cik pikseļus gribi pielikt klāt apakšā */
-  --map-bottom-extra: 14px; /* pamēģini 12–20px */
-}
+
 /* Online kartes konteiners zem kompasa (virs fona) */
 /* Online kartes rāmis starp drošajām zonām */
 #onlineMap,
@@ -1709,7 +1706,7 @@
   top: var(--map-top-gap, 0px);
   bottom: var(--map-bottom-gap, 0px);
 }
-
+#onlineMap .leaflet-bottom { bottom: 10px; }
 /* pārklājums lai nenoķertu peles/skārienu */
 #onlineMapDim{ pointer-events: none; }
 
