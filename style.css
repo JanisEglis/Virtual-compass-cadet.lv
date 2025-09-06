@@ -145,17 +145,7 @@
 								}
 							}
 
-							.button-container.bottom {
-								position: fixed;
-								bottom: calc(var(--vh) * 6); /* Koriģēts, lai vienmēr būtu 5% no faktiskā viewport */
-								display: flex;
-								gap: 1vw;
-								justify-content: center;
-								width: 100%;
-								z-index: 3;
-								pointer-events: none;
-								transition: all 0.20s ease-in-out;
-							}
+						
 
 							.button-container.left {
 								position: fixed;
@@ -303,21 +293,7 @@
 								}
 							}
 
-                            button {
-                                background-color: rgba(91, 16, 16, 0.8);
-                                color: white;
-                                border: none;
-                                border-radius: 50%;
-                                width: 6vw;
-                                height: 6vw;
-                                cursor: pointer;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center; /* Centra vertikāli un horizontāli */
-                                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-                                pointer-events: auto;
-                                overflow: hidden; /* Novērš attēla pārliešanu ārpus pogas */
-                            }
+                          
                             
                             button img {
                                 width: 95%; /* Precīza mēroga kontrole */
@@ -471,7 +447,7 @@
 							  transform: translate(-50%, -50%) rotate(30deg);
 							  transform-origin: center center;
 							  
-							  border-radius:50%
+							  border-radius:50%;
 							  image-rendering: crisp-edges;
 							}
 
@@ -485,7 +461,7 @@
 							  transform-origin: center center;
 							  
 							  display: block;
-							  border-radius:50%
+							  border-radius:50%;
 							  pointer-events: auto;
 							  image-rendering: crisp-edges;
 							}
@@ -1450,22 +1426,13 @@
 							
 							/* Range: sānos – vertikāls un tik garš, cik augsta ir kolonna */
 							#buttonContainer.left  .dock-dimmer input[type=range],
-							#buttonContainer.right .dock-dimmer input[type=range]{
-							  height:calc(100% - 16px);
-							  min-height:0;
-							  width:28px;
-							  writing-mode:bt-lr;
-							  -webkit-appearance:slider-vertical;
-							}
-							@supports not (-webkit-appearance: slider-vertical){
-							  #buttonContainer.left  .dock-dimmer input[type=range],
-							  #buttonContainer.right .dock-dimmer input[type=range]{
-							    height:28px;
-							    width:100%;
-							    transform:rotate(-90deg);
-							    transform-origin:center;
-							  }
-							}
+#buttonContainer.right .dock-dimmer input[type=range]{
+  appearance: none;
+  writing-mode: vertical-lr;
+  direction: rtl;           /* “augstāks = augstāk ekrānā” */
+  width:28px;
+  height:calc(100% - 16px);
+}
 							
 							/* Vienotais track/thumb dizains */
 							#buttonContainer .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
