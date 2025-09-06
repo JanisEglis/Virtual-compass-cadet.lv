@@ -1,112 +1,1737 @@
-/* ===== BĀZE ===== */
-:root{
-  --bg: #0f1115;
-  --text: #e5e7eb;
-  --muted: rgba(255,255,255,.7);
-  --accent: #437e12; /* Tava iecienītā zaļā */
-  --panel: #12161d;
-  --glass: rgba(255,255,255,.06);
+							:root {
+							  --vh: 1vh; 
+							}
+						
+							body, html {
+                              height: 100%; 
+                              margin: 0; 
+                              padding: 0; 
+                            }
+						
+							body {
+								height: calc(var(--vh) * 100); /* Reālais viewport augstums */
+							}
+						
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                background-color: #f0f0f0;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                height: calc(var(--vh, 1vh) * 100);
+                                overflow: hidden;
+                                position: relative;
+                            }
+                            canvas {
+                                background-color: #181818;
+                                background-image: url('https://site-710050.mozfiles.com/files/710050/medium/CADET_TRANSP_.png?1542126381');
+                                background-repeat: no-repeat;
+                                background-attachment: fixed;
+                                background-size: 70% 30%;
+                                background-position: center;
+                                z-index: 1;
+								height: 100%; /* nodrošina, ka canvas izmanto vecāku konteineru */
+                                width: 100%; /* pielāgojas loga platumam */
+                            }
+                            #fullscreenMessage {
+                                position: fixed;
+                                z-index: 15;
+                                color: white;
+                                background-color: rgba(0, 0, 0, 0.4);
+                                width: 100%;
+                                height: 100vh;
+                                justify-content: center; /* Horizontālais centrējums */
+    							align-items: center; /* Vertikālais centrējums */
+                                display: flex;
+                                visibility: visible;
+                                backdrop-filter: blur(5px); /* Šis pievieno izplūdumu fonam */
+								-webkit-backdrop-filter: blur(5px); /* Atbalstam uz vecākiem pārlūkiem */
+                            }
+
+
+                            #fullscreenMessagetext {
+    							background-color: rgba(255, 0, 0, 0.5);
+    							 position: relative;
+                                color: white;
+                                font-size: 2vw;
+                                font-weight: bold;
+                                padding: 20px 20px;
+                                width: 60%;
+                                max-width: 90%; 
+                                height: auto;
+                                text-align: center;
+                                border-radius: 10px;
+                                border: 2px solid red; 
+                                z-index: 50;
+                                justify-content: center; 
+                                align-items: center; 
+                                box-sizing: border-box; 
+                            }
+
+							.highlight-title {
+                              font-size: 2.5vw; /* Virsraksta lielāks fonts */
+                              color: white; /* Krāsu var pielāgot */
+                              font-weight: bold; /* Padara virsrakstu treknāku */
+                              text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5); /* Piešķir ēnu */
+                              display: block; /* Lai veidotu atsevišķu rindu */
+                              margin-bottom: 2px; /* Atstarpes zem virsraksta */
+							}
+
+							.copyright {
+								display: block; /* Izveido jaunu rindu */
+								margin-top: 10px; /* Atstarpe starp linku un tekstu */
+								font-size: 1.5vw; /* Nedaudz mazāks fonts nekā virsraksts */
+								color: #ffffff; /* Balts teksts (var mainīt) */
+								font-weight: normal; /* Parasts fonts (ne trekns) */
+								opacity: 0.8; /* Nedaudz caurspīdīgs efekts */
+							} 
+                            
+                            
+							.arrow {
+    
+								border-left: 2.5vh solid transparent;
+								border-right: 2.5vh solid transparent;
+								border-bottom: 5vh solid red; 
+								transform: rotate(0deg); /* Var izmantot rotate, lai mainītu bultas virzienu */
+								position: fixed;
+								top: 20px; /* Attālums no augšas */
+								right: 56px; /* Attālums no kreisās puses */
+								display: flex;
+								animation: bounce 1.5s infinite ease-in-out; /* Pievienota animācija */
+								 z-index: 10;
+							}                 
+       
+							.arrow::before {
+								font-family: 'Noto Sans Symbols', 'Segoe UI Symbol', sans-serif;
+								content: "𖧵"; /* Simbols bultiņā */
+								position: absolute;
+								color: white; /* Simbola krāsa */
+								font-size: 2.5vh; /* Simbola izmērs */
+								 transform: scaleX(1.5) scaleY(1); /* Palielina platumu par 1.5x, augstumu nemaina */
+								top: 10px; /* Simbola pozīcija virs bultas */
+								right: -5px; /* Horizontāli centrē simbolu */
+								 z-index: 11;
+							}
+							
+							/*arrow animācija*/
+								@keyframes bounce {
+								0% { 
+									transform: translateY(0) rotate(0deg); 
+								}
+								50% { 
+									transform: translateY(-15px) rotate(0deg); 
+								}
+								100% { 
+									transform: translateY(0) rotate(0deg); 
+								}
+							}
+    
+                            #fullscreenMessage.hidden {
+                                visibility: hidden;
+                            }
+							
+							.fs-message-hidden {
+								display: none !important;
+							}
+							
+                            :root {
+								--vh: 1vh;
+							}
+
+							@media (max-width: 1024px) {
+								:root {
+									--vh: 1vh; 
+								}
+							}
+
+							.button-container.bottom {
+								position: fixed;
+								bottom: calc(var(--vh) * 6); /* Koriģēts, lai vienmēr būtu 5% no faktiskā viewport */
+								display: flex;
+								gap: 1vw;
+								justify-content: center;
+								width: 100%;
+								z-index: 3;
+								pointer-events: none;
+								transition: all 0.20s ease-in-out;
+							}
+
+							.button-container.left {
+								position: fixed;
+								left: 4%; /* Precīzi uz kreiso malu */
+								top: auto; /* Atstarpe no augšas (pielāgojiet pēc vajadzības) */
+								display: flex;
+								flex-direction: column; /* Pogas no augšas uz leju */
+								gap: 10px; /* Atstarpe starp pogām */
+								z-index:2;
+								transition: all 0.20s ease-in-out;
+								pointer-events: none;
+							}
+
+							.button-container.right {
+								position: fixed;
+								right: 4%; /* Precīzi uz labo malu */
+								top: auto; /* Atstarpe no augšas (pielāgojiet pēc vajadzības) */
+								display: flex;
+								flex-direction: column; /* Pogas no augšas uz leju */
+								gap: 10px; /* Atstarpe starp pogām */
+								z-index:2;
+								transition: all 0.20s ease-in-out;
+								pointer-events: none;
+							}
+
+							.position-selector-container {
+								position: fixed;
+								top: 15%; /* Vertikāli centrē */
+								right: 0%;
+								transform: translateY(-50%);
+								z-index: 5;
+							}
+
+							.position-selector {
+								background-color: rgba(0, 0, 0, 0.8); /* Caurspīdīgs melns fons */
+								padding: 10px;
+								border-radius: 0px 0 0 0px;
+								box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+								width: 250px;
+								display: flex;
+								align-items: center;
+								flex-direction: column;
+								position: relative;
+								transition: transform 0.3s ease-in-out; /* Pāreja paslēpšanai */
+							}
+
+							.position-selector::after {
+								content: ''; /* Pievieno pseido-elementu */
+								display: block;
+								height: 3px; /* Līnijas augstums */
+								background-color: rgba(255, 0, 0, 0.8); /* Līnijas krāsa */
+								position: absolute;
+								bottom: 0; /* Līnija ir pie apakšas */
+								left: 0%;
+								right: 0%;
+							}
+
+
+							.position-selector-left::after  {
+								content: ''; /* Pievieno pseido-elementu */
+								display: block;
+								height: 3px; /* Līnijas augstums */
+								background-color: rgba(255, 0, 0, 0.8); /* Līnijas krāsa */
+								position: absolute;
+								bottom: 0; /* Līnija ir pie apakšas */
+								left: 0%;
+								right: 0%;
+							}
+
+							#positionSelect {
+								width: 230px;
+							}
+
+							.position-selector.hidden {
+								transform: translateX(100%); /* Paslēpj logu labajā malā */
+							}
+
+							/* Labās puses bultiņa */
+							.position-selector-container .toggle-selector {
+								position: absolute;
+								top: 50%;
+								left: -11%;
+								transform: translateY(-50%);
+								background-color: rgba(255, 0, 51, 0.7);
+								border: none;
+								color: white;
+								border-radius: 10px 0 0 10px; 
+								width: 30px;
+								height: 100%;
+								cursor: pointer;
+								font-size: 14px;
+								text-align: center;
+								line-height: 30px;
+							}
+
+							.position-selector-container .toggle-selector:hover {
+								background-color: rgba(255, 0, 0, 0.9);
+							}
+
+							/* Kreisās puses bultiņa */
+							.position-selector-container-left .toggle-selector-left {
+								position: absolute;
+								top: 50%;
+								right: -30px; 
+								transform: translateY(-50%);
+								background-color: rgba(255, 0, 51, 0.7);
+								border: none;
+								color: white;
+								border-radius: 0 10px 10px 0; 
+								width: 30px;
+								height: 100%;
+								cursor: pointer;
+								font-size: 14px;
+								text-align: center;
+								line-height: 30px;
+							}
+
+							.position-selector-container-left .toggle-selector-left:hover {
+								background-color: rgba(255, 0, 0, 0.9);
+							}
+
+
+						
+
+							.position-selector select {
+								width: 200px;
+								padding: 5px;
+								border: none;
+								border-radius: 3px;
+								font-size: 14px;
+								font-size:16px;
+								background-color: rgba(0, 0, 0, 0.5);
+								color: white;
+							}
+
+
+							label {
+								font-weight: bold;
+							}
+
+
+							@media (max-width: 1024px) {
+								.button-container {
+									bottom: calc(var(--vh) * 5); /* Planšetdatoriem tāds pats nosacījums */
+								}
+							}
+
+                            button {
+                                background-color: rgba(91, 16, 16, 0.8);
+                                color: white;
+                                border: none;
+                                border-radius: 50%;
+                                width: 6vw;
+                                height: 6vw;
+                                cursor: pointer;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center; /* Centra vertikāli un horizontāli */
+                                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+                                pointer-events: auto;
+                                overflow: hidden; /* Novērš attēla pārliešanu ārpus pogas */
+                            }
+                            
+                            button img {
+                                width: 95%; /* Precīza mēroga kontrole */
+                                height: 95%;
+                                object-fit: contain; /* Nodrošina, ka attēls tiek pilnībā ievietots */
+                                display: block;
+                                margin: auto; /* Papildu centrēšana */
+                            }
+							
+							
+							button.active {
+								transform: scale(1.1); /* Neliels izcēlums */
+							}
+							
+							
+							
+							
+							
+							.highlight {
+								background-color: #ffcccc;
+							}						
+							
+		
+							#lockRotationMode {
+								display: none; /* Slēpjam pogu datoros */
+							}
+
+							@media (pointer: coarse) { /* Tiek atvērta tikai uz skārienierīcēm */
+								#lockRotationMode {
+									display: flex; 
+								}
+							}
+
+							button.active {
+								background-color: rgb(187, 1, 1) !important; /* Pogas aktīvais stāvoklis */
+							}
+
+							#toggleFullscreen {
+								font-size: 16px;
+								transition: background-color 0.3s, color 0.3s;
+								background-color: rgba(91, 16, 16, 0.8);
+								color: white;
+								border: none;
+								border-radius: 50%;
+								width: 6vw;
+								height: 6vw;
+								cursor: pointer;
+								display: flex;
+								align-items: center;
+								justify-content: center;
+								box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+							}
+
+							#toggleFullscreen img {
+								width: 95%; 
+								height: 95%;
+								object-fit: contain;
+							}
+
+							#fullscreenPopup {
+								position: fixed;
+								bottom: 30px;
+								right: 10px;
+								color: white;
+								padding: 15px;
+								border-radius: 5px;
+								box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+								z-index: 9999;
+								display: none;
+								font-weight: bold;
+								animation: slide-in 0.5s ease-out;
+							}
+
+							/* Nodrošinām, ka kompass vienmēr būs virs kanvas */
+							#compassContainer {
+							  position: absolute;
+							  width: 25vw;
+							  height: 14vw;
+							  z-index: 3; /* Ļoti liels z-index, lai pārietu pāri canvasa */
+							  transform-origin: center center;
+							  pointer-events: none;
+							  image-rendering: crisp-edges;
+							}
+
+							#rotateCompass90 {
+								background-color: rgba(91, 16, 16, 0.8);
+								color: white;
+								border: none;
+								border-radius: 50%;
+								width: 6vw;
+								height: 6vw;
+								cursor: pointer;
+								display: flex;
+								align-items: center;
+								justify-content: center;
+								box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+							}
+							#rotateCompass90 img {
+								width: 95%;
+								height: 95%;
+							}
+							
+
+							#rotateCompass90.active {
+								transform: scale(1.1); /* Neliels izcēlums */
+							}
+
+							#compassScaleContainer {
+							  position: relative; 
+							  width: 25vw;
+							  height: 14vw;
+							  transform-origin: center center;
+							  
+							  pointer-events: none;
+							  image-rendering: crisp-edges; 
+							}
+
+							#compassInner {
+							  position: absolute;
+							  width: 14vw;
+							  height: 14vw;
+							  left: 41.5%;
+							  top: 0%;
+							  transform: translate(-50%, -50%);
+							  transform-origin: center center;
+							  
+							  image-rendering: crisp-edges;
+							}
+
+							#compassBase {
+							  position: absolute;
+							  width: 25vw;
+							  height: auto;
+							  left: 13.5%;
+							  top: 50%;
+							  transform: translate(-49.9%, -50.2%);
+							  transform-origin: center center;
+							  display: block;
+							 
+							  pointer-events: auto;
+							  image-rendering: crisp-edges;
+
+							}
+
+							#compassScaleInner {
+							  position: absolute;
+							  width: 14vw;
+							  height: 14vw;
+							  left: 41.5%;
+							  top: 0%;
+							  transform: translate(-50%, -50%) rotate(30deg);
+							  transform-origin: center center;
+							  
+							  border-radius:50%
+							  image-rendering: crisp-edges;
+							}
+
+							#compassScale {
+							  position: absolute;
+							  width: 13vw;
+							  height: 13vw;
+							  left: 50.05%;
+							  top: 50.04%;
+							  transform: translate(-50%, -50%);
+							  transform-origin: center center;
+							  
+							  display: block;
+							  border-radius:50%
+							  pointer-events: auto;
+							  image-rendering: crisp-edges;
+							}
+
+							@keyframes rotateCompassNeedle {
+							  from {
+								transform: translate(-50%, -50%) rotate(0deg);
+							  }
+							  to {
+								transform: translate(-50%, -50%) rotate(360deg);
+							  }
+							}
+
+							#compassNeedle {
+							  position: absolute;
+							  width: 0.65vw;
+							  height: auto;
+							  left: 69.5%;
+							  top: 50%;
+							  transform: translate(-50%, -50%);
+							  transform-origin: center center;
+							  opacity: 0.85;
+							  image-rendering: crisp-edges;
+							  /* Animācija nepārtrauktai rotācijai */
+							  animation: rotateCompassNeedle 50s linear infinite;
+							}
+							
+							canvas, #compassContainer {
+								touch-action: none; /* Disable default touch behavior */
+							}
+
+
+							#compassContainer.with-transition, 
+							#compassInner.with-transition, 
+							#compassScaleInner.with-transition,
+							#compassScaleContainer.with-transition {
+								transition: left 0.20s ease-in-out, 
+											top 0.20s ease-in-out, 
+											transform 0.40s ease-in-out;
+							}
+
+							#mapCanvas.with-transition {
+								transition: transform 0.5s ease-in-out;
+							}
+
+							#about {
+								position: fixed;
+								bottom: calc(var(--vh) * 0); /* Koriģēts, lai vienmēr būtu 5% no faktiskā viewport */
+								display: flex;
+								gap: 2vw;
+								justify-content: center;
+								width: 100%;
+								z-index: 2;
+								
+								padding:0.3vw;
+								background-color: rgba(0, 0, 0, 0.8);
+								color: rgba(255, 255, 255, 0.8);
+								text-align:center;
+								z-index:20;
+							}
+
+							.abouttext {
+								font-size: 15px; /* Izvēlies piemērotu teksta izmēru */
+								margin: 10px 0; /* Atstarpe starp tekstiem */
+								text-align: center; /* Centrs katra rinda atsevišķi */
+								margin-top: 1px;
+								margin-bottom: 1px;
+							}
+
+
+							/* Kreisās puses konteineris */
+							.position-selector-container-left {
+								position: fixed;
+								top: 15%; /* Vertikāli centrē */
+								left: 0; /* Kreisajā malā */
+								transform: translateY(-50%);
+								z-index: 5;
+							}
+
+							/* Izvēlne un tās stils */
+							.position-selector-left {
+								background-color: rgba(0, 0, 0, 0.8); /* Caurspīdīgs melns fons */
+								padding: 10px;
+								border-radius: 0 0px 0px 0; /* Kreisās puses stūri noapaļoti */
+								box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+								width: 250px;
+								display: flex;
+								align-items: center;
+								flex-direction: column;
+								position: relative;
+								transition: transform 0.3s ease-in-out; /* Pāreja paslēpšanai */
+							}
+
+							/* Kreisās puses slēpšanas animācija */
+							.position-selector-left.hidden-left {
+								transform: translateX(-100%); /* Pilnībā paslēpta kreisajā malā */
+							}
+
+							.position-selector-left {
+								transform: translateX(0); /* Redzama */
+							}
+
+
+
+							/* Kreisās puses bultiņa */
+							.toggle-selector-left {
+								position: absolute;
+								top: 50%;
+								right: -7%; /* Bultiņa atrodas pie kreisās puses malā */
+								transform: translateY(-50%);
+								background-color: rgba(255, 0, 51, 0.7);
+								border: none;
+								color: white;
+								border-radius: 0 10px 10px 0; /* Tikai labā puse noapaļota */
+								width: 30px;
+								height: 100%;
+								cursor: pointer;
+								font-size: 14px;
+								text-align: center;
+								line-height: 30px;
+							}
+
+							/* Hover efekts bultiņai */
+							.toggle-selector-left:hover {
+								background-color: rgba(255, 0, 0, 0.9);
+							}
+
+							/* Izvēles lodziņš */
+							.position-selector-left select {
+								width: 230px;
+								padding: 5px;
+								border: none;
+								border-radius: 3px;
+								font-size: 16px;
+								background-color: rgba(0, 0, 0, 0.5);
+								color: white;
+							}
+							
+							.position-selector-left select option {
+								background-color: rgba(0, 0, 0, 0.6); /* Fona krāsa opcijām */
+								color: white; /* Teksta krāsa opcijām */
+								border: 2px solid red; 
+								border-radius: 4px;
+							}
+							
+							.position-selector select option {
+								background-color: rgba(0, 0, 0, 0.6); /* Fona krāsa opcijām */
+								color: white; /* Teksta krāsa opcijām */
+								border: 2px solid red; 
+								border-radius: 4px;
+							}
+
+							/* Pilnekrāna pārklājums */
+#orientation-overlay{
+  display: none;            /* sākumā paslēpts */
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-color: #000; color:#fff;
+  text-align:center; z-index:9999;
+  /* centrēšanai, kad JS ieslēdz: */
+  flex-direction: column; justify-content: center; align-items: center;
+  font-size: 1.5em;
 }
 
-*{ box-sizing: border-box; }
-html,body{ height:100%; }
-body{
-  margin:0; padding:0;
-  background:#0f0f0f;
-  color:var(--text);
-  font-family: system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Arial,sans-serif;
-  overflow:hidden;
-}
 
-.hidden{ display:none !important; }
+							#orientation-overlay img {
+								width: 100%;
+								height: auto;
+								margin-top: 20px;
+							}
 
-/* ===== PĀRKLĀJUMI ===== */
-.overlay{
-  position:fixed; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  background: rgba(0,0,0,.7);
-  z-index:1000;
-}
-.overlay-card{
-  background: #1a1f29;
-  border:1px solid var(--glass);
-  border-radius:12px;
-  padding:18px 22px;
-  text-align:center;
-  box-shadow:0 10px 30px rgba(0,0,0,.45);
-}
-.overlay-title{ font-weight:800; margin-bottom:4px; }
-.overlay-sub{ color:var(--muted); }
 
-/* ===== KANVA + KARTE ===== */
-#canvasContainer{
-  position:fixed; inset:0; width:100vw; height:100vh; overflow:hidden;
-}
-#mapCanvas{
-  position:absolute; inset:0; width:100%; height:100%;
-  display:block; background:#181818;
-}
+						   #mobile-warning {
+								position: fixed;
+								top: 0;
+								left: 0;
+								width: 100%;
+								height: 100%;
+								background-color: rgba(0, 0, 0, 0.9); /* Tumšs fons */
+								color: white;
+								display: flex;
+								justify-content: center;
+								align-items: center;
+								text-align: center;
+								font-size: 1.5em;
+								z-index: 9999;
+							}
+
+							.warning-content img {
+								max-width: 300px;
+								height: auto;
+							}
+
+							
+							/* Uznirstošais ziņojums */
+							#touchscreenPopup {
+								position: fixed;
+								bottom: 30px;
+								right: 10px;
+								color: white;
+								padding: 15px;
+								border-radius: 5px;
+								box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+								z-index: 9999;
+								display: none;
+								font-weight: bold;
+								animation: slide-in 0.5s ease-out;
+							}
+
+							@keyframes slide-in {
+								from {
+									transform: translateX(100%);
+								}
+								to {
+									transform: translateX(0);
+								}
+							}
+
+							.popup-success {
+								background-color: #28a745; /* Zaļš fons, kad pievieno */
+							}
+
+							.popup-error {
+								background-color: #dc3545; /* Sarkans fons, kad atvieno */
+							}
+
+							.touch-only {
+								display: none; /* Sākotnēji paslēpta */
+							}
+
+							.touch-visible {
+								display: block !important; /* Parādīta, kad ir aktīva skārienjūtīgā ierīce */
+							}				
+							
+
+
+							/* Popup stils */
+							#popupMenu {
+								position: fixed;
+								top: 50%;
+								left: 50%;
+								transform: translate(-50%, -50%);
+								padding: 10px;
+								background-color: rgba(0, 0, 0, 0.8);
+								color: white;
+								border-radius: 10px;
+								text-align: center;
+								z-index: 9;
+								width: 30vw;
+								height: auto;
+								display: flex;
+								flex-direction: column;
+								align-items: center;
+								gap: 1vw;
+								justify-content: center;
+							}
+
+							/* Virsraksta stils */
+							#popupMenu p {
+								margin-bottom: 15px;
+								font-size: 1.2em;
+								font-weight: bold;
+							}
+
+							/* Pogas rinda */
+							#popupMenu .button-row {
+								display: flex;
+								justify-content: center;
+								gap: 20px; /* Atstarpes starp pogām */
+								margin-top: 10px;
+							}
+
+							/* Pogas stils */
+							#popupMenu button {
+								margin: 0;
+								padding: 0;
+								cursor: pointer;
+								background-color: transparent; 
+								border: none;
+								border-radius: 15px;
+								width: 10vw; /* Palielināts pogas platums */
+								height: 10vw; /* Palielināts pogas augstums */
+								display: flex;
+								align-items: center;
+								justify-content: center;
+								transition: background-color 0.3s, transform 0.2s;
+							}
+
+							#popupMenu button:hover {
+								background-color: rgba(255, 255, 255, 0.1);
+								border-radius: 15px;
+								transform: scale(1.1); /* Palielina pogu pie hover */
+							}
+
+							/* Pogas attēli */
+							#popupMenu button img {
+								width: 9vw; /* Palielināts attēla platums */
+								height: 9vw; /* Palielināts attēla augstums */
+								object-fit: contain; /* Pārliecinās, ka attēls ir pilnībā redzams pogā */
+								border-radius:10px;
+							}
+
+							#resizeHandle {
+								display: none;
+								align-items: center; /* Vertikāli centrē attēlu */
+								justify-content: center; /* Horizontāli centrē attēlu */	 
+								width: 12px;
+								height: 12px;
+								border-radius:5px;
+								position: absolute;
+								background-color:rgba(255, 0, 0, 0.5);
+								cursor: se-resize;
+								z-index: 5;
+							}
+
+							#resizeHandle img {
+								width: 90%; /* Nodrošina, ka attēls pilnībā aizpilda rokturi */
+								height: 90%; /* Nodrošina, ka attēls pilnībā aizpilda rokturi */
+								object-fit: contain; /* Nodrošina, ka attēls tiek saglabāts proporcijās */
+								pointer-events: none; /* Neļauj attēlam bloķēt klikšķus */
+								
+								
+							}
+
+
+
+
+
+							/* Augšējās nolaižamās joslas stils */
+							.top-bar {
+								position: fixed;
+								top: 0;
+								left: 0;
+								width: 100%;
+								background-color: transparent;
+								color: white;
+								padding: 0px;
+								display: flex;
+								justify-content: space-between;
+								align-items: center;
+								z-index: 20;
+								transition: top 0.3s ease-in-out;
+								backdrop-filter: none;
+								transition: height 0.3s ease-in-out, padding 0.3s ease-in-out;
+							}
+
+
+
+							.top-bar .dropdown-toggle {
+								background-color: rgba(255, 0, 51, 0.7);
+								border: none;
+								color: white;
+								padding: 3px;
+								cursor: pointer;
+								font-size: 20px;
+								border-radius: 0 0 5px 5px; /* Tikai apakšējie stūri */
+								transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+								width: 49%;
+								text-align: center;
+								display: block;
+							}
+
+							.top-bar .dropdown-toggle:hover {
+								background-color: rgba(255, 0, 0, 0.9);
+							}
+
+							.top-bar .dropdown-toggle.active {
+								box-shadow: 0px 0px 10px rgba(255, 0, 51, 0.8);
+							}
+
+							.top-bar .dropdown-toggle:first-child {
+								margin-right: 10px;
+							}
+
+							.dropdown-menu {
+								position: fixed;
+								top: -100%;
+								left: 0;
+								width: 100%;
+								height: calc(100vh - 40px);
+								background-color: rgba(0, 0, 0, 0.8);
+								padding: 20px;
+								display: flex;
+								flex-wrap: wrap;
+								justify-content: center;
+								align-items: center;
+								box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+								transition: top 0.4s ease-in-out;
+								   visibility: hidden;
+							}
+
+							.dropdown-menu a {
+								color: white;
+								text-decoration: none;
+								padding: 15px 20px;
+								font-size: 20px;
+								text-align: center;
+								transition: background-color 0.3s ease-in-out;
+								display: flex;
+								align-items: center;
+								justify-content: center;
+								width: 30%;
+								height: 50px;
+								margin: 10px;
+								background-color: rgba(50, 50, 50, 0.8);
+								border-radius: 5px;
+							}
+
+							.dropdown-menu a:hover {
+								background-color: rgba(255, 0, 51, 0.7);
+								color: white;
+							}
+
+							.dropdown-container {
+								position: fixed;
+								top: 0;
+								left: 0;
+								z-index: 10;
+								width: 100%;
+								 background-color: transparent;
+							}
+
+							.dropdown-menu.visible {
+								top: -20px;
+								margin-left:-18px;
+								visibility: visible;
+								 transition: top 0.4s ease-in-out, opacity 0.4s ease-in-out; /* Noņemam delay */
+							}
+
+
+
+
+
+							/* Kad aizveras */
+							.dropdown-menu:not(.visible) {
+							    top: -100%;
+							    opacity: 0;
+							    visibility: hidden;
+							    transition: top 0.4s ease-in-out, opacity 0.4s ease-in-out, visibility 0s 0.4s; /* Visibility delay, lai paslēptu tikai pēc animācijas */
+							}
+
+
+							/* Kad iframe ir aktīvs, dropdown pogas tiek paceltas un samazinātas */
+							.dropdown-menu.shrink .dropdown-link {
+								padding: 5px 1px;
+								font-size: 14px;
+								height: 20px;
+								transform: translateY(70px); /* Paceļ pogas augstāk, bet saglabā rindu izvietojumu */
+								margin-top:-40px;
+							}
+
+
+							@media (max-width: 768px) {
+								.top-bar {
+									flex-direction: column;
+									align-items: center;
+								}
+
+								.top-bar .dropdown-toggle {
+									width: 100%;
+									margin-bottom: 5px;
+								}
+
+								.dropdown-menu {
+									flex-direction: column;
+									height: auto;
+									max-height: 60vh;
+									overflow-y: auto;
+									
+								}
+
+								.dropdown-menu a {
+									width: 90%;
+									font-size: 18px;
+									padding: 12px;
+								}
+							}
+
+
+
+							.dropdown-menu a {
+								transition: padding 0.3s ease-in-out, font-size 0.3s ease-in-out, height 0.3s ease-in-out;
+								padding: 15px 20px;
+								font-size: 20px;
+								height: 50px;
+								margin-top: 10px; /* Noklusējuma attālums no augšas */
+							}
+
+							.dropdown-menu.shrink a {
+								padding: 5px 10px;
+								font-size: 14px; /* Mazāks teksts */
+								height: 30px; /* Samazināts augstums */
+								margin-top: 60px; /* Pārvieto pogas augstāk */
+							}
+
+
+							/* Noklusējuma iframe stils */
+							#contentFrame {
+								transition: height 0.3s ease-in-out, margin-top 0.3s ease-in-out;
+								width: 100%;
+								height: 0; /* Sākumā paslēpts */
+								border: none;
+								display: block;
+								margin-top: 0px;
+							}
+
+							/* Kad iframe ir aktīvs, tas kļūst lielāks un paceļas */
+							#contentFrame.active {
+								height: 75vh; /* Palielināts augstums līdz 85% no ekrāna augstuma */
+								margin-top: 20px; /* Paceļ nedaudz uz augšu */
+								margin-bottom: -40px;
+							}
+
+
+
+							/* Atsauksmju poga */
+							.aboutlink {
+								display: inline-block;
+								padding: 5px 10px;
+								background-color: #d0021b; /* Sarkans tonis */
+								color: white;
+								font-weight: bold;
+								text-decoration: none;
+								border-radius: 5px 5px 0 0;
+								transition: all 0.3s ease-in-out;
+								position: absolute; /* Pārliecinās, ka tā paliek konteinera robežās */
+								right: 10px; /* Novieto pareizi */
+								top: 0px;
+								z-index: 5;
+								width: 170px;
+							}
+
+
+							.aboutlink:hover {
+								background-color: rgba(255, 0, 51, 1);
+								transform: scale(1.05);
+							}
+
+							#iframeContainerAbout {
+								position: fixed;
+								width: 500px;
+								height: 600px;
+								bottom: -620px; /* Sākumā paslēpts zem ekrāna */
+								right: 20px;
+								background: white;
+								box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+								border-radius: 8px;
+								overflow: hidden;
+								transition: bottom 0.5s ease-in-out; /* Slīdēšanas animācija */
+								display: none;
+								z-index: 9999;
+							}
+
+							#iframeContainerAbout iframe {
+								width: 100%;
+								height: 100%;
+							}
+
+							/* Aizvēršanas poga */
+							#closeIframeAbout {
+								position: absolute;
+								top: 5px;
+								right: 5px;
+								background: red;
+								color: white;
+								border: none;
+								width: 25px;
+								height: 25px;
+								border-radius: 50%;
+								font-size: 14px;
+								cursor: pointer;
+							}
+
+
+
+							#iframeContainerQR {
+								position: fixed;
+								width: 300px;
+								height: 330px;
+								bottom: -370px; /* Sākumā paslēpts zem ekrāna */
+								left: 20px; /* Novietots kreisajā pusē */
+								background: rgba(0, 0, 0, 0.8);;
+								box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+								border-radius: 8px;
+								overflow: hidden;
+								transition: bottom 0.5s ease-in-out;
+								display: none;
+								z-index: 20;
+								text-align: center;
+								padding: 20px;
+								
+							}
+
+							#qrCodeContent {
+								text-align: center;
+							}
+
+							.qrTitle {
+								font-size: 18px;
+								font-weight: bold;
+								margin-bottom: 10px;
+								color: white;
+							}
+
+							#qrCodeImage {
+								width: 250px;
+								height: 250px;
+							}
+
+							#closeIframeQR {
+								position: absolute;
+								top: 5px;
+								right: 5px;
+								background: red;
+								color: white;
+								border: none;
+								width: 25px;
+								height: 25px;
+								border-radius: 50%;
+								font-size: 14px;
+								cursor: pointer;
+							}
+
+							.qrLink {
+								display: inline-block;
+								padding: 5px 10px;
+								background-color: #d0021b; /* Sarkans tonis */
+								color: white;
+								font-weight: bold;
+								text-decoration: none;
+								border-radius: 5px 5px 0 0;
+								transition: all 0.3s ease-in-out;
+								position: absolute;
+								left: 10px;
+								bottom: -2px;
+								z-index: 5;
+								width: 170px;
+							}
+
+							.qrLink:hover {
+								background-color: rgba(255, 0, 51, 1);
+								transform: scale(1.05);
+							}
+
+
+
+							/* Labo dropdown pogu novietojumu tikai Lietotāja ceļvedim */
+							#dropdownInstruction.shrink .dropdown-toggle {
+								transform: translateY(30px); /* Samazina pārvietojumu */
+							}
+
+							/* Lietotāja ceļveža iframe pielāgošana */
+							#instructionFrame.active {
+								height: 75vh; 
+								display: block;
+								margin-top: 10px; /* Samazina augšējo attālumu */
+							}
+
+
+							/* === DOCK (tikai #buttonContainer) — jauns dizains bez loģikas maiņas === */
+							:root{
+							  --dock1:#1b1f25; --dock2:#490000a8;
+							  --dock-ring:#8b0202; --dock-icon:#eef2f7; --dock-muted:#3a3f47;
+							  --dock-shadow:0 12px 28px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.35);
+							  --tipX:50%; --tipY:50%;
+							  --labelW:210px; --capH:32px; --capSkew:14px; --capR:10px; --capExtraW:10px; --labelOffsetY:2px;
+							}
+							
+							/* “Čaula” ap pašām pogām (izveidosim ar JS), lai fona kapsula būtu pēc satura platuma */
+							#buttonContainer { pointer-events:none;}
+							#buttonContainer .dock-shell{
+							  position:relative; display:flex; gap:22px; align-items:center;
+							  padding:14px 18px; border-radius:48px;
+							  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+							  background:linear-gradient(180deg,var(--dock1),var(--dock2));
+							  border:1px solid rgba(255,255,255,.04);
+							  box-shadow:var(--dock-shadow);  
+							  pointer-events:auto; /* lai var klikšķināt pogas */
+							}
+							
+							
+							/* lai auto-fit mērogs izskatās pareizi visos novietojumos */
+							#buttonContainer .dock-shell{ 
+							  transform-origin: center center; 
+							  will-change: transform; 
+							}
+							#buttonContainer.left  .dock-shell{ transform-origin: left  center; }
+							#buttonContainer.right .dock-shell{ transform-origin: right center; }
+							
+							
+							
+							/* orientācijas mantošana no Tavām klasēm */
+							#buttonContainer.bottom .dock-shell{ flex-direction:row; }
+							#buttonContainer.left  .dock-shell,
+							#buttonContainer.right .dock-shell{ flex-direction:column; }
+							
+							/* Etiķete (teksta burbulis) + kupola SVG (horizontālajam režīmam) */
+							#buttonContainer .dock-label{
+							  position:absolute; left:0; top:calc(-1 * var(--capH) - var(--labelOffsetY));
+							  transform:translateX(calc(var(--tipX) - 50%));
+							  max-width:var(--labelW);
+							  padding:6px 12px; background:rgba(22,25,30, 0.8);
+							  border:1px solid rgba(210,34,34,.45); border-radius:var(--capR);
+							  color:#fff; font-size:13px; line-height:1.05; font-weight:600;
+							  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+							  box-shadow:0 8px 20px rgba(0,0,0,.35);
+							  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+							  opacity:0; pointer-events:none; z-index:3;
+							  clip-path: inset(0 50% 0 50% round var(--capR));
+							  transition:opacity .18s, clip-path .24s, max-width .12s;
+							}
+							#buttonContainer .show-label .dock-label{
+							  opacity:1; clip-path: inset(0 0 0 0 round var(--capR));
+							}
+							#buttonContainer .dock-cap{
+							  position:absolute; left:0; top:calc(-1 * var(--capH));
+							  width:calc(var(--labelW) + 22px + var(--capExtraW)); height:var(--capH);
+							  transform:translateX(calc(var(--tipX) - 50%));
+							  transform-origin:bottom center;
+							  opacity:0; pointer-events:none; z-index:1;
+							  filter:drop-shadow(0 10px 18px rgba(0,0,0,.35));
+							}
+							#buttonContainer .show-cap .dock-cap{ opacity:1; }
+							
+							/* Vertikālie novietojumi: etiķete slīd vertikāli un stāv sānis (kupolu slēpjam) */
+							#buttonContainer.left  .dock-cap,
+							#buttonContainer.right .dock-cap{ display:none; }
+							#buttonContainer.left  .dock-label,
+							#buttonContainer.right .dock-label{
+							  top:0; transform:translateY(calc(var(--tipY) - 50%));
+							}
+							#buttonContainer.left  .dock-label{ left:100%; margin-left:12px; }
+							#buttonContainer.right .dock-label{ right:100%; left:auto; margin-right:12px; }
+							
+							/* Pogu stils #buttonContainer iekšienē (pārraksta globālo “button” izskatu tikai šeit) */
+							#buttonContainer .dock-shell > button{
+							  position:relative; background:transparent !important; color:var(--dock-icon);
+							  border:none; border-radius:50%;
+							  width:64px; height:64px; /* mobilajam var samazināt ar @media */
+							  display:grid; place-items:center; cursor:pointer; outline:none;
+							  -webkit-tap-highlight-color:transparent;
+							}
+							#buttonContainer .dock-shell > button::before{
+							  content:""; position:absolute; inset:0; border-radius:50%;
+							  border:3px solid var(--dock-ring); box-shadow:0 6px 16px rgba(210,34,34,.35);
+							  transition:transform .18s ease, opacity .18s ease, border-color .18s ease, box-shadow .18s ease;
+							}
+							#buttonContainer .dock-shell > button:active::before{ transform:scale(.95); opacity:.9; }
+							#buttonContainer .dock-shell > button img{
+							  width:78%; height:78%; object-fit:contain; display:block; margin:auto; pointer-events:none;
+							}
+							/* Aktīvajām (Tavā kodā tiek pievienota .active) – neliels izcelums */
+							#buttonContainer .dock-shell > button.active::before{
+							  border-color:#ff0000; box-shadow:0 0 0 4px rgba(255,77,77,.12);
+							}
+							/* “Touch-only” pogas paliek kā ir – tikai izmērs/dizains vienots */
+							#buttonContainer .dock-shell > .touch-only{ display:none; }
+							@media (pointer:coarse){
+							  #buttonContainer .dock-shell > .touch-only{ display:grid; }
+							}
+							
+							/* Mazi skatlogi */
+							@media (max-width:540px){
+							  #buttonContainer .dock-shell{ gap:16px; padding:12px 14px; }
+							  #buttonContainer .dock-shell > button{ width:58px; height:58px; }
+							}
+
+							/* === REGULATORI vienuviet === */
+							:root{
+							  /* cik liela strēmele paliek redzama, kad paslēpts */
+							  --expose-bottom: 28px; /* apakša */
+							  --expose-left:   -4vw;  /* kreisā mala */
+							  --expose-right:  -4vw;  /* labā mala */
+							
+							  /* kad KONTEINERS ir atvērts apakšā – atstarpe no ekrāna malas */
+							  --bottom-offset: 50px;
+							}
+							
+							/* === DRAWER/ROKTURIS priekš #buttonContainer === */
+							#buttonContainer{
+							  --handle-w: 45px;  /* roktura platums */
+							  --handle-h: 45px;  /* roktura augstums */
+							  transition: transform .28s ease;
+							  z-index: 4;
+							}
+							@media (pointer:coarse){
+							  #buttonContainer{ --handle-w: 52px; --handle-h: 52px; }
+							}
+							
+							#buttonContainer .dock-handle{
+							  position:absolute;
+							  width: var(--handle-w);
+							  height: var(--handle-h);
+							  display:none; /* redzams tikai dokētā režīmā */
+							  align-items:center;
+							  justify-content:center;
+							  background: linear-gradient(180deg, #dd2222a1, #b01616);
+							  color:#fff;
+							  font-size: 0;           /* ikonai lietosim SVG, nevis tekstu */
+							  border-radius:10px;
+							  box-shadow:0 8px 18px rgba(0,0,0,.35);
+							  border:1px solid rgba(255,255,255,.25);
+							  cursor:pointer;
+							  pointer-events:auto;
+							  user-select:none;
+							}
+							
+							/* pēc roktura izmēra: */
+							#buttonContainer .dock-handle svg{
+							  width:  calc(var(--handle-w) * .74);
+							  height: calc(var(--handle-h) * .74);
+							}
+							
+							
+							/* Kad dokēts — rokturis parādās */
+							#buttonContainer.docked .dock-handle{ display:flex; }
+							
+							/* Roktura novietojums atkarībā no orientācijas */
+							#buttonContainer.bottom .dock-handle{
+							  top:0; left:50%; transform: translate(-50%, -100%);
+							  border-radius:10px 10px 0 0;
+							}
+							#buttonContainer.left .dock-handle{
+							  top:50%; right:0; transform: translate(100%, -50%);
+							  border-radius:0 10px 10px 0;
+							}
+							#buttonContainer.right .dock-handle{
+							  top:50%; left:0; transform: translate(-100%, -50%);
+							  border-radius:10px 0 0 10px;
+							}
+							
+							.button-container.bottom {
+							  bottom: calc(var(--vh) * 6); /* optional fallback */
+							}
+
+							
+							/* Paslēpšana ar “atvilkni”: atstāj redzamu tieši expose-* */
+							#buttonContainer.docked.bottom{
+							  transform: translateY(calc(100% + var(--bottom-offset) - var(--expose-bottom)));
+							}
+							#buttonContainer.docked.left{
+							  transform: translateX(calc(-100% + var(--expose-left)));
+							}
+							#buttonContainer.docked.right{
+							  transform: translateX(calc(100% - var(--expose-right)));
+							}
+
+
+
+							/* === DIMMER (slīdnis) — izkārtojums un izmēri (PATCH) === */
+							
+							/* GRID čaula */
+							#buttonContainer .dock-shell{
+							  display:inline-grid;
+							  grid-column-gap:22px;
+							  grid-row-gap:12px;
+							  align-items:center;
+							}
+							
+							/* APakšā: pati čaula ir flex-rinda, bez fiksēta platuma */
+							#buttonContainer.bottom .dock-shell{
+							  display:flex !important;
+							  flex-flow: row wrap;
+							  align-items:center;
+							  justify-content:center;
+							  
+							
+							  /* NEKONSTRIĒJAM pēc --rowW, ļaujam saturam noteikt platumu */
+							  width:auto !important;
+							  max-width:calc(100% - 24px);
+							  margin:0 auto;
+							 
+							  box-sizing:border-box;
+							
+							  /* notīram grid mantojumu */
+							  grid-auto-flow:unset;
+							  grid-template-columns:unset;
+							  grid-auto-rows:unset;
+							}
+							
+							/* Pogu bērni – fiksēts satura izmērs, lai nerautos pa 100% */
+							#buttonContainer.bottom .dock-shell > button{
+							  order:1;
+							  flex:0 0 auto !important;
+							  grid-column:auto !important;
+							  grid-row:auto !important;
+							}
+							
+							/* Slīdnis – otrajā rindā un tieši tik plats, cik 1. rindas pogu rinda */
+							#buttonContainer.bottom .dock-dimmer{
+							  order:2;
+							  flex:0 1 auto;
+							  width:min(var(--rowW, 100%), 100%); /* --rowW iedod JS mērījums */
+							  max-width:100%;
+							  margin:6px auto 0;
+							  box-sizing:border-box;
+							
+							  grid-column:auto !important;
+							  grid-row:auto !important;
+							}
+							
+							
+							
+							
+							
+							/* Sāni: 2 kolonnas – slīdnis | pogas (vai otrādi) */
+							#buttonContainer.left .dock-shell,
+							#buttonContainer.right .dock-shell{
+							  display:grid;
+							  grid-auto-flow:row dense;          /* bez spraugām */
+							  grid-auto-rows:max-content;        /* katra pogas rinda pēc satura */
+							  grid-template-columns:auto auto;   /* slīdnis | pogas */
+							  align-items:start;
+							}
+							
+							/* Dimmera kolonna – rindu spanu iedos JS (skat. zemāk) */
+							#buttonContainer.left  .dock-dimmer{
+							  grid-column:1;
+							  align-self:stretch;
+							}
+							#buttonContainer.left  .dock-shell > button{ grid-column:2; }
+							
+							#buttonContainer.right .dock-shell > button{ grid-column:1; }
+							#buttonContainer.right .dock-dimmer{
+							  grid-column:2;
+							  align-self:stretch;
+							}
+							
+							/* Dimmera “kaste” */
+							#buttonContainer .dock-dimmer{
+							  box-sizing:border-box;
+							  display:flex;
+							  flex-direction:row;
+							  align-items:center;
+							  gap:10px;
+							  padding:8px 10px;
+							  background:linear-gradient(180deg, var(--dock1), var(--dock2));
+							  border:1px solid rgba(255,255,255,.06);
+							  border-radius:18px;
+							  box-shadow:var(--dock-shadow);
+							  backdrop-filter:blur(6px);
+							  -webkit-backdrop-filter:blur(6px);
+							  max-width:100%;
+							  pointer-events:auto;
+							  min-height:0;               /* Safari 100% augstuma fix */
+							}
+							
+							/* Vertikālajās malās range vertikāls */
+							#buttonContainer.left  .dock-dimmer,
+							#buttonContainer.right .dock-dimmer{
+							  flex-direction:column;
+							  justify-content:center;
+							}
+							
+							/* Slēpjam iekšējos uzrakstus */
+							#buttonContainer .dock-dimmer label,
+							#buttonContainer .dock-dimmer .dimmer-label,
+							#buttonContainer .dock-dimmer .value{ display:none !important; }
+							
+							/* Range: apakšā – 100% platumā (iekš dimmera) */
+							#buttonContainer .dock-dimmer input[type=range]{ width:100%; max-width:100%; }
+							
+							/* Range: sānos – vertikāls un tik garš, cik augsta ir kolonna */
+							#buttonContainer.left  .dock-dimmer input[type=range],
+							#buttonContainer.right .dock-dimmer input[type=range]{
+							  height:calc(100% - 16px);
+							  min-height:0;
+							  width:28px;
+							  writing-mode:bt-lr;
+							  -webkit-appearance:slider-vertical;
+							}
+							@supports not (-webkit-appearance: slider-vertical){
+							  #buttonContainer.left  .dock-dimmer input[type=range],
+							  #buttonContainer.right .dock-dimmer input[type=range]{
+							    height:28px;
+							    width:100%;
+							    transform:rotate(-90deg);
+							    transform-origin:center;
+							  }
+							}
+							
+							/* Vienotais track/thumb dizains */
+							#buttonContainer .dock-dimmer input[type=range]::-webkit-slider-runnable-track{
+							  height:8px;border-radius:999px;
+							  background:linear-gradient(180deg,var(--dock1),var(--dock2));
+							  border:1px solid rgba(255,255,255,.06);
+							}
+							#buttonContainer .dock-dimmer input[type=range]::-webkit-slider-thumb{
+							  width:18px;height:18px;border-radius:50%;
+							  background:var(--dock-icon);
+							  border:3px solid var(--dock-ring);
+							  box-shadow:0 2px 6px rgba(0,0,0,.35);
+							  margin-top:-5px;
+							}
+							#buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
+							  height:8px;border-radius:999px;
+							  background:linear-gradient(180deg,var(--dock1),var(--dock2));
+							  border:1px solid rgba(255,255,255,.06);
+							}
+							#buttonContainer .dock-dimmer input[type=range]::-moz-range-thumb{
+							  width:18px;height:18px;border-radius:50%;
+							  background:var(--dock-icon);
+							  border:3px solid var(--dock-ring);
+							  box-shadow:0 2px 6px rgba(0,0,0,.35);
+							}
+
+
+							/* Sānu novietojumos – slīdnis aizņem visas rindas */
+							#buttonContainer.left  .dock-dimmer,
+							#buttonContainer.right .dock-dimmer{
+							  grid-row: 1 / -1;      /* SPAN visām rindām */
+							  align-self: stretch;   /* izstiepjas pa kolonnas augstumu */
+							}
+							
+							/* Pārliecinies, ka čaulā tiešām ir režģis ar 2 kolonnām */
+							#buttonContainer.left  .dock-shell,
+							#buttonContainer.right .dock-shell{
+							  display: grid;
+							  grid-template-columns: auto auto;   /* slīdnis | pogas (vai otrādi) */
+							  grid-auto-rows: max-content;
+							}
+
+
+
+							/* čaula ir 2 kolonnas: slīdnis | pogas (vai otrādi) */
+							#buttonContainer.left  .dock-shell,
+							#buttonContainer.right .dock-shell{
+							  display: grid;
+							  grid-template-columns: auto auto;
+							  grid-auto-rows: max-content;
+							  align-items: start;
+							}
+							
+							/* slīdnis aizņem **visas rindas** */
+							#buttonContainer.left  .dock-dimmer,
+							#buttonContainer.right .dock-dimmer{
+							  grid-row: 1 / -1;
+							  align-self: stretch;
+							}
+
+
+
+
+							:root{
+							  --fill: #ff4747;               /* aizpildītā daļa */
+							  --unfill: rgba(255,255,255,.12); /* neaizpildītā daļa */
+							}
+							
+							/* WebKit/Chromium – horizontāls */
+							.dock-dimmer input[type=range]::-webkit-slider-runnable-track{
+							  background:
+							    linear-gradient(to right,
+							      var(--fill) 0,
+							      var(--fill) calc(var(--p)*1%),
+							      var(--unfill) calc(var(--p)*1%),
+							      var(--unfill) 100%);
+							}
+							
+							/* WebKit/Chromium – vertikāls */
+							.dock-dimmer .range-vertical::-webkit-slider-runnable-track{
+							  background:
+							    linear-gradient(to top,
+							      var(--fill) 0,
+							      var(--fill) calc(var(--p)*1%),
+							      var(--unfill) calc(var(--p)*1%),
+							      var(--unfill) 100%);
+							}
+							
+							/* Firefox */
+							.dock-dimmer input[type=range]::-moz-range-track{    background: var(--unfill); }
+							.dock-dimmer input[type=range]::-moz-range-progress{ background: var(--fill); }
+							
+							/* Legacy Edge/IE */
+							.dock-dimmer input[type=range]::-ms-fill-upper{ background: var(--unfill); }
+							.dock-dimmer input[type=range]::-ms-fill-lower{ background: var(--fill); }
+
+
+							:root{
+							  --fill: #ff0000;                 /* tīri sarkans */
+							  --unfill: rgba(255,255,255,.12);
+							}
+							
+							/* lai UI noklusētais “accent” arī ir sarkans (Android/Chrome gadījumam) */
+							.dock-dimmer input[type=range]{ accent-color: var(--fill); }
+
+
+
+							/* ===== Universālie mainīgie slīdnim ===== */
+							:root{
+							  --rng-track: 8px;             /* trases biezums */
+							  --rng-thumb: 18px;            /* ķepas diametrs */
+							  --rng-track-bg: linear-gradient(180deg, var(--dock1), var(--dock2));
+							  --rng-track-border: 1px solid rgba(255,255,255,.06);
+							  --rng-thumb-bg: #eef2f7;
+							  --rng-thumb-ring: var(--dock-ring);
+							  --rng-thumb-shadow: 0 2px 6px rgba(0,0,0,.35);
+							}
+
+
+
+
+							/* HORIZONTĀLAIS REŽĪMS: apakšā — vienmēr šaurš un 100% plats */
+							#buttonContainer.bottom .dock-dimmer input[type=range],
+							#buttonContainer.bottom .dock-dimmer input[type=range].range-vertical,
+							#buttonContainer.bottom .dock-dimmer input[type=range][orient="vertical"]{
+							 
+							  writing-mode: horizontal-tb !important;
+							  transform: none !important;
+							
+							  inline-size: 100% !important;                      /* platums */
+							  block-size: var(--rng-track-bottom, 6px) !important; /* biezums */
+							  height: var(--rng-track-bottom, 6px) !important;   /* drošībai */
+							  margin: 0 !important;
+							  padding: 0 !important;
+							}
+
+
+
+							/* ==== Tikai Firefox ==== */
+							@-moz-document url-prefix() {
+							
+							  /* reset */
+							  #buttonContainer .dock-dimmer input[type=range]{
+							    appearance: none;
+							    -moz-appearance: none;
+							    background: transparent;
+							    border: 0;
+							    outline: 0;
+							  }
+							
+							  /* stils */
+							  #buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
+							    height: 8px;
+							    background: var(--unfill);
+							    border-radius: 999px;
+							    border: 1px solid rgba(255,255,255,.06);
+							  }
+							  #buttonContainer .dock-dimmer input[type=range]::-moz-range-progress{
+							    background: var(--fill);
+							    border-radius: 999px;
+							  }
+							  #buttonContainer .dock-dimmer input[type=range]::-moz-range-thumb{
+							    width: 18px; height: 18px; border-radius: 50%;
+							    background: var(--rng-thumb-bg, #eef2f7);
+							    border: 3px solid var(--rng-thumb-ring, var(--dock-ring));
+							    box-shadow: 0 2px 6px rgba(0,0,0,.35);
+							  }
+							
+
+							 /* SĀNOS: centrēta kaste */
+							  #buttonContainer.left  .dock-dimmer,
+							  #buttonContainer.right .dock-dimmer{
+							    align-items:center !important;
+							    padding-left:8px !important;
+							    padding-right:8px !important;
+							  }
+							
+							  /* SĀNOS: vertikāls range – šaurs, bet tik GARŠ kā pogu kolonna */
+							  #buttonContainer.left  .dock-dimmer input[type=range],
+							  #buttonContainer.right .dock-dimmer input[type=range],
+							  #buttonContainer .dock-dimmer input[type=range][orient="vertical"]{
+							    -moz-appearance: slider-vertical !important;
+							    writing-mode: vertical-lr !important;
+							
+							    /* AUGSTUMS (inline-axis) = kolonnas garums */
+							    inline-size: calc(var(--colH, 100%) - 16px) !important;
+								 /* ⬅️ apgriežam virzienu, lai “augstāka vērtība = augstāk ekrānā” */
+							    transform: scaleY(-1) !important;
+							    transform-origin: center !important;
+							
+							    /* PLATUMS/BIEZUMS (block-axis) = šaurs */
+							    block-size: var(--rng-vert-w, 28px) !important;
+							    max-block-size: var(--rng-vert-w, 28px) !important;
+							
+							    display:block !important;
+							    margin:0 auto !important;
+								}
+   
+
+							  /* Apakšā paliek horizontāls, bez rotācijas un ar pilnu platumu */
+							  #buttonContainer.bottom .dock-dimmer input[type=range]{
+							    -moz-appearance: none !important;
+							    writing-mode: horizontal-tb !important;
+							    inline-size: 100% !important;
+							    block-size: var(--rng-track, 8px) !important;
+							    transform: none !important;
+							  }
+							}
+
+
+							 /* APakšā – nolīdzinām visu, kas “pielipa” no sāniskā režīma */
+							  #buttonContainer.bottom .dock-dimmer{
+							    /* atjauno kompaktu kasti */
+							    padding-block: var(--rng-pad-bottom, 4px) !important;
+							    padding-inline: 10px !important;
+							    align-items: center !important;
+							    height: auto !important;
+							    min-height: 0 !important;
+							    overflow: visible !important; /* lai 18px īkšķis nediktētu kastes augstumu */
+							  }
+
+							
+							  #buttonContainer.bottom .dock-dimmer input[type=range]{
+							    /* skaidri atpakaļ uz horizontālo, bez rotācijām */
+							    -moz-appearance: none !important;
+							    writing-mode: horizontal-tb !important;
+							    transform: none !important;
+							
+							    /* plāna sliede */
+							    inline-size: 100% !important;
+							    block-size: var(--rng-track-bottom, 6px) !important;
+							    height: var(--rng-track-bottom, 6px) !important; /* drošībai */
+							
+							    /* noņemam jebkādas “atlikušās” atstarpes */
+							    margin: 0 !important;
+							    padding: 0 !important;
+							  }
+
+
+
+
+
+
+/* Online kartes konteiners zem kompasa (virs fona) */
 #onlineMap{
-  position:absolute; inset:0; width:100%; height:100%;
-  z-index:2; background:#000;
+  position:absolute;
+  top:0; right:0; bottom:0; left:0;
+  width:100%; height:100%;
+  display:none;
+  z-index:1;
 }
-#onlineMap[hidden]{ display:none; }
+
+#onlineMap { background:#000; }  /* melns fons, kamēr flīzes ielādējas */
+
+/* Tumšošanas pārklājums tiešsaistes kartei (sinhronizēs ar Tavu slīdni) */
 #onlineMapDim{
-  position:absolute; inset:0; z-index:3;
+  position:absolute;
+  top:0; right:0; bottom:0; left:0;
+  width:100%; height:100%;
+  display:none;
+  z-index:2;
+  pointer-events:none;
   background: rgba(0,0,0,0);
-  pointer-events:none;
 }
 
-/* ===== KOMPASS ===== */
-#compassContainer{
-  position:absolute; z-index:4;
-  width:min(28vw, 420px); aspect-ratio:1 / 1;
-  left:5vw; bottom:10vh;
-  pointer-events:none;
-}
-#compassSVG{ width:100%; height:100%; }
-.center-dot{ fill:#fff; opacity:.9; }
-.needle{ fill:#ff2d2d; }
-.needle-cap{ fill:#111; stroke:#eee; stroke-width:2; }
-
-.tick-major{ stroke:#fff; stroke-width:2; opacity:.85; }
-.tick-minor{ stroke:#fff; stroke-width:1; opacity:.4; }
-.label{ fill:#fff; font-size:14px; font-weight:800; text-anchor:middle; dominant-baseline:middle; }
-
-/* ===== DOCK ===== */
-.dock{
-  position:fixed; left:50%; transform:translateX(-50%);
-  bottom:5vh; z-index:5;
-  display:flex; align-items:center; gap:16px;
-  padding:12px 16px; border-radius:42px;
-  background: linear-gradient(180deg, #11161f, #10210f);
-  border:1px solid var(--glass);
-  box-shadow: 0 12px 26px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.02);
-}
-.dock-btn{
-  width:60px; height:60px; border-radius:50%;
-  display:grid; place-items:center; cursor:pointer;
-  border:0; background:#10151d; color:#fff;
-  box-shadow:inset 0 0 0 3px rgba(255,255,255,.04);
-  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
-}
-.dock-btn svg{ width:60%; height:60%; fill:#fff; opacity:.92; }
-.dock-btn:hover{ transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 0 0 3px rgba(255,255,255,.06); }
-.dock-btn[aria-pressed="true"]{ outline:2px solid var(--accent); }
-
-.dock-slider{
-  display:flex; align-items:center; gap:10px;
-  padding:8px 10px; border-radius:14px; background:#10151d; color:#fff; font-weight:700;
-}
-.dock-slider label{ font-size:12px; opacity:.8; }
-.dock-slider input[type="range"]{
-  width:min(45vw, 420px); accent-color: var(--accent);
-}
-
-/* ===== RESPONSĪVI ===== */
-@media (max-width: 720px){
-  #compassContainer{ left:3vw; bottom:18vh; width:52vw; }
-  .dock{ gap:10px; padding:10px 12px; }
-  .dock-btn{ width:52px; height:52px; }
-  .dock-slider input[type="range"]{ width:52vw; }
+/* Lai inline SVG ikonām būtu tāds pats “fit” kā <img> */
+#buttonContainer .dock-shell > button svg{
+  width:78%; height:78%; display:block; margin:auto; pointer-events:none;
 }
