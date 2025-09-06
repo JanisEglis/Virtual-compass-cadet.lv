@@ -4056,14 +4056,11 @@ function startApp(){
 							})();
 
 
-                `;
-                interactiveWindow.document.body.appendChild(script);
-            } 
-			
-			
-			
+                `;                                   // ← beidzas app.textContent iekšējais template string
+  interactiveWindow.document.body.appendChild(app);
+}                                       // ← beidzas function startApp()
 
-// 4) Ja Leaflet nevar ielādēt
+// 4) Ja Leaflet nevar ielādēt (vēl joprojām iekš if (interactiveWindow) {...})
 function showLeafletError(){
   interactiveWindow.document.body.insertAdjacentHTML(
     'beforeend',
@@ -4076,20 +4073,10 @@ loadScriptSequential([
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js'
-], startApp, showLeafletError);			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			else {
-                alert('Pārlūks bloķē jaunus logus. Lūdzu, atļaujiet pārlūkam atvērt logus.');
-            }
-        });
-    </script>
+], startApp, showLeafletError);
+
+} else {                                // ← te nu beidzot nāk else par to pašu if (interactiveWindow)
+  alert('Pārlūks bloķē jaunus logus. Lūdzu, atļaujiet pārlūkam atvērt logus.');
+}
+});                                     // ← beidzas click klausītājs
+</script>
