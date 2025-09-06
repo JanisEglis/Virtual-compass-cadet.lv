@@ -449,9 +449,9 @@ function setDarkness(percent){
   const topSelectors = [
     '#fullscreenMessage:not(.fs-message-hidden)',
     '.position-selector:not(.hidden)',
-    '.position-selector-left:not(.hidden-left)'
+    '.position-selector-left:not(.hidden-left)',
 	'#toggleInstruction',   // ⟵ jaunais
-    '#toggleMaterials',     // ⟵ jaunais
+    '#toggleMaterials'     // ⟵ jaunais
   ];
 
 
