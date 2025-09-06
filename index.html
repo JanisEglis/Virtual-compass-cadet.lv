@@ -1779,6 +1779,8 @@
   z-index:1;
 }
 
+#onlineMap { background:#000; }  /* melns fons, kamēr flīzes ielādējas */
+
 /* Tumšošanas pārklājums tiešsaistes kartei (sinhronizēs ar Tavu slīdni) */
 #onlineMapDim{
   position:absolute;
@@ -2513,28 +2515,33 @@ function startApp(){
 
   let map, osm, topo, inited = false;
 
-  function initMap(){
-    if (inited) return;
-    if (!window.L) { console.warn('Leaflet vēl nav ielādējies'); return; }
-
-    map = L.map(mapDiv, { zoomControl:true, attributionControl:true });
-
-    osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    });
-
-    topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      maxZoom: 17,
-      attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)'
-    });
-
-    osm.addTo(map);
-    L.control.layers({ 'OSM': osm, 'OpenTopoMap': topo }, {}).addTo(map);
-    map.setView([56.9496, 24.1052], 13);
-
-    inited = true;
+function initMap(){
+  if (inited) return true;
+  if (!window.L) {                   // Leaflet vēl nav?
+    console.warn('Leaflet vēl nav ielādējies');
+    return false;
   }
+
+  map = L.map(mapDiv, { zoomControl:true, attributionControl:true });
+
+  osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  });
+
+  topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    maxZoom: 17,
+    attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)'
+  });
+
+  osm.addTo(map);
+  L.control.layers({ 'OSM': osm, 'OpenTopoMap': topo }, {}).addTo(map);
+  map.setView([56.9496, 24.1052], 13);
+
+  inited = true;
+  return true;
+}
+
 
   function syncDimOverlay(){
     if (!dimRange) return;
@@ -2543,30 +2550,36 @@ function startApp(){
     mapDim.style.background = 'rgba(0,0,0,' + a + ')';
   }
 
-  function showOnlineMap(){
-    // 1) Parādi konteineru
-    mapDiv.style.display = 'block';
-    mapDim.style.display = 'block';
-    canvas.style.display = 'none';
-    if (resizeH) resizeH.style.display = 'none';
+ function showOnlineMap(){
+  // parādi konteineru, paslēp kanvu
+  mapDiv.style.display = 'block';
+  mapDim.style.display = 'block';
+  canvas.style.display = 'none';
+  if (resizeH) resizeH.style.display = 'none';
 
-    // 2) Inicializē Leaflet tikai tagad (kad konteineram ir izmērs)
-    initMap();
-
-    // 3) Drošībai iedod dažus invalidateSize (reizēm UI ir vēl animācijā)
-    requestAnimationFrame(()=> map && map.invalidateSize(true));
-    setTimeout(()=> map && map.invalidateSize(true), 100);
-
-    btn.classList.add('active');
-    localStorage.setItem('onlineMapActive','1');
-
-    // ja slīdnis jau ir, sinhronizē tumšošanu
-    syncDimOverlay();
-
-    // atjauno doka izmēru
-    window.__updateDimmerWidth && window.__updateDimmerWidth();
-    window.__fitDock && window.__fitDock();
+  // inicializē; ja Leaflet nav ielādējies, atkāpjamies
+  if (!initMap()){
+    mapDiv.style.display = 'none';
+    mapDim.style.display = 'none';
+    canvas.style.display = 'block';
+    if (resizeH && (typeof img !== 'undefined') && img && img.src) resizeH.style.display = 'block';
+    localStorage.setItem('onlineMapActive','0');
+    alert('Leaflet nav ielādējies — tiešsaistes karte izslēgta.');
+    return;
   }
+
+  // invalide size pēc ielikšanas DOM
+  requestAnimationFrame(() => map && map.invalidateSize(true));
+  setTimeout(() => map && map.invalidateSize(true), 100);
+
+  btn.classList.add('active');
+  localStorage.setItem('onlineMapActive','1');
+
+  syncDimOverlay();
+  window.__updateDimmerWidth && window.__updateDimmerWidth();
+  window.__fitDock && window.__fitDock();
+}
+
 
   function hideOnlineMap(){
     mapDiv.style.display = 'none';
