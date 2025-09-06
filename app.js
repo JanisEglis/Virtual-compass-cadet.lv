@@ -477,6 +477,10 @@
 
       /* lai slāņu kontrole noteikti ir redzama virs kartes */
       .leaflet-control{ z-index: 500; }
+	  /* nolaižam vadības par 50px un paceļam z-index */
+#onlineMap .leaflet-top { top: 50px; }
+#onlineMap .leaflet-control { z-index: 500; }
+#onlineMap .leaflet-popup   { z-index: 600; }
     `;
     const el = document.createElement('style');
     el.textContent = css;
@@ -540,6 +544,44 @@
     return {zone, hemi, easting, northing, band: latBandLetter(lat)};
   }
 
+
+function utmToLL(E, N, zone, hemi){
+  // constants
+  const e = Math.sqrt(e2);
+  const x = E - 500000.0;
+  const y = (hemi === 'S') ? (N - 10000000.0) : N;
+
+  const M  = y / k0;
+  const mu = M / (a*(1 - e2/4 - 3*e2*e2/64 - 5*e2*e2*e2/256));
+
+  const e1 = (1 - Math.sqrt(1-e2)) / (1 + Math.sqrt(1-e2));
+  const J1 = (3*e1/2 - 27*e1*e1*e1/32);
+  const J2 = (21*e1*e1/16 - 55*e1*e1*e1*e1/32);
+  const J3 = (151*e1*e1*e1/96);
+  const J4 = (1097*e1*e1*e1*e1/512);
+
+  const phi1 = mu + J1*Math.sin(2*mu) + J2*Math.sin(4*mu) + J3*Math.sin(6*mu) + J4*Math.sin(8*mu);
+
+  const C1 = ep2 * Math.cos(phi1)*Math.cos(phi1);
+  const T1 = Math.tan(phi1)*Math.tan(phi1);
+  const N1 = a / Math.sqrt(1 - e2*Math.sin(phi1)*Math.sin(phi1));
+  const R1 = a*(1 - e2) / Math.pow(1 - e2*Math.sin(phi1)*Math.sin(phi1), 1.5);
+  const D  = x / (N1*k0);
+
+  let lat = phi1 - (N1*Math.tan(phi1)/R1) * (D*D/2 - (5+3*T1+10*C1-4*C1*C1-9*ep2)*Math.pow(D,4)/24 + (61+90*T1+298*C1+45*T1*T1-252*ep2-3*C1*C1)*Math.pow(D,6)/720);
+  let lon = deg2rad((zone-1)*6 - 180 + 3) + (D - (1+2*T1+C1)*Math.pow(D,3)/6 + (5 - 2*C1 + 28*T1 - 3*C1*C1 + 8*ep2 + 24*T1*T1)*Math.pow(D,5)/120) / Math.cos(phi1);
+
+  return { lat: lat*180/Math.PI, lon: lon*180/Math.PI };
+}
+
+
+
+
+
+
+
+
+
   // 100k režģa burtu ģenerācija (bez I un O)
   const SET_ORIGIN_COLUMN_LETTERS = ['A','J','S','A','J','S'];
   const SET_ORIGIN_ROW_LETTERS    = ['A','F','A','F','A','F'];
@@ -580,19 +622,21 @@
   function pad(n, size){ n = String(n); while(n.length<size) n = '0'+n; return n; }
 
   // MGRS ar 8 cipariem (10 m)
-  function toMGRS8(lat, lon){
-    const utm = llToUTM(lat, lon);
-    const grid = make100kID(utm.easting, utm.northing, utm.zone);
+ function toMGRS8(lat, lon, compact=false){
+  const utm  = llToUTM(lat, lon);
+  const grid = make100kID(utm.easting, utm.northing, utm.zone);
 
-    const eR = Math.floor(utm.easting  % 100000);
-    const nR = Math.floor(utm.northing % 100000);
+  const eR = Math.floor(utm.easting  % 100000);     // 0..99999
+  const nR = Math.floor(utm.northing % 100000);     // 0..99999
 
-    // 8 ciparu precizitātei ņemam 4+4
-    const e4 = pad(Math.floor(eR/10), 4);
-    const n4 = pad(Math.floor(nR/10), 4);
+  // 8 cipari = 10 m => 4+4
+  const e4 = String(Math.floor(eR/10)).padStart(4,'0');
+  const n4 = String(Math.floor(nR/10)).padStart(4,'0');
 
-    return `${utm.zone}${utm.band} ${grid} ${e4} ${n4}`;
-  }
+  const pretty = `${utm.zone}${utm.band} ${grid} ${e4} ${n4}`;
+  const tight  = `${utm.zone}${utm.band}${grid}${e4}${n4}`;
+  return compact ? tight : pretty;
+}
 
   /* ---------------------- KARTES iestatīšana ---------------------- */
   function initMap(){
@@ -630,7 +674,72 @@
       'OSM HOT': hot,
       'CyclOSM': cyclo
     };
-    L.control.layers(baseLayers, {}, {collapsed:true, position:'topright'}).addTo(map);
+
+
+function createUTMGridLayer(){
+  const g = L.layerGroup();
+
+  function redraw(){
+    g.clearLayers();
+    if (!map) return;
+
+    const z = map.getZoom();
+    // solis km (atkarībā no tālummaiņas)
+    const step = (z>=14)?1000 : (z>=12)?2000 : (z>=10)?5000 : (z>=8)?10000 : 20000;
+
+    const b = map.getBounds();
+    const nw = b.getNorthWest(), se = b.getSouthEast();
+
+    const c   = map.getCenter();
+    const z0  = utmZoneSpecial(c.lat, c.lng, utmZone(c.lng));           // UTM zona pēc centra
+    const nwU = llToUTM(nw.lat, nw.lng);
+    const seU = llToUTM(se.lat, se.lng);
+
+    // vienkāršība: ja skatā iekšā ir 2 dažādas zonas — nerežģojam (lai nerādītu kļūdainu sietu)
+    if (nwU.zone !== seU.zone) return;
+
+    const hemi = nwU.hemi; // 'N' vai 'S'
+
+    const minE = Math.floor(Math.min(nwU.easting,  seU.easting)  / step) * step;
+    const maxE = Math.ceil (Math.max(nwU.easting,  seU.easting)  / step) * step;
+    const minN = Math.floor(Math.min(nwU.northing, seU.northing) / step) * step;
+    const maxN = Math.ceil (Math.max(nwU.northing, seU.northing) / step) * step;
+
+    // easting līnijas
+    for (let E = minE; E <= maxE; E += step){
+      const pts = [];
+      for (let N = minN; N <= maxN; N += step/4){
+        const ll = utmToLL(E, N, z0, hemi);
+        pts.push([ll.lat, ll.lon]);
+      }
+      g.addLayer(L.polyline(pts, {weight:1, opacity:0.35, color:'#ff0000'}));
+    }
+    // northing līnijas
+    for (let N = minN; N <= maxN; N += step){
+      const pts = [];
+      for (let E = minE; E <= maxE; E += step/4){
+        const ll = utmToLL(E, N, z0, hemi);
+        pts.push([ll.lat, ll.lon]);
+      }
+      g.addLayer(L.polyline(pts, {weight:1, opacity:0.35, color:'#ff0000'}));
+    }
+  }
+
+  map.on('moveend zoomend', redraw);
+  redraw();
+  return g;
+}
+
+
+
+
+
+	  
+   // jaunais – pievienojam MGRS/UTM režģi kā pārklājumu
+const utmGrid = createUTMGridLayer();
+const layersCtl = L.control.layers(baseLayers, {'MGRS režģis (1–20 km)': utmGrid}, {collapsed:true, position:'topright'}).addTo(map);
+// pēc vajadzības vari ieslēgt pēc noklusējuma:
+utmGrid.addTo(map);
 
     map.setView([56.9496, 24.1052], 13);
 
@@ -669,10 +778,38 @@
       div.id = 'mousePosCtl';
       div.title = 'Noklikšķini, lai kopētu MGRS';
       div.textContent = 'Lat,Lng: —';
-      div.addEventListener('click', () => {
-        const v = div.dataset.mgrs || '';
-        if (v && navigator.clipboard) navigator.clipboard.writeText(v);
-      });
+      div.addEventListener('click', async () => {
+  const v = div.dataset.mgrs || '';
+  if (!v) return;
+
+  let ok = false;
+  try {
+    // primārā metode – darbojas drošā (https) kontekstā
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(v);
+      ok = true;
+    } else {
+      // rezerves variants – textarea + execCommand
+      const ta = document.createElement('textarea');
+      ta.value = v;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+  } catch(e){ ok = false; }
+
+  if (ok) {
+    // īss vizuāls “flash”, netraucē tekstam, ko mousemove pārtaisa
+    const oldBG = div.style.background;
+    div.style.background = 'rgba(31,122,54,.65)'; // zaļš
+    setTimeout(() => { div.style.background = oldBG || 'rgba(0,0,0,.5)'; }, 1200);
+  } else {
+    alert('Neizdevās nokopēt. Lūdzu, mēģini vēlreiz.');
+  }
+});
       return div;
     };
     posCtl.addTo(map);
@@ -686,59 +823,81 @@
     });
 
     // labais klikšķis — popup ar 2 rindām + kopēšanas pogām
-    map.on('contextmenu', e=>{
-      const lat = e.latlng.lat, lon = e.latlng.lng;
-      const ll  = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-      const mgrs = toMGRS8(lat, lon);
+  map.on('contextmenu', e=>{
+  const lat = e.latlng.lat, lon = e.latlng.lng;
+  const ll  = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+  const mgrs = toMGRS8(lat, lon);                          // 8 ciparu MGRS (4+4)
 
-      const copySVG = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="9" y="9" width="10" height="12" rx="2"></rect>
-          <rect x="5" y="3" width="10" height="12" rx="2"></rect>
-        </svg>`;
+  const copySVG = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="9" y="9" width="10" height="12" rx="2"></rect>
+      <rect x="5" y="3" width="10" height="12" rx="2"></rect>
+    </svg>`;
 
-      const html = `
-        <div class="coord-popup">
-          <div class="coord-row">
-            <span class="label">Lat,Lng</span>
-            <span class="value" id="llVal">${ll}</span>
-            <button class="copy-btn" id="copyLL" title="Kopēt Lat,Lng" aria-label="Kopēt Lat,Lng">${copySVG}</button>
-            <span class="copied-msg" id="copiedLL">Nokopēts!</span>
-          </div>
-          <div class="coord-row">
-            <span class="label">MGRS</span>
-            <span class="value" id="mgrsVal">${mgrs}</span>
-            <button class="copy-btn" id="copyMGRS" title="Kopēt MGRS" aria-label="Kopēt MGRS">${copySVG}</button>
-            <span class="copied-msg" id="copiedMGRS">Nokopēts!</span>
-          </div>
-        </div>`;
+  const html = `
+    <div class="coord-popup">
+      <div class="coord-row">
+        <span class="label">Lat,Lng</span>
+        <span class="value" id="llVal">${ll}</span>
+        <button class="copy-btn" id="copyLL" title="Kopēt Lat,Lng" aria-label="Kopēt Lat,Lng">${copySVG}</button>
+        <span class="copied-msg" id="copiedLL">Nokopēts!</span>
+      </div>
+      <div class="coord-row">
+        <span class="label">MGRS</span>
+        <span class="value" id="mgrsVal">${mgrs}</span>
+        <button class="copy-btn" id="copyMGRS" title="Kopēt MGRS" aria-label="Kopēt MGRS">${copySVG}</button>
+        <span class="copied-msg" id="copiedMGRS">Nokopēts!</span>
+      </div>
+    </div>`;
 
-      L.popup({maxWidth: 480})
-        .setLatLng(e.latlng)
-        .setContent(html)
-        .openOn(map);
+  L.popup({maxWidth: 480}).setLatLng(e.latlng).setContent(html).openOn(map);
+});
 
-      // piesienam klikšķus
-      setTimeout(()=>{
-        const doCopy = (btnId, textId, msgId)=>{
-          const btn = document.getElementById(btnId);
-          const val = document.getElementById(textId)?.textContent || '';
-          const msg = document.getElementById(msgId);
-          if (!btn) return;
-          btn.addEventListener('click', ()=>{
-            if (navigator.clipboard) navigator.clipboard.writeText(val);
-            btn.classList.add('copied');
-            msg && msg.classList.add('show');
-            setTimeout(()=>{
-              btn.classList.remove('copied');
-              msg && msg.classList.remove('show');
-            }, 5000);
-          });
-        };
-        doCopy('copyLL',   'llVal',   'copiedLL');
-        doCopy('copyMGRS', 'mgrsVal', 'copiedMGRS');
-      },0);
+// piesienam kopēšanas loģiku drošā brīdī – kad popup ir atvērts
+map.on('popupopen', ev=>{
+  const root = ev.popup.getElement();
+  if (!root) return;
+
+  const doCopy = async (btnSel, valSel, msgSel) => {
+    const btn = root.querySelector(btnSel);
+    const val = root.querySelector(valSel)?.textContent || '';
+    const msg = root.querySelector(msgSel);
+    if (!btn || !val) return;
+
+    btn.addEventListener('click', async () => {
+      let ok = false;
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(val);
+          ok = true;
+        } else {
+          // rezerves variants
+          const ta = document.createElement('textarea');
+          ta.value = val;
+          ta.style.position = 'fixed';
+          ta.style.opacity  = '0';
+          document.body.appendChild(ta);
+          ta.focus(); ta.select();
+          ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+      } catch(e){ ok = false; }
+
+      if (ok) {
+        btn.classList.add('copied');
+        msg && msg.classList.add('show');
+        setTimeout(()=>{ btn.classList.remove('copied'); msg && msg.classList.remove('show'); }, 5000);
+      } else {
+        btn.classList.remove('copied');
+        msg && msg.classList.remove('show');
+        alert('Neizdevās nokopēt. Lūdzu, izmēģini vēlreiz.');
+      }
     });
+  };
+
+  doCopy('#copyLL',   '#llVal',   '#copiedLL');
+  doCopy('#copyMGRS', '#mgrsVal', '#copiedMGRS');
+});
 
     inited = true;
     return true;
