@@ -411,103 +411,352 @@
 
 
 
-(function OnlineMap(){
+<script>
+(function(){
   const mapDiv   = document.getElementById('onlineMap');
   const mapDim   = document.getElementById('onlineMapDim');
   const btn      = document.getElementById('toggleOnlineMap');
   const canvas   = document.getElementById('mapCanvas');
   const resizeH  = document.getElementById('resizeHandle');
+  const dimRange = document.getElementById('mapDimmerRange');
 
-  let map, layers = {}, inited = false;
-  const VIEW_KEY   = 'leafletView_v1';
-  const ACTIVE_KEY = 'onlineMapActive';
+  let map, inited = false;
 
+  /* ---------- POPUP STILS (pielāgo “dock-shell” vizuālam) ---------- */
+  (function injectPopupCSS(){
+    const css = `
+      .leaflet-container .coord-popup{
+        min-width: 320px;
+        padding: 10px 12px;
+      }
+      .leaflet-container .coord-row{
+        display:flex; align-items:center; gap:8px;
+        margin:6px 0;
+        color: #fff;
+        font: 14px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      }
+      .leaflet-container .coord-row .label{
+        color:#cfd6e4; opacity:.9; min-width:72px;
+      }
+      .leaflet-container .coord-row .value{
+        flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        font-weight:600; color:#ffffff;
+      }
+      .leaflet-container .copy-btn{
+        flex:0 0 auto;
+        display:inline-grid; place-items:center;
+        width:30px; height:30px; border-radius:8px;
+        background: linear-gradient(180deg, var(--dock1, #1b1f25), var(--dock2, #490000a8));
+        border:1px solid rgba(255,255,255,.06);
+        box-shadow: 0 6px 16px rgba(0,0,0,.35);
+        color:#eef2f7; cursor:pointer;
+        transition: transform .12s ease, background-color .2s ease, border-color .2s ease;
+      }
+      .leaflet-container .copy-btn:hover{ transform: scale(1.06); }
+      .leaflet-container .copy-btn:active{ transform: scale(.95); }
+      .leaflet-container .copy-btn svg{ width:18px; height:18px; display:block; }
+      .leaflet-container .copy-btn.copied{
+        background:#1f7a36; border-color:#2bd169;
+      }
+      .leaflet-container .copied-msg{
+        margin-left:4px; font-size:12px; color:#2bd169; opacity:0; transition:opacity .2s;
+      }
+      .leaflet-container .copied-msg.show{ opacity:1; }
+
+      /* pārrakstām Leaflet popup “balto” čaulu uz tumšu dock stilā */
+      .leaflet-popup-content-wrapper{
+        background: linear-gradient(180deg, var(--dock1, #1b1f25), var(--dock2, #2a0f0faa));
+        color:#fff; border-radius:16px;
+        border:1px solid rgba(255,255,255,.06);
+        box-shadow: 0 12px 28px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.35);
+      }
+      .leaflet-popup-tip{
+        background: linear-gradient(180deg, var(--dock1, #1b1f25), var(--dock2, #2a0f0faa));
+        border:1px solid rgba(255,255,255,.06);
+      }
+
+      /* lai slāņu kontrole noteikti ir redzama virs kartes */
+      .leaflet-control{ z-index: 500; }
+    `;
+    const el = document.createElement('style');
+    el.textContent = css;
+    document.head.appendChild(el);
+  })();
+
+  /* ---------------------- MGRS (8 cipari) ---------------------- */
+  // WGS84 konstantes
+  const a = 6378137.0, f = 1/298.257223563, k0 = 0.9996;
+  const e2 = f*(2-f), ep2 = e2/(1-e2);
+
+  const deg2rad = d => d*Math.PI/180;
+
+  function utmZone(lon){
+    let z = Math.floor((lon + 180)/6) + 1;
+    return z;
+  }
+  // Īpašie gadījumi (Norvēģija / Svalbāra)
+  function utmZoneSpecial(lat, lon, z){
+    if (lat>=56 && lat<64 && lon>=3 && lon<12) return 32;
+    if (lat>=72 && lat<84){
+      if (lon>=0   && lon<9 ) return 31;
+      if (lon>=9   && lon<21) return 33;
+      if (lon>=21  && lon<33) return 35;
+      if (lon>=33  && lon<42) return 37;
+    }
+    return z;
+  }
+
+  function latBandLetter(lat){
+    const bands = "CDEFGHJKLMNPQRSTUVWX"; // 8° joslas, X ir 12°
+    const idx = Math.floor((lat + 80) / 8);
+    if (idx<0) return 'C';
+    if (idx>19) return 'X';
+    return bands[idx];
+  }
+
+  function llToUTM(lat, lon){
+    let zone = utmZone(lon);
+    zone = utmZoneSpecial(lat, lon, zone);
+
+    const phi = deg2rad(lat);
+    const lam = deg2rad(lon);
+    const lam0 = deg2rad((zone-1)*6 - 180 + 3);
+
+    const N = a / Math.sqrt(1 - e2*Math.sin(phi)*Math.sin(phi));
+    const T = Math.tan(phi)*Math.tan(phi);
+    const C = ep2 * Math.cos(phi)*Math.cos(phi);
+    const A = Math.cos(phi) * (lam - lam0);
+
+    const M = a*((1 - e2/4 - 3*e2*e2/64 - 5*e2*e2*e2/256)*phi
+            - (3*e2/8 + 3*e2*e2/32 + 45*e2*e2*e2/1024)*Math.sin(2*phi)
+            + (15*e2*e2/256 + 45*e2*e2*e2/1024)*Math.sin(4*phi)
+            - (35*e2*e2*e2/3072)*Math.sin(6*phi));
+
+    let easting  = k0 * N * (A + (1-T+C)*Math.pow(A,3)/6 + (5-18*T+T*T+72*C-58*ep2)*Math.pow(A,5)/120) + 500000.0;
+    let northing = k0 * (M + N*Math.tan(phi)*(A*A/2 + (5-T+9*C+4*C*C)*Math.pow(A,4)/24 + (61-58*T+T*T+600*C-330*ep2)*Math.pow(A,6)/720));
+    const hemi = (lat >= 0) ? 'N' : 'S';
+    if (lat < 0) northing += 10000000.0;
+
+    return {zone, hemi, easting, northing, band: latBandLetter(lat)};
+  }
+
+  // 100k režģa burtu ģenerācija (bez I un O)
+  const SET_ORIGIN_COLUMN_LETTERS = ['A','J','S','A','J','S'];
+  const SET_ORIGIN_ROW_LETTERS    = ['A','F','A','F','A','F'];
+
+  function get100kSetForZone(zone){ return (zone-1) % 6; }
+
+  function letterAfter(startChar, steps, isRow){
+    // rinda: A..V (20 burti), kolonna: A..Z bez I,O
+    const skip = ch => (ch==='I' || ch==='O');
+    let ch = startChar.charCodeAt(0);
+    for(let i=0;i<steps;i++){
+      ch++;
+      let s = String.fromCharCode(ch);
+      if (skip(s)) ch++;
+      if (isRow){
+        if (ch > 'V'.charCodeAt(0)) ch = 'A'.charCodeAt(0);
+      } else {
+        if (ch > 'Z'.charCodeAt(0)) ch = 'A'.charCodeAt(0);
+      }
+    }
+    return String.fromCharCode(ch);
+  }
+
+  function make100kID(easting, northing, zone){
+    const set = get100kSetForZone(zone);
+    const eIdx = Math.floor(easting / 100000);            // 1..8
+    const nIdx = Math.floor(northing / 100000);           // 0..(∞), mod 20 zemāk
+
+    const colOrigin = SET_ORIGIN_COLUMN_LETTERS[set];     // A / J / S
+    const rowOrigin = SET_ORIGIN_ROW_LETTERS[set];        // A / F
+
+    const col = letterAfter(colOrigin, eIdx-1, false);
+    const row = letterAfter(rowOrigin, nIdx % 20, true);
+
+    return col + row;
+  }
+
+  function pad(n, size){ n = String(n); while(n.length<size) n = '0'+n; return n; }
+
+  // MGRS ar 8 cipariem (10 m)
+  function toMGRS8(lat, lon){
+    const utm = llToUTM(lat, lon);
+    const grid = make100kID(utm.easting, utm.northing, utm.zone);
+
+    const eR = Math.floor(utm.easting  % 100000);
+    const nR = Math.floor(utm.northing % 100000);
+
+    // 8 ciparu precizitātei ņemam 4+4
+    const e4 = pad(Math.floor(eR/10), 4);
+    const n4 = pad(Math.floor(nR/10), 4);
+
+    return `${utm.zone}${utm.band} ${grid} ${e4} ${n4}`;
+  }
+
+  /* ---------------------- KARTES iestatīšana ---------------------- */
   function initMap(){
     if (inited) return true;
-    if (!window.L) { console.warn('Leaflet nav ielādējies'); return false; }
+    if (!window.L){ console.warn('Leaflet nav ielādēts'); return false; }
 
-    map = L.map(mapDiv, {
-      zoomControl: true,
-      attributionControl: true,
-      keyboard: true,          // ieslēdzam tikai tad, kad karte redzama
-      scrollWheelZoom: true,
-      inertia: true
+    map = L.map(mapDiv, { zoomControl:true, attributionControl:true });
+
+    const osm  = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      maxZoom: 17,
+      attribution: 'Map data: &copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap (CC-BY-SA)'
     });
 
-    // Bāzes kārtas (viens papildus OSM HOT kā rezerves variants)
-    layers.osmStd = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, detectRetina: true, tileSize: 256,
-      attribution: '&copy; OpenStreetMap contributors'
-    });
-    layers.osmHot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-      maxZoom: 20, detectRetina: true, tileSize: 256,
-      attribution: '&copy; OpenStreetMap contributors, HOT'
-    });
-    layers.topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      maxZoom: 17, detectRetina: true, tileSize: 256,
-      attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Style: &copy; OpenTopoMap (CC-BY-SA)'
+    const esri = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19, attribution: 'Tiles &copy; Esri'
     });
 
-    layers.osmStd.addTo(map);
-    L.control.layers({ 'OSM': layers.osmStd, 'OSM HOT': layers.osmHot, 'OpenTopoMap': layers.topo }, {}).addTo(map);
+    const hot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+      maxZoom: 20, attribution: '&copy; OSM, HOT'
+    });
 
-    // Atjauno iepriekšējo skatu
-    const saved = localStorage.getItem(VIEW_KEY);
-    if (saved) {
-      try {
-        const v = JSON.parse(saved);
-        map.setView(v.center, v.zoom, { animate: false });
-      } catch {
-        map.setView([56.9496, 24.1052], 13);  // Rīga
-      }
-    } else {
-      map.setView([56.9496, 24.1052], 13);
-    }
+    const cyclo = L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+      maxZoom: 20, attribution: '&copy; OSM, CyclOSM'
+    });
 
-    // Saglabā skatu
-    const saveView = () => {
-      const c = map.getCenter();
-      localStorage.setItem(
-        VIEW_KEY,
-        JSON.stringify({ center: [ +c.lat.toFixed(6), +c.lng.toFixed(6) ], zoom: map.getZoom() })
-      );
+    const baseLayers = {
+      'OSM': osm,
+      'OpenTopoMap': topo,
+      'Esri satelīts': esri,
+      'OSM HOT': hot,
+      'CyclOSM': cyclo
     };
-    map.on('moveend zoomend', saveView);
+    L.control.layers(baseLayers, {}, {collapsed:true, position:'topright'}).addTo(map);
 
-    // Flīžu kļūdu “paķeršana” – pārslēdzamies uz citu slāni, ja daudzas kļūdas īsā laikā
-    let errorCount = 0, errorTimer = null;
-    function onTileError(){
-      errorCount++;
-      if (!errorTimer) {
-        errorTimer = setTimeout(() => { errorCount = 0; errorTimer = null; }, 2000);
-      }
-      if (errorCount > 6) {
-        if (map.hasLayer(layers.osmStd)) {
-          layers.osmStd.removeFrom(map);
-          layers.osmHot.addTo(map);
-        } else if (!map.hasLayer(layers.topo)) {
-          layers.topo.addTo(map);
-        }
-        errorCount = 0;
-      }
+    map.setView([56.9496, 24.1052], 13);
+
+    // klasiskā skala + 1:xxxx
+    L.control.scale({imperial:false, metric:true, maxWidth:200}).addTo(map);
+    const ratioCtl = L.control({position:'bottomleft'});
+    ratioCtl.onAdd = function(){
+      const div = L.DomUtil.create('div', 'leaflet-control-attribution');
+      Object.assign(div.style, {
+        background:'rgba(0,0,0,.5)', color:'#fff', padding:'2px 6px',
+        borderRadius:'4px', font:'12px/1.2 system-ui, sans-serif', marginTop:'4px'
+      });
+      div.id = 'scaleRatioCtl';
+      div.textContent = 'Mērogs: —';
+      return div;
+    };
+    ratioCtl.addTo(map);
+
+    function updateRatio(){
+      const c = map.getCenter(), z = map.getZoom();
+      const mpp = 156543.03392 * Math.cos(c.lat*Math.PI/180) / Math.pow(2,z);
+      const scale = Math.round(mpp / 0.00028);
+      const el = document.getElementById('scaleRatioCtl');
+      if (el) el.textContent = 'Mērogs: 1:' + scale.toLocaleString('lv-LV');
     }
-    Object.values(layers).forEach(tl => tl.on('tileerror', onTileError));
+    map.on('moveend zoomend', updateRatio); updateRatio();
+
+    // apakšējais kreisais info (Lat/Lng + MGRS) + klikšķis — kopēt
+    const posCtl = L.control({position:'bottomleft'});
+    posCtl.onAdd = function(){
+      const div = L.DomUtil.create('div', 'leaflet-control-attribution');
+      Object.assign(div.style, {
+        background:'rgba(0,0,0,.5)', color:'#fff', padding:'2px 6px',
+        borderRadius:'4px', font:'12px/1.2 system-ui, sans-serif', marginTop:'4px', cursor:'pointer'
+      });
+      div.id = 'mousePosCtl';
+      div.title = 'Noklikšķini, lai kopētu MGRS';
+      div.textContent = 'Lat,Lng: —';
+      div.addEventListener('click', () => {
+        const v = div.dataset.mgrs || '';
+        if (v && navigator.clipboard) navigator.clipboard.writeText(v);
+      });
+      return div;
+    };
+    posCtl.addTo(map);
+
+    map.on('mousemove', e=>{
+      const lat = e.latlng.lat, lon = e.latlng.lng;
+      const mgrs = toMGRS8(lat, lon);
+      const s = `${lat.toFixed(6)}, ${lon.toFixed(6)}  |  ${mgrs}`;
+      const el = document.getElementById('mousePosCtl');
+      if (el){ el.textContent = s; el.dataset.mgrs = mgrs; }
+    });
+
+    // labais klikšķis — popup ar 2 rindām + kopēšanas pogām
+    map.on('contextmenu', e=>{
+      const lat = e.latlng.lat, lon = e.latlng.lng;
+      const ll  = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+      const mgrs = toMGRS8(lat, lon);
+
+      const copySVG = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="10" height="12" rx="2"></rect>
+          <rect x="5" y="3" width="10" height="12" rx="2"></rect>
+        </svg>`;
+
+      const html = `
+        <div class="coord-popup">
+          <div class="coord-row">
+            <span class="label">Lat,Lng</span>
+            <span class="value" id="llVal">${ll}</span>
+            <button class="copy-btn" id="copyLL" title="Kopēt Lat,Lng" aria-label="Kopēt Lat,Lng">${copySVG}</button>
+            <span class="copied-msg" id="copiedLL">Nokopēts!</span>
+          </div>
+          <div class="coord-row">
+            <span class="label">MGRS</span>
+            <span class="value" id="mgrsVal">${mgrs}</span>
+            <button class="copy-btn" id="copyMGRS" title="Kopēt MGRS" aria-label="Kopēt MGRS">${copySVG}</button>
+            <span class="copied-msg" id="copiedMGRS">Nokopēts!</span>
+          </div>
+        </div>`;
+
+      L.popup({maxWidth: 480})
+        .setLatLng(e.latlng)
+        .setContent(html)
+        .openOn(map);
+
+      // piesienam klikšķus
+      setTimeout(()=>{
+        const doCopy = (btnId, textId, msgId)=>{
+          const btn = document.getElementById(btnId);
+          const val = document.getElementById(textId)?.textContent || '';
+          const msg = document.getElementById(msgId);
+          if (!btn) return;
+          btn.addEventListener('click', ()=>{
+            if (navigator.clipboard) navigator.clipboard.writeText(val);
+            btn.classList.add('copied');
+            msg && msg.classList.add('show');
+            setTimeout(()=>{
+              btn.classList.remove('copied');
+              msg && msg.classList.remove('show');
+            }, 5000);
+          });
+        };
+        doCopy('copyLL',   'llVal',   'copiedLL');
+        doCopy('copyMGRS', 'mgrsVal', 'copiedMGRS');
+      },0);
+    });
 
     inited = true;
     return true;
   }
 
+  /* ---------------------- Tumšošanas sinhronizācija ---------------------- */
   function syncDimOverlay(){
-    const dimRange = document.getElementById('mapDimmerRange');
     if (!dimRange) return;
-    const a = Math.min(0.8, Math.max(0, (+dimRange.value || 0) / 100));
+    const v = +dimRange.value || 0;            // 0..80
+    const a = Math.min(0.8, Math.max(0, v/100));
     mapDim.style.background = 'rgba(0,0,0,' + a + ')';
   }
 
+  /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
   function showOnlineMap(){
     mapDiv.style.display = 'block';
 
-    // ja CSS vēl nav iedevis izmēru, uzliekam no vecāka
+    // drošībai – ja CSS nav iedevis izmēru
     if (!mapDiv.offsetWidth || !mapDiv.offsetHeight){
       const p = mapDiv.parentElement;
       mapDiv.style.width  = (p?.clientWidth  || window.innerWidth)  + 'px';
@@ -516,28 +765,24 @@
 
     mapDim.style.display = 'block';
     canvas.style.display = 'none';
-    if (resizeH && typeof img !== 'undefined' && img && img.src) resizeH.style.display = 'none';
+    if (resizeH) resizeH.style.display = 'none';
 
     if (!initMap()){
-      // ja Leaflet nav, atgriežam atpakaļ kanvu
       mapDiv.style.display = 'none';
       mapDim.style.display = 'none';
       canvas.style.display = 'block';
-      if (resizeH && typeof img !== 'undefined' && img && img.src) resizeH.style.display = 'block';
-      localStorage.setItem(ACTIVE_KEY, '0');
+      if (resizeH && (typeof img!=='undefined') && img && img.src) resizeH.style.display = 'block';
+      localStorage.setItem('onlineMapActive','0');
       alert('Leaflet nav ielādējies — tiešsaistes karte izslēgta.');
       return;
     }
 
-    // izmēra invalidācija pēc parādīšanas
-    requestAnimationFrame(() => map && map.invalidateSize(true));
-    setTimeout(() => map && map.invalidateSize(true), 150);
+    requestAnimationFrame(()=> map && map.invalidateSize(true));
+    setTimeout(()=> map && map.invalidateSize(true), 100);
 
-    // lai bultiņas strādā kompasam, klaviatūru ieslēdzam tikai redzamai kartei
-    map.keyboard.enable();
+    btn?.classList.add('active');
+    localStorage.setItem('onlineMapActive','1');
 
-    btn && btn.classList.add('active');
-    localStorage.setItem(ACTIVE_KEY, '1');
     syncDimOverlay();
     window.__updateDimmerWidth && window.__updateDimmerWidth();
     window.__fitDock && window.__fitDock();
@@ -547,46 +792,25 @@
     mapDiv.style.display = 'none';
     mapDim.style.display = 'none';
     canvas.style.display = 'block';
-    if (resizeH && typeof img !== 'undefined' && img && img.src) resizeH.style.display = 'block';
-
-    if (map) map.keyboard.disable();   // neķer bultiņas, kad karte paslēpta
-
-    btn && btn.classList.remove('active');
-    localStorage.setItem(ACTIVE_KEY, '0');
+    if (resizeH && (typeof img!=='undefined') && img && img.src) resizeH.style.display = 'block';
+    btn?.classList.remove('active');
+    localStorage.setItem('onlineMapActive','0');
     window.__updateDimmerWidth && window.__updateDimmerWidth();
     window.__fitDock && window.__fitDock();
   }
 
   btn && btn.addEventListener('click', () => {
     const isOn = mapDiv.style.display === 'block';
-    if (isOn) hideOnlineMap(); else showOnlineMap();
+    isOn ? hideOnlineMap() : showOnlineMap();
   });
 
-  // Atjauno iepriekšējo ON/OFF stāvokli
-  if (localStorage.getItem(ACTIVE_KEY) === '1') {
-    showOnlineMap();
-  }
+  if (localStorage.getItem('onlineMapActive') === '1'){ showOnlineMap(); }
 
-  // Pārzīmē izmēru uz loga resize
-  window.addEventListener('resize', () => map && map.invalidateSize());
-
-  // Tumšošanas slīdnis
-  const dimRange = document.getElementById('mapDimmerRange');
-  if (dimRange) { dimRange.addEventListener('input', syncDimOverlay); syncDimOverlay(); }
-
-  // Interakcija ar karti arī dokē pogas (tāpat kā canvas/kompass)
-  ['pointerdown','mousedown','touchstart'].forEach(ev => {
-    mapDiv.addEventListener(ev, () => {
-      const bc = document.getElementById('buttonContainer');
-      if (bc) bc.classList.add('docked');
-    }, { passive: true });
-  });
-
-  // Ērts hotkey: M – pārslēdz karti
-  document.addEventListener('keydown', (e) => {
-    if ((e.key || '').toLowerCase() === 'm') btn && btn.click();
-  });
+  window.addEventListener('resize', ()=> map && map.invalidateSize());
+  if (dimRange){ dimRange.addEventListener('input', syncDimOverlay); syncDimOverlay(); }
 })();
+</script>
+
 
 
 
