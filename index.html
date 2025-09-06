@@ -1650,10 +1650,10 @@
 
 
 
-/* ==== Firefox-only (Chrome/Edge/Safari neietekmē) ==== */
+/* ==== Tikai Firefox ==== */
 @-moz-document url-prefix() {
 
-  /* Reset */
+  /* reset */
   #buttonContainer .dock-dimmer input[type=range]{
     appearance: none;
     -moz-appearance: none;
@@ -1662,7 +1662,7 @@
     outline: 0;
   }
 
-  /* Vizuālais stils */
+  /* stils */
   #buttonContainer .dock-dimmer input[type=range]::-moz-range-track{
     height: 8px;
     background: var(--unfill);
@@ -1680,21 +1680,27 @@
     box-shadow: 0 2px 6px rgba(0,0,0,.35);
   }
 
-  /* 🔑 Orientāciju nosaka pēc atribūta, nevis pēc klases */
+  /* ── MALĀS: vienmēr vertikāls (pārspēj rotācijas fallbacku) ── */
+  #buttonContainer.left  .dock-dimmer input[type=range],
+  #buttonContainer.right .dock-dimmer input[type=range],
   #buttonContainer .dock-dimmer input[type=range][orient="vertical"]{
     -moz-appearance: slider-vertical !important;
-    writing-mode: bt-lr !important;
-    inline-size: 28px !important;                /* “platums” */
-    block-size: calc(100% - 16px) !important;    /* pilns augstums (8px+8px padding) */
-  }
-  #buttonContainer .dock-dimmer input[type=range]:not([orient="vertical"]){
-    -moz-appearance: none !important;
-    writing-mode: horizontal-tb !important;
-    inline-size: 100% !important;
-    block-size: var(--rng-track, 8px) !important;
+    writing-mode: vertical-lr !important;        /* nevis bt-lr */
+    width: 28px !important;
+    height: calc(100% - 16px) !important;        /* pielāgo, ja padding cits */
+    transform: none !important;                  /* atceļ rotate fallbacku */
   }
 
-  /* Dimmera kolonna sānā = pilns augstums */
+  /* ── APAKŠĀ: vienmēr horizontāls ── */
+  #buttonContainer.bottom .dock-dimmer input[type=range]{
+    -moz-appearance: none !important;
+    writing-mode: horizontal-tb !important;
+    width: 100% !important;
+    height: var(--rng-track, 8px) !important;
+    transform: none !important;
+  }
+
+  /* slīdņa “kaste” malās lai stiepjas pa pilnu kolonnas augstumu */
   #buttonContainer.left  .dock-dimmer,
   #buttonContainer.right .dock-dimmer{
     grid-row: 1 / -1;
@@ -3358,10 +3364,28 @@
 							    '<span class="value" id="mapDimmerValue"></span>';
 							  shell.insertBefore(dimWrap, shell.firstChild);
 
-// nodrošinām, ka FF uzreiz saņem pareizo orientāciju
+// Uzreiz pēc slīdņa ielikšanas DOM
 setTimeout(function () {
-  if (typeof syncRangeOrientation === 'function') syncRangeOrientation();
+  const bc = document.getElementById('buttonContainer');
+  const range = document.getElementById('mapDimmerRange');
+  if (!bc || !range) return;
+
+  const apply = () => {
+    const side = bc.classList.contains('left') || bc.classList.contains('right');
+    if (side) {
+      range.setAttribute('orient','vertical');
+      range.classList.add('range-vertical');
+    } else {
+      range.removeAttribute('orient');
+      range.classList.remove('range-vertical');
+    }
+  };
+
+  // sākumā + turpmāk, kad mainās #buttonContainer klases
+  apply();
+  new MutationObserver(apply).observe(bc, { attributes:true, attributeFilter:['class'] });
 }, 0);
+
 
 
 
