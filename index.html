@@ -1649,6 +1649,30 @@
 							}
 
 
+
+
+/* HORIZONTĀLAIS REŽĪMS: apakšā — vienmēr šaurš un 100% plats */
+#buttonContainer.bottom .dock-dimmer input[type=range],
+#buttonContainer.bottom .dock-dimmer input[type=range].range-vertical,
+#buttonContainer.bottom .dock-dimmer input[type=range][orient="vertical"]{
+  -webkit-appearance: none !important;
+  writing-mode: horizontal-tb !important;
+  transform: none !important;
+
+  inline-size: 100% !important;                      /* platums */
+  block-size: var(--rng-track-bottom, 6px) !important; /* biezums */
+  height: var(--rng-track-bottom, 6px) !important;   /* drošībai */
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+
+
+
+
+
+
+
 /* ==== Tikai Firefox ==== */
 @-moz-document url-prefix() {
 
