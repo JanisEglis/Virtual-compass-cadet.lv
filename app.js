@@ -343,14 +343,16 @@ document.getElementById('toggleRotationMode').addEventListener('click', () => {
 						// izsauc uzreiz un katru reizi pēc pozīcijas maiņas
 						syncRangeOrientation();
 						
-						const _oldUpdatePos = updateButtonContainerPosition;
-						updateButtonContainerPosition = function(position){
-						  _oldUpdatePos(position);
-						  syncRangeOrientation();
-						  window.__updateDimmerWidth && window.__updateDimmerWidth();
-						  window.__fitDock && window.__fitDock();
-						};
+						
 
+const _oldUpdatePos = updateButtonContainerPosition;
+updateButtonContainerPosition = function(position){
+  _oldUpdatePos(position);
+  syncRangeOrientation();
+  window.__updateDimmerWidth && window.__updateDimmerWidth();
+  window.__fitDock && window.__fitDock();
+  window.__updateMapSafeAreas && window.__updateMapSafeAreas(); // 👈 pievieno šo
+};
 
 
 						document.addEventListener('DOMContentLoaded', () => {
@@ -2621,8 +2623,8 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 							  bc.appendChild(handle);
 							
 							  /* — PUBLISKĀS FUNKCIJAS — */
-							  function dockButtons() { bc.classList.add('docked'); }
-							  function showButtons() { bc.classList.remove('docked'); window.__fitDock && window.__fitDock(); }
+							  function dockButtons() { bc.classList.add('docked'); window.__updateMapSafeAreas && window.__updateMapSafeAreas(); }
+							  function showButtons() { bc.classList.remove('docked'); window.__fitDock && window.__fitDock(); window.__updateMapSafeAreas && window.__updateMapSafeAreas(); }
 							
 							  // Piesienam rokturim
 							  handle.addEventListener('click', showButtons);
