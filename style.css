@@ -1943,7 +1943,7 @@
 
 /* ja gribi — tikai salocītā stāvoklī */
 #onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left.info-collapsed{
-  min-width: calc(var(--infoStackW) + 30px);
+  min-width: calc(var(--infoStackW) + 10px);
 }
 
 
