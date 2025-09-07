@@ -425,7 +425,7 @@ function setDarkness(percent){
 						resizeHandle.style.backgroundImage = 'url("https://site-710050.mozfiles.com/files/710050/resize_map__1_.png")';
 
 						resizeHandle.style.cursor = 'se-resize';
-						resizeHandle.style.border = '3px red';
+						resizeHandle.style.border = '3px solid red';
 
 
 
