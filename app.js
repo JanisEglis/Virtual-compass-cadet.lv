@@ -1,4 +1,105 @@
-						function debounce(func, wait = 50) {
+/* ===== PRELOADER – gaida līdz lapa+attēli (un, ja aktīvi, arī pirmās karšu flīzes) ir gatavi ===== */
+(function(){
+  const pre = document.getElementById('app-preloader');
+  if(!pre){ return; }
+
+  // nobloķē ritināšanu līdz “[gatavs]”
+  document.body.classList.add('preloading');
+
+  const bar = pre.querySelector('.progress > span');
+  const msg = pre.querySelector('.msg');
+  const skipBtn = pre.querySelector('#preloaderSkip');
+
+  let total = 1;    // vismaz “window.load”
+  let done  = 0;
+
+  const tick = (label) => {
+    done = Math.min(done+1, total);
+    const pct = Math.max(0, Math.min(100, Math.round((done/total)*100)));
+    if(bar) bar.style.width = pct + '%';
+    if(msg) msg.textContent = `Ielādējam… ${pct}%`;
+  };
+
+  // Savācam svarīgās bildes (kompass + pogu ikonas u.c.) un gaidām to ielādi
+  const imgSet = new Set();
+  [
+    '#compassContainer img',
+    '#buttonContainer img',
+    '#fullscreenMessage img',
+    '.warning-content img',
+    '#qrCodeImage',
+    '#uploadedImg',
+    '#newUploadedImg',
+    '#resizeHandle img'
+  ].forEach(sel => {
+    document.querySelectorAll(sel).forEach(img => { if(img && img.src) imgSet.add(img); });
+  });
+
+  const imgPromises = Array.from(imgSet).map(imgEl => new Promise(res=>{
+    if(imgEl.complete && imgEl.naturalWidth > 0){ res('cached'); return; }
+    imgEl.addEventListener('load',  () => res('load'),  {once:true});
+    imgEl.addEventListener('error', () => res('error'), {once:true});
+  }).then(tick));
+
+  total += imgPromises.length;
+
+  // Ja tiešsaistes karte startā ir ieslēgta, mēģinām sagaidīt pirmās flīzes (bez “mūžīgās gaidīšanas”)
+  (function watchTilesIfNeeded(){
+    try{
+      if(localStorage.getItem('onlineMapActive') !== '1') return;
+      const host = document.getElementById('onlineMap');
+      if(!host) return;
+
+      // sagaidām ~8 flīzes vai max 4s
+      let target = 8, seen = 0;
+      total += target;
+
+      const onTile = ()=>{ if(seen < target){ seen++; tick('tile'); } };
+      const obs = new MutationObserver(recs=>{
+        recs.forEach(r=>{
+          r.addedNodes.forEach(n=>{
+            if(n && n.tagName === 'IMG' && n.classList.contains('leaflet-tile')){
+              n.addEventListener('load', onTile, {once:true});
+              n.addEventListener('error', onTile, {once:true});
+            }
+          });
+        });
+      });
+      obs.observe(host, {subtree:true, childList:true});
+      setTimeout(()=>{ obs.disconnect(); /* neatstāj atvērtu */ }, 4000);
+    }catch(e){}
+  })();
+
+  // “window load” – kad viss statiskais jau ielādēts
+  const pageLoaded = new Promise(res => window.addEventListener('load', () => { tick('window'); res(); }, {once:true}));
+
+  // Drošības tainauts, lai nelimst (piedāvā “Turpināt” pēc 6s)
+  const showSkip = setTimeout(()=> pre.classList.add('show-skip'), 6000);
+  skipBtn.addEventListener('click', finish, {once:true});
+
+  // Kad viss gatavs – noslēdzam
+  Promise.allSettled(imgPromises); // paralēli, bet neko nebloķē
+  Promise.all([ pageLoaded, Promise.allSettled(imgPromises) ])
+    .then(()=> new Promise(r=> setTimeout(r, 300)))  // mazs “elpas” brīdis layoutam
+    .then(finish);
+
+  function finish(){
+    clearTimeout(showSkip);
+    pre.classList.add('hidden');
+    document.body.classList.remove('preloading');
+    setTimeout(()=> pre.remove(), 480); // pēc animācijas tiešām noņemam no DOM
+  }
+})();
+
+
+
+
+
+
+
+
+
+function debounce(func, wait = 50) {
 						  let timeout;
 						  return function (...args) {
 						    clearTimeout(timeout);
