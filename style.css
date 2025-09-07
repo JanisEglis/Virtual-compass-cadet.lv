@@ -1945,10 +1945,7 @@
 
 
 
-/* ── Apakšējā kreisā Leaflet “stack” salokāms ───────────────────────── */
-#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left{
-  position: relative;
-}
+
 
 /* Kad salocīts – paslēp visas kontroles, atstājot tikai rokturi */
 #onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left.info-collapsed
