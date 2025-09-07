@@ -1742,7 +1742,8 @@
 
 /* Leaflet kontroles lai nesakrīt ar augšu/apakšu */
 #onlineMap .leaflet-top    { top:    calc(var(--map-top-safe, 0px) + 10px); }
-#onlineMap .leaflet-bottom { bottom: calc(var(--map-bottom-safe, 0px) + 10px); }
+
+#onlineMap .leaflet-bottom{ bottom: var(--map-bottom-safe-plus-pad, 0px) !important; }
 
 
 /* pārklājums, kas netraucē klikus */
