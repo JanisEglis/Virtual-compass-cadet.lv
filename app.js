@@ -76,7 +76,7 @@
 
   // Poga “Turpināt” un cietais timeouts
   const showSkip = setTimeout(()=> pre.classList.add('show-skip'), 6000);
-  
+  const hardCut  = setTimeout(()=> finish('hard-timeout'), 8000);
   skipBtn.addEventListener('click', () => finish('skip'), {once:true});
 
   Promise.all([ pageLoaded, Promise.allSettled(imgPromises) ])
@@ -94,8 +94,6 @@
     setTimeout(()=> pre.remove(), 480);
   }
 })();
-
-
 
 
 
