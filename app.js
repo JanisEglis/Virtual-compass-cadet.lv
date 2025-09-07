@@ -1080,10 +1080,12 @@ map.whenReady(() => {
       stack.appendChild(btn);
     }
 
-    // neļaujam kartes pannam “apēst” klikus
+    // neļaujam kartes pannam “apēst” klikus/riteni
     if (window.L && L.DomEvent) {
       L.DomEvent.disableClickPropagation(btn);
+      L.DomEvent.disableScrollPropagation(btn);
       L.DomEvent.on(btn, 'mousedown dblclick pointerdown touchstart', L.DomEvent.stop);
+      L.DomEvent.on(btn, 'contextmenu', L.DomEvent.stop);
     }
 
     const toggle = (ev) => {
@@ -1091,17 +1093,50 @@ map.whenReady(() => {
       stack.classList.toggle('info-collapsed');
       const expanded = !stack.classList.contains('info-collapsed');
       btn.setAttribute('aria-expanded', String(expanded));
-      // neliels vizuāls signāls – apgriežam bultiņu ar CSS klasi
       btn.classList.toggle('collapsed', !expanded);
     };
 
-    // PIESIENAM klausītājus (gan uz jau esošu, gan jaunuztaisītu pogu)
-    btn.addEventListener('click', toggle);
+    // ── TOUCH/POINTER atbalsts + klikšķa “spoka” slāpēšana ─────────────
+    let lastTouchToggleAt = 0;
+
+    const onPointerUp = (e) => {
+      // darbojas gan pele, gan touch/pen
+      toggle(e);
+      if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+        lastTouchToggleAt = Date.now();
+      }
+    };
+
+    const onTouchEnd = (e) => {
+      toggle(e);
+      lastTouchToggleAt = Date.now();
+    };
+
+    const onClick = (e) => {
+      // ja tikko bija touch, neļaujam “dubultam” click atkārtot toggle
+      if (Date.now() - lastTouchToggleAt < 350) {
+        e.preventDefault(); e.stopPropagation();
+        return;
+      }
+      toggle(e);
+    };
+
+    // PIESIENAM klausītājus (strādā uz visām ierīcēm)
+    if ('onpointerup' in window) {
+      btn.addEventListener('pointerup', onPointerUp, { passive: false });
+    } else {
+      btn.addEventListener('touchend', onTouchEnd, { passive: false });
+    }
+    // rezerves desktopiem / vecākiem iOS
+    btn.addEventListener('click', onClick, { passive: false });
+
+    // pieklājīgs tastatūras atbalsts (Space/Enter)
     btn.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') toggle(e);
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(e); }
     });
   })();
 });
+
 
 
 
