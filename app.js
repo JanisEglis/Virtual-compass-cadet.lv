@@ -1133,25 +1133,37 @@ map.whenReady(() => {
 
 
 function makeLayersClickOnly(layersCtl){
-  const c    = layersCtl._container;
-  const link = layersCtl._layersLink;
+  if (!layersCtl) return;
 
-  // Noņem hover expand/collapse
-  L.DomEvent.off(c,    'mouseenter', layersCtl._expand,   layersCtl);
-  L.DomEvent.off(c,    'mouseleave', layersCtl._collapse, layersCtl);
-  L.DomEvent.off(link, 'focus',      layersCtl._expand,   layersCtl);
+  // mēģinām paņemt konteineru; ja vēl nav – pārliekam uz nākamo kadru
+  const c = layersCtl._container;
+  if (!c) { requestAnimationFrame(() => makeLayersClickOnly(layersCtl)); return; }
 
-  // Toggling ar klikšķi / Enter / Space
+  // mēģinām paņemt “toggle” linku no API vai pēc klases
+  const link = layersCtl._layersLink || c.querySelector('.leaflet-control-layers-toggle');
+
+  // — droši noņemam hover/focus uzvedību —
+  try { L.DomEvent.off(c,    'mouseover', layersCtl._expand,   layersCtl); } catch(e){}
+  try { L.DomEvent.off(c,    'mouseout',  layersCtl._collapse, layersCtl); } catch(e){}
+  if (link) {
+    try { L.DomEvent.off(link, 'focus',   layersCtl._expand,   layersCtl); } catch(e){}
+    try { L.DomEvent.off(link, 'blur',    layersCtl._collapse, layersCtl); } catch(e){}
+  }
+
+  // — pārslēgšana tikai ar klikšķi / Enter / Space —
   function toggle(e){
     L.DomEvent.stop(e);
     const open = L.DomUtil.hasClass(c, 'leaflet-control-layers-expanded');
     open ? layersCtl._collapse() : layersCtl._expand();
   }
-  L.DomEvent.on(link, 'click',     toggle);
-  L.DomEvent.on(link, 'pointerup', toggle);
-  L.DomEvent.on(link, 'keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') toggle(e);
-  });
+
+  if (link) {
+    L.DomEvent.on(link, 'click',     toggle);
+    L.DomEvent.on(link, 'pointerup', toggle);
+    L.DomEvent.on(link, 'keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') toggle(e);
+    });
+  }
 
   // Aizver TIKAI pēc izvēles (radio/checkbox). Turi SHIFT, lai neaizvērtu.
   const form = c.querySelector('.leaflet-control-layers-list') || c;
@@ -1162,12 +1174,19 @@ function makeLayersClickOnly(layersCtl){
     });
   });
 
-  // Atspējo klikšķu “izsūci” uz karti
+  // Nenopludina klikšķus uz karti
   L.DomEvent.on(c, 'click mousedown dblclick', L.DomEvent.stopPropagation);
 }
 
 
 
+const layersCtl = L.control.layers(baseLayers, overlays, {
+  collapsed: true,
+  position: 'topright'
+}).addTo(map);
+
+// ļaujam Leafletam uzbūvēt DOM, tad pieliekam mūsu uzvedību
+requestAnimationFrame(() => makeLayersClickOnly(layersCtl));
 
 
 
