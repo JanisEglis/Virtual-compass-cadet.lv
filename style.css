@@ -1777,8 +1777,9 @@
 }
 /* tikai #onlineMap iekšpusē */
 #onlineMap .leaflet-bottom.leaflet-left .scale-picker-ctl{
-  transform: translateX(10px);
+  margin-left: 10px !important;  /* noklusējums Leafletam ir 10px */
 }
+
 
 /* Lai inline SVG ikonām būtu tāds pats “fit” kā <img> */
 #buttonContainer .dock-shell > button svg{
