@@ -1916,21 +1916,21 @@
   transform: translateY(calc(100% - var(--info-expose)));
 }
 
-/* Roktura poga virs kapsulas */
-.leaflet-control-container .leaflet-bottom.leaflet-left .info-handle{
+/* Paša roktura stils/pozīcija */
+#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left .info-handle{
   position: absolute;
-  top: 0; left: 50%;
-  transform: translate(-50%, -100%);
-  width: 45px; height: 28px;
-  display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(180deg, #dd2222a1, #b01616);
-  color:#fff;
-  border:1px solid rgba(255,255,255,.25);
-  border-radius: 10px 10px 0 0;
+  left: 50%;
+  top: 0;                           /* sēž virs bloka */
+  transform: translate(-50%, -100%);/* tieši virs malas */
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  background: linear-gradient(180deg, #dd2222, #b01616);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 10px;
+  color: #fff;
+  cursor: pointer;
+  z-index: 1000;
   box-shadow: 0 8px 18px rgba(0,0,0,.35);
-  cursor: pointer; user-select: none;
-  z-index: 2;
-  padding:0; font-size:0;
 }
 
 .leaflet-control-container .leaflet-bottom.leaflet-left .info-handle svg{
@@ -1953,22 +1953,7 @@
   display: none !important;
 }
 
-/* Paša roktura stils/pozīcija */
-#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left .info-handle{
-  position: absolute;
-  left: 50%;
-  top: 0;                           /* sēž virs bloka */
-  transform: translate(-50%, -100%);/* tieši virs malas */
-  width: 34px; height: 34px;
-  display: grid; place-items: center;
-  background: linear-gradient(180deg, #dd2222, #b01616);
-  border: 1px solid rgba(255,255,255,.25);
-  border-radius: 10px;
-  color: #fff;
-  cursor: pointer;
-  z-index: 1000;
-  box-shadow: 0 8px 18px rgba(0,0,0,.35);
-}
+
 
 
 
