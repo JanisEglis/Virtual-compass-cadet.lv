@@ -1041,6 +1041,54 @@ map.whenReady(() => {
       if (el){ el.textContent = s; el.dataset.mgrs = mgrs; }
     });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+map.whenReady(() => {
+  (function addInfoHandle(){
+    const stack = document.querySelector('.leaflet-control-container .leaflet-bottom.leaflet-left');
+    if (!stack || stack.dataset.handleAttached) return;
+
+    const btn = document.createElement('button');
+    btn.className = 'info-handle';
+    btn.setAttribute('aria-expanded','true');
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
+    stack.appendChild(btn);
+    stack.dataset.handleAttached = '1';
+
+    btn.addEventListener('click', () => {
+      stack.classList.toggle('info-collapsed');
+      btn.setAttribute('aria-expanded', String(!stack.classList.contains('info-collapsed')));
+    });
+  })();
+});
+
+
+
+
+
+
+
+
+	  
     // labais klikšķis — popup ar 2 rindām + kopēšanas pogām
   map.on('contextmenu', e=>{
   const lat = e.latlng.lat, lon = e.latlng.lng;
