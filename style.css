@@ -1811,88 +1811,96 @@
 
 
 
-
-/* === LEAFLET bottom-left "stack" — vienots dizains, neatkabinot kastes === */
-#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left{
-  /* čaula ap visu kolonnu */
-  display: inline-flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;                                      /* vert. atstarpe starp kastēm */
-  padding: 10px 12px;                            /* iekšējā atstarpe čaulai */
-  width: max-content;                            /* platums pēc garākā bērna */
-  background: linear-gradient(180deg, var(--dock1, #1b1f25), var(--dock2, #490000a8));
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 14px;
-  box-shadow: var(--dock-shadow, 0 12px 28px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.35));
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+/* ================== LEAFLET INFO STACK — vienots stils ================== */
+:root{
+  /* pielāgo kā vajag */
+  --infoStackW: 260px;                           /* visas rindiņas vienā platumā */
+  --infoStackLeft: 20px;                         /* kreisā atkāpe no malas, ja neizmanto --bottomleft-left */
+  --infoPad: 6px;
+  --infoGap: 8px;
 }
 
-/* katru kontroli taisām caurspīdīgu, lai redzama čaulas fona kapsula */
-#onlineMap .leaflet-bottom.leaflet-left .leaflet-control{
-  background: transparent !important;
-  border: 0 !important;
-  margin: 0 !important;          /* atstāpes dodam ar .gap uz čaulas */
-  padding: 0 !important;
-  color: #fff !important;
-  font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
-  width: 100%;                   /* nolīdzinām pēc garākā (koordināšu) bloka */
+/* atbīdam apakš-kreiso kolonnu no kreisās malas ar tavu mainīgo */
+.leaflet-control-container .leaflet-bottom.leaflet-left{
+  left: var(--bottomleft-left, var(--infoStackLeft)) !important;
 }
 
-/* mūsu pašu tekstu blokiem (Mērogs: 1:xxxx un Lat/Lng|MGRS) piešķiram iekšējo “tableti” */
-#scaleRatioCtl,
-#mousePosCtl,
-#scalePicker,
-#onlineMap .leaflet-bottom.leaflet-left .leaflet-control-attribution{
-  display: block;
+/* kapsula ap visu apakš-kreiso “stabiņu” (dock look&feel) */
+.leaflet-control-container .leaflet-bottom.leaflet-left{
+  display: inline-flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: var(--infoGap) !important;
+  padding: 10px 12px !important;
+  width: max-content !important;
+  background: linear-gradient(180deg, var(--dock1, #1b1f25), var(--dock2, #490000a8)) !important;
+  border: 1px solid rgba(255,255,255,.06) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--dock-shadow, 0 12px 28px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.35)) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+/* IKVIENA rinda vienādā platumā un ar “tabletes” fonu */
+.leaflet-bottom.leaflet-left .leaflet-control,
+#scaleRatioCtl, #mousePosCtl, #scalePicker{
+  width: var(--infoStackW) !important;
+  max-width: var(--infoStackW) !important;
   background: rgba(0,0,0,.35) !important;
   border: 1px solid rgba(255,255,255,.10) !important;
   border-radius: 8px !important;
-  padding: 4px 8px !important;
-  box-shadow: 0 6px 16px rgba(0,0,0,.28);
+  padding: var(--infoPad) 8px !important;
+  color: #fff !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,.28) !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
 }
 
-/* koordināšu rādītājs — lai ilgs teksts nelauž izkārtojumu */
+/* koordināšu tekstam — neļaut lauzt izkārtojumu */
 #mousePosCtl{
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* skala (balto “line” pārzīmējam tumšajā tēmā) */
-#onlineMap .leaflet-control-scale{
-  margin-top: 10px !important;   /* tava prasība, lai nesaskaras ar “Mērogs: 1:xxxx” */
+/* skala (“2 km”) — nogalinām balto bloku, salīdzinām ar pārējiem */
+.leaflet-control-scale{
+  width: var(--infoStackW) !important;
+  max-width: var(--infoStackW) !important;
 }
-#onlineMap .leaflet-control-scale-line{
+.leaflet-control-scale-line{
+  width: 100% !important;                          /* ja gribi atstāt “īstā mēroga” joslas platumu, šo rindu izdzēs */
   background: rgba(255,255,255,.08) !important;
   border: 1px solid rgba(255,255,255,.25) !important;
   color: #fff !important;
   box-shadow: none !important;
+  padding: var(--infoPad) 8px !important;
+  line-height: 1.1 !important;
+  box-sizing: border-box !important;
 }
-#onlineMap .leaflet-control-scale-line:not(:last-child){
+.leaflet-control-scale-line:not(:last-child){
   border-bottom: none !important;
 }
 
-/* mēroga izvēlnei (select) – lai izskatās kā pārējie */
-#scalePicker{
-  appearance: none;
+/* “Mērogs: 1:25 000” select — tumšs un pilnā platumā */
+.leaflet-bottom.leaflet-left select,
+#scalePicker select{
+  width: 100% !important;
+  appearance: none !important;
   background: rgba(0,0,0,.35) !important;
   color: #fff !important;
   border: 1px solid rgba(255,255,255,.10) !important;
   border-radius: 8px !important;
-  padding: 4px 8px !important;
-  width: 100%;
+  padding: 6px 10px !important;
+  font: 12px/1.2 system-ui,-apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+}
+.leaflet-bottom.leaflet-left select option{
+  background: rgba(0,0,0,.85) !important;
+  color: #fff !important;
 }
 
-/* neliels “paceļums” virs apakšējā UI — tu jau to dari ar safe zones, te neko nepārrakstām */
-#onlineMap .leaflet-bottom{
+/* lai apakšējās kontroles nestāvētu virs taviem apakšējiem UI */
+.leaflet-bottom{
   bottom: calc(var(--map-bottom-safe, 0px) + var(--map-bottom-gap, 35px)) !important;
 }
-
-/* ja vēlies smalkāku vizuālo atstarpi starp rindām, vari mainīt gap: 8px uz 6–10px */
-
-
 
 
 
