@@ -505,16 +505,15 @@ function setDarkness(percent){
     return Math.round(px);
   }
 
- function updateMapSafeAreas(){
+// kur aprēķini safe zonas:
+function updateMapSafeAreas(){
   const topPx    = getTopSafePx();
   const bottomPx = getBottomSafePx();
+  document.documentElement.style.setProperty('--map-top-safe',    topPx + 'px');
+  document.documentElement.style.setProperty('--map-bottom-safe', bottomPx + 'px');
 
-  // aprēķinām nelielu “pad” no pašu apakšējo kontroļu augstuma (min 20, max 36)
-  const ctl = document.querySelector('#onlineMap .leaflet-bottom .leaflet-control');
-  const pad = ctl ? Math.max(20, Math.min(36, Math.round(ctl.getBoundingClientRect().height * 0.4))) : 28;
-
-  document.documentElement.style.setProperty('--map-top-safe', topPx + 'px');
-  document.documentElement.style.setProperty('--map-bottom-safe-plus-pad', (bottomPx + pad) + 'px');
+  // konservatīvs buferis virs about (pielāgo, ja vajag)
+  document.documentElement.style.setProperty('--map-bottom-gap', '28px');
 
   try { map && map.invalidateSize(true); } catch(e){}
 }
