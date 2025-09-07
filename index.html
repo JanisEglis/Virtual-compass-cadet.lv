@@ -21,6 +21,21 @@
   <script defer src="app.js"></script>
 </head>
 <body>
+
+
+<!-- PRELOADER (sākuma pārklājums) -->
+<div id="app-preloader" role="status" aria-live="polite" aria-label="Ielādējam…">
+  <div class="preloader-inner">
+    <img class="brand" src="https://site-710050.mozfiles.com/files/710050/medium/CADET_TRANSP_.png?1542126381" alt="CADET.LV" />
+    <div class="spinner" aria-hidden="true"></div>
+    <div class="progress"><span style="width:0%"></span></div>
+    <p class="msg">Ielādējam… 0%</p>
+    <button id="preloaderSkip" class="skip" type="button">Turpināt</button>
+  </div>
+</div>
+
+
+	
    	<!-- Brīdinājuma pārklājums viedtālruņiem -->
 							<div id="mobile-warning" style="display: none;">
 								<div class="warning-content">
