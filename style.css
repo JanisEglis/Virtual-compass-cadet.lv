@@ -1773,7 +1773,7 @@
 /* pacel Leaflet apakšējās kontroles virs apakšējā UI */
 /* vietā, kur tev ir +10px */
 #onlineMap .leaflet-bottom{
-  bottom: calc(var(--map-bottom-safe, 0px) + var(--map-bottom-gap, 28px)) !important;
+  bottom: calc(var(--map-bottom-safe, 0px) + var(--map-bottom-gap, 35px)) !important;
 }
 
 /* Lai inline SVG ikonām būtu tāds pats “fit” kā <img> */
