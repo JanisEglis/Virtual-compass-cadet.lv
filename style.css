@@ -1775,10 +1775,7 @@
 #onlineMap .leaflet-bottom{
   bottom: calc(var(--map-bottom-safe, 0px) + var(--map-bottom-gap, 35px)) !important;
 }
-/* tikai #onlineMap iekšpusē */
-#onlineMap .leaflet-bottom.leaflet-left .scale-picker-ctl{
-  margin-left: 10px !important;  /* noklusējums Leafletam ir 10px */
-}
+
 
 
 /* Lai inline SVG ikonām būtu tāds pats “fit” kā <img> */
