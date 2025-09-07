@@ -48,6 +48,7 @@ body.preloading{ overflow: hidden; }
   letter-spacing: .02em;
   white-space: nowrap;       /* vienā rindā */
   user-select: none;
+  color: white;
 }
 
 #app-preloader .preloader-about span + span::before{
