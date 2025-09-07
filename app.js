@@ -1352,11 +1352,7 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 						}
 	
 
-						function drawImage() {
-							ctx.clearRect(0, 0, canvas.width, canvas.height);
-							ctx.drawImage(img, imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
-							positionResizeHandle();
-						}
+						
 
 						// Reset Map Button Functionality
 						document.getElementById('resetMap').addEventListener('click', () => {
@@ -1422,16 +1418,7 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 
 
 
-						canvas.addEventListener('touchstart', (e) => {
-							e.preventDefault();
-							if (e.touches.length === 1) { // Pārvietošana
-								startX = e.touches[0].clientX;
-								startY = e.touches[0].clientY;
-								dragging = true;
-							} else if (e.touches.length === 2) { // Tālummaiņa
-								lastTouchDistance = getDistance(e.touches[0], e.touches[1]);
-							}
-						});
+
 
 						canvas.addEventListener('touchmove', (e) => {
 							e.preventDefault();
@@ -1462,16 +1449,6 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 								drawImage();
 							}
 						});
-
-						canvas.addEventListener('touchend', () => {
-							dragging = false;
-						});
-
-						function getDistance(touch1, touch2) {
-							const dx = touch1.clientX - touch2.clientX;
-							const dy = touch1.clientY - touch2.clientY;
-							return Math.sqrt(dx * dx + dy * dy);
-						}
 
 
 
@@ -1557,13 +1534,6 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 							});
 						}
 
-
-
-
-						// Kad attēls ir ielādēts, pievieno apmali, bet saglabā funkcionalitāti
-						img.onload = function () {
-							adjustImageSize(); // Nodrošina sākotnējo attēla novietojumu
-							drawImage(); // Uzzīmē attēlu
 							
 
 						// PIEVIENO APMALI UZ CANVAS
