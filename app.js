@@ -1064,7 +1064,6 @@ map.whenReady(() => {
     const stack = document.querySelector('#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left');
     if (!stack) return;
 
-    // ja poga jau ir HTML → paņemam to; citādi izveidojam
     let btn = stack.querySelector('.info-handle');
     if (!btn) {
       btn = document.createElement('button');
@@ -1080,7 +1079,7 @@ map.whenReady(() => {
       stack.appendChild(btn);
     }
 
-    // neļaujam kartes pannam “apēst” klikus/riteni
+    // neļaujam kartes pannam “apēst” notikumus
     if (window.L && L.DomEvent) {
       L.DomEvent.disableClickPropagation(btn);
       L.DomEvent.disableScrollPropagation(btn);
@@ -1096,47 +1095,29 @@ map.whenReady(() => {
       btn.classList.toggle('collapsed', !expanded);
     };
 
-    // ── TOUCH/POINTER atbalsts + klikšķa “spoka” slāpēšana ─────────────
-    let lastTouchToggleAt = 0;
+    // ── PIESAISTE AR PAREIZU FILTRU ─────────────────────────────
+    const supportsPointer = 'onpointerup' in window;
 
-    const onPointerUp = (e) => {
-      // darbojas gan pele, gan touch/pen
-      toggle(e);
-      if (e.pointerType === 'touch' || e.pointerType === 'pen') {
-        lastTouchToggleAt = Date.now();
-      }
-    };
+    if (supportsPointer) {
+      btn.addEventListener('pointerup', (e) => {
+        // tikai primārā (kreisā) poga ar peli; uz touch/pen – vienmēr OK
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        toggle(e);
+      }, { passive: false });
 
-    const onTouchEnd = (e) => {
-      toggle(e);
-      lastTouchToggleAt = Date.now();
-    };
-
-    const onClick = (e) => {
-      // ja tikko bija touch, neļaujam “dubultam” click atkārtot toggle
-      if (Date.now() - lastTouchToggleAt < 350) {
-        e.preventDefault(); e.stopPropagation();
-        return;
-      }
-      toggle(e);
-    };
-
-    // PIESIENAM klausītājus (strādā uz visām ierīcēm)
-    if ('onpointerup' in window) {
-      btn.addEventListener('pointerup', onPointerUp, { passive: false });
+      // NEPIESIENAM 'click', lai nebūtu dubult-toggles uz kreisās peles
     } else {
-      btn.addEventListener('touchend', onTouchEnd, { passive: false });
+      // vecākiem iOS/UC u.c. – touch + click kā rezerve
+      btn.addEventListener('touchend', toggle, { passive: false });
+      btn.addEventListener('click', toggle, { passive: false });
     }
-    // rezerves desktopiem / vecākiem iOS
-    btn.addEventListener('click', onClick, { passive: false });
 
-    // pieklājīgs tastatūras atbalsts (Space/Enter)
+    // Tastatūras piekļūstamība
     btn.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(e); }
     });
   })();
 });
-
 
 
 
