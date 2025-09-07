@@ -367,9 +367,9 @@ updateButtonContainerPosition = function(position){
 								leftToggleButton.textContent = '❮'; // Izvēlne ir redzama, bultiņa uz iekšu
 							}
 						
-						if (!leftPositionSelector.classList.contains('hidden-left')) {
-							leftPositionSelector.classList.add('hidden-left'); 
-							}
+//	kreisais panelis					if (!leftPositionSelector.classList.contains('hidden-left')) {
+//							leftPositionSelector.classList.add('hidden-left'); 
+//							}
 						});
 
 						
