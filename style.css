@@ -1968,3 +1968,57 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 👇 cik plats korpuss, kad salocīts (pielāgo: 10px, 24px, 32px...) */
+:root{ --infoCollapsedW: 10px; }
+
+/* Salocīts: uzspiežam precīzu platumu un notīrām “max-content” efektu */
+#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left.info-collapsed{
+  display: block !important;              /* iPad/Safari — lai platums tiešām strādā */
+  box-sizing: border-box !important;      /* padding iet iekšā norādītajā platumā */
+  width: var(--infoCollapsedW) !important;
+  min-width: var(--infoCollapsedW) !important;
+  max-width: var(--infoCollapsedW) !important;
+
+  /* horizontālo padding samazini, lai 10px būtu reāli, nevis 10 + 12 + 12 */
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+
+  gap: 0 !important;                      /* bez liekām spraugām */
+}
+
+/* rokturim ļaujam aizņemt visu atlikušo šauro platumu */
+#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left.info-collapsed .info-handle{
+  width: 100% !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
