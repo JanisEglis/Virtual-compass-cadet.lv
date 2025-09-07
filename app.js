@@ -983,7 +983,7 @@ function createUTMGridLayer(){
     const minN = Math.floor(Math.min(nwU.northing, seU.northing) / step) * step;
     const maxN = Math.ceil (Math.max(seU.northing, nwU.northing) / step) * step;
 
-    const labelZoom = z >= false; // tikai pie pietuvinājuma rādam tekstus
+    const labelZoom = z >= 12; // tikai pie pietuvinājuma rādam tekstus
     const midN = (minN + maxN) / 2;
     const midE = (minE + maxE) / 2;
 
@@ -1180,13 +1180,7 @@ function makeLayersClickOnly(layersCtl){
 
 
 
-const layersCtl = L.control.layers(baseLayers, overlays, {
-  collapsed: true,
-  position: 'topright'
-}).addTo(map);
 
-// ļaujam Leafletam uzbūvēt DOM, tad pieliekam mūsu uzvedību
-requestAnimationFrame(() => makeLayersClickOnly(layersCtl));
 
 
 
