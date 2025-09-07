@@ -1981,47 +1981,37 @@
 
 
 
-
-/* bāzes vērtība (desktopam) */
+/* 1) viena vieta, kur norādi salocītās kolonnas platumu */
 :root{ --infoCollapsedW: 60px; }
 
-/* TABLETE (tipiski 600–1024px un “coarse” pointers) */
-@media (hover: none) and (pointer: coarse) and (min-width: 600px) and (max-width: 1024px){
-  :root{
-    --infoCollapsedW: 60px;   /* pielāgo: cik šauru gribi salocītu uz planšetes */
-    --info-expose: 36px;      /* roktura augstums — ērtāk trāpīt ar pirkstu */
-  }
+/* 2) info kolonnas salocītais stāvoklis – fiksē platumu */
+#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left.info-collapsed{
+  /* kustība uz leju paliek kā bija */
+  transform: translateY(calc(100% - var(--info-expose)));
 
-  /* mazāks iekšējais horizontālais padding planšetei */
-  #onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left{
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-  }
+  /* platuma “force” — pārspēj `width: max-content !important` */
+  width: var(--infoCollapsedW) !important;
+  min-width: var(--infoCollapsedW) !important;
+  max-width: var(--infoCollapsedW) !important;
 
-  /* salocītā stāvokļa platuma “force” + noņemam padding, lai platums būtu īsts */
+  /* lai platums būtu īsts, nevis width+padding+gap */
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  gap: 0 !important;
+}
+
+/* 3) rokturim nevajag 101%, citādi vizuāli “izlien” ārā šaurā režīmā */
+#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left .info-handle{
+  width: 100% !important;   /* bija 101% */
+}
+
+/* 4) iPad/Safari reizēm ignorē inline-flex width — iedodam papildu “enkuru” */
+@supports (-webkit-touch-callout: none){
   #onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left.info-collapsed{
-    display: block !important;                /* Safari/iPad respektē width */
+    display: block !important;       /* vietā ‘inline-flex’ salocītam */
     box-sizing: border-box !important;
-    width: var(--infoCollapsedW) !important;
-    min-width: var(--infoCollapsedW) !important;
-    max-width: var(--infoCollapsedW) !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    gap: 0 !important;                        /* bez starpām, lai nesačakarē platumu */
-  }
-
-  /* rokturis aizņem visu šauro joslu un ir tik augsts, cik --info-expose */
-  #onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left .info-handle{
-    width: 100% !important;
-    height: var(--info-expose) !important;
   }
 }
-
-/* (ne obligāti) — mazajiem telefoniem var dot vēl šaurāku salocījumu */
-@media (max-width: 599px){
-  :root{ --infoCollapsedW: 40px; --info-expose: 34px; }
-}
-
 
 
 
