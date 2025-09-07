@@ -505,13 +505,19 @@ function setDarkness(percent){
     return Math.round(px);
   }
 
-  function updateMapSafeAreas(){
-    const topPx    = getTopSafePx();
-    const bottomPx = getBottomSafePx();
-    document.documentElement.style.setProperty('--map-top-safe',    topPx + 'px');
-    document.documentElement.style.setProperty('--map-bottom-safe', bottomPx + 'px');
-    try { window.L && window.L.Map && window.L && map && map.invalidateSize(true); } catch(e){}
-  }
+ function updateMapSafeAreas(){
+  const topPx    = getTopSafePx();
+  const bottomPx = getBottomSafePx();
+
+  // aprēķinām nelielu “pad” no pašu apakšējo kontroļu augstuma (min 20, max 36)
+  const ctl = document.querySelector('#onlineMap .leaflet-bottom .leaflet-control');
+  const pad = ctl ? Math.max(20, Math.min(36, Math.round(ctl.getBoundingClientRect().height * 0.4))) : 28;
+
+  document.documentElement.style.setProperty('--map-top-safe', topPx + 'px');
+  document.documentElement.style.setProperty('--map-bottom-safe-plus-pad', (bottomPx + pad) + 'px');
+
+  try { map && map.invalidateSize(true); } catch(e){}
+}
 
   window.__updateMapSafeAreas = updateMapSafeAreas;
 
