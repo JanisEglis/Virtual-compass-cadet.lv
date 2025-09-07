@@ -1784,7 +1784,9 @@
 
 
 
-
+#onlineMap .leaflet-bottom.leaflet-left .leaflet-control-attribution + .leaflet-control-scale{
+  margin-top: 10px !important;
+}
 
 
 /* pacel Leaflet apakšējās kontroles virs apakšējā UI */
