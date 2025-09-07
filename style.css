@@ -1954,8 +1954,9 @@
   display: none !important;
 }
 
-
-
+.leaflet-top, .leaflet-bottom {
+	pointer-events: auto;
+}
 
 
 
