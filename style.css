@@ -1830,7 +1830,7 @@
 
 /* Kapsula ap visu apakš-kreiso “stabiņu” (dock look&feel) */
 .leaflet-control-container .leaflet-bottom.leaflet-left{
-  position: relative !important;
+  
   display: inline-flex !important;
   flex-direction: column !important;
   align-items: stretch !important;
