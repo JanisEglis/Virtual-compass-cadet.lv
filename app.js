@@ -1060,26 +1060,40 @@ map.whenReady(() => {
 
 
 map.whenReady(() => {
-  (function addInfoHandle(){
-    const stack = document.querySelector('.leaflet-control-container .leaflet-bottom.leaflet-left');
+  (function addInfoHandle() {
+    // paņem apakš-kreiso kolonu no tieši šīs kartes, nevis no visa dokumenta
+    const stack = document.querySelector('#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left');
     if (!stack || stack.dataset.handleAttached) return;
 
     const btn = document.createElement('button');
     btn.className = 'info-handle';
-    btn.setAttribute('aria-expanded','true');
+    btn.setAttribute('aria-expanded', 'true');
     btn.innerHTML = `
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>`;
+
     stack.appendChild(btn);
     stack.dataset.handleAttached = '1';
 
-    btn.addEventListener('click', () => {
+    // !!! Svarīgi: neļaujam kartes drag/pan “apēst” klikus
+    if (window.L && L.DomEvent) {
+      L.DomEvent.disableClickPropagation(btn);
+      L.DomEvent.on(btn, 'mousedown dblclick pointerdown touchstart', L.DomEvent.stop);
+    }
+
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
       stack.classList.toggle('info-collapsed');
-      btn.setAttribute('aria-expanded', String(!stack.classList.contains('info-collapsed')));
+      btn.setAttribute(
+        'aria-expanded',
+        String(!stack.classList.contains('info-collapsed'))
+      );
     });
   })();
 });
+
 
 
 
