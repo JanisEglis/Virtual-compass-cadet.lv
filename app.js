@@ -1,26 +1,25 @@
-/* ===== PRELOADER – gaida līdz lapa+attēli (un, ja aktīvi, arī pirmās karšu flīzes) ir gatavi ===== */
 (function(){
   const pre = document.getElementById('app-preloader');
-  if(!pre){ return; }
+  if(!pre) return;
 
-  // nobloķē ritināšanu līdz “[gatavs]”
   document.body.classList.add('preloading');
 
   const bar = pre.querySelector('.progress > span');
   const msg = pre.querySelector('.msg');
   const skipBtn = pre.querySelector('#preloaderSkip');
 
-  let total = 1;    // vismaz “window.load”
+  let total = 1; // vismaz loga "load"
   let done  = 0;
+  let closed = false;
 
-  const tick = (label) => {
-    done = Math.min(done+1, total);
+  const tick = (why) => {
+    done = Math.min(done + 1, total);
     const pct = Math.max(0, Math.min(100, Math.round((done/total)*100)));
-    if(bar) bar.style.width = pct + '%';
-    if(msg) msg.textContent = `Ielādējam… ${pct}%`;
+    if (bar) bar.style.width = pct + '%';
+    if (msg) msg.textContent = `Ielādējam… ${pct}%`;
   };
 
-  // Savācam svarīgās bildes (kompass + pogu ikonas u.c.) un gaidām to ielādi
+  // === DROŠĀKA bildeņu savākšana (ignorē tukšu src) ===
   const imgSet = new Set();
   [
     '#compassContainer img',
@@ -32,28 +31,27 @@
     '#newUploadedImg',
     '#resizeHandle img'
   ].forEach(sel => {
-    document.querySelectorAll(sel).forEach(img => { if(img && img.src) imgSet.add(img); });
+    document.querySelectorAll(sel).forEach(img => {
+      const raw = img.getAttribute('src');           // ← nevis img.src
+      if (raw && raw.trim() !== '') imgSet.add(img); // ignorē tukšos
+    });
   });
 
   const imgPromises = Array.from(imgSet).map(imgEl => new Promise(res=>{
-    if(imgEl.complete && imgEl.naturalWidth > 0){ res('cached'); return; }
+    if (imgEl.complete && imgEl.naturalWidth > 0) { res('cached'); return; }
     imgEl.addEventListener('load',  () => res('load'),  {once:true});
     imgEl.addEventListener('error', () => res('error'), {once:true});
   }).then(tick));
-
   total += imgPromises.length;
 
-  // Ja tiešsaistes karte startā ir ieslēgta, mēģinām sagaidīt pirmās flīzes (bez “mūžīgās gaidīšanas”)
+  // (ja izmanto tiešsaistes karti startā – tikai progressam; nekad nebloķē finish)
   (function watchTilesIfNeeded(){
     try{
       if(localStorage.getItem('onlineMapActive') !== '1') return;
       const host = document.getElementById('onlineMap');
       if(!host) return;
-
-      // sagaidām ~8 flīzes vai max 4s
       let target = 8, seen = 0;
       total += target;
-
       const onTile = ()=>{ if(seen < target){ seen++; tick('tile'); } };
       const obs = new MutationObserver(recs=>{
         recs.forEach(r=>{
@@ -66,28 +64,34 @@
         });
       });
       obs.observe(host, {subtree:true, childList:true});
-      setTimeout(()=>{ obs.disconnect(); /* neatstāj atvērtu */ }, 4000);
+      setTimeout(()=>obs.disconnect(), 4000);
     }catch(e){}
   })();
 
-  // “window load” – kad viss statiskais jau ielādēts
-  const pageLoaded = new Promise(res => window.addEventListener('load', () => { tick('window'); res(); }, {once:true}));
+  // “window load” — ķer arī gadījumu, ja tas jau ir noticis
+  const pageLoaded = new Promise(res => {
+    if (document.readyState === 'complete') { tick('win-complete'); res(); }
+    else window.addEventListener('load', () => { tick('win-load'); res(); }, {once:true});
+  });
 
-  // Drošības tainauts, lai nelimst (piedāvā “Turpināt” pēc 6s)
+  // Poga “Turpināt” un cietais timeouts
   const showSkip = setTimeout(()=> pre.classList.add('show-skip'), 6000);
-  skipBtn.addEventListener('click', finish, {once:true});
+  
+  skipBtn.addEventListener('click', () => finish('skip'), {once:true});
 
-  // Kad viss gatavs – noslēdzam
-  Promise.allSettled(imgPromises); // paralēli, bet neko nebloķē
   Promise.all([ pageLoaded, Promise.allSettled(imgPromises) ])
-    .then(()=> new Promise(r=> setTimeout(r, 300)))  // mazs “elpas” brīdis layoutam
-    .then(finish);
+    .then(()=> new Promise(r=> setTimeout(r, 300)))
+    .then(()=> finish('ready'));
 
-  function finish(){
-    clearTimeout(showSkip);
+  function finish(reason){
+    if (closed) return;
+    closed = true;
+    clearTimeout(showSkip); clearTimeout(hardCut);
     pre.classList.add('hidden');
     document.body.classList.remove('preloading');
-    setTimeout(()=> pre.remove(), 480); // pēc animācijas tiešām noņemam no DOM
+    // debug, ja vajag:
+    console.debug('[preloader] finish:', reason, {done, total});
+    setTimeout(()=> pre.remove(), 480);
   }
 })();
 
