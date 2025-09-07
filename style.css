@@ -1982,28 +1982,46 @@
 
 
 
-/* 👇 cik plats korpuss, kad salocīts (pielāgo: 10px, 24px, 32px...) */
+/* bāzes vērtība (desktopam) */
 :root{ --infoCollapsedW: 60px; }
 
-/* Salocīts: uzspiežam precīzu platumu un notīrām “max-content” efektu */
-#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left.info-collapsed{
-  display: block !important;              /* iPad/Safari — lai platums tiešām strādā */
-  box-sizing: border-box !important;      /* padding iet iekšā norādītajā platumā */
-  width: var(--infoCollapsedW) !important;
-  min-width: var(--infoCollapsedW) !important;
-  max-width: var(--infoCollapsedW) !important;
+/* TABLETE (tipiski 600–1024px un “coarse” pointers) */
+@media (hover: none) and (pointer: coarse) and (min-width: 600px) and (max-width: 1024px){
+  :root{
+    --infoCollapsedW: 60px;   /* pielāgo: cik šauru gribi salocītu uz planšetes */
+    --info-expose: 36px;      /* roktura augstums — ērtāk trāpīt ar pirkstu */
+  }
 
-  /* horizontālo padding samazini, lai 10px būtu reāli, nevis 10 + 12 + 12 */
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  /* mazāks iekšējais horizontālais padding planšetei */
+  #onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left{
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
 
-  gap: 0 !important;                      /* bez liekām spraugām */
+  /* salocītā stāvokļa platuma “force” + noņemam padding, lai platums būtu īsts */
+  #onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left.info-collapsed{
+    display: block !important;                /* Safari/iPad respektē width */
+    box-sizing: border-box !important;
+    width: var(--infoCollapsedW) !important;
+    min-width: var(--infoCollapsedW) !important;
+    max-width: var(--infoCollapsedW) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    gap: 0 !important;                        /* bez starpām, lai nesačakarē platumu */
+  }
+
+  /* rokturis aizņem visu šauro joslu un ir tik augsts, cik --info-expose */
+  #onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left .info-handle{
+    width: 100% !important;
+    height: var(--info-expose) !important;
+  }
 }
 
-/* rokturim ļaujam aizņemt visu atlikušo šauro platumu */
-#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left.info-collapsed .info-handle{
-  width: 100% !important;
+/* (ne obligāti) — mazajiem telefoniem var dot vēl šaurāku salocījumu */
+@media (max-width: 599px){
+  :root{ --infoCollapsedW: 40px; --info-expose: 34px; }
 }
+
 
 
 
