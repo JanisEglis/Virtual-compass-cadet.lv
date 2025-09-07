@@ -1958,7 +1958,10 @@
 	pointer-events: auto;
 }
 
-
+#onlineMap .info-handle{
+  touch-action: manipulation;     /* mazina 300ms tap delay */
+  -webkit-tap-highlight-color: transparent;
+}
 
 
 
