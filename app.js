@@ -1536,14 +1536,7 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 
 							
 
-						// PIEVIENO APMALI UZ CANVAS
-						ctx.lineWidth = 2; // Apmales biezums
-						ctx.strokeStyle = "red"; // Apmales krāsa
-						ctx.strokeRect(imgX, imgY, imgWidth * imgScale, imgHeight * imgScale); // Apvelk attēlu
-
-						positionResizeHandle(); // Nodrošina, ka izmēru maiņas punkts ir pareizā vietā
-						resizeHandle.style.display = 'block';
-						};
+						
 
 
 
