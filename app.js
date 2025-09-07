@@ -434,6 +434,9 @@ function setDarkness(percent){
 (function(){
   const mapDiv   = document.getElementById('onlineMap');
   const mapDim   = document.getElementById('onlineMapDim');
+	if (mapDiv && mapDim && mapDim.parentElement !== mapDiv) {
+  mapDiv.appendChild(mapDim);
+}
   const btn      = document.getElementById('toggleOnlineMap');
   const canvas   = document.getElementById('mapCanvas');
   const resizeH  = document.getElementById('resizeHandle');
