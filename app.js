@@ -1062,20 +1062,23 @@ map.whenReady(() => {
 map.whenReady(() => {
   (function addInfoHandle() {
     const stack = document.querySelector('#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left');
-    if (!stack || stack.querySelector('.info-handle')) return;
+    if (!stack) return;
 
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'info-handle';
-    btn.setAttribute('aria-expanded', 'true');
-    btn.setAttribute('title', 'Parādīt/slēpt info paneli');
-    btn.innerHTML = `
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>`;
-
-    stack.appendChild(btn);
+    // ja poga jau ir HTML → paņemam to; citādi izveidojam
+    let btn = stack.querySelector('.info-handle');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'info-handle';
+      btn.setAttribute('aria-expanded', 'true');
+      btn.setAttribute('title', 'Parādīt/slēpt info paneli');
+      btn.innerHTML = `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+      stack.appendChild(btn);
+    }
 
     // neļaujam kartes pannam “apēst” klikus
     if (window.L && L.DomEvent) {
@@ -1084,18 +1087,22 @@ map.whenReady(() => {
     }
 
     const toggle = (ev) => {
-      ev && (ev.preventDefault(), ev.stopPropagation());
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
       stack.classList.toggle('info-collapsed');
       const expanded = !stack.classList.contains('info-collapsed');
       btn.setAttribute('aria-expanded', String(expanded));
+      // neliels vizuāls signāls – apgriežam bultiņu ar CSS klasi
+      btn.classList.toggle('collapsed', !expanded);
     };
 
+    // PIESIENAM klausītājus (gan uz jau esošu, gan jaunuztaisītu pogu)
     btn.addEventListener('click', toggle);
     btn.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') toggle(e);
     });
   })();
 });
+
 
 
 
