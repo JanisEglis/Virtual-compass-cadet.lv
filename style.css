@@ -37,8 +37,24 @@ body.preloading{ overflow: hidden; }
 #app-preloader.show-skip .skip{ display:inline-block; }
 @keyframes spin { to{ transform: rotate(360deg); } }
 
+#app-preloader .preloader-about{
+  display: flex;
+  gap: 16px;                 /* atstarpes starp vienumiem */
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,.85);
+  font-weight: 700;
+  font-size: clamp(12px, 1.4vw, 16px); /* pielāgojas ekrānam */
+  letter-spacing: .02em;
+  white-space: nowrap;       /* vienā rindā */
+  user-select: none;
+}
 
-
+#app-preloader .preloader-about span + span::before{
+  content: "|";
+  margin: 0 10px;
+  opacity: .6;
+}
 
 
 
