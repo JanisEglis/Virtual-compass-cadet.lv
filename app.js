@@ -1029,23 +1029,28 @@ map.setView([56.9496, 24.1052], 13);
 
 // režģi un slāņu kontroli veido tikai tad, kad karte tiešām “gatava”
 map.whenReady(() => {
-  // saņemam līniju un etiķešu slāņus
+  // saņemam ABUS slāņus no funkcijas
   const { grid, labels } = createUTMGridLayers();
-  // apvienojam vienā slānī, ko var ieslēgt/izslēgt
-  const utmGrid = L.layerGroup([grid, labels]);
 
-  const overlays = { 'MGRS režģis (1–20 km)': utmGrid };
+  // ieliekam katru atsevišķi kā pārklājumu
+  const overlays = {
+    'MGRS režģa līnijas (1–20 km)': grid,
+    'MGRS etiķetes': labels,
+  };
 
   const layersCtl = L.control.layers(baseLayers, overlays, {
     collapsed: true,
     position: 'topright'
   }).addTo(map);
 
-  utmGrid.addTo(map);
+  // abi defaultā ieslēgti
+  grid.addTo(map);
+  labels.addTo(map);
 
   // ▶ Slāņu panelis: atveras ar klikšķi, aizveras pēc izvēles
   makeLayersClickOnly(layersCtl);
 });
+
 
 
 
