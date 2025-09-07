@@ -1983,7 +1983,7 @@
 
 
 /* 👇 cik plats korpuss, kad salocīts (pielāgo: 10px, 24px, 32px...) */
-:root{ --infoCollapsedW: 10px; }
+:root{ --infoCollapsedW: 60px; }
 
 /* Salocīts: uzspiežam precīzu platumu un notīrām “max-content” efektu */
 #onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left.info-collapsed{
