@@ -247,6 +247,7 @@ document.getElementById('toggleRotationMode').addEventListener('click', () => {
 							const rightToggleButton = document.querySelector('.toggle-selector');
 							leftToggleButton.textContent = '❯';
 							rightToggleButton.textContent = '❮';
+window.__updateMapSafeAreas && window.__updateMapSafeAreas();
 						}
 
 						// Labās puses pogas klausītājs
@@ -449,17 +450,16 @@ function setDarkness(percent){
 
 
 /* === SAFE AREAS kalkulācija kartes kontrolēm (augša/apakša) === */
+
 (function(){
   const topSelectors = [
     '#fullscreenMessage:not(.fs-message-hidden)',
-    '.position-selector:not(.hidden)',
-    '.position-selector-left:not(.hidden-left)',
     '.top-bar',
     '.dropdown-menu.visible',
     '#contentFrame.active',
-    '#instructionFrame.active',
-    '#toggleInstruction',
-    '#toggleMaterials'
+    '#instructionFrame.active'
+    // ⬅️ NOŅEMAM .position-selector un .position-selector-left,
+    // lai sānu paneļi neietekmētu top drošo zonu
   ];
 
   const bottomSelectors = [
@@ -470,20 +470,32 @@ function setDarkness(percent){
 
   function visibleOverlapTop(el){
     const st = getComputedStyle(el);
-    if (st.display === 'none' || st.visibility === 'hidden' || el.offsetParent === null) return 0;
     const r = el.getBoundingClientRect();
+    // “nederīgs/neredzams” elements
+    if (st.display === 'none' || st.visibility === 'hidden' || r.width === 0 || r.height === 0) return 0;
+
+    // Skaitām tikai elementus, kas tiešām ietekmē AUGŠU:
+    //  - platus (>= 50% no viewport platuma) UN
+    //  - atrodas pašā augšā (r.top tuvu 0) vai ir "fixed" un aizsedz augšējo joslu
+    const isWide = r.width >= window.innerWidth * 0.5;
+    const nearTop = r.top <= 12; // ~12px no ekrāna augšas
+    const pinnedTop = (st.position === 'fixed' && r.top < 40); // fixed pārklājums pie augšas
+
+    if (!isWide || !(nearTop || pinnedTop)) return 0;
+
     const TOP_BAND = Math.min(180, Math.round(window.innerHeight * 0.22));
     const intersects = r.top < TOP_BAND && r.bottom > 0;
     if (!intersects) return 0;
+
     return Math.max(0, Math.min(r.bottom, TOP_BAND));
   }
 
   function visibleOverlapBottom(el){
     const st = getComputedStyle(el);
-    if (st.display === 'none' || st.visibility === 'hidden' || el.offsetParent === null) return 0;
     const r = el.getBoundingClientRect();
+    if (st.display === 'none' || st.visibility === 'hidden' || r.width === 0 || r.height === 0) return 0;
     const H = window.innerHeight;
-    const BOTTOM_BAND = Math.min(220, Math.round(H * 0.28)); // var pielāgot
+    const BOTTOM_BAND = Math.min(220, Math.round(H * 0.28));
     const intersects = r.bottom > (H - BOTTOM_BAND) && r.top < H;
     if (!intersects) return 0;
     return Math.max(0, Math.min(r.bottom, H) - Math.max(r.top, H - BOTTOM_BAND));
@@ -505,18 +517,14 @@ function setDarkness(percent){
     return Math.round(px);
   }
 
-// kur aprēķini safe zonas:
-function updateMapSafeAreas(){
-  const topPx    = getTopSafePx();
-  const bottomPx = getBottomSafePx();
-  document.documentElement.style.setProperty('--map-top-safe',    topPx + 'px');
-  document.documentElement.style.setProperty('--map-bottom-safe', bottomPx + 'px');
-
-  // konservatīvs buferis virs about (pielāgo, ja vajag)
-  document.documentElement.style.setProperty('--map-bottom-gap', '35px');
-
-  try { map && map.invalidateSize(true); } catch(e){}
-}
+  function updateMapSafeAreas(){
+    const topPx    = getTopSafePx();
+    const bottomPx = getBottomSafePx();
+    document.documentElement.style.setProperty('--map-top-safe',    topPx + 'px');
+    document.documentElement.style.setProperty('--map-bottom-safe', bottomPx + 'px');
+    document.documentElement.style.setProperty('--map-bottom-gap', '35px');
+    try { map && map.invalidateSize(true); } catch(e){}
+  }
 
   window.__updateMapSafeAreas = updateMapSafeAreas;
 
@@ -529,6 +537,7 @@ function updateMapSafeAreas(){
     window.visualViewport.addEventListener('scroll', call);
   }
 })();
+
 
 
 
