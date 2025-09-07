@@ -513,7 +513,7 @@ function updateMapSafeAreas(){
   document.documentElement.style.setProperty('--map-bottom-safe', bottomPx + 'px');
 
   // konservatīvs buferis virs about (pielāgo, ja vajag)
-  document.documentElement.style.setProperty('--map-bottom-gap', '28px');
+  document.documentElement.style.setProperty('--map-bottom-gap', '35px');
 
   try { map && map.invalidateSize(true); } catch(e){}
 }
