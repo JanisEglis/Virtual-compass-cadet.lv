@@ -983,7 +983,7 @@ function createUTMGridLayer(){
     const minN = Math.floor(Math.min(nwU.northing, seU.northing) / step) * step;
     const maxN = Math.ceil (Math.max(seU.northing, nwU.northing) / step) * step;
 
-    const labelZoom = z >= 11; // tikai pie pietuvinājuma rādam tekstus
+    const labelZoom = z >= false; // tikai pie pietuvinājuma rādam tekstus
     const midN = (minN + maxN) / 2;
     const midE = (minE + maxE) / 2;
 
@@ -1030,9 +1030,19 @@ map.setView([56.9496, 24.1052], 13);
 // režģi un slāņu kontroli veido tikai tad, kad karte tiešām “gatava”
 map.whenReady(() => {
   const utmGrid = createUTMGridLayer();
-  L.control.layers(baseLayers, { 'MGRS režģis (1–20 km)': utmGrid }, { collapsed:true, position:'topright' }).addTo(map);
+  const overlays = { 'MGRS režģis (1–20 km)': utmGrid };
+
+  const layersCtl = L.control.layers(baseLayers, overlays, {
+    collapsed: true,
+    position: 'topright'
+  }).addTo(map);
+
   utmGrid.addTo(map);
+
+  // ▶ Slāņu panelis: atveras ar klikšķi, aizveras pēc izvēles
+  makeLayersClickOnly(layersCtl);
 });
+
 
 
     // klasiskā skala + 1:xxxx
@@ -1122,6 +1132,39 @@ map.whenReady(() => {
 
 
 
+function makeLayersClickOnly(layersCtl){
+  const c    = layersCtl._container;
+  const link = layersCtl._layersLink;
+
+  // Noņem hover expand/collapse
+  L.DomEvent.off(c,    'mouseenter', layersCtl._expand,   layersCtl);
+  L.DomEvent.off(c,    'mouseleave', layersCtl._collapse, layersCtl);
+  L.DomEvent.off(link, 'focus',      layersCtl._expand,   layersCtl);
+
+  // Toggling ar klikšķi / Enter / Space
+  function toggle(e){
+    L.DomEvent.stop(e);
+    const open = L.DomUtil.hasClass(c, 'leaflet-control-layers-expanded');
+    open ? layersCtl._collapse() : layersCtl._expand();
+  }
+  L.DomEvent.on(link, 'click',     toggle);
+  L.DomEvent.on(link, 'pointerup', toggle);
+  L.DomEvent.on(link, 'keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') toggle(e);
+  });
+
+  // Aizver TIKAI pēc izvēles (radio/checkbox). Turi SHIFT, lai neaizvērtu.
+  const form = c.querySelector('.leaflet-control-layers-list') || c;
+  form.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(inp => {
+    inp.addEventListener('click', (ev) => {
+      if (ev.shiftKey) return;
+      setTimeout(() => layersCtl._collapse(), 80);
+    });
+  });
+
+  // Atspējo klikšķu “izsūci” uz karti
+  L.DomEvent.on(c, 'click mousedown dblclick', L.DomEvent.stopPropagation);
+}
 
 
 
@@ -1189,6 +1232,8 @@ map.whenReady(() => {
     btn.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(e); }
     });
+
+
   })();
 });
 
