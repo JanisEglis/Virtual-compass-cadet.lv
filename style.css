@@ -1811,22 +1811,26 @@
 
 
 
-/* ================== LEAFLET INFO STACK — vienots stils ================== */
+/* ================== LEAFLET INFO STACK — v2.1 (vienots stils + handle) ================== */
 :root{
-  /* pielāgo kā vajag */
-  --infoStackW: 260px;                           /* visas rindiņas vienā platumā */
-  --infoStackLeft: 20px;                         /* kreisā atkāpe no malas, ja neizmanto --bottomleft-left */
+  /* izkārtojums */
+  --infoStackW: 260px;          /* visas rindiņas vienā platumā */
+  --infoStackLeft: 20px;        /* kreisā atkāpe, ja nav --bottomleft-left */
   --infoPad: 6px;
   --infoGap: 8px;
+
+  /* roktura/atvilknes iestatījumi */
+  --info-expose: 28px;          /* cik daudz paliek redzams, kad paslēpts */
 }
 
-/* atbīdam apakš-kreiso kolonnu no kreisās malas ar tavu mainīgo */
+/* Atbīdam apakš-kreiso kolonnu no kreisās malas ar tavu mainīgo */
 .leaflet-control-container .leaflet-bottom.leaflet-left{
   left: var(--bottomleft-left, var(--infoStackLeft)) !important;
 }
 
-/* kapsula ap visu apakš-kreiso “stabiņu” (dock look&feel) */
+/* Kapsula ap visu apakš-kreiso “stabiņu” (dock look&feel) */
 .leaflet-control-container .leaflet-bottom.leaflet-left{
+  position: relative !important;
   display: inline-flex !important;
   flex-direction: column !important;
   align-items: stretch !important;
@@ -1839,6 +1843,8 @@
   box-shadow: var(--dock-shadow, 0 12px 28px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.35)) !important;
   backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
+  transition: transform .26s ease;  /* priekš atvilknes animācijas */
+  will-change: transform;
 }
 
 /* IKVIENA rinda vienādā platumā un ar “tabletes” fonu */
@@ -1854,20 +1860,17 @@
   box-shadow: 0 6px 16px rgba(0,0,0,.28) !important;
   margin: 0 !important;
   box-sizing: border-box !important;
+  overflow: hidden !important;      /* drošības josta pret “izlēcieniem” */
+  min-width: 0 !important;
 }
 
-/* koordināšu tekstam — neļaut lauzt izkārtojumu */
-#mousePosCtl{
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+/* Koordināšu tekstam — neļaut lauzt izkārtojumu */
+#mousePosCtl{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* skala (“2 km”) — nogalinām balto bloku, salīdzinām ar pārējiem */
-.leaflet-control-scale{
-  width: var(--infoStackW) !important;
-  max-width: var(--infoStackW) !important;
-}
+/* Skala (piem., “2 km”) — tumšs, pilnā platumā */
+.leaflet-control-scale{ width: var(--infoStackW) !important; max-width: var(--infoStackW) !important; }
 .leaflet-control-scale-line{
-  width: 100% !important;                          /* ja gribi atstāt “īstā mēroga” joslas platumu, šo rindu izdzēs */
+  width: 100% !important;                       /* = saskaņots ar pārējiem */
   background: rgba(255,255,255,.08) !important;
   border: 1px solid rgba(255,255,255,.25) !important;
   color: #fff !important;
@@ -1876,15 +1879,21 @@
   line-height: 1.1 !important;
   box-sizing: border-box !important;
 }
-.leaflet-control-scale-line:not(:last-child){
-  border-bottom: none !important;
-}
+.leaflet-control-scale-line:not(:last-child){ border-bottom: none !important; }
 
-/* “Mērogs: 1:25 000” select — tumšs un pilnā platumā */
+/* “Mērogs: 1:25 000” select — tumšs, 100% platumā (overflow fix) */
+.leaflet-bottom.leaflet-left #scalePicker,
+.leaflet-bottom.leaflet-left .leaflet-control { box-sizing: border-box !important; overflow: hidden !important; min-width: 0 !important; }
+.leaflet-bottom.leaflet-left #scalePicker *{ max-width: 100% !important; box-sizing: border-box !important; }
+
 .leaflet-bottom.leaflet-left select,
 #scalePicker select{
+  display: block !important;
   width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
   appearance: none !important;
+  -webkit-appearance: none !important;
   background: rgba(0,0,0,.35) !important;
   color: #fff !important;
   border: 1px solid rgba(255,255,255,.10) !important;
@@ -1893,14 +1902,44 @@
   font: 12px/1.2 system-ui,-apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
 }
 .leaflet-bottom.leaflet-left select option{
-  background: rgba(0,0,0,.85) !important;
-  color: #fff !important;
+  background: rgba(0,0,0,.85) !important; color: #fff !important;
 }
 
-/* lai apakšējās kontroles nestāvētu virs taviem apakšējiem UI */
+/* Apakšējās kontroles nelien virs tava apakšējā UI */
 .leaflet-bottom{
   bottom: calc(var(--map-bottom-safe, 0px) + var(--map-bottom-gap, 35px)) !important;
 }
+
+/* ========= ROKTURIS (manuāla atvēršana/aizvēršana) ========= */
+/* Noslēgtais stāvoklis: noslīdam lejup, atstājot redzamu tikai rokturi */
+.leaflet-control-container .leaflet-bottom.leaflet-left.info-collapsed{
+  transform: translateY(calc(100% - var(--info-expose)));
+}
+
+/* Roktura poga virs kapsulas */
+.leaflet-control-container .leaflet-bottom.leaflet-left .info-handle{
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translate(-50%, -100%);
+  width: 45px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #dd2222a1, #b01616);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.25);
+  border-radius: 10px 10px 0 0;
+  box-shadow: 0 8px 18px rgba(0,0,0,.35);
+  cursor: pointer; user-select: none;
+  z-index: 2;
+  padding:0; font-size:0;
+}
+
+.leaflet-control-container .leaflet-bottom.leaflet-left .info-handle svg{
+  width: 70%; height: 70%; transition: transform .2s ease;
+}
+.leaflet-control-container .leaflet-bottom.leaflet-left.info-collapsed .info-handle svg{
+  transform: rotate(180deg);
+}
+
 
 
 
