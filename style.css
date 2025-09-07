@@ -1851,7 +1851,7 @@
 .leaflet-bottom.leaflet-left .leaflet-control,
 #scaleRatioCtl, #mousePosCtl, #scalePicker{
   width: var(--infoStackW) !important;
-  max-width: var(--infoStackW) !important;
+  
   background: rgba(0,0,0,.35) !important;
   border: 1px solid rgba(255,255,255,.10) !important;
   border-radius: 8px !important;
@@ -1862,6 +1862,7 @@
   box-sizing: border-box !important;
   overflow: hidden !important;      /* drošības josta pret “izlēcieniem” */
   min-width: 0 !important;
+	text-align: center;
 }
 
 /* Koordināšu tekstam — neļaut lauzt izkārtojumu */
