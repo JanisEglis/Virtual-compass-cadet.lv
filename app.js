@@ -765,9 +765,7 @@ function utmToLL(E, N, zone, hemi){
     if (!window.L){ console.warn('Leaflet nav ielādēts'); return false; }
 
     map = L.map(mapDiv, { zoomControl:true, attributionControl:true });
-map.createPane('gridPane');
-map.getPane('gridPane').style.zIndex = 420; // virs tiles, zem markeriem
-const gridRenderer = L.canvas({ padding: 0.3 }); // gludai veiktspējai
+
     const osm  = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '&copy; OpenStreetMap'
     }).addTo(map);
@@ -901,55 +899,30 @@ map.on('moveend zoomend', ()=>{ updateRatio(); syncScalePicker(); });
 
 
 	  
+
 function createUTMGridLayer(){
   const g = L.layerGroup();
 
-  function redraw(){
-    if (!map || !map._loaded) return;
-    g.clearLayers();
+function redraw(){
+  if (!map || !map._loaded) return; // <- neļaujam zvanīt pirms centrs/zoom
+  g.clearLayers();
 
-    const z  = map.getZoom();
-    // režģa solis (m) atkarībā no zoom
+  const z = map.getZoom();
+    // solis km (atkarībā no tālummaiņas)
     const step = (z>=14)?1000 : (z>=12)?2000 : (z>=10)?5000 : (z>=8)?10000 : 20000;
 
-    // “major” ik pēc 10km (vai 20km, ja solis ir 20km)
-    const majorEvery = (step >= 20000) ? 20000 : 10000;
-
-    // līniju biezums (px) pēc zoom
-    const baseW = (z>=15)?2.6 : (z>=13)?2.2 : (z>=11)?1.8 : 1.4;
-
-    // palīdzfunkcija – pievieno vienu līniju ar kontūru un pamanāmu toni
-    function addLine(pts, isMajor){
-      const topColor   = isMajor ? '#ff3b30' : '#ff6b6b';   // spilgts sarkans / gaišāks sarkans
-      const topOpac    = isMajor ? 0.95 : 0.85;
-      const topWeight  = isMajor ? baseW+0.6 : baseW;
-
-      // 1) balta kontūra zem (lai izceltos uz tumša/sat. fona)
-      g.addLayer(L.polyline(pts, {
-        pane:'gridPane', renderer:gridRenderer, interactive:false,
-        color:'#ffffff', opacity:0.9, weight: topWeight + 2, lineCap:'butt'
-      }));
-
-      // 2) pati līnija virsū
-      g.addLayer(L.polyline(pts, {
-        pane:'gridPane', renderer:gridRenderer, interactive:false,
-        color: topColor, opacity: topOpac, weight: topWeight,
-        lineCap:'butt',
-        dashArray: isMajor ? null : (z>=13 ? '8 6' : '6 8') // minor – viegli svītrots
-      }));
-    }
-
-    const b  = map.getBounds();
+    const b = map.getBounds();
     const nw = b.getNorthWest(), se = b.getSouthEast();
 
-    // UTM zona pēc centra; ja skatā iekrīt 2 zonas — nerādām, lai nebūtu kļūdains siets
     const c   = map.getCenter();
-    const z0  = utmZoneSpecial(c.lat, c.lng, utmZone(c.lng));
+    const z0  = utmZoneSpecial(c.lat, c.lng, utmZone(c.lng));           // UTM zona pēc centra
     const nwU = llToUTM(nw.lat, nw.lng);
     const seU = llToUTM(se.lat, se.lng);
+
+    // vienkāršība: ja skatā iekšā ir 2 dažādas zonas — nerežģojam (lai nerādītu kļūdainu sietu)
     if (nwU.zone !== seU.zone) return;
 
-    const hemi = nwU.hemi;
+    const hemi = nwU.hemi; // 'N' vai 'S'
 
     const minE = Math.floor(Math.min(nwU.easting,  seU.easting)  / step) * step;
     const maxE = Math.ceil (Math.max(nwU.easting,  seU.easting)  / step) * step;
@@ -959,30 +932,27 @@ function createUTMGridLayer(){
     // easting līnijas
     for (let E = minE; E <= maxE; E += step){
       const pts = [];
-      for (let N = minN; N <= maxN; N += Math.max(250, step/4)){ // pietiekami blīvi punkti līkumošanai
+      for (let N = minN; N <= maxN; N += step/4){
         const ll = utmToLL(E, N, z0, hemi);
         pts.push([ll.lat, ll.lon]);
       }
-      const isMajor = (E % majorEvery) === 0;
-      addLine(pts, isMajor);
+      g.addLayer(L.polyline(pts, {weight:1, opacity:0.35, color:'#ff0000'}));
     }
-
     // northing līnijas
     for (let N = minN; N <= maxN; N += step){
       const pts = [];
-      for (let E = minE; E <= maxE; E += Math.max(250, step/4)){
+      for (let E = minE; E <= maxE; E += step/4){
         const ll = utmToLL(E, N, z0, hemi);
         pts.push([ll.lat, ll.lon]);
       }
-      const isMajor = (N % majorEvery) === 0;
-      addLine(pts, isMajor);
+      g.addLayer(L.polyline(pts, {weight:1, opacity:0.35, color:'#ff0000'}));
     }
   }
 
   map.on('moveend zoomend', redraw);
+  
   return g;
 }
-
 
 
 
