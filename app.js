@@ -959,62 +959,66 @@ function createUTMGridLayers(){
     }
   }
 
-  function redraw(){
-    if (!map || !map._loaded) return;
-    gLines.clearLayers();
-    gLabels.clearLayers();
+ function redraw(){
+  if (!map || !map._loaded) return;
+  gLines.clearLayers();
+  gLabels.clearLayers();
 
-    const z  = map.getZoom();
-    const step = (z>=14)?1000 : (z>=12)?2000 : (z>=10)?5000 : (z>=8)?10000 : 20000;
+  const z  = map.getZoom();
+  const step = (z>=14)?1000 : (z>=12)?2000 : (z>=10)?5000 : (z>=8)?10000 : 20000;
 
-    const b  = map.getBounds();
-    const nw = b.getNorthWest(), se = b.getSouthEast();
+  const b  = map.getBounds();
+  const nw = b.getNorthWest(), se = b.getSouthEast();
 
-    const c   = map.getCenter();
-    const z0  = utmZoneSpecial(c.lat, c.lng, utmZone(c.lng));
-    const nwU = llToUTM(nw.lat, nw.lng);
-    const seU = llToUTM(se.lat, se.lng);
-    if (nwU.zone !== seU.zone) return;
+  // vienmēr zīmē vienas (centrālās) UTM zonas koordinātēs
+  const c   = map.getCenter();
+  const z0  = utmZoneSpecial(c.lat, c.lng, utmZone(c.lng));
+  const hemi = (c.lat >= 0) ? 'N' : 'S';
 
-    const hemi = nwU.hemi;
-    const minE = Math.floor(Math.min(nwU.easting,  seU.easting)  / step) * step;
-    const maxE = Math.ceil (Math.max(nwU.easting,  seU.easting)  / step) * step;
-    const minN = Math.floor(Math.min(nwU.northing, seU.northing) / step) * step;
-    const maxN = Math.ceil (Math.max(seU.northing, nwU.northing) / step) * step;
+  // stūrus konvertējam PIESPIESTAJĀ zonā (nevis pēc pašu stūru zonas)
+  const nwU = llToUTMInZone(nw.lat, nw.lng, z0);
+  const seU = llToUTMInZone(se.lat, se.lng, z0);
 
-    // rādīt etiķetes tikai pietuvinājumā (vajadzības gadījumā maini 12 → citu)
-    const labelZoom = z >= 12;
-    const midN = (minN + maxN) / 2;
-    const midE = (minE + maxE) / 2;
+  const minE = Math.floor(Math.min(nwU.easting,  seU.easting)  / step) * step;
+  const maxE = Math.ceil (Math.max(nwU.easting,  seU.easting)  / step) * step;
+  const minN = Math.floor(Math.min(nwU.northing, seU.northing) / step) * step;
+  const maxN = Math.ceil (Math.max(seU.northing, nwU.northing) / step) * step;
 
-    // Easting līnijas
-    for (let E = minE; E <= maxE; E += step){
-      const pts = [];
-      for (let N = minN; N <= maxN; N += step/4){
-        const ll = utmToLL(E, N, z0, hemi); pts.push([ll.lat, ll.lon]);
-      }
-      const isMajor = (E % 10000) === 0;
-      const labLL = utmToLL(E, midN, z0, hemi);
-      addLine(pts, isMajor, labelZoom, [labLL.lat, labLL.lon], 'E ' + Math.round(E/1000) + ' km');
+  const labelZoom = z >= true; // ← ja gribi etiķetes vienmēr: const labelZoom = true;
+  const midN = (minN + maxN) / 2;
+  const midE = (minE + maxE) / 2;
+
+  // Easting līnijas
+  for (let E = minE; E <= maxE; E += step){
+    const pts = [];
+    for (let N = minN; N <= maxN; N += step/4){
+      const ll = utmToLL(E, N, z0, hemi);
+      pts.push([ll.lat, ll.lon]);
     }
-    // Northing līnijas
-    for (let N = minN; N <= maxN; N += step){
-      const pts = [];
-      for (let E = minE; E <= maxE; E += step/4){
-        const ll = utmToLL(E, N, z0, hemi); pts.push([ll.lat, ll.lon]);
-      }
-      const isMajor = (N % 10000) === 0;
-      const labLL = utmToLL(midE, N, z0, hemi);
-      addLine(pts, isMajor, labelZoom, [labLL.lat, labLL.lon], 'N ' + Math.round(N/1000) + ' km');
-    }
+    const isMajor = (E % 10000) === 0;
+    const labLL = utmToLL(E, midN, z0, hemi);
+    addLine(pts, isMajor, labelZoom, [labLL.lat, labLL.lon], 'E ' + Math.round(E/1000) + ' km');
   }
 
+  // Northing līnijas
+  for (let N = minN; N <= maxN; N += step){
+    const pts = [];
+    for (let E = minE; E <= maxE; E += step/4){
+      const ll = utmToLL(E, N, z0, hemi);
+      pts.push([ll.lat, ll.lon]);
+    }
+    const isMajor = (N % 10000) === 0;
+    const labLL = utmToLL(midE, N, z0, hemi);
+    addLine(pts, isMajor, labelZoom, [labLL.lat, labLL.lon], 'N ' + Math.round(N/1000) + ' km');
+  }
+}
   map.on('moveend zoomend', redraw);
   setTimeout(redraw, 0);
 
   // atgriežam abus atsevišķus slāņus
   return { grid: gLines, labels: gLabels };
 }
+
 
 
 
@@ -1029,6 +1033,38 @@ map.setView([56.9496, 24.1052], 13);
 
 // režģi un slāņu kontroli veido tikai tad, kad karte tiešām “gatava”
 map.whenReady(() => {
+
+
+// LL → UTM piespiedu zonā (izmantojam centra zonu, lai režģis nepazūd)
+function llToUTMInZone(lat, lon, zone){
+  const phi  = deg2rad(lat);
+  const lam  = deg2rad(lon);
+  const lam0 = deg2rad((zone - 1)*6 - 180 + 3);
+
+  const N = a / Math.sqrt(1 - e2*Math.sin(phi)*Math.sin(phi));
+  const T = Math.tan(phi)*Math.tan(phi);
+  const C = ep2 * Math.cos(phi)*Math.cos(phi);
+  const A = Math.cos(phi) * (lam - lam0);
+
+  const M = a*((1 - e2/4 - 3*e2*e2/64 - 5*e2*e2*e2/256)*phi
+         - (3*e2/8 + 3*e2*e2/32 + 45*e2*e2*e2/1024)*Math.sin(2*phi)
+         + (15*e2*e2/256 + 45*e2*e2*e2/1024)*Math.sin(4*phi)
+         - (35*e2*e2*e2/3072)*Math.sin(6*phi));
+
+  let easting  = k0 * N * (A + (1-T+C)*Math.pow(A,3)/6 + (5-18*T+T*T+72*C-58*ep2)*Math.pow(A,5)/120) + 500000.0;
+  let northing = k0 * (M + N*Math.tan(phi)*(A*A/2 + (5-T+9*C+4*C*C)*Math.pow(A,4)/24 + (61-58*T+T*T+600*C-330*ep2)*Math.pow(A,6)/720));
+
+  const hemi = (lat >= 0) ? 'N' : 'S';
+  if (lat < 0) northing += 10000000.0;
+
+  return { zone, hemi, easting, northing, band: latBandLetter(lat) };
+}
+
+
+
+
+
+	
   // saņemam ABUS slāņus no funkcijas
   const { grid, labels } = createUTMGridLayers();
 
