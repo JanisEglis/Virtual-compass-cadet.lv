@@ -2094,10 +2094,7 @@ body.preloading{ overflow: hidden; }
 #onlineMap .leaflet-control { z-index: 2000 !important; }
 #onlineMap .leaflet-popup { z-index: 2100 !important; }
 
-/* Novieto izvēlnes zemāk par Leaflet */
-.position-selector-container,
-.position-selector,
-.position-selector-left { z-index: 400 !important; }
+
 
 /* Kad paneļi paslēpti – lai tie vispār neķertu peles/touch */
 .position-selector.hidden,
