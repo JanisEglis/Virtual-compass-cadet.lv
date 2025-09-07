@@ -2018,6 +2018,32 @@
 
 
 
+/* Liec Leaflet kontroles virs visa */
+#onlineMap .leaflet-control-container,
+#onlineMap .leaflet-top.leaflet-right,
+#onlineMap .leaflet-control { z-index: 2000 !important; }
+#onlineMap .leaflet-popup { z-index: 2100 !important; }
+
+/* Novieto izvēlnes zemāk par Leaflet */
+.position-selector-container,
+.position-selector,
+.position-selector-left { z-index: 400 !important; }
+
+/* Kad paneļi paslēpti – lai tie vispār neķertu peles/touch */
+.position-selector.hidden,
+.position-selector-left.hidden-left {
+  pointer-events: none !important; /* ja gribi animāciju, atstāj display un lieto opacity */
+  /* display: none;  ← ja animācijas nevajag, šis arī der */
+}
+
+/* Lai pats “container” nekad nebloku klikšķus ārpus redzamā paneļa */
+.position-selector-container { pointer-events: none; }
+.position-selector,
+.position-selector-left,
+.toggle-selector,
+.toggle-selector-left,
+#positionSelect,
+#positionSelectLeft { pointer-events: auto; }
 
 
 
