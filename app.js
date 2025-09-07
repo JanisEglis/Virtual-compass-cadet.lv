@@ -903,56 +903,120 @@ map.on('moveend zoomend', ()=>{ updateRatio(); syncScalePicker(); });
 function createUTMGridLayer(){
   const g = L.layerGroup();
 
-function redraw(){
-  if (!map || !map._loaded) return; // <- neļaujam zvanīt pirms centrs/zoom
-  g.clearLayers();
+  // Pane režģim (virs flīzēm, vienlaikus netraucē klikšķiem)
+  if (!map.getPane('gridPane')){
+    map.createPane('gridPane');
+    const p = map.getPane('gridPane');
+    p.style.zIndex = 490;
+    p.style.pointerEvents = 'none';
+  }
 
-  const z = map.getZoom();
-    // solis km (atkarībā no tālummaiņas)
+  // CSS etiketēm (ievieto vienreiz)
+  if (!document.getElementById('utm-grid-css')){
+    const el = document.createElement('style');
+    el.id = 'utm-grid-css';
+    el.textContent = `
+      .utm-label span{
+        display:inline-block;
+        background: rgba(0,0,0,.55);
+        color:#fff;
+        padding:2px 6px;
+        border-radius:6px;
+        font: 12px/1.25 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        text-shadow: 0 1px 0 #000, 0 0 3px #000;
+        white-space:nowrap;
+        user-select:none;
+      }
+      .utm-label.major span{ font-weight:700; }
+    `;
+    document.head.appendChild(el);
+  }
+
+  // Stili – košs sarkans ar baltu “halo”
+  const GRID_COLOR = '#ff3131';
+  const OUTLINE_COLOR = '#ffffff';
+
+  const MINOR = { pane:'gridPane', color: GRID_COLOR, opacity: 0.95, weight: 2.4, lineJoin:'round', lineCap:'round', dashArray:'6,6' };
+  const MINOR_OUT = { pane:'gridPane', color: OUTLINE_COLOR, opacity: 0.95, weight: MINOR.weight + 2.4, lineJoin:'round', lineCap:'round' };
+
+  const MAJOR = { pane:'gridPane', color: GRID_COLOR, opacity: 1.0,  weight: 3.6, lineJoin:'round', lineCap:'round' };
+  const MAJOR_OUT = { pane:'gridPane', color: OUTLINE_COLOR, opacity: 0.98, weight: MAJOR.weight + 3.0, lineJoin:'round', lineCap:'round' };
+
+  function addLine(points, isMajor, putLabel, labelLatLng, labelText){
+    const outline = L.polyline(points, isMajor ? MAJOR_OUT : MINOR_OUT).addTo(g);
+    const color   = L.polyline(points, isMajor ? MAJOR     : MINOR    ).addTo(g);
+    color.bringToFront();
+
+    if (putLabel && labelLatLng){
+      const icon = L.divIcon({
+        className: 'utm-label' + (isMajor ? ' major' : ''),
+        html: `<span>${labelText}</span>`,
+        iconSize:[0,0], iconAnchor:[0,0]
+      });
+      L.marker(labelLatLng, { icon, pane:'gridPane', interactive:false }).addTo(g);
+    }
+  }
+
+  function redraw(){
+    if (!map || !map._loaded) return;
+    g.clearLayers();
+
+    const z = map.getZoom();
+    // solis pēc zoom: 1/2/5/10/20 km
     const step = (z>=14)?1000 : (z>=12)?2000 : (z>=10)?5000 : (z>=8)?10000 : 20000;
 
-    const b = map.getBounds();
+    const b  = map.getBounds();
     const nw = b.getNorthWest(), se = b.getSouthEast();
 
     const c   = map.getCenter();
-    const z0  = utmZoneSpecial(c.lat, c.lng, utmZone(c.lng));           // UTM zona pēc centra
+    const z0  = utmZoneSpecial(c.lat, c.lng, utmZone(c.lng));
     const nwU = llToUTM(nw.lat, nw.lng);
     const seU = llToUTM(se.lat, se.lng);
 
-    // vienkāršība: ja skatā iekšā ir 2 dažādas zonas — nerežģojam (lai nerādītu kļūdainu sietu)
+    // Ja skatā iekrīt 2 UTM zonas – izlaižam (lai nerādītu greizi)
     if (nwU.zone !== seU.zone) return;
 
-    const hemi = nwU.hemi; // 'N' vai 'S'
+    const hemi = nwU.hemi;
 
     const minE = Math.floor(Math.min(nwU.easting,  seU.easting)  / step) * step;
     const maxE = Math.ceil (Math.max(nwU.easting,  seU.easting)  / step) * step;
     const minN = Math.floor(Math.min(nwU.northing, seU.northing) / step) * step;
-    const maxN = Math.ceil (Math.max(nwU.northing, seU.northing) / step) * step;
+    const maxN = Math.ceil (Math.max(seU.northing, nwU.northing) / step) * step;
 
-    // easting līnijas
+    const labelZoom = z >= 11; // tikai pie pietuvinājuma rādam tekstus
+    const midN = (minN + maxN) / 2;
+    const midE = (minE + maxE) / 2;
+
+    // Easting līnijas (E konst.)
     for (let E = minE; E <= maxE; E += step){
       const pts = [];
       for (let N = minN; N <= maxN; N += step/4){
         const ll = utmToLL(E, N, z0, hemi);
         pts.push([ll.lat, ll.lon]);
       }
-      g.addLayer(L.polyline(pts, {weight:1, opacity:0.35, color:'#ff0000'}));
+      const isMajor = (E % 10000) === 0; // ik pa 10 km – “major”
+      const labLL = utmToLL(E, midN, z0, hemi);
+      addLine(pts, isMajor, labelZoom, [labLL.lat, labLL.lon], 'E ' + Math.round(E/1000) + ' km');
     }
-    // northing līnijas
+
+    // Northing līnijas (N konst.)
     for (let N = minN; N <= maxN; N += step){
       const pts = [];
       for (let E = minE; E <= maxE; E += step/4){
         const ll = utmToLL(E, N, z0, hemi);
         pts.push([ll.lat, ll.lon]);
       }
-      g.addLayer(L.polyline(pts, {weight:1, opacity:0.35, color:'#ff0000'}));
+      const isMajor = (N % 10000) === 0; // ik pa 10 km – “major”
+      const labLL = utmToLL(midE, N, z0, hemi);
+      addLine(pts, isMajor, labelZoom, [labLL.lat, labLL.lon], 'N ' + Math.round(N/1000) + ' km');
     }
   }
 
   map.on('moveend zoomend', redraw);
-  
+  setTimeout(redraw, 0);
   return g;
 }
+
 
 
 
