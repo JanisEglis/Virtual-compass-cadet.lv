@@ -812,7 +812,8 @@ function zoomForScale(scale){
 }
 
 // pašas kontroles UI
-const scalePickCtl = L.control({position:'bottomleft'});
+const scalePickCtl = L.control({ position: 'bottomright' }); // bija: bottomleft
+
 scalePickCtl.onAdd = function(){
   const wrap = L.DomUtil.create('div', 'leaflet-control-attribution');
   Object.assign(wrap.style, {
