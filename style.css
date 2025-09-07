@@ -1776,8 +1776,8 @@
   bottom: calc(var(--map-bottom-safe, 0px) + var(--map-bottom-gap, 35px)) !important;
 }
 /* tikai #onlineMap iekšpusē */
-#onlineMap .leaflet-right .leaflet-control{
-  margin-right: 10px !important;
+#onlineMap .leaflet-bottom.leaflet-left .scale-picker-ctl{
+  transform: translateX(10px);
 }
 
 /* Lai inline SVG ikonām būtu tāds pats “fit” kā <img> */
