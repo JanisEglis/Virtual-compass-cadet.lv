@@ -823,7 +823,7 @@ scalePickCtl.onAdd = function(){
   wrap.title = 'Izvēlies mērogu';
 
   const label = document.createElement('span');
-  label.textContent = 'Mērogs: ';
+  label.textContent = 'Tīkla mērogs: ';
   label.style.marginRight = '6px';
 
   const select = document.createElement('select');
@@ -982,7 +982,7 @@ map.whenReady(() => {
       const mpp = 156543.03392 * Math.cos(c.lat*Math.PI/180) / Math.pow(2,z);
       const scale = Math.round(mpp / 0.00028);
       const el = document.getElementById('scaleRatioCtl');
-      if (el) el.textContent = 'Mērogs: 1:' + scale.toLocaleString('lv-LV');
+      if (el) el.textContent = 'Tīkla mērogs: 1:' + scale.toLocaleString('lv-LV');
     }
     map.on('moveend zoomend', updateRatio); updateRatio();
 
