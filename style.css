@@ -1770,8 +1770,24 @@
   pointer-events: none;
   z-index: 450;               /* zem .leaflet-control (500), virs flīzēm */
 }
+
+
+
+:root{
+  --bottomleft-left: 10px; /* cik pa labi no kreisās malas */
+}
+
+/* tikai apakšējā kreisā kolonna */
+#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-left{
+  left: var(--bottomleft-left) !important;
+}
+
+
+
+
+
+
 /* pacel Leaflet apakšējās kontroles virs apakšējā UI */
-/* vietā, kur tev ir +10px */
 #onlineMap .leaflet-bottom{
   bottom: calc(var(--map-bottom-safe, 0px) + var(--map-bottom-gap, 35px)) !important;
 }
