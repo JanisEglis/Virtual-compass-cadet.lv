@@ -183,7 +183,7 @@
 
 							.position-selector-container {
 								position: fixed;
-								top: 15%; /* Vertikāli centrē */
+								top: 20%; /* Vertikāli centrē */
 								right: 0%;
 								transform: translateY(-50%);
 								z-index: 5;
@@ -545,7 +545,7 @@
 							/* Kreisās puses konteineris */
 							.position-selector-container-left {
 								position: fixed;
-								top: 15%; /* Vertikāli centrē */
+								top: 20%; /* Vertikāli centrē */
 								left: 0; /* Kreisajā malā */
 								transform: translateY(-50%);
 								z-index: 5;
