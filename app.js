@@ -972,7 +972,7 @@ map.whenReady(() => {
         borderRadius:'4px', font:'12px/1.2 system-ui, sans-serif', marginTop:'4px'
       });
       div.id = 'scaleRatioCtl';
-      div.textContent = 'Mērogs: —';
+      div.textContent = 'Tīkla mērogs: —';
       return div;
     };
     ratioCtl.addTo(map);
