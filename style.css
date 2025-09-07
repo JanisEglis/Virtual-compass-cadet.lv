@@ -1775,6 +1775,10 @@
 #onlineMap .leaflet-bottom{
   bottom: calc(var(--map-bottom-safe, 0px) + var(--map-bottom-gap, 35px)) !important;
 }
+/* tikai #onlineMap iekšpusē */
+#onlineMap .leaflet-right .leaflet-control{
+  margin-right: 10px !important;
+}
 
 /* Lai inline SVG ikonām būtu tāds pats “fit” kā <img> */
 #buttonContainer .dock-shell > button svg{
