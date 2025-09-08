@@ -2,24 +2,38 @@ name: Build legacy (ES5) bundle
 
 on:
   push:
-    branches: [ main, master ]  # izvēlies to, kuru izmanto
+    branches: [ main, master ]
 
+# Ļauj darbplūsmai komitēt atpakaļ repo
 permissions:
-  contents: write   # lai var iekomitēt ģenerēto failu
+  contents: write
 
 jobs:
   build-legacy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # vajag, lai push/commit strādā
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
-      - run: npm ci || npm i
+      - name: Install deps
+        run: npm install
 
-      - run: npm run build:legacy
+      - name: Show versions (debug)
+        run: |
+          node -v
+          npm -v
+          npx babel --version || true
+
+      - name: Build legacy
+        run: npm run build:legacy
 
       - name: Commit app.legacy.js
         uses: stefanzweifel/git-auto-commit-action@v5
