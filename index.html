@@ -684,30 +684,45 @@
 
 
 
-<!-- Modern/Legacy sargs: modern = app.js; legacy = transpile on the fly -->
+<!-- Modern/Legacy loader BEZ document.write -->
 <script>
 (function(){
   function supportsOptChain(){ try { return new Function("var a={b:1}; return a?.b")()===1; } catch(e){ return false; } }
   function supportsNullish(){ try { return new Function("var a=null; return a ?? 5")()===5; } catch(e){ return false; } }
 
-  if (supportsOptChain() && supportsNullish()) {
-    // Moderns – ielādē parasto app.js
-    document.write('<script defer src="app.js"><\/script>');
+  function loadScript(src, attrs, onload){
+    var s = document.createElement('script');
+    s.src = src;
+    if (attrs) for (var k in attrs) s.setAttribute(k, attrs[k] === '' ? '' : attrs[k]);
+    if (onload) s.onload = onload;
+    s.onerror = function(){ console.error('[loader] failed:', src); };
+    document.head.appendChild(s);
+  }
+
+  if (supportsOptChain() && supportsNullish()){
+    // Modern – vienkārši ielādē app.js
+    loadScript('app.js', {defer:''});
   } else {
-    // Legacy – 1) Babel Standalone, 2) atnes app.js, 3) pārtulko uz ES5 un palaiž
-    document.write('<script nomodule src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>');
-    document.write('<script nomodule>(function(){' +
-      'var x=new XMLHttpRequest(); x.open("GET","app.js");' +
-      'x.onload=function(){ try{' +
-      ' var out=Babel.transform(x.responseText,{presets:[[\"env\",{targets:{chrome:\"60\"}}]]}).code;' +
-      ' (0,eval)(out); console.info(\"[legacy] transpiled app.js on the fly\");' +
-      '}catch(e){ console.error(\"[legacy-transpile]\",e); }};' +
-      'x.onerror=function(){ console.error(\"[legacy-transpile] failed to load app.js\"); };' +
-      'x.send();' +
-    '})();<\/script>');
+    // Legacy – 1) ielādē Babel Standalone, 2) atnes app.js, 3) transpilo un palaiž
+    loadScript('https://unpkg.com/@babel/standalone/babel.min.js', {nomodule:''}, function(){
+      var x = new XMLHttpRequest();
+      x.open('GET','app.js');
+      x.onload = function(){
+        try{
+          var out = Babel.transform(x.responseText, { presets: [['env', {targets:{chrome:'60'}}]] }).code;
+          (0,eval)(out);
+          console.info('[legacy] transpiled app.js on the fly');
+        } catch(e){
+          console.error('[legacy-transpile]', e);
+        }
+      };
+      x.onerror = function(){ console.error('[legacy-transpile] failed to load app.js'); };
+      x.send();
+    });
   }
 })();
 </script>
+
 
 
 
