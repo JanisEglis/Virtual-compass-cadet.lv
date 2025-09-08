@@ -1,0 +1,28 @@
+name: Build legacy (ES5) bundle
+
+on:
+  push:
+    branches: [ main, master ]  # izvēlies to, kuru izmanto
+
+permissions:
+  contents: write   # lai var iekomitēt ģenerēto failu
+
+jobs:
+  build-legacy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci || npm i
+
+      - run: npm run build:legacy
+
+      - name: Commit app.legacy.js
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update app.legacy.js (auto)"
+          file_pattern: app.legacy.js
