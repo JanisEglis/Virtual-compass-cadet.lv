@@ -291,6 +291,335 @@
 
 
 
+<script>
+(function(){
+  /* =========================
+     COMPACT DEVTOOL (ONE-FILE)
+     ========================= */
+
+  /* --- CSS inject (poga + panelis) --- */
+  const st = document.createElement('style');
+  st.textContent = `
+#dtToggle{
+  position:fixed; right:12px; bottom:var(--dock-bottom,35px);
+  width:42px; height:42px; border-radius:10px;
+  border:1px solid rgba(255,255,255,.16);
+  background:linear-gradient(180deg,#1b1f25,#2a0f0faa);
+  box-shadow:0 10px 24px rgba(0,0,0,.55);
+  color:#fff; font:18px/42px system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  display:grid; place-items:center; cursor:pointer;
+  z-index:2147483000; -webkit-tap-highlight-color: transparent;
+}
+#dtToggle:hover{ transform:translateY(-1px); }
+
+#dtPanel{
+  position:fixed; right:64px; bottom:var(--dock-bottom,35px);
+  width:380px; max-height:52vh; min-height:140px;
+  display:none; flex-direction:column; overflow:hidden; resize:both;
+  border-radius:14px; border:1px solid rgba(255,255,255,.08);
+  background:linear-gradient(180deg,#1b1f25,#2a0f0faa);
+  box-shadow:0 16px 40px rgba(0,0,0,.55);
+  color:#eef2f7; z-index:2147483000;
+  backdrop-filter:saturate(1.2) blur(8px);
+}
+#dtPanel.open{ display:flex; }
+
+#dtPanel .bar{
+  display:flex; align-items:center; gap:8px;
+  padding:8px 10px; user-select:none; cursor:move;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0));
+}
+#dtPanel .bar strong{ font-size:13px; letter-spacing:.2px; }
+#dtPanel .bar .sp{ flex:1; }
+#dtPanel .bar button{
+  appearance:none; border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.08); color:#fff;
+  border-radius:8px; padding:4px 8px; font-size:12px; cursor:pointer;
+}
+#dtPanel .bar button:hover{ background:rgba(255,255,255,.14); }
+
+#dtPanel .body{
+  flex:1 1 auto; overflow:auto; padding:10px;
+  font:12px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  white-space:pre-wrap; word-break:break-word;
+  background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.00));
+}
+#dtPanel .body > div{ padding:1px 0; }
+
+#dtPanel .foot{
+  display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+#dtPanel .foot button, #dtPanel .foot label{
+  appearance:none; border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.07); color:#fff;
+  border-radius:8px; padding:5px 10px; font-size:12px; cursor:pointer;
+}
+#dtPanel .foot label{ display:flex; align-items:center; gap:6px; cursor:pointer; }
+#dtPanel input[type=checkbox]{ transform:translateY(1px); }
+
+@media (max-width: 760px){
+  #dtPanel{ right:10px; width:92vw; max-height:56vh; }
+  #dtToggle{ right:10px; }
+}`;
+  document.head.appendChild(st);
+
+  /* --- UI: poga + panelis --- */
+  const btn = document.createElement('button');
+  btn.id = 'dtToggle'; btn.type = 'button'; btn.title = 'DevTool';
+  btn.textContent = '🛠';
+  document.body.appendChild(btn);
+
+  const root = document.createElement('div');
+  root.id = 'dtPanel';
+  root.innerHTML = `
+    <div class="bar">
+      <strong>DevTool</strong>
+      <span class="sp"></span>
+      <button data-act="clear">Notīrīt</button>
+      <button data-act="min">Min</button>
+      <button data-act="close">✖</button>
+    </div>
+    <div class="body" id="dtBody"></div>
+    <div class="foot">
+      <button id="dtCopy">Kopēt atskaiti</button>
+      <button id="dtDl">Lejupielādēt .txt</button>
+      <label title="Paturēt ritinājumu apakšā"><input type="checkbox" id="dtLock" checked> Scroll-lock</label>
+      <label title="Pauzēt jaunu rindu pievienošanu"><input type="checkbox" id="dtPause"> Pauze</label>
+    </div>`;
+  document.body.appendChild(root);
+
+  const body = root.querySelector('#dtBody');
+  const lock = root.querySelector('#dtLock');
+  const pause = root.querySelector('#dtPause');
+
+  /* --- atvēršana/aizvēršana --- */
+  const LS_POS  = 'dt.pos';
+  const LS_SIZE = 'dt.size';
+  const LS_OPEN = 'dt.open';
+  const clamp = (v,min,max)=>Math.min(max,Math.max(min,v));
+
+  function restoreState(){
+    try{
+      const pos = JSON.parse(localStorage.getItem(LS_POS)||'null');
+      const size= JSON.parse(localStorage.getItem(LS_SIZE)||'null');
+      const open= localStorage.getItem(LS_OPEN)==='1';
+
+      if (size && size.w && size.h){
+        root.style.width  = clamp(size.w, 240, Math.max(260, window.innerWidth - 24)) + 'px';
+        root.style.height = clamp(size.h, 120, Math.max(140, window.innerHeight - 24)) + 'px';
+      }
+      if (pos && (pos.r!=null) && (pos.b!=null)){
+        root.style.right  = clamp(pos.r, 4, Math.max(4, window.innerWidth - 120)) + 'px';
+        root.style.bottom = clamp(pos.b, 4, Math.max(4, window.innerHeight - 60)) + 'px';
+      }
+      if (open) root.classList.add('open');
+    }catch(e){}
+  }
+  function saveState(){
+    try{
+      const cs = getComputedStyle(root);
+      localStorage.setItem(LS_POS,  JSON.stringify({ r: parseFloat(cs.right), b: parseFloat(cs.bottom) }));
+      localStorage.setItem(LS_SIZE, JSON.stringify({ w: root.offsetWidth, h: root.offsetHeight }));
+      localStorage.setItem(LS_OPEN, root.classList.contains('open') ? '1' : '0');
+    }catch(e){}
+  }
+  restoreState();
+
+  btn.addEventListener('click', ()=>{ root.classList.toggle('open'); saveState(); });
+  root.querySelector('[data-act="close"]').addEventListener('click', ()=>{ root.classList.remove('open'); saveState(); });
+  root.querySelector('[data-act="min"]').addEventListener('click', ()=>{
+    const h = root.style.height;
+    root.style.height = (h && parseInt(h) < 120) ? '' : '38px';
+    saveState();
+  });
+  root.querySelector('[data-act="clear"]').addEventListener('click', ()=>{ body.textContent=''; });
+
+  /* --- drag (virsraksta josla) --- */
+  (function dragEnable(){
+    const bar = root.querySelector('.bar');
+    let dragging=false, sx=0, sy=0, startR=0, startB=0;
+
+    function down(e){
+      dragging=true;
+      const ev = e.touches ? e.touches[0] : e;
+      sx = ev.clientX; sy = ev.clientY;
+      const cs = getComputedStyle(root);
+      startR = parseFloat(cs.right); startB = parseFloat(cs.bottom);
+      e.preventDefault();
+    }
+    function move(e){
+      if(!dragging) return;
+      const ev = e.touches ? e.touches[0] : e;
+      const dx = ev.clientX - sx;
+      const dy = ev.clientY - sy;
+      root.style.right  = clamp(startR - dx, 4, Math.max(4, window.innerWidth - 120)) + 'px';
+      root.style.bottom = clamp(startB - dy, 4, Math.max(4, window.innerHeight - 60)) + 'px';
+    }
+    function up(){ if(dragging){ dragging=false; saveState(); } }
+
+    bar.addEventListener('mousedown', down);
+    bar.addEventListener('touchstart', down, {passive:false});
+    window.addEventListener('mousemove', move, {passive:false});
+    window.addEventListener('touchmove', move, {passive:false});
+    window.addEventListener('mouseup', up);
+    window.addEventListener('touchend', up);
+  })();
+
+  /* --- saglabā izmērus pēc “resize” --- */
+  const sizeObs = new ResizeObserver(()=> saveState());
+  sizeObs.observe(root);
+
+  /* --- log helpers --- */
+  const t = d=> new Date(d).toLocaleTimeString();
+  const toText = v=>{
+    try{
+      if (typeof v === 'string') return v;
+      if (v instanceof Error) return (v.stack || (v.name+': '+v.message));
+      return JSON.stringify(v,null,2);
+    }catch(e){ return String(v); }
+  };
+  function appendLine(txt){
+    if (pause.checked) return;
+    const atBottom = lock.checked && (body.scrollTop + body.clientHeight >= body.scrollHeight - 4);
+    const line = document.createElement('div');
+    line.textContent = txt;
+    body.appendChild(line);
+    if (atBottom) body.scrollTop = body.scrollHeight;
+  }
+  function log(){ appendLine(`[${t(Date.now())}] ` + Array.from(arguments).map(toText).join(' ')); }
+
+  /* --- report --- */
+  function makeReport(){
+    const lines = [];
+    const ls = k => (localStorage.getItem(k) ?? '—');
+    const safe = id => {
+      const el = document.getElementById(id);
+      if(!el) return `${id}: —`;
+      const r = el.getBoundingClientRect();
+      return `${id}: ${Math.round(r.width)}×${Math.round(r.height)} (display:${getComputedStyle(el).display})`;
+    };
+
+    lines.push('=== ATSTĀVOKĻA ATSKAITE =======================');
+    lines.push('URL: ' + location.href);
+    lines.push('Laiks: ' + new Date().toString());
+    lines.push('User-Agent: ' + navigator.userAgent);
+    lines.push('');
+    lines.push(`Viewport: ${window.innerWidth}×${window.innerHeight}`);
+    lines.push('visualViewport: ' + (window.visualViewport ? `${Math.round(window.visualViewport.width)}×${Math.round(window.visualViewport.height)}` : 'nav'));
+    lines.push('');
+    lines.push('localStorage:');
+    lines.push('  onlineMapActive = ' + ls('onlineMapActive'));
+    lines.push('  buttonPosition  = ' + ls('buttonPosition'));
+    lines.push('  mapDarken       = ' + ls('mapDarken'));
+    lines.push('');
+    lines.push('Elementi:');
+    lines.push('  ' + safe('buttonContainer'));
+    lines.push('  ' + safe('onlineMap'));
+    lines.push('  ' + safe('mapCanvas'));
+    lines.push('  ' + safe('about'));
+    lines.push('');
+
+    // karte, ja pieejama via __getMap
+    try{
+      const map = window.__getMap ? window.__getMap() : null;
+      if (map && map.getCenter){
+        const c = map.getCenter();
+        lines.push('Karte:');
+        lines.push('  zoom=' + map.getZoom());
+        lines.push(`  center= ${c.lat.toFixed(6)}, ${c.lng.toFixed(6)}`);
+        const s = map.getSize();
+        lines.push('  size= ' + s.x + '×' + s.y);
+        lines.push('');
+      }else{
+        lines.push('Karte: nav pieejama (__getMap nav vai karte nav gatava).');
+        lines.push('');
+      }
+    }catch(e){
+      lines.push('Karte: kļūda, lasot stāvokli: ' + (e && e.message ? e.message : e));
+      lines.push('');
+    }
+
+    lines.push('Pēdējās rindas no loga:');
+    const items = body.querySelectorAll('div');
+    const n = items.length, tail = Math.max(0, n - 80);
+    for (let i = tail; i < n; i++) lines.push('  ' + items[i].textContent);
+    lines.push('================================================');
+    return lines.join('\n');
+  }
+
+  root.querySelector('#dtCopy').addEventListener('click', async ()=>{
+    const txt = makeReport();
+    try{
+      if (navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(txt);
+        log('✅ Atskaites teksts nokopēts.');
+      }else{
+        const ta = document.createElement('textarea');
+        ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        log('✅ Atskaites teksts nokopēts (rezerves metode).');
+      }
+    }catch(e){ log('❌ Neizdevās kopēt: ' + e); }
+  });
+
+  root.querySelector('#dtDl').addEventListener('click', ()=>{
+    const blob = new Blob([makeReport()], {type:'text/plain;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'atskaite.txt';
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(a.href);
+    a.remove();
+    log('⬇️ Sagatavota atskaite .txt formātā.');
+  });
+
+  /* --- Hook uz Leaflet, ja ir __getMap --- */
+  (function waitMap(){
+    let tries = 0, maxTries = 40; // ~20s
+    const t = setInterval(()=>{
+      tries++;
+      try{
+        if (window.__getMap){
+          const map = window.__getMap();
+          if (map && map.on){
+            clearInterval(t);
+            map.on('load',      ()=> log('Leaflet: load'));
+            map.on('moveend',   ()=> { const c=map.getCenter(); log(`Leaflet: moveend zoom=${map.getZoom()} center=${c.lat.toFixed(6)},${c.lng.toFixed(6)}`); });
+            map.on('zoomend',   ()=> { const c=map.getCenter(); log(`Leaflet: zoomend zoom=${map.getZoom()} center=${c.lat.toFixed(6)},${c.lng.toFixed(6)}`); });
+            map.on('layeradd',   e => log('Leaflet: layeradd', (e.layer && e.layer._leaflet_id) || ''));
+            map.on('layerremove',e => log('Leaflet: layerremove', (e.layer && e.layer._leaflet_id) || ''));
+            log('🔗 DevTool pieslēdzās Leaflet kartei.');
+          }
+        }
+      }catch(e){}
+      if (tries >= maxTries) clearInterval(t);
+    }, 500);
+  })();
+
+  /* --- Globālo kļūdu logi (palīdz atrast problēmas) --- */
+  window.addEventListener('error', e => {
+    log('❗ Kļūda:', e.message, '@', e.filename+':'+e.lineno+':'+e.colno);
+  });
+  window.addEventListener('unhandledrejection', e => {
+    log('❗ Neapstrādāts solījums:', (e && e.reason) ? (e.reason.stack || e.reason) : '—');
+  });
+
+  /* --- Publiska API, ja gribi ielogot pats --- */
+  window.__devtool = {
+    open(){ root.classList.add('open'); saveState(); },
+    close(){ root.classList.remove('open'); saveState(); },
+    log,
+    report: makeReport
+  };
+
+  // start log
+  log('DevTool gatavs. Klikšķini 🛠 apakšā labajā stūrī.');
+})();
+</script>
 
 
 
