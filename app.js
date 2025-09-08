@@ -74,14 +74,29 @@
     else window.addEventListener('load', () => { tick('win-load'); res(); }, {once:true});
   });
 
-  // Poga “Turpināt” un cietais timeouts
-  const showSkip = setTimeout(()=> pre.classList.add('show-skip'), 6000);
-  const hardCut  = setTimeout(()=> finish('hard-timeout'), 8000);
-  skipBtn.addEventListener('click', () => finish('skip'), {once:true});
+// Poga “Turpināt” un cietais timeouts
+const showSkip = setTimeout(() => pre && pre.classList.add('show-skip'), 6000);
+const hardCut  = setTimeout(() => finish('hard-timeout'), 8000);
+if (skipBtn) skipBtn.addEventListener('click', () => finish('skip'), { once: true });
 
-  Promise.all([ pageLoaded, Promise.allSettled(imgPromises) ])
-    .then(()=> new Promise(r=> setTimeout(r, 300)))
-    .then(()=> finish('ready'));
+// drošs "allSettled" arī bez native atbalsta (neliekam polyfillu vēlāk)
+var allSettled = Promise.allSettled
+  ? function(promises){ return Promise.allSettled(promises); }
+  : function(promises){
+      return Promise.all(promises.map(function(p){
+        return Promise.resolve(p).then(
+          function(value){  return { status: 'fulfilled', value:  value }; },
+          function(reason){ return { status: 'rejected',  reason: reason }; }
+        );
+      }));
+    };
+
+Promise.all([ pageLoaded, allSettled(imgPromises) ])
+  .then(() => new Promise(r => setTimeout(r, 300)))
+  .then(() => finish('ready'));
+
+
+
 
   function finish(reason){
     if (closed) return;
