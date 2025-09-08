@@ -277,5 +277,326 @@
 									<img id="compassNeedle" src="https://site-710050.mozfiles.com/files/710050/VIRTUALAIS_KOMPASS_ADATA_CADET_LV_PV4.png" alt="Compass Needle">  
 								</div>
 							</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+(function(){
+  if (window.__DevToolInstalled) return; 
+  window.__DevToolInstalled = true;
+
+  /* ---------- stils ---------- */
+  const css = `
+#devtoolsBtn{
+  position:fixed; bottom:12px; left:12px; z-index:2147483647;
+  width:42px; height:42px; border-radius:10px; border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(180deg,#181c22,#12151a);
+  color:#e9eef7; display:grid; place-items:center; cursor:pointer;
+  box-shadow:0 10px 26px rgba(0,0,0,.45); font-size:20px; line-height:1;
+}
+#devtoolsBtn:hover{ transform:translateY(-1px); }
+#devtoolsPanel{
+  position:fixed; right:12px; bottom:12px; z-index:2147483647;
+  width:min(480px,96vw); height:min(68vh,88vh);
+  background:linear-gradient(180deg,#0e1116f2,#12151af2);
+  border:1px solid rgba(255,255,255,.12); border-radius:14px;
+  box-shadow:0 18px 40px rgba(0,0,0,.55); color:#e9eef7;
+  font:13px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+#devtoolsPanel.closed{ display:none; }
+#devtoolsPanel .hdr{display:flex;align-items:center;gap:10px;padding:10px 12px;background:linear-gradient(180deg,#141920,#0f1318);}
+#devtoolsPanel .hdr strong{font-weight:700;}
+#devtoolsPanel .hdr .pill{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;background:#1b2531;color:#c9d6e5;border:1px solid rgba(255,255,255,.08)}
+#devtoolsPanel .hdr button{background:#232a33;border:1px solid rgba(255,255,255,.12);color:#e9eef7;border-radius:8px;height:30px;padding:0 8px;cursor:pointer}
+#devtoolsPanel .body{padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0}
+#devtoolsPanel .row{display:flex;gap:8px;flex-wrap:wrap}
+#devtoolsPanel .row .btn{background:#232a33;border:1px solid rgba(255,255,255,.12);color:#e9eef7;border-radius:8px;height:32px;padding:0 10px;cursor:pointer}
+#devtoolsPanel .grid{display:grid;grid-template-columns: 1fr auto auto;gap:6px;align-items:center;border-top:1px solid rgba(255,255,255,.08);padding-top:8px}
+#devtoolsPanel .grid .k{color:#9fb1c9}
+#devtoolsPanel .ok{color:#8be28b} .warn{color:#ffd479} .bad{color:#ff6f6f}
+#devtoolsPanel pre{flex:1;min-height:120px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:8px 10px;overflow:auto;white-space:pre-wrap;word-break:break-word;}
+`;
+
+  const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
+
+  /* ---------- helpers ---------- */
+  const $ = sel => document.querySelector(sel);
+  const exists = sel => !!$(sel);
+  const now = () => new Date().toISOString().replace('T',' ').replace('Z','');
+  function safeRect(el){ try{ const r = el.getBoundingClientRect(); return {w:Math.round(r.width), h:Math.round(r.height)}; }catch(_){ return {w:0,h:0}; } }
+  function isVisible(el){
+    if (!el) return false;
+    const cs = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    return cs.display!=='none' && cs.visibility!=='hidden' && r.width>0 && r.height>0;
+  }
+  function textBool(b){ return b ? '✓' : '✕'; }
+
+  /* ---------- UI ---------- */
+  const btn = document.createElement('button');
+  btn.id='devtoolsBtn'; btn.type='button'; btn.title='Atvērt diagnostiku'; btn.innerText='🛠️';
+  document.body.appendChild(btn);
+
+  const panel = document.createElement('div');
+  panel.id='devtoolsPanel'; panel.className='closed';
+  panel.innerHTML = `
+    <div class="hdr">
+      <strong>DevTool • Tāfeles diagnostika</strong>
+      <span id="devStatus" class="pill">idle</span>
+      <button id="devClose">Aizvērt</button>
+    </div>
+    <div class="body">
+      <div class="row">
+        <button id="devRun"   class="btn">Palaist Health-check</button>
+        <button id="devTrace" class="btn">Sākt izsekošanu</button>
+        <button id="devCopy"  class="btn">Kopēt atskaiti</button>
+        <button id="devClear" class="btn">Tīrīt žurnālu</button>
+      </div>
+      <div id="devHealth" class="grid"></div>
+      <pre id="devLog" aria-live="polite"></pre>
+    </div>`;
+  document.body.appendChild(panel);
+
+  const statusEl = panel.querySelector('#devStatus');
+  const logEl    = panel.querySelector('#devLog');
+  let tracing = false;
+  const cleanups = [];
+
+  function setStatus(txt){ statusEl.textContent = txt; }
+  function log(msg, obj){
+    const line = `[${now()}] ${msg}` + (obj ? `\n${stringify(obj)}` : '');
+    logEl.textContent += (logEl.textContent ? '\n' : '') + line;
+    logEl.scrollTop = logEl.scrollHeight;
+    try{ console.debug('%c[DevTool]','color:#8ab4f8', msg, obj||''); }catch(_){}
+  }
+  window.__devlog = log; // noder, ja gribi pašrocīgi ielogot no sava koda
+
+  function stringify(v){
+    try{ return (typeof v==='string') ? v : JSON.stringify(v, (k,val)=> val instanceof Node ? `[Node:${val.nodeName}]` : val, 2); }
+    catch(_){ return String(v); }
+  }
+
+  function open(){ panel.classList.remove('closed'); setStatus('open'); }
+  function close(){ panel.classList.add('closed'); setStatus('idle'); }
+  btn.addEventListener('click', open);
+  panel.querySelector('#devClose').addEventListener('click', close);
+
+  /* ---------- Health-check ---------- */
+  function kvRow(key, value, cls=''){
+    const wrap = document.createDocumentFragment();
+    const k = document.createElement('div'); k.className='k'; k.textContent = key;
+    const v = document.createElement('div'); v.className=cls; v.textContent = value;
+    const m = document.createElement('div'); m.textContent = ' ';
+    wrap.appendChild(k); wrap.appendChild(v); wrap.appendChild(m);
+    return wrap;
+  }
+
+  function runHealth(){
+    setStatus('checking…');
+    const grid = panel.querySelector('#devHealth');
+    grid.textContent = '';
+
+    // Pamatvide
+    const vv = (window.visualViewport && Math.round(window.visualViewport.height)) || window.innerHeight;
+    const w  = window.innerWidth, h = vv;
+    const dpr = window.devicePixelRatio||1;
+    const mtp = navigator.maxTouchPoints||0;
+    grid.appendChild(kvRow('Logs', `${w}×${h} @${dpr}x`));
+    grid.appendChild(kvRow('Touch', `${mtp} punkts/i`));
+
+    // LocalStorage
+    const onlineFlag = localStorage.getItem('onlineMapActive');
+    const darken = localStorage.getItem('mapDarken')||'0';
+    grid.appendChild(kvRow('onlineMapActive', String(onlineFlag)));
+    grid.appendChild(kvRow('mapDarken', `${darken}%`));
+
+    // Elementi
+    const sels = [
+      ['#mapCanvas','Canvas'],
+      ['#onlineMap','Leaflet karte'],
+      ['#onlineMapDim','Kartes pārklājums (dim)'],
+      ['#buttonContainer','Pogu doks'],
+      ['#mapDimmerRange','Tumšuma slīdnis'],
+      ['#resizeHandle','Resize rokturis'],
+      ['#compassContainer','Kompass'],
+      ['#contentFrame','Saturs (Materials)'],
+      ['#instructionFrame','Saturs (Guide)'],
+      ['#fullscreenMessage','Fullscreen ziņa'],
+      ['#mobile-warning','Mobile brīdinājums'],
+      ['#touchscreenPopup','Touch popup'],
+      ['#app-preloader','Preloader']
+    ];
+    sels.forEach(([sel,label])=>{
+      const el = $(sel); const ok = !!el; 
+      const visible = isVisible(el);
+      const r = ok ? safeRect(el) : {w:0,h:0};
+      grid.appendChild(kvRow(label, `${textBool(ok)}  ${visible?'(redzams)':'(n/redzams)'}  ${r.w}×${r.h}`, ok && visible ? 'ok' : (ok ? 'warn' : 'bad')));
+    });
+
+    // Leaflet
+    const leafletLoaded = !!window.L;
+    grid.appendChild(kvRow('Leaflet L', textBool(leafletLoaded), leafletLoaded?'ok':'bad'));
+    let mapState = 'nav';
+    try{
+      const getMap = window.__getMap;
+      if (typeof getMap === 'function') {
+        const m = getMap();
+        if (m && m._loaded) mapState = `ok (zoom ${m.getZoom()}, ctr ${m.getCenter().lat.toFixed(4)},${m.getCenter().lng.toFixed(4)})`;
+        else if (m) mapState = 'inited (nav _loaded)';
+      }
+    }catch(_){}
+    grid.appendChild(kvRow('Karte (ref)', mapState, /ok/.test(mapState)?'ok':(mapState==='nav'?'warn':'warn')));
+
+    // Preloader stāvoklis
+    const pre = $('#app-preloader');
+    if (pre){
+      const hidden = pre.classList.contains('hidden');
+      const bodyPreloading = document.body.classList.contains('preloading');
+      grid.appendChild(kvRow('Preloader', hidden?'pabeigts':'REDZAMS', hidden?'ok':'warn'));
+      grid.appendChild(kvRow('Body.preloading', textBool(bodyPreloading), bodyPreloading?'warn':'ok'));
+    }
+
+    // “Tāfeles’” iesp. cēloņu hinti
+    const hints = [];
+    if (onlineFlag === '1' && !isVisible($('#onlineMap')) && !leafletLoaded) {
+      hints.push('onlineMapActive=1, bet Leaflet nav ielādēts vai #onlineMap neredzams.');
+    }
+    if (!isVisible($('#mapCanvas'))) {
+      hints.push('#mapCanvas neredzams — iespējams, pārklāts ar preloader vai tiešsaistes karti.');
+    }
+    if ($('#resizeHandle') && !isVisible($('#resizeHandle'))) {
+      hints.push('Resize rokturis nav redzams — attēls var nebūt ielādēts.');
+    }
+    if (hints.length) grid.appendChild(kvRow('Hints', hints.join('  |  '), 'warn'));
+
+    setStatus('ready');
+    log('Health-check pabeigts', {hints});
+  }
+
+  /* ---------- Trace režīms ---------- */
+  function on(el, ev, fn, opts){
+    el.addEventListener(ev, fn, opts);
+    cleanups.push(()=> el.removeEventListener(ev, fn, opts));
+  }
+
+  function startTrace(){
+    if (tracing) return; tracing = true;
+    setStatus('tracing');
+    log('Izsekošana START');
+
+    // log window kļūdas
+    on(window, 'error', (e)=> log('window.error', {msg:e.message, src:e.filename, line:e.lineno}));
+    on(window, 'unhandledrejection', (e)=> log('unhandledrejection', {reason: String(e.reason)}));
+
+    // ielādes / preloaderis
+    const pre = $('#app-preloader');
+    if (pre){
+      const mo = new MutationObserver(()=>{ 
+        const hidden = pre.classList.contains('hidden');
+        log('Preloader klase mainīta', {hidden});
+      });
+      mo.observe(pre, {attributes:true, attributeFilter:['class']});
+      cleanups.push(()=> mo.disconnect());
+    }
+
+    // izmēri, orientācija, fullscreen
+    ['resize','orientationchange','visibilitychange'].forEach(ev => on(window, ev, ()=> log(`window.${ev}`, {w:innerWidth,h:(visualViewport?visualViewport.height:innerHeight)})));
+    on(document, 'fullscreenchange', ()=> log('fullscreenchange', {active: !!(document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement||document.msFullscreenElement)}));
+
+    // kartes notikumi, ja pieejami
+    try{
+      const getMap = window.__getMap;
+      if (typeof getMap === 'function'){
+        const m = getMap();
+        if (m){
+          ['load','moveend','zoomend','dragstart','contextmenu','popupopen'].forEach(ev=>{
+            m.on(ev, (e)=> log(`Leaflet:${ev}`, {zoom:m.getZoom(), center:m.getCenter()}));
+          });
+          cleanups.push(()=> ['load','moveend','zoomend','dragstart','contextmenu','popupopen'].forEach(ev=> m.off(ev)));
+          log('Leaflet trace piesaistīts');
+        }
+      }
+    }catch(_){}
+
+    // doks un pozīciju izvēlnes
+    const bc = $('#buttonContainer');
+    if (bc){
+      const mo = new MutationObserver(()=> log('buttonContainer.class mainīts', {className: bc.className}));
+      mo.observe(bc, {attributes:true, attributeFilter:['class']});
+      cleanups.push(()=> mo.disconnect());
+    }
+  }
+
+  function stopTrace(){
+    if (!tracing) return; tracing = false;
+    while(cleanups.length){ try{ cleanups.pop()(); }catch(_){ } }
+    setStatus('ready'); log('Izsekošana STOP');
+  }
+
+  /* ---------- pogas ---------- */
+  panel.querySelector('#devRun').addEventListener('click', runHealth);
+  panel.querySelector('#devClear').addEventListener('click', ()=> (logEl.textContent=''));
+  panel.querySelector('#devCopy').addEventListener('click', async ()=>{
+    const healthTxt = panel.querySelector('#devHealth').innerText.replace(/\n{2,}/g,'\n');
+    const full = `=== HEALTH ===\n${healthTxt}\n\n=== LOG ===\n${logEl.textContent}`;
+    try{ await navigator.clipboard.writeText(full); setStatus('nokopēts'); }catch(_){ setStatus('copy fail'); }
+  });
+  panel.querySelector('#devTrace').addEventListener('click', (e)=>{
+    if (!tracing){ startTrace(); e.target.textContent = 'Stop izsekošanu'; }
+    else { stopTrace(); e.target.textContent = 'Sākt izsekošanu'; }
+  });
+
+  /* ---------- auto-hooki (ērtībai) ---------- */
+  // log DOMContentLoaded / load
+  if (document.readyState === 'complete') log('window.load (jau noticis)');
+  else window.addEventListener('load', ()=> log('window.load'));
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ()=> log('DOMContentLoaded'));
+  else log('DOMContentLoaded (jau noticis)');
+
+  // preloader sākotnējais stāvoklis
+  const pre = $('#app-preloader');
+  if (pre) log('Preloader stāvoklis', {hidden: pre.classList.contains('hidden'), bodyPreloading: document.body.classList.contains('preloading')});
+
+  // ja online karte bija ieslēgta — reģistrē hintu
+  const onlineFlag = localStorage.getItem('onlineMapActive');
+  if (onlineFlag === '1') log('onlineMapActive=1 — tiek gaidīts Leaflet', {leafletLoaded: !!window.L});
+
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
 </body>
 </html>
