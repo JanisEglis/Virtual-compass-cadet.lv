@@ -1,0 +1,13 @@
+{
+  "name": "virtual-compass",
+  "private": true,
+  "devDependencies": {
+    "@babel/cli": "^7",
+    "@babel/core": "^7",
+    "@babel/preset-env": "^7",
+    "core-js": "^3"
+  },
+  "scripts": {
+    "build:legacy": "babel app.js -o app.legacy.js"
+  }
+}
