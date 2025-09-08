@@ -1,3 +1,9 @@
+console.info('[modern] app.js start');
+
+
+
+
+
 (function(){
   const pre = document.getElementById('app-preloader');
   if(!pre) return;
