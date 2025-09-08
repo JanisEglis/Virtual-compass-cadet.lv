@@ -500,7 +500,8 @@ updateButtonContainerPosition = function(position){
 						const canvas = document.getElementById('mapCanvas');
 						const ctx = canvas.getContext('2d');
 						const img = new Image();
-						img.src = ''; // Tiks pievienots pēc augšupielādes
+img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
 
 						let imgX = 0, imgY = 0;
 						let imgScale = 1;
