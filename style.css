@@ -2118,64 +2118,6 @@ body.preloading{ overflow: hidden; }
 
 
 
-/* ====== DevTool (kompakts peldošs panelis) ====== */
-#devtool-toggle{
-  position:fixed; right:12px; bottom:var(--dock-bottom,35px);
-  width:40px; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,.15);
-  background:linear-gradient(180deg,#1b1f25,#2a0f0faa);
-  box-shadow:0 8px 22px rgba(0,0,0,.45);
-  color:#fff; font:16px/40px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  display:grid; place-items:center; cursor:pointer; z-index:2147483000;
-}
-#devtool-toggle:hover{ transform:translateY(-1px); }
-#devtool{
-  position:fixed; right:60px; bottom:var(--dock-bottom,35px);
-  width:380px; max-height:48vh; min-height:140px;
-  display:none; flex-direction:column; overflow:hidden; resize:both;
-  border-radius:14px; border:1px solid rgba(255,255,255,.08);
-  background:linear-gradient(180deg,#1b1f25,#2a0f0faa);
-  box-shadow:0 14px 36px rgba(0,0,0,.5);
-  z-index:2147483000; color:#eef2f7;
-  backdrop-filter:saturate(1.2) blur(8px);
-}
-#devtool.open{ display:flex; }
-
-#devtool .bar{
-  display:flex; align-items:center; gap:8px;
-  padding:8px 10px; cursor:move; user-select:none;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0));
-}
-#devtool .bar strong{ font-size:13px; letter-spacing:.2px; }
-#devtool .bar .spacer{ flex:1; }
-#devtool .bar button{
-  appearance:none; border:1px solid rgba(255,255,255,.15);
-  background:rgba(255,255,255,.07); color:#fff; border-radius:8px;
-  padding:4px 8px; font-size:12px; cursor:pointer;
-}
-#devtool .bar button:hover{ background:rgba(255,255,255,.12); }
-
-#devtool .body{
-  flex:1 1 auto; overflow:auto; padding:10px; font:12px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  white-space:pre-wrap; word-break:break-word;
-}
-#devtool .footer{
-  display:flex; flex-wrap:wrap; gap:6px; align-items:center;
-  padding:8px; border-top:1px solid rgba(255,255,255,.06);
-}
-#devtool .footer button, #devtool .footer label{
-  appearance:none; border:1px solid rgba(255,255,255,.15);
-  background:rgba(255,255,255,.07); color:#fff; border-radius:8px;
-  padding:5px 10px; font-size:12px; cursor:pointer;
-}
-#devtool .footer label{ display:flex; align-items:center; gap:6px; cursor:pointer; }
-#devtool .footer input[type=checkbox]{ transform:translateY(1px); }
-
-/* Mobile pielāgojums */
-@media (max-width: 680px){
-  #devtool{ right:10px; width:92vw; max-height:52vh; }
-  #devtool-toggle{ right:10px; }
-}
 
 
 
