@@ -40,167 +40,53 @@
 
 
 
-
 <script>
-/* ================================================================
-   DEVTOOL V1 (compact, early-capture, one-file)
-   - liec šo skriptu PATS PIRMAIS (head vai uzreiz pēc <body>)
-   - poga vienmēr redzama (max z-index), panelis ritināms un izmērāms
-   - konsoles, kļūdu, resursu un performance “āķi” jau no ielādes
-   - atskaite: kopēt vai .txt lejupielāde
-   ================================================================= */
-(function DevToolV1(){
+/* ==============================================================
+   DEVTOOL V1 — compact, early-capture, one-file, safe
+   Ievieto PATS PIRMAIS (head vai uzreiz pēc <body>).
+   ============================================================== */
+(function(){
   'use strict';
+  try {
 
-  /* ---------- EARLY BUFFER ---------- */
+  /* ====== Early buffer & helpers ====== */
   const T0 = (performance && performance.timeOrigin) || Date.now();
-  const pad = n=> n<10?('0'+n):n;
-  const ts = ()=> {
+  const pad = n => (n<10 ? '0'+n : ''+n);
+  const ts  = () => {
     const ms = Math.max(0, Math.round(performance.now ? performance.now() : (Date.now()-T0)));
-    const s = Math.floor(ms/1000);
-    const m = Math.floor(s/60);
-    const rems = s%60;
-    return `[${pad(m)}:${pad(rems)}.${(ms%1000).toString().padStart(3,'0')}]`;
+    const s = Math.floor(ms/1000), m = Math.floor(s/60), rems = s%60;
+    return `[${pad(m)}:${pad(rems)}.${(ms%1000+'').padStart(3,'0')}]`;
   };
-  const ringMax = 1200;
-  const buf = [];
-  let errCount = 0, warnCount = 0, infoCount = 0, logCount = 0;
 
-  function push(type, args){
-    const line = `${ts()} ${type} ` + args.map(safeString).join(' ');
-    if (buf.length >= ringMax) buf.shift();
-    buf.push(line);
-    if (type==='ERR') errCount++;
-    if (type==='WRN') warnCount++;
-    if (type==='INF') infoCount++;
-    if (type==='LOG' || type==='DBG') logCount++;
-    bumpBadge();
-    // ja UI jau gatavs – arī izdrukā
-    if (els.body) appendLine(line);
-  }
+  const ringMax = 2000;
+  const buf = [];
+  let ERR=0, WRN=0, LOG=0, INF=0, DBG=0;
+
   function safeString(v){
     try{
       if (typeof v === 'string') return v;
       if (v instanceof Error) return (v.stack || (v.name+': '+v.message));
       return JSON.stringify(v);
-    }catch(e){ return String(v); }
+    } catch(_){ return String(v); }
   }
+  function lineJoin(args){ return args.map(safeString).join(' '); }
 
-  /* ---------- CONSOLE HOOK (ON EARLY) ---------- */
-  const orig = {
-    log: console.log, warn: console.warn, error: console.error,
-    info: console.info, debug: console.debug
-  };
-  let hooked = false;
-  function hookConsole(){
-    if (hooked) return; hooked = true;
-    console.log = function(){ try{ push('LOG', [...arguments]); }catch(_){}; return orig.log.apply(console, arguments); };
-    console.warn = function(){ try{ push('WRN', [...arguments]); }catch(_){}; return orig.warn.apply(console, arguments); };
-    console.error = function(){ try{ push('ERR', [...arguments]); }catch(_){}; return orig.error.apply(console, arguments); };
-    console.info = function(){ try{ push('INF', [...arguments]); }catch(_){}; return orig.info.apply(console, arguments); };
-    console.debug = function(){ try{ push('DBG', [...arguments]); }catch(_){}; return orig.debug.apply(console, arguments); };
-  }
-  function unhookConsole(){
-    if (!hooked) return; hooked = false;
-    console.log = orig.log; console.warn = orig.warn; console.error = orig.error;
-    console.info = orig.info; console.debug = orig.debug;
-  }
-  // startējam uzreiz
-  hookConsole();
-
-  /* ---------- GLOBAL ERROR/REJECTION & RESOURCE ERRORS ---------- */
-  window.addEventListener('error',  e => push('ERR', [e.message, '@', e.filename+':'+e.lineno+':'+e.colno]));
-  window.addEventListener('unhandledrejection', e => {
-    const r = e && e.reason;
-    push('ERR', ['UnhandledPromise', r && (r.stack||r.message||String(r))]);
-  });
-  // img/script/link kļūdas (capture=true, jo nebubble)
-  document.addEventListener('error', e=>{
-    const el = e.target || {};
-    const tag = el.tagName || '?';
-    if (tag === 'IMG' || tag === 'SCRIPT' || tag === 'LINK'){
-      const src = el.currentSrc || el.src || el.href || '(nav)';
-      push('ERR', [`Resursa kļūda <${tag.toLowerCase()}>:`, src]);
-    }
-  }, true);
-
-  /* ---------- READYSTATE & LOAD TIMING ---------- */
-  document.addEventListener('readystatechange', ()=>push('INF', ['readyState=', document.readyState]));
-  window.addEventListener('DOMContentLoaded', ()=>push('INF', ['DOMContentLoaded']));
-  window.addEventListener('load', ()=>push('INF', ['window.load']));
-
-  /* ---------- PERFORMANCE OBSERVERS (ja pieejami) ---------- */
-  const perf = { paints:{}, lcp:null, cls:0, fid:null, nav:null, longTasks:0 };
-  try{
-    // paints (FP/FCP)
-    if (window.PerformanceObserver){
-      new PerformanceObserver(list=>{
-        for (const e of list.getEntries()){
-          perf.paints[e.name] = Math.round(e.startTime);
-          push('INF', ['paint', e.name, perf.paints[e.name]+'ms']);
-        }
-      }).observe({type:'paint', buffered:true});
-    }
-    // LCP
-    if (window.PerformanceObserver){
-      const lcpObs = new PerformanceObserver(list=>{
-        const last = list.getEntries().pop();
-        if (last){ perf.lcp = Math.round(last.startTime); }
-      });
-      lcpObs.observe({type:'largest-contentful-paint', buffered:true});
-      window.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'hidden') { try{ lcpObs.disconnect(); }catch(_){ } }});
-    }
-    // CLS
-    if (window.PerformanceObserver){
-      new PerformanceObserver(list=>{
-        for (const e of list.getEntries()){
-          if (!e.hadRecentInput) perf.cls += e.value;
-        }
-      }).observe({type:'layout-shift', buffered:true});
-    }
-    // FID
-    if (window.PerformanceObserver){
-      new PerformanceObserver(list=>{
-        const e = list.getEntries()[0];
-        if (e) perf.fid = Math.round(e.processingStart - e.startTime);
-      }).observe({type:'first-input', buffered:true});
-    }
-    // LongTasks
-    if (window.PerformanceObserver){
-      new PerformanceObserver(list=>{
-        perf.longTasks += list.getEntries().length;
-      }).observe({type:'longtask', buffered:true});
-    }
-    // Navigation
-    setTimeout(()=> {
-      try{
-        const nav = performance.getEntriesByType('navigation')[0];
-        if (nav){
-          perf.nav = {
-            type: nav.type, ttfb: Math.round(nav.responseStart),
-            domInteractive: Math.round(nav.domInteractive),
-            domContentLoaded: Math.round(nav.domContentLoadedEventEnd),
-            loadEventEnd: Math.round(nav.loadEventEnd)
-          };
-          push('INF', ['navigation', JSON.stringify(perf.nav)]);
-        }
-      }catch(_){}
-    }, 0);
-  }catch(_){}
-
-  /* ---------- UI (injected asap) ---------- */
-  const els = { btn:null, panel:null, body:null, lock:null, pause:null, bar:null };
+  /* ====== UI state ====== */
   const LS = {
-    OPEN: 'dt.open', POS: 'dt.pos', SIZE: 'dt.size', LOCK:'dt.lock', PAUSE:'dt.pause', HOOK:'dt.hook', AUTO:'dt.autoOpen'
+    OPEN:'dt.open', POS:'dt.pos', SIZE:'dt.size',
+    LOCK:'dt.lock', PAUSE:'dt.pause', HOOK:'dt.hook', AUTO:'dt.auto'
   };
+  const els = { btn:null, panel:null, body:null, lock:null, pause:null };
+  let autoOpen = true;
 
-  // CSS (arī badge uz pogas)
+  /* ====== CSS inject (button + panel) ====== */
   (function injectCSS(){
     const css = `
 #dtToggle{
-  position:fixed; right:12px; bottom:var(--dock-bottom, 35px);
+  position:fixed; right:12px; bottom:var(--dock-bottom,35px);
   width:44px; height:44px; border-radius:12px; display:grid; place-items:center;
-  border:1px solid rgba(255,255,255,.16); background:linear-gradient(180deg,#1b1f25,#2a0f0faa);
+  border:1px solid rgba(255,255,255,.16);
+  background:linear-gradient(180deg,#1b1f25,#2a0f0faa);
   box-shadow:0 10px 24px rgba(0,0,0,.55); color:#fff; font:20px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   cursor:pointer; z-index:2147483647; -webkit-tap-highlight-color:transparent; user-select:none; pointer-events:auto;
 }
@@ -209,10 +95,9 @@
   position:absolute; top:-6px; right:-6px; min-width:18px; height:18px; padding:0 4px;
   background:#E53935; color:#fff; border-radius:10px; border:1px solid #fff3;
   font:11px/18px ui-monospace,Menlo,Consolas,monospace; text-align:center;
-  display: inline-block; transform:translateZ(0);
 }
 #dtPanel{
-  position:fixed; right:64px; bottom:var(--dock-bottom, 35px);
+  position:fixed; right:64px; bottom:var(--dock-bottom,35px);
   width:380px; max-width:96vw; max-height:60vh; min-height:140px;
   display:none; flex-direction:column; overflow:hidden; resize:both;
   border-radius:14px; border:1px solid rgba(255,255,255,.08);
@@ -227,21 +112,19 @@
 }
 #dtPanel .bar .t{ font-size:13px; letter-spacing:.2px; }
 #dtPanel .bar .sp{ flex:1; }
-#dtPanel .bar button{
+#dtPanel .bar button,
+#dtPanel .foot button, #dtPanel .foot label{
   appearance:none; border:1px solid rgba(255,255,255,.15);
   background:rgba(255,255,255,.08); color:#fff; border-radius:8px; padding:4px 8px; font-size:12px; cursor:pointer;
 }
-#dtPanel .bar button:hover{ background:rgba(255,255,255,.14); }
+#dtPanel .bar button:hover,
+#dtPanel .foot button:hover{ background:rgba(255,255,255,.14); }
 #dtPanel .body{
   flex:1 1 auto; overflow:auto; padding:10px;
   font:12px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  white-space:pre-wrap; word-break:break-word; background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.00));
+  white-space:pre-wrap; word-break:break-word;
 }
 #dtPanel .foot{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px; border-top:1px solid rgba(255,255,255,.06); }
-#dtPanel .foot button, #dtPanel .foot label{
-  appearance:none; border:1px solid rgba(255,255,255,.15);
-  background:rgba(255,255,255,.07); color:#fff; border-radius:8px; padding:5px 10px; font-size:12px; cursor:pointer;
-}
 #dtPanel input[type=checkbox]{ transform:translateY(1px); }
 @media (max-width:760px){
   #dtPanel{ right:10px; width:92vw; max-height:62vh; }
@@ -249,18 +132,147 @@
 }`;
     const st = document.createElement('style');
     st.textContent = css;
-    // ieliekam HEAD, ja nav – pie html, vēlāk pārvietosim
     (document.head || document.documentElement).appendChild(st);
   })();
 
+  /* ====== Console hook (early) ====== */
+  const orig = {
+    log: console.log, warn: console.warn, error: console.error,
+    info: console.info, debug: console.debug
+  };
+  let hooked = true;
+  function bumpBadge(){
+    if (!els.btn) return;
+    const b = `E:${ERR}${WRN?` W:${WRN}`:''}`;
+    els.btn.setAttribute('data-badge', (ERR||WRN) ? b : '');
+  }
+  function appendLine(line){
+    if (!els.body) return;
+    if (els.pause && els.pause.checked) return;
+    const atBottom = els.lock && els.lock.checked
+      ? (els.body.scrollTop + els.body.clientHeight >= els.body.scrollHeight - 4) : false;
+    els.body.appendChild(document.createTextNode(line+'\n'));
+    if (els.lock && els.lock.checked || atBottom) els.body.scrollTop = els.body.scrollHeight;
+  }
+  function push(kind, args){
+    const line = `${ts()} ${kind} ${lineJoin(args)}`;
+    if (buf.length >= ringMax) buf.shift();
+    buf.push(line);
+    if (kind==='ERR') ERR++; else if (kind==='WRN') WRN++; else if (kind==='LOG') LOG++;
+    else if (kind==='INF') INF++; else if (kind==='DBG') DBG++;
+    bumpBadge();
+    if (els.body) appendLine(line);
+    if (autoOpen && kind==='ERR') openPanel();
+  }
+  function hookConsole(){
+    if (hooked) return; hooked = true;
+    console.log   = function(){ try{ push('LOG', [...arguments]); }catch(_){ } return orig.log.apply(console, arguments); };
+    console.warn  = function(){ try{ push('WRN', [...arguments]); }catch(_){ } return orig.warn.apply(console, arguments); };
+    console.error = function(){ try{ push('ERR', [...arguments]); }catch(_){ } return orig.error.apply(console, arguments); };
+    console.info  = function(){ try{ push('INF', [...arguments]); }catch(_){ } return orig.info.apply(console, arguments); };
+    console.debug = function(){ try{ push('DBG', [...arguments]); }catch(_){ } return orig.debug.apply(console, arguments); };
+  }
+  function unhookConsole(){
+    if (!hooked) return; hooked = false;
+    console.log=orig.log; console.warn=orig.warn; console.error=orig.error; console.info=orig.info; console.debug=orig.debug;
+  }
+  // start capture immediately
+  hookConsole();
+
+  /* ====== Global error/resource/rejection ====== */
+  window.addEventListener('error',  e => push('ERR', [e.message, '@', e.filename+':'+e.lineno+':'+e.colno]));
+  window.addEventListener('unhandledrejection', e => {
+    const r = e && e.reason;
+    push('ERR', ['UnhandledPromise', r && (r.stack||r.message||String(r))]);
+  });
+  document.addEventListener('error', e=>{
+    const el = e.target || {};
+    const tag = el.tagName || '?';
+    if (tag==='IMG'||tag==='SCRIPT'||tag==='LINK'){
+      const src = el.currentSrc || el.src || el.href || '(nav)';
+      push('ERR', [`Resursa kļūda <${tag.toLowerCase()}>:`, src]);
+    }
+  }, true);
+
+  /* ====== Performance observers (buffered) ====== */
+  try{
+    if (window.PerformanceObserver){
+      new PerformanceObserver(list=>{
+        for (const e of list.getEntries()) push('INF', ['paint', e.name, Math.round(e.startTime)+'ms']);
+      }).observe({type:'paint', buffered:true});
+
+      let cls=0;
+      new PerformanceObserver(list=>{
+        for (const e of list.getEntries()) if (!e.hadRecentInput) cls += e.value;
+        push('INF', ['CLS', cls.toFixed(3)]);
+      }).observe({type:'layout-shift', buffered:true});
+
+      const lcpObs = new PerformanceObserver(list=>{
+        const last = list.getEntries().pop();
+        if (last) push('INF', ['LCP', Math.round(last.startTime)+'ms']);
+      });
+      lcpObs.observe({type:'largest-contentful-paint', buffered:true});
+      addEventListener('visibilitychange', ()=>{ if (document.visibilityState==='hidden') try{ lcpObs.disconnect(); }catch(_){} });
+
+      new PerformanceObserver(list=>{
+        const e=list.getEntries()[0]; if (e) push('INF', ['FID', Math.round(e.processingStart - e.startTime)+'ms']);
+      }).observe({type:'first-input', buffered:true});
+
+      new PerformanceObserver(list=>{
+        if (list.getEntries().length) push('WRN', ['LongTasks', list.getEntries().length]);
+      }).observe({type:'longtask', buffered:true});
+    }
+    setTimeout(()=>{
+      try{
+        const nav = performance.getEntriesByType('navigation')[0];
+        if (nav){
+          const data = {
+            type: nav.type,
+            ttfb: Math.round(nav.responseStart),
+            domInteractive: Math.round(nav.domInteractive),
+            domContentLoaded: Math.round(nav.domContentLoadedEventEnd),
+            loadEventEnd: Math.round(nav.loadEventEnd)
+          };
+          push('INF', ['navigation', JSON.stringify(data)]);
+        }
+      }catch(_){}
+    },0);
+  }catch(_){}
+
+  /* ====== Simple XHR/fetch tap (lightweight) ====== */
+  (function tapFetchXHR(){
+    const _fetch = window.fetch;
+    if (_fetch){
+      window.fetch = function(){
+        const url = arguments[0] && arguments[0].url ? arguments[0].url : String(arguments[0]);
+        push('INF', ['fetch→', url]);
+        return _fetch.apply(this, arguments).then(res=>{
+          push(res.ok?'INF':'WRN', ['fetch←', res.status, url]);
+          return res;
+        }).catch(err=>{ push('ERR', ['fetch✖', url, err && err.message]); throw err; });
+      };
+    }
+    const XHR = window.XMLHttpRequest;
+    if (XHR){
+      const open = XHR.prototype.open, send = XHR.prototype.send;
+      XHR.prototype.open = function(m,u){ this.__dt_url = u; return open.apply(this, arguments); };
+      XHR.prototype.send = function(){
+        const url=this.__dt_url||'?'; push('INF', ['xhr→', url]);
+        this.addEventListener('load', ()=>push((this.status>=200&&this.status<400)?'INF':'WRN',['xhr←',this.status,url]));
+        this.addEventListener('error',()=>push('ERR',['xhr✖',url]));
+        return send.apply(this, arguments);
+      };
+    }
+  })();
+
+  /* ====== UI build (after body exists) ====== */
   function ensureUI(){
     if (els.btn && els.panel) return;
     if (!document.body) { setTimeout(ensureUI, 0); return; }
 
-    // poga
+    // toggle button
     const btn = document.createElement('button');
     btn.id='dtToggle'; btn.type='button'; btn.title='DevTool'; btn.textContent='🛠';
-    // extra inline, ja kāds CSS mēģina paslēpt
     Object.assign(btn.style,{
       position:'fixed', right:'12px', bottom:'35px', display:'grid',
       zIndex:2147483647, pointerEvents:'auto', opacity:'1', visibility:'visible'
@@ -268,13 +280,12 @@
     document.body.appendChild(btn);
     els.btn = btn;
 
-    // panelis
+    // panel
     const panel = document.createElement('div');
     panel.id='dtPanel';
     panel.innerHTML = `
       <div class="bar" id="dtBar">
-        <span class="t">DevTool</span>
-        <span class="sp"></span>
+        <span class="t">DevTool</span><span class="sp"></span>
         <button data-act="clear">Notīrīt</button>
         <button data-act="min">Min</button>
         <button data-act="close">✖</button>
@@ -286,68 +297,128 @@
         <label><input type="checkbox" id="dtLock" checked> Scroll-lock</label>
         <label><input type="checkbox" id="dtPause"> Pauze</label>
         <label><input type="checkbox" id="dtHook" checked> Ķert console</label>
-        <label><input type="checkbox" id="dtAuto"> Auto-atvērt</label>
+        <label><input type="checkbox" id="dtAuto" checked> Auto-atvērt pie kļūdas</label>
       </div>`;
     document.body.appendChild(panel);
     els.panel = panel;
-    els.body = panel.querySelector('#dtBody');
-    els.lock = panel.querySelector('#dtLock');
-    els.pause= panel.querySelector('#dtPause');
-    const chkHook = panel.querySelector('#dtHook');
-    const chkAuto = panel.querySelector('#dtAuto');
+    els.body  = panel.querySelector('#dtBody');
+    els.lock  = panel.querySelector('#dtLock');
+    els.pause = panel.querySelector('#dtPause');
 
-    // atjauno state
+    // restore state
     try{
-      const pos = JSON.parse(localStorage.getItem(LS.POS)||'null');
-      const size= JSON.parse(localStorage.getItem(LS.SIZE)||'null');
-      const open= localStorage.getItem(LS.OPEN)==='1';
-      const lock= localStorage.getItem(LS.LOCK)!=='0';
-      const pause=localStorage.getItem(LS.PAUSE)==='1';
+      const pos  = JSON.parse(localStorage.getItem(LS.POS)||'null');
+      const size = JSON.parse(localStorage.getItem(LS.SIZE)||'null');
+      const open = localStorage.getItem(LS.OPEN)==='1';
+      const lock = localStorage.getItem(LS.LOCK)!=='0';
+      const pause= localStorage.getItem(LS.PAUSE)==='1';
       const hook = localStorage.getItem(LS.HOOK)!=='0';
-      const auto = (localStorage.getItem(LS.AUTO)!=='0');
+      autoOpen   = localStorage.getItem(LS.AUTO)!=='0';
 
-      if (size && size.w && size.h){ panel.style.width = size.w+'px'; panel.style.height = size.h+'px'; }
+      if (size && size.w && size.h){ panel.style.width=size.w+'px'; panel.style.height=size.h+'px'; }
       if (pos && pos.r!=null && pos.b!=null){ panel.style.right=pos.r+'px'; panel.style.bottom=pos.b+'px'; }
-      if (open || auto) panel.classList.add('open');
-      els.lock.checked = lock;
-      els.pause.checked= pause;
-      chkHook.checked  = hook;
-      chkAuto.checked  = auto;
+      if (open) panel.classList.add('open');
+      els.lock.checked  = lock;
+      els.pause.checked = pause;
+      panel.querySelector('#dtHook').checked = hook;
+      panel.querySelector('#dtAuto').checked = autoOpen;
       if (!hook) unhookConsole();
     }catch(_){}
 
-    // poga / atvēršana
+    // wire controls
     btn.addEventListener('click', ()=>{ panel.classList.toggle('open'); saveState(); });
     panel.querySelector('[data-act="close"]').addEventListener('click', ()=>{ panel.classList.remove('open'); saveState(); });
     panel.querySelector('[data-act="min"]').addEventListener('click', ()=>{
-      const h = panel.style.height;
-      panel.style.height = (h && parseInt(h)<120) ? '' : '38px';
-      saveState();
+      const h = parseInt(panel.style.height||'0',10);
+      panel.style.height = (h && h<120) ? '' : '38px'; saveState();
     });
     panel.querySelector('[data-act="clear"]').addEventListener('click', ()=>{ els.body.textContent=''; });
 
-    // drag pa virsb. joslu
+    // drag by bar
     (function drag(){
-      const bar = panel.querySelector('#dtBar');
-      let drag=false, sx=0, sy=0, startR=0, startB=0;
-      function down(e){ drag=true; const p=e.touches?e.touches[0]:e; sx=p.clientX; sy=p.clientY;
-        const cs=getComputedStyle(panel); startR=parseFloat(cs.right); startB=parseFloat(cs.bottom); e.preventDefault(); }
-      function move(e){ if(!drag) return; const p=e.touches?e.touches[0]:e;
-        panel.style.right=(startR-(p.clientX-sx))+'px'; panel.style.bottom=(startB-(p.clientY-sy))+'px'; }
-      function up(){ if(drag){ drag=false; saveState(); } }
+      const bar=panel.querySelector('#dtBar');
+      let dragging=false, sx=0, sy=0, startR=0, startB=0;
+      const down=e=>{ dragging=true; const p=e.touches?e.touches[0]:e; sx=p.clientX; sy=p.clientY;
+        const cs=getComputedStyle(panel); startR=parseFloat(cs.right); startB=parseFloat(cs.bottom); e.preventDefault(); };
+      const move=e=>{ if(!dragging) return; const p=e.touches?e.touches[0]:e;
+        panel.style.right=(startR-(p.clientX-sx))+'px'; panel.style.bottom=(startB-(p.clientY-sy))+'px'; };
+      const up =()=>{ if(dragging){ dragging=false; saveState(); } };
       bar.addEventListener('mousedown',down); bar.addEventListener('touchstart',down,{passive:false});
-      window.addEventListener('mousemove',move,{passive:false}); window.addEventListener('touchmove',move,{passive:false});
-      window.addEventListener('mouseup',up); window.addEventListener('touchend',up);
+      addEventListener('mousemove',move,{passive:false}); addEventListener('touchmove',move,{passive:false});
+      addEventListener('mouseup',up); addEventListener('touchend',up);
     })();
-    // saglabā izmērus
-    new ResizeObserver(()=>saveState()).observe(panel);
 
-    // scroll-lock, pause, hook, auto
-    els.lock.addEventListener('change',
+    // persist size
+    if (window.ResizeObserver){
+      new ResizeObserver(()=>saveState()).observe(panel);
+    }
 
+    // checkboxes
+    els.lock.addEventListener('change', ()=> localStorage.setItem(LS.LOCK, els.lock.checked?'1':'0'));
+    els.pause.addEventListener('change',()=> localStorage.setItem(LS.PAUSE,els.pause.checked?'1':'0'));
+    panel.querySelector('#dtHook').addEventListener('change', e=>{
+      localStorage.setItem(LS.HOOK, e.target.checked?'1':'0');
+      e.target.checked ? hookConsole() : unhookConsole();
+    });
+    panel.querySelector('#dtAuto').addEventListener('change', e=>{
+      autoOpen = !!e.target.checked;
+      localStorage.setItem(LS.AUTO, autoOpen?'1':'0');
+    });
 
+    // copy & download
+    panel.querySelector('#dtCopy').addEventListener('click', async ()=>{
+      const text = buildReport();
+      try{
+        if (navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(text); alert('Atskaite nokopēta.'); }
+        else { const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+               document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert('Atskaite nokopēta.'); }
+      }catch(e){ alert('Neizdevās kopēt: '+e.message); }
+    });
+    panel.querySelector('#dtDl').addEventListener('click', ()=>{
+      const blob = new Blob([buildReport()], {type:'text/plain'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = 'devtool-report.txt'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+    });
 
+    // flush buffered lines
+    buf.forEach(appendLine);
+    bumpBadge();
+  }
+  function openPanel(){ ensureUI(); els.panel && els.panel.classList.add('open'); saveState(); }
+  function saveState(){
+    if (!els.panel) return;
+    try{
+      const cs=getComputedStyle(els.panel);
+      localStorage.setItem(LS.OPEN, els.panel.classList.contains('open')?'1':'0');
+      localStorage.setItem(LS.SIZE, JSON.stringify({ w: parseInt(els.panel.style.width||els.panel.offsetWidth,10), h: parseInt(els.panel.style.height||els.panel.offsetHeight,10) }));
+      localStorage.setItem(LS.POS,  JSON.stringify({ r: parseFloat(cs.right), b: parseFloat(cs.bottom) }));
+    }catch(_){}
+  }
+  function buildReport(){
+    const hdr = [
+      '=== DevTool Report ===',
+      'Time: ' + new Date().toISOString(),
+      'URL:  ' + location.href,
+      'UA:   ' + navigator.userAgent,
+      `Counts: ERR=${ERR} WRN=${WRN} LOG=${LOG} INF=${INF} DBG=${DBG}`,
+      '----------------------'
+    ].join('\n');
+    return hdr+'\n'+buf.join('\n')+'\n';
+  }
 
+  // mark lifecycle
+  document.addEventListener('readystatechange', ()=>push('INF',['readyState=',document.readyState]));
+  addEventListener('DOMContentLoaded', ()=>push('INF',['DOMContentLoaded']));
+  addEventListener('load', ()=>push('INF',['window.load']));
+
+  // show UI as soon as body exists
+  ensureUI();
+
+  } catch (fatal) {
+    try { console.error('[DevTool fatal]', fatal); } catch(_){}
+  }
+})();
+</script>
 
 
 
