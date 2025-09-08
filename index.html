@@ -294,292 +294,238 @@
 
 
 <script>
+/* ====== DevTool: kompakts panelis ar ritināšanu un atskaites kopēšanu ====== */
 (function(){
-  if (window.__DevToolInstalled) return; 
-  window.__DevToolInstalled = true;
+  // ─ helpers
+  const fmtTime = d => new Date(d).toLocaleTimeString();
+  const toText  = v => {
+    try{
+      if (typeof v === 'string') return v;
+      if (v instanceof Error) return (v.stack || (v.name+': '+v.message));
+      return JSON.stringify(v, null, 2);
+    }catch(e){ return String(v); }
+  };
 
-  /* ---------- stils ---------- */
-  const css = `
-#devtoolsBtn{
-  position:fixed; bottom:12px; left:12px; z-index:2147483647;
-  width:42px; height:42px; border-radius:10px; border:1px solid rgba(255,255,255,.12);
-  background:linear-gradient(180deg,#181c22,#12151a);
-  color:#e9eef7; display:grid; place-items:center; cursor:pointer;
-  box-shadow:0 10px 26px rgba(0,0,0,.45); font-size:20px; line-height:1;
-}
-#devtoolsBtn:hover{ transform:translateY(-1px); }
-#devtoolsPanel{
-  position:fixed; right:12px; bottom:12px; z-index:2147483647;
-  width:min(480px,96vw); height:min(68vh,88vh);
-  background:linear-gradient(180deg,#0e1116f2,#12151af2);
-  border:1px solid rgba(255,255,255,.12); border-radius:14px;
-  box-shadow:0 18px 40px rgba(0,0,0,.55); color:#e9eef7;
-  font:13px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  display:flex; flex-direction:column; overflow:hidden;
-}
-#devtoolsPanel.closed{ display:none; }
-#devtoolsPanel .hdr{display:flex;align-items:center;gap:10px;padding:10px 12px;background:linear-gradient(180deg,#141920,#0f1318);}
-#devtoolsPanel .hdr strong{font-weight:700;}
-#devtoolsPanel .hdr .pill{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;background:#1b2531;color:#c9d6e5;border:1px solid rgba(255,255,255,.08)}
-#devtoolsPanel .hdr button{background:#232a33;border:1px solid rgba(255,255,255,.12);color:#e9eef7;border-radius:8px;height:30px;padding:0 8px;cursor:pointer}
-#devtoolsPanel .body{padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0}
-#devtoolsPanel .row{display:flex;gap:8px;flex-wrap:wrap}
-#devtoolsPanel .row .btn{background:#232a33;border:1px solid rgba(255,255,255,.12);color:#e9eef7;border-radius:8px;height:32px;padding:0 10px;cursor:pointer}
-#devtoolsPanel .grid{display:grid;grid-template-columns: 1fr auto auto;gap:6px;align-items:center;border-top:1px solid rgba(255,255,255,.08);padding-top:8px}
-#devtoolsPanel .grid .k{color:#9fb1c9}
-#devtoolsPanel .ok{color:#8be28b} .warn{color:#ffd479} .bad{color:#ff6f6f}
-#devtoolsPanel pre{flex:1;min-height:120px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-  border-radius:10px;padding:8px 10px;overflow:auto;white-space:pre-wrap;word-break:break-word;}
-`;
+  // ─ UI
+  const toggle = document.createElement('button');
+  toggle.id = 'devtool-toggle';
+  toggle.type = 'button';
+  toggle.title = 'Atvērt DevTool';
+  toggle.textContent = '🛠';
+  document.body.appendChild(toggle);
 
-  const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
-
-  /* ---------- helpers ---------- */
-  const $ = sel => document.querySelector(sel);
-  const exists = sel => !!$(sel);
-  const now = () => new Date().toISOString().replace('T',' ').replace('Z','');
-  function safeRect(el){ try{ const r = el.getBoundingClientRect(); return {w:Math.round(r.width), h:Math.round(r.height)}; }catch(_){ return {w:0,h:0}; } }
-  function isVisible(el){
-    if (!el) return false;
-    const cs = getComputedStyle(el);
-    const r = el.getBoundingClientRect();
-    return cs.display!=='none' && cs.visibility!=='hidden' && r.width>0 && r.height>0;
-  }
-  function textBool(b){ return b ? '✓' : '✕'; }
-
-  /* ---------- UI ---------- */
-  const btn = document.createElement('button');
-  btn.id='devtoolsBtn'; btn.type='button'; btn.title='Atvērt diagnostiku'; btn.innerText='🛠️';
-  document.body.appendChild(btn);
-
-  const panel = document.createElement('div');
-  panel.id='devtoolsPanel'; panel.className='closed';
-  panel.innerHTML = `
-    <div class="hdr">
-      <strong>DevTool • Tāfeles diagnostika</strong>
-      <span id="devStatus" class="pill">idle</span>
-      <button id="devClose">Aizvērt</button>
+  const root = document.createElement('div');
+  root.id = 'devtool';
+  root.innerHTML = `
+    <div class="bar">
+      <strong>DevTool</strong>
+      <span class="spacer"></span>
+      <button data-act="clear">Notīrīt</button>
+      <button data-act="min">Min</button>
+      <button data-act="close">✖</button>
     </div>
-    <div class="body">
-      <div class="row">
-        <button id="devRun"   class="btn">Palaist Health-check</button>
-        <button id="devTrace" class="btn">Sākt izsekošanu</button>
-        <button id="devCopy"  class="btn">Kopēt atskaiti</button>
-        <button id="devClear" class="btn">Tīrīt žurnālu</button>
-      </div>
-      <div id="devHealth" class="grid"></div>
-      <pre id="devLog" aria-live="polite"></pre>
+    <div class="body" id="devtool-body"></div>
+    <div class="footer">
+      <button id="dt-copy">Kopēt atskaiti</button>
+      <button id="dt-dl">Lejupielādēt .txt</button>
+      <label title="Paturēt ritinājumu apakšā"><input type="checkbox" id="dt-lock" checked> Scroll-lock</label>
+      <label title="Pauzēt jaunu rindu pievienošanu"><input type="checkbox" id="dt-pause"> Pauze</label>
     </div>`;
-  document.body.appendChild(panel);
+  document.body.appendChild(root);
 
-  const statusEl = panel.querySelector('#devStatus');
-  const logEl    = panel.querySelector('#devLog');
-  let tracing = false;
-  const cleanups = [];
+  const body  = root.querySelector('#devtool-body');
+  const lock  = root.querySelector('#dt-lock');
+  const pause = root.querySelector('#dt-pause');
 
-  function setStatus(txt){ statusEl.textContent = txt; }
-  function log(msg, obj){
-    const line = `[${now()}] ${msg}` + (obj ? `\n${stringify(obj)}` : '');
-    logEl.textContent += (logEl.textContent ? '\n' : '') + line;
-    logEl.scrollTop = logEl.scrollHeight;
-    try{ console.debug('%c[DevTool]','color:#8ab4f8', msg, obj||''); }catch(_){}
+  // ─ atvēršana/aizvēršana
+  toggle.addEventListener('click', ()=> root.classList.toggle('open'));
+  root.querySelector('[data-act="close"]').addEventListener('click', ()=> root.classList.remove('open'));
+  root.querySelector('[data-act="min"]').addEventListener('click', ()=>{
+    // samazinām līdz šaurai joslai; klikšķis uz joslas atkal atver
+    const h = root.style.height;
+    root.style.height = (h && parseInt(h) < 120) ? '' : '38px';
+  });
+
+  // notīrīt
+  root.querySelector('[data-act="clear"]').addEventListener('click', ()=> { body.textContent = ''; });
+
+  // ─ drag and drop pārvietošana ar virsraksta joslu
+  (function enableDrag(){
+    const bar = root.querySelector('.bar');
+    let dragging = false, sx=0, sy=0, startRight=0, startBottom=0;
+    const onDown = e => {
+      dragging = true;
+      const ev = e.touches ? e.touches[0] : e;
+      sx = ev.clientX; sy = ev.clientY;
+      const cs = getComputedStyle(root);
+      startRight  = parseFloat(cs.right);
+      startBottom = parseFloat(cs.bottom);
+      e.preventDefault();
+    };
+    const onMove = e => {
+      if(!dragging) return;
+      const ev = e.touches ? e.touches[0] : e;
+      const dx = ev.clientX - sx;
+      const dy = ev.clientY - sy;
+      root.style.right  = Math.max(4, startRight - dx) + 'px';
+      root.style.bottom = Math.max(4, startBottom - dy) + 'px';
+    };
+    const onUp = ()=> dragging=false;
+
+    bar.addEventListener('mousedown', onDown);
+    bar.addEventListener('touchstart', onDown, {passive:false});
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onMove, {passive:false});
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchend', onUp);
+  })();
+
+  // ─ log buffer + pievienošana
+  function appendLine(txt){
+    if (pause.checked) return;
+    const atBottom = lock.checked && (body.scrollTop + body.clientHeight >= body.scrollHeight - 4);
+    const line = document.createElement('div');
+    line.textContent = txt;
+    body.appendChild(line);
+    if (atBottom) body.scrollTop = body.scrollHeight;
   }
-  window.__devlog = log; // noder, ja gribi pašrocīgi ielogot no sava koda
+  function log(){ appendLine(`[${fmtTime(Date.now())}] ` + Array.from(arguments).map(toText).join(' ')); }
 
-  function stringify(v){
-    try{ return (typeof v==='string') ? v : JSON.stringify(v, (k,val)=> val instanceof Node ? `[Node:${val.nodeName}]` : val, 2); }
-    catch(_){ return String(v); }
-  }
+  // ─ Report (savāc satura stāvokli)
+  function makeReport(){
+    const lines = [];
+    const ls = k => (localStorage.getItem(k) ?? '—');
+    const safe = id => {
+      const el = document.getElementById(id);
+      if(!el) return '—';
+      const r = el.getBoundingClientRect();
+      return `${id}: ${Math.round(r.width)}×${Math.round(r.height)} (display:${getComputedStyle(el).display})`;
+    };
 
-  function open(){ panel.classList.remove('closed'); setStatus('open'); }
-  function close(){ panel.classList.add('closed'); setStatus('idle'); }
-  btn.addEventListener('click', open);
-  panel.querySelector('#devClose').addEventListener('click', close);
+    lines.push('=== ATSTĀVOKĽA ATSKAITE =========================');
+    lines.push('URL: ' + location.href);
+    lines.push('Laiks: ' + new Date().toString());
+    lines.push('User-Agent: ' + navigator.userAgent);
+    lines.push('');
+    lines.push('Viewport: ' + window.innerWidth + '×' + window.innerHeight);
+    lines.push('visualViewport: ' + (window.visualViewport ? `${Math.round(window.visualViewport.width)}×${Math.round(window.visualViewport.height)}` : 'nav'));
+    lines.push('');
+    lines.push('localStorage:');
+    lines.push('  onlineMapActive = ' + ls('onlineMapActive'));
+    lines.push('  buttonPosition  = ' + ls('buttonPosition'));
+    lines.push('  mapDarken       = ' + ls('mapDarken'));
+    lines.push('');
+    lines.push('Elementi:');
+    lines.push('  ' + safe('buttonContainer'));
+    lines.push('  ' + safe('onlineMap'));
+    lines.push('  ' + safe('mapCanvas'));
+    lines.push('  ' + safe('about'));
+    lines.push('');
 
-  /* ---------- Health-check ---------- */
-  function kvRow(key, value, cls=''){
-    const wrap = document.createDocumentFragment();
-    const k = document.createElement('div'); k.className='k'; k.textContent = key;
-    const v = document.createElement('div'); v.className=cls; v.textContent = value;
-    const m = document.createElement('div'); m.textContent = ' ';
-    wrap.appendChild(k); wrap.appendChild(v); wrap.appendChild(m);
-    return wrap;
-  }
-
-  function runHealth(){
-    setStatus('checking…');
-    const grid = panel.querySelector('#devHealth');
-    grid.textContent = '';
-
-    // Pamatvide
-    const vv = (window.visualViewport && Math.round(window.visualViewport.height)) || window.innerHeight;
-    const w  = window.innerWidth, h = vv;
-    const dpr = window.devicePixelRatio||1;
-    const mtp = navigator.maxTouchPoints||0;
-    grid.appendChild(kvRow('Logs', `${w}×${h} @${dpr}x`));
-    grid.appendChild(kvRow('Touch', `${mtp} punkts/i`));
-
-    // LocalStorage
-    const onlineFlag = localStorage.getItem('onlineMapActive');
-    const darken = localStorage.getItem('mapDarken')||'0';
-    grid.appendChild(kvRow('onlineMapActive', String(onlineFlag)));
-    grid.appendChild(kvRow('mapDarken', `${darken}%`));
-
-    // Elementi
-    const sels = [
-      ['#mapCanvas','Canvas'],
-      ['#onlineMap','Leaflet karte'],
-      ['#onlineMapDim','Kartes pārklājums (dim)'],
-      ['#buttonContainer','Pogu doks'],
-      ['#mapDimmerRange','Tumšuma slīdnis'],
-      ['#resizeHandle','Resize rokturis'],
-      ['#compassContainer','Kompass'],
-      ['#contentFrame','Saturs (Materials)'],
-      ['#instructionFrame','Saturs (Guide)'],
-      ['#fullscreenMessage','Fullscreen ziņa'],
-      ['#mobile-warning','Mobile brīdinājums'],
-      ['#touchscreenPopup','Touch popup'],
-      ['#app-preloader','Preloader']
-    ];
-    sels.forEach(([sel,label])=>{
-      const el = $(sel); const ok = !!el; 
-      const visible = isVisible(el);
-      const r = ok ? safeRect(el) : {w:0,h:0};
-      grid.appendChild(kvRow(label, `${textBool(ok)}  ${visible?'(redzams)':'(n/redzams)'}  ${r.w}×${r.h}`, ok && visible ? 'ok' : (ok ? 'warn' : 'bad')));
-    });
-
-    // Leaflet
-    const leafletLoaded = !!window.L;
-    grid.appendChild(kvRow('Leaflet L', textBool(leafletLoaded), leafletLoaded?'ok':'bad'));
-    let mapState = 'nav';
+    // mēģinām paņemt Leaflet karti, ja pieejama
     try{
-      const getMap = window.__getMap;
-      if (typeof getMap === 'function') {
-        const m = getMap();
-        if (m && m._loaded) mapState = `ok (zoom ${m.getZoom()}, ctr ${m.getCenter().lat.toFixed(4)},${m.getCenter().lng.toFixed(4)})`;
-        else if (m) mapState = 'inited (nav _loaded)';
+      const map = window.__getMap ? window.__getMap() : null;
+      if (map && map.getCenter){
+        const c = map.getCenter();
+        lines.push('Karte:');
+        lines.push('  zoom=' + map.getZoom());
+        lines.push(`  center= ${c.lat.toFixed(6)}, ${c.lng.toFixed(6)}`);
+        lines.push('  size= ' + map.getSize().x + '×' + map.getSize().y);
+        lines.push('');
+      } else {
+        lines.push('Karte: nav pieejama (__getMap nav vai initMap vēl nav pabeigts).');
+        lines.push('');
       }
-    }catch(_){}
-    grid.appendChild(kvRow('Karte (ref)', mapState, /ok/.test(mapState)?'ok':(mapState==='nav'?'warn':'warn')));
-
-    // Preloader stāvoklis
-    const pre = $('#app-preloader');
-    if (pre){
-      const hidden = pre.classList.contains('hidden');
-      const bodyPreloading = document.body.classList.contains('preloading');
-      grid.appendChild(kvRow('Preloader', hidden?'pabeigts':'REDZAMS', hidden?'ok':'warn'));
-      grid.appendChild(kvRow('Body.preloading', textBool(bodyPreloading), bodyPreloading?'warn':'ok'));
+    }catch(e){
+      lines.push('Karte: kļūda, lasot stāvokli: ' + (e && e.message ? e.message : e));
+      lines.push('');
     }
 
-    // “Tāfeles’” iesp. cēloņu hinti
-    const hints = [];
-    if (onlineFlag === '1' && !isVisible($('#onlineMap')) && !leafletLoaded) {
-      hints.push('onlineMapActive=1, bet Leaflet nav ielādēts vai #onlineMap neredzams.');
+    lines.push('Pēdējās redzamās rindas no loga:');
+    // paņemam redzamo loga saturu
+    const items = body.querySelectorAll('div');
+    const n = items.length;
+    const tail = Math.max(0, n - 80); // max 80 rindas
+    for (let i = tail; i < n; i++){
+      lines.push('  ' + items[i].textContent);
     }
-    if (!isVisible($('#mapCanvas'))) {
-      hints.push('#mapCanvas neredzams — iespējams, pārklāts ar preloader vai tiešsaistes karti.');
-    }
-    if ($('#resizeHandle') && !isVisible($('#resizeHandle'))) {
-      hints.push('Resize rokturis nav redzams — attēls var nebūt ielādēts.');
-    }
-    if (hints.length) grid.appendChild(kvRow('Hints', hints.join('  |  '), 'warn'));
-
-    setStatus('ready');
-    log('Health-check pabeigts', {hints});
+    lines.push('====================================================');
+    return lines.join('\n');
   }
 
-  /* ---------- Trace režīms ---------- */
-  function on(el, ev, fn, opts){
-    el.addEventListener(ev, fn, opts);
-    cleanups.push(()=> el.removeEventListener(ev, fn, opts));
-  }
-
-  function startTrace(){
-    if (tracing) return; tracing = true;
-    setStatus('tracing');
-    log('Izsekošana START');
-
-    // log window kļūdas
-    on(window, 'error', (e)=> log('window.error', {msg:e.message, src:e.filename, line:e.lineno}));
-    on(window, 'unhandledrejection', (e)=> log('unhandledrejection', {reason: String(e.reason)}));
-
-    // ielādes / preloaderis
-    const pre = $('#app-preloader');
-    if (pre){
-      const mo = new MutationObserver(()=>{ 
-        const hidden = pre.classList.contains('hidden');
-        log('Preloader klase mainīta', {hidden});
-      });
-      mo.observe(pre, {attributes:true, attributeFilter:['class']});
-      cleanups.push(()=> mo.disconnect());
-    }
-
-    // izmēri, orientācija, fullscreen
-    ['resize','orientationchange','visibilitychange'].forEach(ev => on(window, ev, ()=> log(`window.${ev}`, {w:innerWidth,h:(visualViewport?visualViewport.height:innerHeight)})));
-    on(document, 'fullscreenchange', ()=> log('fullscreenchange', {active: !!(document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement||document.msFullscreenElement)}));
-
-    // kartes notikumi, ja pieejami
+  // ─ Kopēt / Lejupielādēt
+  root.querySelector('#dt-copy').addEventListener('click', async ()=>{
+    const txt = makeReport();
     try{
-      const getMap = window.__getMap;
-      if (typeof getMap === 'function'){
-        const m = getMap();
-        if (m){
-          ['load','moveend','zoomend','dragstart','contextmenu','popupopen'].forEach(ev=>{
-            m.on(ev, (e)=> log(`Leaflet:${ev}`, {zoom:m.getZoom(), center:m.getCenter()}));
-          });
-          cleanups.push(()=> ['load','moveend','zoomend','dragstart','contextmenu','popupopen'].forEach(ev=> m.off(ev)));
-          log('Leaflet trace piesaistīts');
+      if (navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(txt);
+        log('✅ Atskaites teksts nokopēts starpliktuvē.');
+      }else{
+        const ta = document.createElement('textarea');
+        ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        log('✅ Atskaites teksts nokopēts (rezerves metode).');
+      }
+    }catch(e){ log('❌ Neizdevās nokopēt: ' + e); }
+  });
+
+  root.querySelector('#dt-dl').addEventListener('click', ()=>{
+    const blob = new Blob([makeReport()], {type:'text/plain;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'atskaite.txt';
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(a.href);
+    a.remove();
+    log('⬇️ Sagatavota atskaite .txt formātā.');
+  });
+
+  // ─ Pieslēdzamies Leaflet kartei (kad gatava)
+  (function waitMapAndHook(){
+    let tries = 0, maxTries = 40; // ~20s
+    const t = setInterval(()=>{
+      tries++;
+      try{
+        if (window.__getMap){
+          const map = window.__getMap();
+          if (map && map.on){
+            clearInterval(t);
+            // būtiskie notikumi
+            map.on('load',      ()=> log('Leaflet: load'));
+            map.on('moveend',   ()=> { const c=map.getCenter(); log(`Leaflet: moveend zoom=${map.getZoom()} center=${c.lat.toFixed(6)},${c.lng.toFixed(6)}`); });
+            map.on('zoomend',   ()=> { const c=map.getCenter(); log(`Leaflet: zoomend zoom=${map.getZoom()} center=${c.lat.toFixed(6)},${c.lng.toFixed(6)}`); });
+            map.on('layeradd',  e => log('Leaflet: layeradd', (e.layer && e.layer._leaflet_id) || ''));
+            map.on('layerremove',e=> log('Leaflet: layerremove', (e.layer && e.layer._leaflet_id) || ''));
+            log('🔗 DevTool pieslēdzās Leaflet kartei.');
+          }
         }
-      }
-    }catch(_){}
+      }catch(e){ /* klusējam */ }
+      if (tries >= maxTries) clearInterval(t);
+    }, 500);
+  })();
 
-    // doks un pozīciju izvēlnes
-    const bc = $('#buttonContainer');
-    if (bc){
-      const mo = new MutationObserver(()=> log('buttonContainer.class mainīts', {className: bc.className}));
-      mo.observe(bc, {attributes:true, attributeFilter:['class']});
-      cleanups.push(()=> mo.disconnect());
-    }
-  }
-
-  function stopTrace(){
-    if (!tracing) return; tracing = false;
-    while(cleanups.length){ try{ cleanups.pop()(); }catch(_){ } }
-    setStatus('ready'); log('Izsekošana STOP');
-  }
-
-  /* ---------- pogas ---------- */
-  panel.querySelector('#devRun').addEventListener('click', runHealth);
-  panel.querySelector('#devClear').addEventListener('click', ()=> (logEl.textContent=''));
-  panel.querySelector('#devCopy').addEventListener('click', async ()=>{
-    const healthTxt = panel.querySelector('#devHealth').innerText.replace(/\n{2,}/g,'\n');
-    const full = `=== HEALTH ===\n${healthTxt}\n\n=== LOG ===\n${logEl.textContent}`;
-    try{ await navigator.clipboard.writeText(full); setStatus('nokopēts'); }catch(_){ setStatus('copy fail'); }
+  // ─ pārtveram globālās kļūdas uz logu (palīdz atskaitē)
+  window.addEventListener('error', e => {
+    log('❗ Kļūda:', e.message, '@', e.filename+':'+e.lineno+':'+e.colno);
   });
-  panel.querySelector('#devTrace').addEventListener('click', (e)=>{
-    if (!tracing){ startTrace(); e.target.textContent = 'Stop izsekošanu'; }
-    else { stopTrace(); e.target.textContent = 'Sākt izsekošanu'; }
+  window.addEventListener('unhandledrejection', e => {
+    log('❗ Neapstrādāts solījums:', toText(e.reason));
   });
 
-  /* ---------- auto-hooki (ērtībai) ---------- */
-  // log DOMContentLoaded / load
-  if (document.readyState === 'complete') log('window.load (jau noticis)');
-  else window.addEventListener('load', ()=> log('window.load'));
+  // ─ publiska API “ja vajag”
+  window.__devtool = {
+    open(){ root.classList.add('open'); },
+    close(){ root.classList.remove('open'); },
+    log,
+    report: makeReport
+  };
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ()=> log('DOMContentLoaded'));
-  else log('DOMContentLoaded (jau noticis)');
-
-  // preloader sākotnējais stāvoklis
-  const pre = $('#app-preloader');
-  if (pre) log('Preloader stāvoklis', {hidden: pre.classList.contains('hidden'), bodyPreloading: document.body.classList.contains('preloading')});
-
-  // ja online karte bija ieslēgta — reģistrē hintu
-  const onlineFlag = localStorage.getItem('onlineMapActive');
-  if (onlineFlag === '1') log('onlineMapActive=1 — tiek gaidīts Leaflet', {leafletLoaded: !!window.L});
-
+  // sākuma ziņa
+  log('DevTool gatavs. Noklikšķini 🛠, lai atvērtu.');
 })();
 </script>
-
 
 
 
