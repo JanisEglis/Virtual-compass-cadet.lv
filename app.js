@@ -930,7 +930,7 @@ function utmToLL(E, N, zone, hemi){
     if (!window.L){ console.warn('Leaflet nav ielādēts'); return false; }
 
     map = L.map(mapDiv, { zoomControl:true, attributionControl:true });
-
+window.__getMap = () => map;   // 👈 Ieliec tieši šeit
     const osm  = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '&copy; OpenStreetMap'
     }).addTo(map);
