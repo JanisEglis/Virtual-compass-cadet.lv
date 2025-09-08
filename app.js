@@ -123,7 +123,17 @@ function debounce(func, wait = 50) {
 						    timeout = setTimeout(() => func.apply(this, args), wait);
 						  };
 						}
-						
+
+
+// — Drošie selektori un notikumu piesaiste —
+const $  = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const byId = (id) => document.getElementById(id);
+const on = (el, ev, fn, opts) => el && el.addEventListener(ev, fn, opts);
+
+
+
+
 						// Izmanto vizuālo viewport (adreses joslas “elpošana”)
 						function updateViewportHeight() {
 						  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -177,15 +187,17 @@ function debounce(func, wait = 50) {
 
 
 						// Funkcija, kas maina attēlus uz pogām
-						function toggleButtonImage(buttonId) {
-							const button = document.getElementById(buttonId);
-							const img = button.querySelector('img');
-							const config = buttonImageMap[buttonId];
+function toggleButtonImage(buttonId) {
+  const button = document.getElementById(buttonId);
+  if (!button) return;
+  const img = button.querySelector('img');
+  const config = buttonImageMap[buttonId];
+  if (!img || !config) return;
 
-							if (img && config) {
-								img.src = img.src === config.defaultSrc ? config.alternateSrc : config.defaultSrc;
-							}
-						}
+  const cur = img.getAttribute('src'); // salīdzinām ar oriģinālo atributu
+  img.setAttribute('src', cur === config.defaultSrc ? config.alternateSrc : config.defaultSrc);
+}
+
 
 						// Pievienojam notikumus pogām
 var _tgl = document.getElementById('toggleRotationMode');
@@ -273,7 +285,7 @@ if (_lck) _lck.addEventListener('click', function(){ toggleButtonImage('lockRota
 							 * Funkcija, kas uzsāk pārbaudi ik pēc 1 sekundes, vai ir pievienota skārienjūtīga ierīce.
 							 */
 							function startContinuousCheck() {
-								setInterval(checkTouchscreenStatus, 1000); // Pārbauda ik pēc 1 sekundes
+								setInterval(checkTouchscreenStatus, 3000); // Pārbauda ik pēc 1 sekundes
 							}
 
 							/**
@@ -312,33 +324,25 @@ if (_lck) _lck.addEventListener('click', function(){ toggleButtonImage('lockRota
 
 
 						// Funkcija, kas pārbauda ierīces orientāciju
-						function checkOrientation() {
-							const overlay = document.getElementById('orientation-overlay');
+function checkOrientation() {
+  const overlay = document.getElementById('orientation-overlay');
+  if (!overlay) return;
+  overlay.style.display = window.matchMedia("(orientation: portrait)").matches ? 'flex' : 'none';
+}
 
-							if (window.matchMedia("(orientation: portrait)").matches) {
-								// Ja ierīce ir vertikālā režīmā
-								overlay.style.display = 'flex';
-							} else {
-								// Ja ierīce ir horizontālā režīmā
-								overlay.style.display = 'none';
-							}
-						}
 
 
 						// Funkcija pārbauda, vai tiek izmantots viedtālrunis ar mazu ekrānu
-						function showMobileWarning() {
-							const warningElement = document.getElementById('mobile-warning');
+function showMobileWarning() {
+  const warningElement = document.getElementById('mobile-warning');
+  if (!warningElement) return;
 
-							// Viedtālruņa detekcija (User Agent + ekrāna platuma pārbaude)
-							const isMobileDevice = /iphone|ipod|android.*mobile|windows phone|iemobile|opera mini/.test(navigator.userAgent.toLowerCase());
-							const isSmallScreen = window.innerWidth < 900; // Ekrāna platums < 768px
+  const isMobileDevice = /iphone|ipod|android.*mobile|windows phone|iemobile|opera mini/.test(navigator.userAgent.toLowerCase());
+  const isSmallScreen = window.innerWidth < 900;
 
-							if (isMobileDevice && isSmallScreen) {
-								warningElement.style.display = 'flex'; // Parāda brīdinājumu
-							} else {
-								warningElement.style.display = 'none'; // Slēpj brīdinājumu
-							}
-						}
+  warningElement.style.display = (isMobileDevice && isSmallScreen) ? 'flex' : 'none';
+}
+
 
 						// Notikumu klausītāji
 						window.addEventListener('load', showMobileWarning);
@@ -532,16 +536,20 @@ function setDarkness(percent){
 
 
 
-						const resizeHandle = document.getElementById('resizeHandle');
-						resizeHandle.style.display = 'block';
-						resizeHandle.style.position = 'absolute'; // Nodrošina, ka rokturis tiek pozicionēts attiecībā pret attēlu, nevis fiksēti uz ekrāna.
-						resizeHandle.style.zIndex = '10';
-						resizeHandle.style.width = Math.max(40, window.innerWidth * 0.05) + 'px';
-						resizeHandle.style.height = Math.max(40, window.innerHeight * 0.05) + 'px';
-						resizeHandle.style.backgroundImage = 'url("https://site-710050.mozfiles.com/files/710050/resize_map__1_.png")';
+const resizeHandle = document.getElementById('resizeHandle');
+if (resizeHandle) {
+  resizeHandle.style.display = 'block';
+  resizeHandle.style.position = 'absolute';
+  resizeHandle.style.zIndex = '10';
+  resizeHandle.style.width = Math.max(40, window.innerWidth * 0.05) + 'px';
+  resizeHandle.style.height = Math.max(40, window.innerHeight * 0.05) + 'px';
+  resizeHandle.style.backgroundImage = 'url("https://site-710050.mozfiles.com/files/710050/resize_map__1_.png")';
+  resizeHandle.style.cursor = 'se-resize';
+  resizeHandle.style.border = '3px solid red';
 
-						resizeHandle.style.cursor = 'se-resize';
-						resizeHandle.style.border = '3px solid red';
+  on(resizeHandle, 'mousedown', startResize);
+  on(resizeHandle, 'touchstart', startResize);
+}
 
 
 
@@ -1684,10 +1692,10 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 						
 
 						// Reset Map Button Functionality
-						document.getElementById('resetMap').addEventListener('click', () => {
-							adjustImageSize();
-							drawImage();
-						});
+	on(byId('resetMap'), 'click', () => {
+  adjustImageSize();
+  drawImage();
+});
 
 						// Attēla pārvietošana
 						canvas.addEventListener('mousedown', (e) => {
@@ -1791,9 +1799,7 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 							return Math.sqrt(dx * dx + dy * dy);
 						}
 
-						// Izmēra maiņa ar rokturi un skārienjūtību
-						resizeHandle.addEventListener('mousedown', startResize);
-						resizeHandle.addEventListener('touchstart', startResize);
+
 
 						function startResize(e) {
 							e.preventDefault();
@@ -1962,6 +1968,8 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 							let globalScale = 1;      // mērogs visam kompasam (compassScaleContainer)
 							let baseRotation = 0;     // rotācija bāzei (compassInner)
 							let scaleRotation = 70;    // rotācija skalai (compassScaleInner)
+let lastRotation = 0;     // pinch/rotate aprēķinam
+
 
 						// Helper funkcijas
 						function getDistance(touch1, touch2) {
@@ -1981,12 +1989,17 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 
 
 
-						toggleRotationModeButton.addEventListener('click', () => {
-							activeRotationTarget = activeRotationTarget === 'compassInner' ? 'compassScaleInner' : 'compassInner';
-							
-							// Mainām pogas fona krāsu, lai parādītu, kas pašlaik tiek rotēts
-							toggleRotationModeButton.style.backgroundColor = activeRotationTarget === 'compassInner' ? 'rgba(91, 16, 16, 0.8)' : 'rgb(187, 1, 1)';
-						});
+if (toggleRotationModeButton) {
+  toggleRotationModeButton.addEventListener('click', () => {
+    activeRotationTarget = (activeRotationTarget === 'compassInner')
+      ? 'compassScaleInner'
+      : 'compassInner';
+
+    toggleRotationModeButton.style.backgroundColor =
+      (activeRotationTarget === 'compassInner') ? 'rgba(91, 16, 16, 0.8)' : 'rgb(187, 1, 1)';
+  });
+}
+
 
 
 
@@ -2275,7 +2288,7 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 								const toggleFullscreenButton = document.getElementById('toggleFullscreen');
 								const fullscreenIcon = document.getElementById('fullscreenIcon');
 								const fullscreenPopup = document.getElementById('fullscreenPopup');
-
+  if (!toggleFullscreenButton || !fullscreenIcon || !fullscreenPopup) return;
 								const enterFullscreenIcon = 'https://site-710050.mozfiles.com/files/710050/icon_fullscreen_enter.png';
 								const exitFullscreenIcon = 'https://site-710050.mozfiles.com/files/710050/icon_fullscreen_exit.png';
 
@@ -2367,19 +2380,22 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 
 
 
-							document.getElementById("toggleMaterials").addEventListener("click", function() {
-								let menu = document.getElementById("dropdownMaterials");
-								let toggleButton = document.getElementById("toggleMaterials");
-								menu.classList.toggle("visible");
-								toggleButton.classList.toggle("active");
-							});
+on(byId("toggleMaterials"), "click", function() {
+  let menu = byId("dropdownMaterials");
+  let toggleButton = byId("toggleMaterials");
+  if (!menu || !toggleButton) return;
+  menu.classList.toggle("visible");
+  toggleButton.classList.toggle("active");
+});
 
-							document.getElementById("toggleInstruction").addEventListener("click", function() {
-								let menu = document.getElementById("dropdownInstruction");
-								let toggleButton = document.getElementById("toggleInstruction");
-								menu.classList.toggle("visible");
-								toggleButton.classList.toggle("active");
-							});
+on(byId("toggleInstruction"), "click", function() {
+  let menu = byId("dropdownInstruction");
+  let toggleButton = byId("toggleInstruction");
+  if (!menu || !toggleButton) return;
+  menu.classList.toggle("visible");
+  toggleButton.classList.toggle("active");
+});
+
 
 							document.addEventListener("click", function(event) {
 								let instructionMenu = document.getElementById("dropdownInstruction");
