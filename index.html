@@ -411,16 +411,7 @@
 <script nomodule src="https://cdn.jsdelivr.net/npm/core-js-bundle/minified.js"></script>
 <script nomodule src="https://cdn.jsdelivr.net/npm/resize-observer-polyfill@1.5.1/dist/ResizeObserver.global.js"></script>
 
-<!-- Modern/Legacy sargs: ielādē app.js vai app.legacy.js (abi ar defer) -->
-<script>
-(function(){
-  function supportsOptChain(){ try { return new Function("var a={b:1}; return a?.b")()===1; } catch(e){ return false; } }
-  function supportsNullish(){ try { return new Function("var a=null; return a ?? 5")()===5; } catch(e){ return false; } }
-  var modern = supportsOptChain() && supportsNullish();
-  var src = modern ? 'app.js' : 'app.legacy.js';
-  document.write('<script defer src="'+src+'"><\/script>');
-})();
-</script>
+
 
 
 
@@ -702,6 +693,23 @@
 
 
 
+<!-- Modern/Legacy sargs: izvēlas app.js vai app.legacy.js -->
+<script>
+(function(){
+  function supportsOptChain(){ try { return new Function("var a={b:1}; return a?.b")()===1; } catch(e){ return false; } }
+  function supportsNullish(){ try { return new Function("var a=null; return a ?? 5")()===5; } catch(e){ return false; } }
+
+  // Testiem: ?forceLegacy=1 piespiež legacy arī modernā pārlūkā
+  var q = new URLSearchParams(location.search);
+  var forceLegacy = q.get('forceLegacy') === '1';
+
+  var modern = !forceLegacy && supportsOptChain() && supportsNullish();
+  var src = modern ? 'app.js' : 'app.legacy.js';
+
+  console.info('[loader] choosing:', src);
+  document.write('<script src="'+src+'"><\/script>');
+})();
+</script>
 
 
 
