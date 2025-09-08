@@ -188,13 +188,11 @@ function debounce(func, wait = 50) {
 						}
 
 						// Pievienojam notikumus pogām
-document.getElementById('toggleRotationMode').addEventListener('click', () => {
-							toggleButtonImage('toggleRotationMode');
-						});
+var _tgl = document.getElementById('toggleRotationMode');
+if (_tgl) _tgl.addEventListener('click', function(){ toggleButtonImage('toggleRotationMode'); });
 
-						document.getElementById('lockRotationMode').addEventListener('click', () => {
-							toggleButtonImage('lockRotationMode');
-						});
+var _lck = document.getElementById('lockRotationMode');
+if (_lck) _lck.addEventListener('click', function(){ toggleButtonImage('lockRotationMode'); });
 
 
 
@@ -1576,54 +1574,56 @@ window.__bindDimmer = function(inputEl){
   setDarkness(saved); // piemēro uzreiz
 };
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
-  function showOnlineMap(){
-    mapDiv.style.display = 'block';
+function showOnlineMap(){
+  mapDiv.style.display = 'block';
 
-    // drošībai – ja CSS nav iedevis izmēru
-    if (!mapDiv.offsetWidth || !mapDiv.offsetHeight){
-      const p = mapDiv.parentElement;
-      mapDiv.style.width  = (p?.clientWidth  || window.innerWidth)  + 'px';
-      mapDiv.style.height = (p?.clientHeight || window.innerHeight) + 'px';
-    }
-
-    mapDim.style.display = 'block';
-
-const v = +(localStorage.getItem('mapDarken') || 0);
-setDarkness(v);	  
-    canvas.style.display = 'none';
-    if (resizeH) resizeH.style.display = 'none';
-
-    if (!initMap()){
-      mapDiv.style.display = 'none';
-      mapDim.style.display = 'none';
-      canvas.style.display = 'block';
-      if (resizeH && (typeof img!=='undefined') && img && img.src) resizeH.style.display = 'block';
-      localStorage.setItem('onlineMapActive','0');
-      alert('Leaflet nav ielādējies — tiešsaistes karte izslēgta.');
-      return;
-    }
-
-    requestAnimationFrame(()=> map && map.invalidateSize(true));
-    setTimeout(()=> map && map.invalidateSize(true), 100);
-
-    btn?.classList.add('active');
-    localStorage.setItem('onlineMapActive','1');
-
-    syncDimOverlay();
-    window.__updateDimmerWidth && window.__updateDimmerWidth();
-    window.__fitDock && window.__fitDock();
+  if (!mapDiv.offsetWidth || !mapDiv.offsetHeight){
+    const p = mapDiv.parentElement;
+    mapDiv.style.width  = (p && p.clientWidth  ? p.clientWidth  : window.innerWidth)  + 'px';
+    mapDiv.style.height = (p && p.clientHeight ? p.clientHeight : window.innerHeight) + 'px';
   }
 
-  function hideOnlineMap(){
+  mapDim.style.display = 'block';
+
+  const v = +(localStorage.getItem('mapDarken') || 0);
+  setDarkness(v);
+
+  canvas.style.display = 'none';
+  if (resizeH && typeof img !== 'undefined' && img && img.src) resizeH.style.display = 'block';
+
+  if (!initMap()){
     mapDiv.style.display = 'none';
     mapDim.style.display = 'none';
     canvas.style.display = 'block';
-    if (resizeH && (typeof img!=='undefined') && img && img.src) resizeH.style.display = 'block';
-    btn?.classList.remove('active');
+    if (resizeH && typeof img !== 'undefined' && img && img.src) resizeH.style.display = 'block';
     localStorage.setItem('onlineMapActive','0');
-    window.__updateDimmerWidth && window.__updateDimmerWidth();
-    window.__fitDock && window.__fitDock();
+    alert('Leaflet nav ielādējies — tiešsaistes karte izslēgta.');
+    return;
   }
+
+  requestAnimationFrame(()=> map && map.invalidateSize(true));
+  setTimeout(()=> map && map.invalidateSize(true), 100);
+
+  if (btn) btn.classList.add('active');                 // ← bez ?.
+  localStorage.setItem('onlineMapActive','1');
+
+  syncDimOverlay();
+  window.__updateDimmerWidth && window.__updateDimmerWidth();
+  window.__fitDock && window.__fitDock();
+}
+
+function hideOnlineMap(){
+  mapDiv.style.display = 'none';
+  mapDim.style.display = 'none';
+  canvas.style.display = 'block';
+  if (resizeH && typeof img !== 'undefined' && img && img.src) resizeH.style.display = 'block';
+  if (btn) btn.classList.remove('active');              // ← bez ?.
+  localStorage.setItem('onlineMapActive','0');
+  window.__updateDimmerWidth && window.__updateDimmerWidth();
+  window.__fitDock && window.__fitDock();
+}
+
+
 
   btn && btn.addEventListener('click', () => {
     const isOn = mapDiv.style.display === 'block';
@@ -2886,54 +2886,51 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 
 
 
-							(function(){
-							  // 1) Tavs esošais – notīra inline stilus,
-							  //    lai .bottom/.left/.right CSS var stāties spēkā
-							  function updateDimmerPlacement(){
-							    const bc   = document.getElementById('buttonContainer');
-							    const dim  = bc?.querySelector('.dock-dimmer');
-							    if(!bc || !dim) return;
-							
-							    dim.style.gridRow = '';
-							    dim.style.gridColumn = '';
-							    dim.style.width = '';
-							    dim.style.maxWidth = '';
-							    dim.style.height = '';                 // ⇦ notīrām
-							    dim.style.removeProperty('--colH');    // ⇦ notīrām
-							  }
-							
-							  // 2) Jauns – uzliek precīzu rindu “span” sānā
-							  function updateDimmerSpan(){
-							    const bc    = document.getElementById('buttonContainer');
-							    const shell = bc?.querySelector('.dock-shell');
-							    const dim   = shell?.querySelector('.dock-dimmer');
-							    if(!bc || !shell || !dim) return;
-							
-							    // Apakšā span nav vajadzīgs
-							    const side = bc.classList.contains('left') || bc.classList.contains('right');
-							    if (!side) { dim.style.gridRow = ''; return; }
-							
-							    // Saskaitām redzamās pogas (ignorējam paslēptās)
-							    const rows = Math.max(
-							      1,
-							      [...shell.children].filter(el => el.tagName === 'BUTTON' && el.offsetParent !== null).length
-							    );
-							
-							    // Uzliekam precīzu span
-							    dim.style.gridRow = '1 / span ' + rows;
-							  }
-							
-							  // 3) Wrapperis – vispirms notīra, tad uzstāda span
-							  function updateDimmerAll(){
-							    updateDimmerPlacement();
-							    updateDimmerSpan();
-							  }
-							
-							  // Publiski un klausītāji
-							  window.__updateDimmerWidth = updateDimmerAll;
-							  window.addEventListener('load',  updateDimmerAll);
-							  window.addEventListener('resize',updateDimmerAll);
-							})();
+(function(){
+  function updateDimmerPlacement(){
+    var bc  = document.getElementById('buttonContainer');
+    if(!bc) return;
+    var dim = bc.querySelector('.dock-dimmer');
+    if(!dim) return;
+
+    dim.style.gridRow    = '';
+    dim.style.gridColumn = '';
+    dim.style.width      = '';
+    dim.style.maxWidth   = '';
+    dim.style.height     = '';
+    dim.style.removeProperty('--colH');
+  }
+
+  function updateDimmerSpan(){
+    var bc    = document.getElementById('buttonContainer');
+    if(!bc) return;
+    var shell = bc.querySelector('.dock-shell');
+    if(!shell) return;
+    var dim   = shell.querySelector('.dock-dimmer');
+    if(!dim) return;
+
+    var side = bc.classList.contains('left') || bc.classList.contains('right');
+    if (!side) { dim.style.gridRow = ''; return; }
+
+    var children = [].slice.call(shell.children);
+    var rows = Math.max(
+      1,
+      children.filter(function(el){ return el.tagName === 'BUTTON' && el.offsetParent !== null; }).length
+    );
+
+    dim.style.gridRow = '1 / span ' + rows;
+  }
+
+  function updateDimmerAll(){
+    updateDimmerPlacement();
+    updateDimmerSpan();
+  }
+
+  window.__updateDimmerWidth = updateDimmerAll;
+  window.addEventListener('load',  updateDimmerAll);
+  window.addEventListener('resize',updateDimmerAll);
+})();
+
 							
 							(function(){
 							  const prevUpdate = window.__updateDimmerWidth || function(){};
