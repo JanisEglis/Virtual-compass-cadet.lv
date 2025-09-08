@@ -1756,8 +1756,9 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 								startY = e.touches[0].clientY;
 								dragging = true;
 							} else if (e.touches.length === 2) { // Tālummaiņa
-								lastTouchDistance = getDistance(e.touches[0], e.touches[1]);
-							}
+  lastTouchDistance = canvasTouchDistance(e.touches[0], e.touches[1]);
+}
+
 						});
 
 
@@ -1775,11 +1776,11 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 								startY = e.touches[0].clientY;
 								drawImage();
 							} else if (e.touches.length === 2) { // Tālummaiņa
-								const touch1 = e.touches[0];
-								const touch2 = e.touches[1];
-								const newDistance = getDistance(touch1, touch2);
-								let zoomFactor = newDistance / lastTouchDistance;
-								lastTouchDistance = newDistance;
+  const touch1 = e.touches[0];
+  const touch2 = e.touches[1];
+  const newDistance = canvasTouchDistance(touch1, touch2);
+  let zoomFactor = newDistance / lastTouchDistance;
+  lastTouchDistance = newDistance;
 								
 								// Aprēķina pieskārienu centru
 								const centerX = (touch1.clientX + touch2.clientX) / 2;
@@ -1800,11 +1801,12 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 							dragging = false;
 						});
 
-						function getDistance(touch1, touch2) {
-							const dx = touch1.clientX - touch2.clientX;
-							const dy = touch1.clientY - touch2.clientY;
-							return Math.sqrt(dx * dx + dy * dy);
-						}
+function canvasTouchDistance(touch1, touch2) {
+  const dx = touch1.clientX - touch2.clientX;
+  const dy = touch1.clientY - touch2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
 
 
 
