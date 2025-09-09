@@ -89,55 +89,56 @@
 
 <script>
 (function(){
-  const url = document.getElementById('url');
-  const frame = document.getElementById('frame');
-  const device = document.getElementById('device');
-  const dims = document.getElementById('dims');
-  const viewport = document.getElementById('viewport');
-  const scaler = document.getElementById('scaler');
-  const btnLoad = document.getElementById('load');
-  const btnReload = document.getElementById('reload');
-  const btnLog = document.getElementById('toggleLog');
-  const log = document.getElementById('log');
-  const logc = document.getElementById('logc');
-  const chk = id => document.getElementById(id);
+  var url = document.getElementById('url');
+  var frame = document.getElementById('frame');
+  var device = document.getElementById('device');
+  var dims = document.getElementById('dims');
+  var viewport = document.getElementById('viewport');
+  var scaler = document.getElementById('scaler');
+  var btnLoad = document.getElementById('load');
+  var btnReload = document.getElementById('reload');
+  var btnLog = document.getElementById('toggleLog');
+  var log = document.getElementById('log');
+  var logc = document.getElementById('logc');
+  var chk = function(id){ return document.getElementById(id); };
 
-  // —— Sandbox režīms (Same-origin) ——
+  // — Sandbox (same-origin) —
   function applySandboxFlags(){
-    const flags = ['allow-scripts','allow-forms','allow-pointer-lock','allow-popups','allow-modals'];
+    var flags = ['allow-scripts','allow-forms','allow-pointer-lock','allow-popups','allow-modals'];
     if (chk('sameOrigin').checked) flags.push('allow-same-origin');
     frame.setAttribute('sandbox', flags.join(' '));
   }
-  document.getElementById('sameOrigin').addEventListener('change', () => {
+  document.getElementById('sameOrigin').addEventListener('change', function(){
     applySandboxFlags();
     try { if (frame.contentWindow) frame.contentWindow.location.reload(); } catch(_) {}
   });
 
-  // izmēri
-  document.querySelectorAll('.seg [data-sz]').forEach(b=>{
-    b.addEventListener('click', ()=>{
-      document.querySelectorAll('.seg [data-sz]').forEach(x=>x.setAttribute('aria-pressed','false'));
+  // Izmēri
+  Array.prototype.forEach.call(document.querySelectorAll('.seg [data-sz]'), function(b){
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(document.querySelectorAll('.seg [data-sz]'), function(x){ x.setAttribute('aria-pressed','false'); });
       b.setAttribute('aria-pressed','true');
-      const [w,h]=b.dataset.sz.split('x').map(Number);
+      var wh = b.getAttribute('data-sz').split('x');
+      var w = parseInt(wh[0],10), h=parseInt(wh[1],10);
       device.style.width = w+'px'; device.style.height = h+'px';
       applyFit();
     });
   });
 
-  btnLog.addEventListener('click', ()=>{ log.style.display = (log.style.display==='block')?'none':'block'; });
-  btnReload.addEventListener('click', ()=>{ if (frame.contentWindow) frame.contentWindow.location.reload(); });
-  btnLoad.addEventListener('click', ()=> loadTarget(url.value.trim() || 'index.html'));
-  url.addEventListener('keydown', e=>{ if(e.key==='Enter') loadTarget(url.value.trim()||'index.html'); });
-  window.addEventListener('resize', ()=> applyFit(), {passive:true});
+  btnLog.addEventListener('click', function(){ log.style.display = (log.style.display==='block')?'none':'block'; });
+  btnReload.addEventListener('click', function(){ if (frame.contentWindow) frame.contentWindow.location.reload(); });
+  btnLoad.addEventListener('click', function(){ loadTarget(url.value.trim() || 'index.html'); });
+  url.addEventListener('keydown', function(e){ if(e.key==='Enter') loadTarget(url.value.trim()||'index.html'); });
+  window.addEventListener('resize', function(){ applyFit(); }, {passive:true});
   chk('fitWidth').addEventListener('change', applyFit);
 
   // Dev logi no child
-  window.addEventListener('message', (e)=>{
-    const d = e.data;
+  window.addEventListener('message', function(e){
+    var d = e.data;
     if(!d || d.__em_sig!=='chrome60') return;
-    const pre = document.createElement('pre');
+    var pre = document.createElement('pre');
     pre.className = d.level || 'log';
-    pre.textContent = `[${(d.level||'log').toUpperCase()}] ` + (d.text||'');
+    pre.textContent = '['+(d.level||'log').toUpperCase()+'] ' + (d.text||'');
     logc.appendChild(pre);
     log.style.display = 'block';
     log.scrollTop = log.scrollHeight;
@@ -145,32 +146,34 @@
   });
 
   function updateDims(w, h, dpr){
-    const W = w || parseInt(device.style.width) || device.clientWidth;
-    const H = h || parseInt(device.style.height) || device.clientHeight;
-    const DPR = (dpr!==undefined) ? dpr : '?';
-    const zoom = Number((getCurrentScale()||1).toFixed(2));
-    dims.textContent = `${W}×${H} @ DPR${DPR} • Zoom ${zoom}×`;
+    var W = w || parseInt(device.style.width,10) || device.clientWidth;
+    var H = h || parseInt(device.style.height,10) || device.clientHeight;
+    var DPR = (dpr!==undefined) ? dpr : '?';
+    var zoom = Number((getCurrentScale()||1).toFixed(2));
+    dims.textContent = W+'×'+H+' @ DPR'+DPR+' • Zoom '+zoom+'×';
   }
 
   function errorToLog(msg){
-    const pre = document.createElement('pre');
+    var pre = document.createElement('pre');
     pre.className = 'err';
-    pre.textContent = `[ERR] ${msg}`;
+    pre.textContent = '[ERR] '+msg;
     logc.appendChild(pre);
     log.style.display = 'block';
     log.scrollTop = log.scrollHeight;
   }
 
   function sameOriginAbsolute(u){
-    try{ const full = new URL(u, location.href); return full.origin === location.origin ? full : null; }
-    catch{ return null; }
+    try{
+      var full = new URL(u, location.href);
+      return full.origin === location.origin ? full : null;
+    }catch(e){ return null; }
   }
 
-  // Bloķē <script type="module"> + modulepreload
+  // Bloķēt <script type="module"> + modulepreload
   function blockModules(html){
     html = html.replace(/<script\b([^>]*)>/gi, function(all, attrs){
       if(/\btype\s*=\s*["']module["']/i.test(attrs)){
-        const newAttrs = attrs.replace(/\btype\s*=\s*["']module["']/i,'').trim();
+        var newAttrs = attrs.replace(/\btype\s*=\s*["']module["']/i,'').trim();
         return '<script type="text/plain" data-blocked="module" '+ newAttrs + '>';
       }
       return all;
@@ -179,27 +182,82 @@
     return html;
   }
 
-  // Pievieno crossorigin="anonymous" ārējiem resursiem (pilnākiem erroriem)
+  // Pievieno crossorigin="anonymous" ārējiem resursiem
   function addCrossorigin(html){
-    html = html.replace(/<script\b([^>]*?)\bsrc\s*=\s*["']https?:\/\/[^"']+["']([^>]*)>/gi, (m, pre, post) => {
+    html = html.replace(/<script\b([^>]*?)\bsrc\s*=\s*["']https?:\/\/[^"']+["']([^>]*)>/gi, function(m, pre, post){
       if (/crossorigin\s*=/i.test(m)) return m;
-      return `<script ${pre.trim()} crossorigin="anonymous" ${post}>`;
+      return '<script '+pre.trim()+' crossorigin="anonymous" '+post+'>';
     });
-    html = html.replace(/<link\b([^>]*?)\brel\s*=\s*["']stylesheet["']([^>]*?)\bhref\s*=\s*["']https?:\/\/[^"']+["']([^>]*)>/gi, (m, a, b, c) => {
+    html = html.replace(/<link\b([^>]*?)\brel\s*=\s*["']stylesheet["']([^>]*?)\bhref\s*=\s*["']https?:\/\/[^"']+["']([^>]*)>/gi, function(m,a,b,c){
       if (/crossorigin\s*=/i.test(m)) return m;
-      return `<link ${a} rel="stylesheet" ${b} crossorigin="anonymous" ${c}>`;
+      return '<link '+a+' rel="stylesheet" '+b+' crossorigin="anonymous" '+c+'>';
     });
     return html;
   }
 
+  function buildPrelude(absHref, opts){
+    // Galva (<base>)
+    var parts = [];
+    parts.push('<base href="'+ absHref.replace(/"/g,'&quot;') +'">');
+
+    // Atvērt/ aizvērt <script> droši
+    var openS = '<scr'+'ipt>';
+    var closeS = '</scr'+'ipt>';
+
+    // JS kods kā tīrs string (bez `)
+    var code = '';
+    code += '(function(){\n';
+    code += '  var OPTS='+JSON.stringify(opts)+';\n';
+    code += '  function post(l,t,x){try{parent.postMessage({__em_sig:"chrome60",level:l,text:t,type:(x&&x.type)||"",dpr:(x&&x.dpr)||null},"*");}catch(e){}}\n';
+
+    // Konsoles hook + kļūdu notveršana
+    code += '  (function(){try{\n';
+    code += '    var o={};["log","warn","error"].forEach(function(k){ o[k]=console[k]; console[k]=function(){ try{post(k,Array.prototype.map.call(arguments,function(a){ try{return typeof a==="object"?JSON.stringify(a):String(a);}catch(e){return String(a);} }).join(" "));}catch(e){}; return o[k].apply(this,arguments); }; });\n';
+    code += '    window.addEventListener("error",function(e){ var msg=e.message||"Script error."; var file=e.filename||""; var line=e.lineno||0; var col=e.colno||0; var stack=(e.error&&e.error.stack)?"\\n"+e.error.stack:""; post("err", msg+" @"+file+":"+line+":"+col+stack); }, true);\n';
+    code += '    window.addEventListener("error",function(e){ var t=e.target; if(!t||t===window) return; var tag=t.tagName?t.tagName.toLowerCase():"?"; var url=(t.src||t.href||""); post("warn","Resource load error: <"+tag+"> "+url); }, true);\n';
+    code += '    window.addEventListener("unhandledrejection",function(e){ var r=e.reason; var txt=(r&&r.message)?r.message:String(r); var stack=(r&&r.stack)?"\\n"+r.stack:""; post("err","Unhandled promise rejection: "+txt+stack); },{passive:true});\n';
+    code += '    post("ok","Emulācijas prelude ielādēts.",{type:"meta",dpr:window.devicePixelRatio||"?"});\n';
+    code += '  }catch(e){}})();\n';
+
+    // UA spoof
+    code += '  (function(){ if(!OPTS.spoofUA) return; try{ var ua60="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"; var P=Object.getPrototypeOf(navigator); if(P){ Object.defineProperty(P,"userAgent",{configurable:true,get:function(){return ua60;}}); } if("userAgentData" in navigator){ try{ Object.defineProperty(P,"userAgentData",{configurable:true,get:function(){return undefined;}});}catch(e){} } post("log","UA spoof → Chrome 60"); }catch(e){ post("warn","UA spoof neizdevās: "+e.message); } })();\n';
+
+    // Touch & DPR
+    code += '  (function(){ try{ if(OPTS.forceTouch){ var P=Object.getPrototypeOf(navigator); if(P){ Object.defineProperty(P,"maxTouchPoints",{configurable:true,get:function(){return 10;}}); } try{ Object.defineProperty(window,"ontouchstart",{configurable:true,value:null}); }catch(e){} post("log","Touch režīms ieslēgts"); } if(OPTS.forceDPR1){ try{ Object.defineProperty(window,"devicePixelRatio",{configurable:true,get:function(){return 1;}}); post("log","DPR=1"); }catch(e){ post("warn","DPR piesaiste neizdevās: "+e.message); } } }catch(e){} })();\n';
+
+    // visualViewport
+    code += '  (function(){ try{ if(OPTS.disableVV){ try{ Object.defineProperty(window,"visualViewport",{configurable:true,value:undefined}); post("log","visualViewport atspējots"); }catch(e){} } else if(!("visualViewport" in window)){ var vv=(function(){ var o={}; var w=innerWidth,h=innerHeight,s=1,x=0,y=0; var evt=document.createDocumentFragment(); o.addEventListener=evt.addEventListener.bind(evt); o.removeEventListener=evt.removeEventListener.bind(evt); function upd(){ var nw=innerWidth,nh=innerHeight; if(nw!==w||nh!==h){ w=nw; h=nh; evt.dispatchEvent(new Event("resize")); } } Object.defineProperties(o,{ width:{get:function(){return w;}}, height:{get:function(){return h;}}, scale:{get:function(){return s;}}, pageTop:{get:function(){return y;}}, pageLeft:{get:function(){return x;}} }); addEventListener("resize",upd,{passive:true}); addEventListener("scroll",function(){ var ny=pageYOffset||document.documentElement.scrollTop; if(ny!==y){ y=ny; evt.dispatchEvent(new Event("scroll")); } },{passive:true}); return o; })(); Object.defineProperty(window,"visualViewport",{configurable:true,value:vv}); post("log","visualViewport polyfill ieslēgts"); } }catch(e){} })();\n';
+
+    // Storage SecurityError simulācija
+    code += '  (function(){ if(!OPTS.disableStorage) return; try{ var msg="Failed to read the \\'localStorage\\' property from \\'Window\\': The document is sandboxed and lacks the \\'allow-same-origin\\' flag."; Object.defineProperty(window,"localStorage",{configurable:true,get:function(){throw new DOMException(msg,"SecurityError");}}); Object.defineProperty(window,"sessionStorage",{configurable:true,get:function(){throw new DOMException(msg,"SecurityError");}}); post("warn","Storage atspējots (SecurityError simulācija)"); }catch(e){} })();\n';
+
+    // ResizeObserver
+    code += '  (function(){ try{ if(OPTS.useROPoly){ if(typeof window.ResizeObserver==="undefined"){ function RO(cb){ this.cb=cb; this.items=[]; } RO.prototype.observe=function(el){ if(!this.items.find(function(i){return i.el===el;})){ this.items.push({el:el,box:el.getBoundingClientRect()}); } }; RO.prototype.unobserve=function(el){ this.items=this.items.filter(function(i){return i.el!==el;}); }; RO.prototype.disconnect=function(){ this.items.length=0; }; var Obs=new Set(); function tick(inst){ var entries=[]; inst.items.forEach(function(it){ var r=it.el.getBoundingClientRect(); if(Math.abs(r.width-it.box.width)>0.5||Math.abs(r.height-it.box.height)>0.5){ entries.push({target:it.el,contentRect:r}); it.box=r; } }); if(entries.length) try{ inst.cb(entries,inst);}catch(e){ console.error(e);} } setInterval(function(){ Obs.forEach(tick); },250); var C=function(cb){ var ro=new RO(cb); Obs.add(ro); return ro; }; C.toString=function(){ return "function ResizeObserver() { [polyfill] }"; }; window.ResizeObserver=C; post("log","ResizeObserver polyfill ieslēgts"); } else { post("log","ResizeObserver atbalstīts"); } } else { try{ Object.defineProperty(window,"ResizeObserver",{configurable:true,value:undefined}); post("log","ResizeObserver nav pieejams (Chrome 60)"); }catch(e){} } }catch(e){} })();\n';
+
+    // IntersectionObserver
+    code += '  (function(){ try{ if(OPTS.useIOPoly && typeof window.IntersectionObserver==="undefined"){ function IO(cb,opts){ this.cb=cb; this.items=[]; this.thresholds=[(opts&&opts.threshold)||0]; } IO.prototype.observe=function(el){ if(!this.items.find(function(i){return i.el===el;})){ this.items.push({el:el,vis:false}); } }; IO.prototype.unobserve=function(el){ this.items=this.items.filter(function(i){return i.el!==el;}); }; IO.prototype.disconnect=function(){ this.items.length=0; }; function vis(el){ var r=el.getBoundingClientRect(); return r.bottom>0 && r.right>0 && r.top<(innerHeight||document.documentElement.clientHeight) && r.left<(innerWidth||document.documentElement.clientWidth); } var arr=[]; function pump(){ arr.forEach(function(io){ var entries=[]; io.items.forEach(function(it){ var v=vis(it.el); if(v!==it.vis){ it.vis=v; entries.push({target:it.el,isIntersecting:v,intersectionRatio:v?1:0}); } }); if(entries.length) try{ io.cb(entries,io);}catch(e){ console.error(e);} }); } setInterval(pump,200); addEventListener("scroll",pump,{passive:true}); addEventListener("resize",pump,{passive:true}); window.IntersectionObserver=function(cb,opts){ var io=new IO(cb,opts); arr.push(io); return io; }; post("log","IntersectionObserver polyfill ieslēgts"); } }catch(e){} })();\n';
+
+    // flex-gap fallback
+    code += '  (function(){ if(!OPTS.flexGapFix) return; function px(n){ return Number(String(n).replace("px",""))||0 } function apply(root){ if(!root||!root.querySelectorAll) return; try{ var all=root.querySelectorAll("*"); for(var i=0;i<all.length;i++){ var el=all[i]; var cs=getComputedStyle(el); if(cs.display!=="flex") continue; var rg=px(cs.rowGap),cg=px(cs.columnGap); if((rg||cg)&&!el.__gapFixed){ el.__gapFixed=true; el.style.rowGap="0px"; el.style.columnGap="0px"; var isRow=cs.flexDirection.indexOf("row")===0; var kids=Array.prototype.slice.call(el.children); kids.forEach(function(ch,idx){ var s=ch.style,gcs=getComputedStyle(ch); if(isRow){ if(idx) s.marginLeft=(px(gcs.marginLeft)+cg)+"px"; if(rg){ s.marginTop=px(gcs.marginTop)+"px"; s.marginBottom=px(gcs.marginBottom)+"px"; } } else { if(idx) s.marginTop=(px(gcs.marginTop)+rg)+"px"; if(cg){ s.marginLeft=px(gcs.marginLeft)+"px"; s.marginRight=px(gcs.marginRight)+"px"; } } }); } } } catch(e){ try{ parent.postMessage({__em_sig:"chrome60",level:"warn",text:"flex-gap apply error: "+e.message},"*"); }catch(_){} } } function run(){ apply(document.body); } var mo=new MutationObserver(function(){ apply(document.body); }); mo.observe(document.documentElement,{childList:true,subtree:true}); if(document.readyState==="complete"||document.readyState==="interactive"){ run(); } else { addEventListener("DOMContentLoaded",run,{once:true}); } post("log","flex-gap → margin fallback ieslēgts"); })();\n';
+
+    // Modern API “nogriešana”
+    code += '  (function(){ if(!OPTS.pruneModern) return; try{ try{ delete String.prototype.replaceAll; }catch(e){ try{ String.prototype.replaceAll=undefined; }catch(e2){} } try{ if(Promise&&Promise.prototype) Promise.prototype.finally=undefined; }catch(e){} try{ window.AbortController=undefined; }catch(e){} try{ window.AbortSignal=undefined; }catch(e){} try{ window.structuredClone=undefined; }catch(e){} try{ window.crypto && (window.crypto.randomUUID=undefined); }catch(e){} try{ if(window.Intl && window.Intl.RelativeTimeFormat){ window.Intl.RelativeTimeFormat=undefined; } }catch(e){} try{ if(window.CSS && window.CSS.supports){ var orig=window.CSS.supports; window.CSS.supports=function(prop,val){ if(arguments.length===2 && (prop==="gap"||prop==="row-gap"||prop==="column-gap")) return false; return orig.apply(this,arguments); }; } }catch(e){} post("warn","Nogrieztas modernās API (replaceAll, Promise.finally, AbortController, structuredClone, randomUUID, Intl.RelativeTimeFormat, CSS.gap)"); }catch(e){} })();\n';
+
+    code += '  post("ok","Chrome60 emulācijas komplekts injicēts.");\n';
+    code += '})();\n';
+
+    parts.push(openS + code + closeS);
+    return parts.join('\n');
+  }
+
   async function loadTarget(path){
     logc.textContent = '';
-    const abs = sameOriginAbsolute(path);
+    var abs = sameOriginAbsolute(path);
     if(!abs){ errorToLog('URL ir citā domēnā vai nederīgs – lieto relatīvu ceļu (piem., index.html).'); return; }
 
-    let html;
+    var html;
     try{
-      const res = await fetch(abs.href, {cache:'no-store', credentials:'same-origin'});
+      var res = await fetch(abs.href, {cache:'no-store', credentials:'same-origin'});
       if(!res.ok) throw new Error(res.status+' '+res.statusText);
       html = await res.text();
     }catch(e){
@@ -207,7 +265,7 @@
       return;
     }
 
-    const opts = {
+    var opts = {
       disableVV: chk('disableVV').checked,
       useROPoly: chk('useROPoly').checked,
       useIOPoly: chk('useIOPoly').checked,
@@ -220,176 +278,15 @@
       disableStorage: chk('disableStorage').checked
     };
 
-    if(opts.blockModule){ html = blockModules(html); }
+    if(opts.blockModule) html = blockModules(html);
     html = addCrossorigin(html);
 
-    // --- PRELUDE — bez burtiska </script> (sadalīts)
-    const prelude = (() => {
-      const base = `<base href="${abs.href.replace(/"/g,'&quot;')}">`;
-      const openScript = '<scr'+'ipt>';
-      const closeScript = '</scr'+'ipt>';
-      const code = `(function(){
-  var OPTS=${JSON.stringify(opts)};
-  function post(l,t,x){try{parent.postMessage({__em_sig:"chrome60",level:l,text:t,type:(x&&x.type)||"",dpr:(x&&x.dpr)||null},"*");}catch(e){}}
-
-  // Konsoles hook + notikumi
-  (function hook(){try{
-    var o={};["log","warn","error"].forEach(function(k){
-      o[k]=console[k];
-      console[k]=function(){
-        try{post(k,Array.prototype.map.call(arguments,function(a){try{return typeof a==="object"?JSON.stringify(a):String(a);}catch(e){return String(a);}}).join(" "));}catch(e){}
-        return o[k].apply(this,arguments);
-      };
-    });
-    window.addEventListener("error",function(e){
-      var msg=e.message||"Script error.";var file=e.filename||"";var line=e.lineno||0;var col=e.colno||0;
-      var stack=(e.error&&e.error.stack)?("\\n"+e.error.stack):"";
-      post("err", msg+" @"+file+":"+line+":"+col+stack);
-    }, true);
-    window.addEventListener("error", function(e){
-      var t=e.target; if(!t || t===window) return;
-      var tag=t.tagName ? t.tagName.toLowerCase() : "?"; var url=(t.src||t.href||"");
-      post("warn","Resource load error: <"+tag+"> "+url);
-    }, true);
-    window.addEventListener("unhandledrejection",function(e){
-      var r=e.reason; var txt=(r&&r.message)?r.message:String(r); var stack=(r&&r.stack)?("\\n"+r.stack):"";
-      post("err","Unhandled promise rejection: "+txt+stack);
-    },{passive:true});
-    post("ok","Emulācijas prelude ielādēts.",{type:"meta",dpr:window.devicePixelRatio||"?"});
-  }catch(e){}})();
-
-  // UA spoof
-  (function(){if(!OPTS.spoofUA) return;try{
-    var ua60="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36";
-    var P=Object.getPrototypeOf(navigator);
-    if(P){Object.defineProperty(P,"userAgent",{configurable:true,get:function(){return ua60;}});}
-    if("userAgentData" in navigator){try{Object.defineProperty(P,"userAgentData",{configurable:true,get:function(){return undefined;}});}catch(e){}}
-    post("log","UA spoof → Chrome 60");
-  }catch(e){post("warn","UA spoof neizdevās: "+e.message);}})();
-
-  // Touch & DPR
-  (function(){try{
-    if(OPTS.forceTouch){
-      var P=Object.getPrototypeOf(navigator);
-      if(P){Object.defineProperty(P,"maxTouchPoints",{configurable:true,get:function(){return 10;}});}
-      try{Object.defineProperty(window,"ontouchstart",{configurable:true,value:null});}catch(e){}
-      post("log","Touch režīms ieslēgts");
-    }
-    if(OPTS.forceDPR1){
-      try{Object.defineProperty(window,"devicePixelRatio",{configurable:true,get:function(){return 1;}});post("log","DPR=1");}
-      catch(e){post("warn","DPR piesaiste neizdevās: "+e.message);}
-    }
-  }catch(e){}})();
-
-  // visualViewport
-  (function(){try{
-    if(OPTS.disableVV){
-      try{Object.defineProperty(window,"visualViewport",{configurable:true,value:undefined});post("log","visualViewport atspējots");}catch(e){}
-    }else if(!("visualViewport" in window)){
-      var vv=(function(){
-        var o={};var w=innerWidth,h=innerHeight,s=1,x=0,y=0;var evt=document.createDocumentFragment();
-        o.addEventListener=evt.addEventListener.bind(evt);o.removeEventListener=evt.removeEventListener.bind(evt);
-        function upd(){var nw=innerWidth,nh=innerHeight;if(nw!==w||nh!==h){w=nw;h=nh;evt.dispatchEvent(new Event("resize"));}}
-        Object.defineProperties(o,{width:{get:function(){return w;}},height:{get:function(){return h;}},scale:{get:function(){return s;}},pageTop:{get:function(){return y;}},pageLeft:{get:function(){return x;}}});
-        addEventListener("resize",upd,{passive:true});
-        addEventListener("scroll",function(){var ny=pageYOffset||document.documentElement.scrollTop;if(ny!==y){y=ny;evt.dispatchEvent(new Event("scroll"));}},{passive:true});
-        return o;
-      })();
-      Object.defineProperty(window,"visualViewport",{configurable:true,value:vv});
-      post("log","visualViewport polyfill ieslēgts");
-    }
-  }catch(e){}})();
-
-  // Storage simulācija (SecurityError)
-  (function(){if(!OPTS.disableStorage) return; try{
-    var msg="Failed to read the 'localStorage' property from 'Window': The document is sandboxed and lacks the 'allow-same-origin' flag.";
-    Object.defineProperty(window,"localStorage",{configurable:true,get:function(){throw new DOMException(msg,"SecurityError");}});
-    Object.defineProperty(window,"sessionStorage",{configurable:true,get:function(){throw new DOMException(msg,"SecurityError");}});
-    post("warn","Storage atspējots (SecurityError simulācija)");
-  }catch(e){}})();
-
-  // ResizeObserver
-  (function(){try{
-    if(OPTS.useROPoly){
-      if(typeof window.ResizeObserver==="undefined"){
-        function RO(cb){this.cb=cb;this.items=[];}
-        RO.prototype.observe=function(el){if(!this.items.find(function(i){return i.el===el;})){this.items.push({el:el,box:el.getBoundingClientRect()});}};
-        RO.prototype.unobserve=function(el){this.items=this.items.filter(function(i){return i.el!==el;});};
-        RO.prototype.disconnect=function(){this.items.length=0;};
-        var Obs=new Set();
-        function tick(inst){var entries=[];inst.items.forEach(function(it){var r=it.el.getBoundingClientRect();if(Math.abs(r.width-it.box.width)>0.5||Math.abs(r.height-it.box.height)>0.5){entries.push({target:it.el,contentRect:r});it.box=r;}});if(entries.length)try{inst.cb(entries,inst);}catch(e){console.error(e);}}
-        setInterval(function(){Obs.forEach(tick);},250);
-        var C=function(cb){var ro=new RO(cb);Obs.add(ro);return ro;};
-        C.toString=function(){return "function ResizeObserver() { [polyfill] }";};
-        window.ResizeObserver=C; post("log","ResizeObserver polyfill ieslēgts");
-      } else { post("log","ResizeObserver atbalstīts"); }
-    } else {
-      try{Object.defineProperty(window,"ResizeObserver",{configurable:true,value:undefined});post("log","ResizeObserver nav pieejams (Chrome 60)");}catch(e){}
-    }
-  }catch(e){}})();
-
-  // IntersectionObserver (pēc vajadzības)
-  (function(){try{
-    if(OPTS.useIOPoly && typeof window.IntersectionObserver==="undefined"){
-      function IO(cb,opts){this.cb=cb;this.items=[];this.thresholds=[(opts&&opts.threshold)||0];}
-      IO.prototype.observe=function(el){if(!this.items.find(function(i){return i.el===el;})){this.items.push({el:el,vis:false});}};
-      IO.prototype.unobserve=function(el){this.items=this.items.filter(function(i){return i.el!==el;});};
-      IO.prototype.disconnect=function(){this.items.length=0;};
-      function vis(el){var r=el.getBoundingClientRect();return r.bottom>0&&r.right>0&&r.top<(innerHeight||document.documentElement.clientHeight)&&r.left<(innerWidth||document.documentElement.clientWidth);}
-      var arr=[];function pump(){arr.forEach(function(io){var entries=[];io.items.forEach(function(it){var v=vis(it.el);if(v!==it.vis){it.vis=v;entries.push({target:it.el,isIntersecting:v,intersectionRatio:v?1:0});}});if(entries.length)try{io.cb(entries,io);}catch(e){console.error(e);}});}
-      setInterval(pump,200);addEventListener("scroll",pump,{passive:true});addEventListener("resize",pump,{passive:true});
-      window.IntersectionObserver=function(cb,opts){var io=new IO(cb,opts);arr.push(io);return io;};
-      post("log","IntersectionObserver polyfill ieslēgts");
-    }
-  }catch(e){}})();
-
-  // flex-gap fallback
-  (function(){if(!OPTS.flexGapFix) return;function px(n){return Number(String(n).replace("px",""))||0}
-    function apply(root){if(!root||!root.querySelectorAll) return;try{
-      var all=root.querySelectorAll("*");
-      for(var i=0;i<all.length;i++){var el=all[i];var cs=getComputedStyle(el);if(cs.display!=="flex") continue;
-        var rg=px(cs.rowGap),cg=px(cs.columnGap);
-        if((rg||cg)&&!el.__gapFixed){el.__gapFixed=true;el.style.rowGap="0px";el.style.columnGap="0px";
-          var isRow=cs.flexDirection.indexOf("row")===0;var kids=Array.prototype.slice.call(el.children);
-          kids.forEach(function(ch,idx){var s=ch.style,gcs=getComputedStyle(ch);
-            if(isRow){ if(idx) s.marginLeft=(px(gcs.marginLeft)+cg)+"px"; if(rg){s.marginTop=px(gcs.marginTop)+"px";s.marginBottom=px(gcs.marginBottom)+"px";} }
-            else    { if(idx) s.marginTop=(px(gcs.marginTop)+rg)+"px"; if(cg){s.marginLeft=px(gcs.marginLeft)+"px";s.marginRight=px(gcs.marginRight)+"px";} }
-          });
-        }
-      }
-    }catch(e){post("warn","flex-gap apply error: "+e.message);} }
-    function run(){apply(document.body);}
-    var mo=new MutationObserver(function(){apply(document.body);});mo.observe(document.documentElement,{childList:true,subtree:true});
-    if(document.readyState==="complete"||document.readyState==="interactive"){run();}else{addEventListener("DOMContentLoaded",run,{once:true});}
-    post("log","flex-gap → margin fallback ieslēgts");
-  })();
-
-  // Prune modern API (Chrome 60 nav)
-  (function(){if(!OPTS.pruneModern) return;try{
-    try{delete String.prototype.replaceAll;}catch(e){try{String.prototype.replaceAll=undefined;}catch(e2){}}
-    try{if(Promise&&Promise.prototype) Promise.prototype.finally=undefined;}catch(e){}
-    try{window.AbortController=undefined;}catch(e){}
-    try{window.AbortSignal=undefined;}catch(e){}
-    try{window.structuredClone=undefined;}catch(e){}
-    try{window.crypto && (window.crypto.randomUUID=undefined);}catch(e){}
-    try{if(window.Intl && window.Intl.RelativeTimeFormat){window.Intl.RelativeTimeFormat=undefined;}}catch(e){}
-    try{if(window.CSS && window.CSS.supports){var orig=window.CSS.supports;window.CSS.supports=function(prop,val){
-      if(arguments.length===2 && (prop==="gap"||prop==="row-gap"||prop==="column-gap")) return false;
-      return orig.apply(this,arguments);
-    };}}catch(e){}
-    post("warn","Nogrieztas modernās API (replaceAll, Promise.finally, AbortController, structuredClone, randomUUID, Intl.RelativeTimeFormat, CSS.gap)");
-  }catch(e){}})();
-
-  post("ok","Chrome60 emulācijas komplekts injicēts.");
-})();`;
-      return base + openScript + code + closeScript;
-    })();
-
-    // Ievietojam prelude aiz <head>
-    let finalHTML;
-    const headIdx = html.search(/<head[^>]*>/i);
+    // Ieliekam PRELUDE aiz <head>
+    var headIdx = html.search(/<head[^>]*>/i);
+    var prelude = buildPrelude(abs.href, opts);
+    var finalHTML;
     if(headIdx !== -1){
-      const insertPos = html.indexOf('>', headIdx) + 1;
+      var insertPos = html.indexOf('>', headIdx) + 1;
       finalHTML = html.slice(0, insertPos) + '\n' + prelude + '\n' + html.slice(insertPos);
     } else {
       finalHTML = prelude + '\n' + html;
@@ -400,17 +297,27 @@
     applyFit();
   }
 
-  function getDeviceSize(){ const w=parseInt((device.style.width||'').replace('px',''))||device.clientWidth; const h=parseInt((device.style.height||'').replace('px',''))||device.clientHeight; return {w,h}; }
-  function getCurrentScale(){ const m=(scaler.style.transform||'').match(/scale\(([^)]+)\)/); return m?parseFloat(m[1]):1; }
+  function getDeviceSize(){
+    var w=parseInt((device.style.width||'').replace('px',''),10) || device.clientWidth;
+    var h=parseInt((device.style.height||'').replace('px',''),10) || device.clientHeight;
+    return {w:w,h:h};
+  }
+  function getCurrentScale(){
+    var m=(scaler.style.transform||'').match(/scale\(([^)]+)\)/);
+    return m?parseFloat(m[1]):1;
+  }
   function applyFit(){
-    const {w,h}=getDeviceSize(); const fit=chk('fitWidth').checked;
-    const vw=Math.max(1, viewport.clientWidth-16), vh=Math.max(1, viewport.clientHeight-16);
-    let scale=1; if(fit) scale=Math.min(1, Math.min(vw/w, vh/h));
-    scaler.style.transform='scale('+scale+')'; scaler.style.width=(w*scale)+'px'; scaler.style.height=(h*scale)+'px';
-    updateDims(w,h);
+    var s=getDeviceSize();
+    var fit=chk('fitWidth').checked;
+    var vw=Math.max(1, viewport.clientWidth-16), vh=Math.max(1, viewport.clientHeight-16);
+    var scale=1; if(fit) scale=Math.min(1, Math.min(vw/s.w, vh/s.h));
+    scaler.style.transform='scale('+scale+')';
+    scaler.style.width=(s.w*scale)+'px';
+    scaler.style.height=(s.h*scale)+'px';
+    updateDims(s.w,s.h);
   }
 
-  // Noklusējumi (1:1 “tāfeles” sajūta: opaque/null origin)
+  // Noklusējumi 1:1 “tāfeles” (opaque origin)
   document.getElementById('sameOrigin').checked = false;
   document.getElementById('fitWidth').checked = true;
 
