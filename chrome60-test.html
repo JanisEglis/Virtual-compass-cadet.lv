@@ -138,14 +138,23 @@
       try{ void win.document; return true; }catch{ return false; }
     }
 
- function loadTarget(path){
-logc.textContent='';
-// Enforce same-origin usage hint
-if(/^(https?:)?\/\//i.test(path)){
-console.warn('Ievadīts absolūts URL. Projektu lapās (GitHub Pages) tas vedīs uz lietotāja sakni. Ievadi relatīvu ceļu, piem., index.html. Tavu ievadi pārveidojam par relatīvu.');
-path = path.replace(/^\//,'');
-// Set src (let browser resolve relative path inside same origin)
-frame.src = path; }
+function loadTarget(path){
+  logc.textContent = '';
+
+  // Atļaujam pilnu URL vai relatīvu ceļu. Ja URL ir no šī paša origin, pārvēršam par relatīvu.
+  if (/^(https?:)?\/\//i.test(path)) {
+    try {
+      const u = new URL(path, location.href);
+      if (u.origin === location.origin) {
+        // pārvēršam uz relatīvu ceļu repo ietvarā (GitHub Pages projektam)
+        path = u.pathname + u.search + u.hash;
+      } else {
+        console.error('URL ir citā domēnā — injekcija nebūs iespējama. Lieto relatīvu ceļu (piem., index.html) vai glabā failu tajā pašā domēnā.');
+      }
+    } catch(e){
+      console.warn('Neizdevās parsēt URL:', e.message);
+    }
+  }
 }
 Object.defineProperties(obj, {
 width:{ get(){ return w; }}, height:{ get(){ return h; }}, scale:{ get(){ return s; }}, pageTop:{ get(){ return y; }}, pageLeft:{ get(){ return x; }}
