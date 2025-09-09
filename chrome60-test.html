@@ -72,6 +72,7 @@
         <label class="chk"><input id="blockModule" type="checkbox" checked> Bloķēt <code>&lt;script type="module"&gt;</code></label>
         <label class="chk"><input id="pruneModern" type="checkbox" checked> Nogriezt modernās API</label>
         <label class="chk"><input id="fitWidth" type="checkbox" checked> Pielāgot (Auto-fit)</label>
+        <label class="chk"><input id="sameOrigin" type="checkbox"> Same-origin režīms (localStorage/CORS)</label>
       </div>
       <div class="warnline">Ja ievadīsi URL citā domēnā, injekcija netiks pielikta (SOP/CORS dēļ). Testē ar relatīvu ceļu.</div>
     </header>
@@ -106,6 +107,27 @@
   const log = document.getElementById('log');
   const logc = document.getElementById('logc');
   const chk = id => document.getElementById(id);
+
+  // ——— NEW: sandbox režīmu pārslēgšana (Same-origin) ———
+  function applySandboxFlags() {
+    const flags = [
+      'allow-scripts',
+      'allow-forms',
+      'allow-pointer-lock',
+      'allow-popups',
+      'allow-modals'
+    ];
+    if (chk('sameOrigin') && chk('sameOrigin').checked) {
+      flags.push('allow-same-origin');
+    }
+    frame.setAttribute('sandbox', flags.join(' '));
+  }
+  // Reaģē uz ķeksīti – pielieto un pārlādē iframe
+  document.getElementById('sameOrigin').addEventListener('change', () => {
+    applySandboxFlags();
+    try { if (frame.contentWindow) frame.contentWindow.location.reload(); } catch(_) {}
+  });
+  // ———————————————————————————————————————————————————————
 
   // izmēri
   document.querySelectorAll('.seg [data-sz]').forEach(b=>{
@@ -270,7 +292,8 @@
       finalHTML = prelude + '\n' + html;
     }
 
-    // Rakstām child dokumentā ar SRC-DOC (nav vajadzīgs allow-same-origin)
+    // ❗ Pielieto sandbox flagus (iesk. same-origin), tad raksti dokumentu
+    applySandboxFlags();
     frame.srcdoc = finalHTML;
 
     // Pielāgo mērogu
@@ -303,6 +326,9 @@
   url.value = 'index.html';
   // (pēc vajadzības) automātiski ielādēt: atkomentē nākamo rindu
   // loadTarget(url.value);
+
+  // Uzreiz pielieto sandbox flagus pēc lapas atvēršanas (atbilstoši ķeksim)
+  applySandboxFlags();
 })();
 </script>
 </body>
