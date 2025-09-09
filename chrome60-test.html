@@ -195,10 +195,12 @@
     return html;
   }
 
-  // — Prelude kā data: skripts (base64) — droši pret </script> un “dīvainām” zīmēm
+  // ❗ SALABOTS: drošs Unicode → base64 (pareizs parseInt)
   function base64Unicode(str){
-    // droši Unicode -> base64
-    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,function(_,p){return String.fromCharCode('0x'+p);}));
+    var utf8 = encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(_m, p1){
+      return String.fromCharCode(parseInt(p1, 16));
+    });
+    return btoa(utf8);
   }
 
   function buildPreludeCode(opts){
@@ -210,7 +212,7 @@
     // Hooks
     c.push('(function(){try{var o={};["log","warn","error"].forEach(function(k){o[k]=console[k];console[k]=function(){try{post(k,Array.prototype.map.call(arguments,function(a){try{return typeof a==="object"?JSON.stringify(a):String(a);}catch(e){return String(a);}}).join(" "));}catch(e){};return o[k].apply(this,arguments);};});window.addEventListener("error",function(e){var msg=e.message||"Script error.";var file=e.filename||"";var line=e.lineno||0;var col=e.colno||0;var stack=(e.error&&e.error.stack)?"\\n"+e.error.stack:"";post("err",msg+" @"+file+":"+line+":"+col+stack);},true);window.addEventListener("error",function(e){var t=e.target;if(!t||t===window)return;var tag=t.tagName?t.tagName.toLowerCase():"?";var url=(t.src||t.href||"");post("warn","Resource load error: <"+tag+"> "+url);},true);window.addEventListener("unhandledrejection",function(e){var r=e.reason;var txt=(r&&r.message)?r.message:String(r);var stack=(r&&r.stack)?"\\n"+r.stack:"";post("err","Unhandled promise rejection: "+txt+stack);},{passive:true});post("ok","Emulacijas prelude ieladets.",{type:"meta",dpr:window.devicePixelRatio||"?"});}catch(e){}})();');
 
-    // UA
+    // UA spoof
     c.push('(function(){if(!OPTS.spoofUA)return;try{var ua60="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36";var P=Object.getPrototypeOf(navigator);if(P){Object.defineProperty(P,"userAgent",{configurable:true,get:function(){return ua60;}});}if("userAgentData" in navigator){try{Object.defineProperty(P,"userAgentData",{configurable:true,get:function(){return undefined;}});}catch(e){}}post("log","UA spoof -> Chrome 60");}catch(e){post("warn","UA spoof neizdevas: "+e.message);}})();');
 
     // Touch & DPR
@@ -270,14 +272,13 @@
     if(opts.blockModule) html = blockModules(html);
     html = addCrossorigin(html);
 
-    // Ievietojam <base> + <script src="data:...">
-    var headIdx = html.search(/<head[^>]*>/i);
+    // Prelude kā data: script (tagad ar korektu base64)
     var preludeCode = buildPreludeCode(opts);
     var dataSrc = 'data:text/javascript;base64,' + base64Unicode(preludeCode);
-
     var preludeHtml = '<base href="'+abs.href.replace(/"/g,'&quot;')+'">' +
                       '<scr'+'ipt src="'+dataSrc+'"></scr'+'ipt>';
 
+    var headIdx = html.search(/<head[^>]*>/i);
     var finalHTML;
     if(headIdx !== -1){
       var insertPos = html.indexOf('>', headIdx) + 1;
