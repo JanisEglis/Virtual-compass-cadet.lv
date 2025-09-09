@@ -30,7 +30,6 @@
     .warnline{padding:.6rem .9rem; background:#15100e; border:1px solid #2b1f1d; color:#f1c9c9; border-radius:10px; margin:.4rem 1rem}
 
     .main{position:relative;display:grid;place-items:center;padding:10px; overflow:hidden;}
-    /* Auto-fit ietvars */
     .viewport{width:100%;height:100%;overflow:auto;display:grid;place-items:center;}
     .scaler{transform-origin: top left; will-change: transform;}
 
@@ -60,8 +59,8 @@
         <button id="reload">Pārlādēt</button>
         <button id="toggleLog">Konsoles logs</button>
       </div>
-      <div class="help">⚠️ Glabā šo failu <b>tajā pašā domēnā</b> kā testējamā lapa un ielādē ar <b>relatīvu ceļu</b> (piem., <code>index.html</code>).</div>
-      <div class="note">Slēdži, lai atkārtotu Chrome 60 uzvedību (UA, moduļi, API, polyfilli):</div>
+      <div class="help">⚠️ Šim failam jābūt <b>tajā pašā domēnā</b> kā testējamā lapa. Ielādē ar <b>relatīvu ceļu</b> (piem., <code>index.html</code>).</div>
+      <div class="note">Slēdži, lai atkārtotu Chrome 60 uzvedību:</div>
       <div class="bar" style="border-top:1px solid var(--border)">
         <label class="chk"><input id="disableVV" type="checkbox" checked> Atspējot <code>visualViewport</code></label>
         <label class="chk"><input id="useROPoly" type="checkbox" checked> <code>ResizeObserver</code> polyfill</label>
@@ -74,7 +73,7 @@
         <label class="chk"><input id="pruneModern" type="checkbox" checked> Nogriezt modernās API</label>
         <label class="chk"><input id="fitWidth" type="checkbox" checked> Pielāgot (Auto-fit)</label>
       </div>
-      <div class="warnline">Ja ievadīsi URL citā domēnā, injekcija netiks pielikta (drošības dēļ). Testē ar relatīvu ceļu.</div>
+      <div class="warnline">Ja ievadīsi URL citā domēnā, injekcija netiks pielikta (SOP/CORS dēļ). Testē ar relatīvu ceļu.</div>
     </header>
 
     <section class="main">
@@ -82,7 +81,6 @@
         <div id="scaler" class="scaler">
           <div id="device" class="device" style="width:1920px;height:1080px">
             <div class="badge" id="dims">1920×1080 @ DPR? • Zoom 1.00×</div>
-            <!-- NO allow-same-origin → nav brīdinājuma -->
             <iframe id="frame" class="frame" sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups allow-modals"></iframe>
           </div>
         </div>
@@ -165,9 +163,8 @@
     }catch{ return null; }
   }
 
-  // bloķēt <script type=module> ar drošu regex
+  // Bloķē <script type="module"> + modulepreload
   function blockModules(html){
-    // 1) <script type="module">
     html = html.replace(/<script\b([^>]*)>/gi, function(all, attrs){
       if(/\btype\s*=\s*["']module["']/i.test(attrs)){
         const newAttrs = attrs.replace(/\btype\s*=\s*["']module["']/i,'').trim();
@@ -175,8 +172,22 @@
       }
       return all;
     });
-    // 2) <link rel="modulepreload">
     html = html.replace(/<link\b([^>]*\brel\s*=\s*["']modulepreload["'][^>]*)>/gi, '<!-- modulepreload blocked -->');
+    return html;
+  }
+
+  // Pievieno crossorigin="anonymous" ārējiem resursiem (lai errori nav anonīmi)
+  function addCrossorigin(html){
+    // <script src="https://...">
+    html = html.replace(/<script\b([^>]*?)\bsrc\s*=\s*["']https?:\/\/[^"']+["']([^>]*)>/gi, (m, pre, post) => {
+      if (/crossorigin\s*=/i.test(m)) return m;
+      return `<script ${pre.trim()} crossorigin="anonymous" ${post}>`;
+    });
+    // <link rel="stylesheet" href="https://...">
+    html = html.replace(/<link\b([^>]*?)\brel\s*=\s*["']stylesheet["']([^>]*?)\bhref\s*=\s*["']https?:\/\/[^"']+["']([^>]*)>/gi, (m, a, b, c) => {
+      if (/crossorigin\s*=/i.test(m)) return m;
+      return `<link ${a} rel="stylesheet" ${b} crossorigin="anonymous" ${c}>`;
+    });
     return html;
   }
 
@@ -208,6 +219,7 @@
     };
 
     if(opts.blockModule){ html = blockModules(html); }
+    html = addCrossorigin(html); // lai nebūtu "Script error."
 
     // PRELUDE – inline <script> iekš mērķa <head> agrāk par visu citu
     const prelude =
@@ -215,7 +227,13 @@
       '<script>(function(){'+
       'var OPTS='+JSON.stringify(opts)+';'+
       'function post(l,t,x){try{parent.postMessage({__em_sig:"chrome60",level:l,text:t,type:(x&&x.type)||"",dpr:(x&&x.dpr)||null},"*");}catch(e){}}'+
-      '(function hook(){try{var o={};["log","warn","error"].forEach(function(k){o[k]=console[k];console[k]=function(){try{post(k,Array.prototype.map.call(arguments,function(a){try{return typeof a==="object"?JSON.stringify(a):String(a);}catch(e){return String(a);}}).join(" "));}catch(e){};return o[k].apply(this,arguments);};});window.addEventListener("error",function(e){post("err",(e.message||"")+" @"+(e.filename||"")+":"+ (e.lineno||""));},{passive:true});window.addEventListener("unhandledrejection",function(e){post("err","Unhandled promise rejection: "+(e.reason&&e.reason.message?e.reason.message:String(e.reason)));},{passive:true});post("ok","Emulācijas prelude ielādēts.",{type:"meta",dpr:window.devicePixelRatio||"?"});}catch(e){}})();'+
+
+      // — konsoles hook + bagātīgi error listeneri —
+      '(function hook(){try{var o={};["log","warn","error"].forEach(function(k){o[k]=console[k];console[k]=function(){try{post(k,Array.prototype.map.call(arguments,function(a){try{return typeof a==="object"?JSON.stringify(a):String(a);}catch(e){return String(a);}}).join(" "));}catch(e){};return o[k].apply(this,arguments);};});'+
+      'window.addEventListener("error",function(e){var msg=e.message||"Script error.";var file=e.filename||"";var line=e.lineno||0;var col=e.colno||0;var stack=(e.error&&e.error.stack)?("\\n"+e.error.stack):"";post("err", msg+" @"+file+":"+line+":"+col+stack);}, true);'+
+      'window.addEventListener("error", function(e){var t=e.target; if(!t || t===window) return; var tag=t.tagName ? t.tagName.toLowerCase() : "?"; var url=(t.src||t.href||""); post("warn","Resource load error: <"+tag+"> "+url);}, true);'+
+      'window.addEventListener("unhandledrejection",function(e){var r=e.reason; var txt=(r&&r.message)?r.message:String(r); var stack=(r&&r.stack)?("\\n"+r.stack):""; post("err","Unhandled promise rejection: "+txt+stack);},{passive:true});'+
+      'post("ok","Emulācijas prelude ielādēts.",{type:"meta",dpr:window.devicePixelRatio||"?"});}catch(e){}})();'+
 
       // UA spoof
       '(function(){if(!OPTS.spoofUA) return;try{var ua60="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36";var P=Object.getPrototypeOf(navigator);if(P){Object.defineProperty(P,"userAgent",{configurable:true,get:function(){return ua60;}});}if("userAgentData" in navigator){try{Object.defineProperty(P,"userAgentData",{configurable:true,get:function(){return undefined;}});}catch(e){}}post("log","UA spoof → Chrome 60");}catch(e){post("warn","UA spoof neizdevās: "+e.message);}})();'+
@@ -283,8 +301,8 @@
 
   // noklusētais ceļš
   url.value = 'index.html';
-  // uzreiz ielādē
-  // loadTarget(url.value);  ← ja gribi auto ielādi, atkomentē
+  // (pēc vajadzības) automātiski ielādēt: atkomentē nākamo rindu
+  // loadTarget(url.value);
 })();
 </script>
 </body>
