@@ -10,7 +10,7 @@
       --card:#11161d; --border:#232b36;
     }
     html,body{height:100%;}
-    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,Segoe UI,Roboto,Arial,sans-serif;}
+    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,Segoe UI,Roboto,Arial,sans-serif; overflow-x:hidden;}
     .wrap{display:grid;grid-template-rows:auto 1fr; height:100%;}
     header{background:var(--panel);border-bottom:1px solid var(--border);}
     .bar{display:flex;flex-wrap:wrap; gap:.75rem; align-items:center; padding:.75rem 1rem;}
@@ -29,7 +29,11 @@
     .note{padding:.6rem .9rem; background:#0e1510; border:1px solid #1d2b1f; color:#cde7cf; border-radius:10px; margin:.4rem 1rem}
     .warnline{padding:.6rem .9rem; background:#15100e; border:1px solid #2b1f1d; color:#f1c9c9; border-radius:10px; margin:.4rem 1rem}
 
-    .main{position:relative;display:grid;place-items:center;padding:10px}
+    .main{position:relative;display:grid;place-items:center;padding:10px; overflow:hidden;}
+    /* Auto-fit ietvars */
+    .viewport{width:100%;height:100%;overflow:auto;display:grid;place-items:center;}
+    .scaler{transform-origin: top left; will-change: transform;}
+
     .device{position:relative;background:#0a0e13;border:1px solid var(--border);border-radius:14px;box-shadow:0 15px 40px rgba(0,0,0,.45);overflow:hidden}
     .device .frame{display:block;border:0;background:#0a0e13;width:100%;height:100%}
     .badge{position:absolute;right:10px;top:10px;font-size:12px;color:var(--muted);background:#0c1117;border:1px solid var(--border);padding:.2rem .4rem;border-radius:6px}
@@ -39,8 +43,6 @@
     .log .err{color:#ffb4b4}
     .log .warn{color:#ffd59e}
     .log .ok{color:#b7ffb7}
-
-
   </style>
 </head>
 <body>
@@ -70,15 +72,20 @@
         <label class="chk"><input id="forceDPR1" type="checkbox"> DevicePixelRatio=1</label>
         <label class="chk"><input id="blockModule" type="checkbox" checked> Bloķēt <code>&lt;script type="module"&gt;</code></label>
         <label class="chk"><input id="pruneModern" type="checkbox" checked> Nogriezt modernās API</label>
+        <label class="chk"><input id="fitWidth" type="checkbox" checked> Pielāgot (Auto-fit)</label>
       </div>
       <div class="warnline">Ja ievadīsi URL citā domēnā, injekcija netiks pielikta (drošības dēļ). Testē ar relatīvu ceļu.</div>
     </header>
 
     <section class="main">
-      <div id="device" class="device" style="width:1920px;height:1080px">
-        <div class="badge" id="dims">1920×1080 @ DPR?</div>
-        <!-- NO allow-same-origin → nav brīdinājuma -->
-        <iframe id="frame" class="frame" sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups allow-modals"></iframe>
+      <div id="viewport" class="viewport">
+        <div id="scaler" class="scaler">
+          <div id="device" class="device" style="width:1920px;height:1080px">
+            <div class="badge" id="dims">1920×1080 @ DPR? • Zoom 1.00×</div>
+            <!-- NO allow-same-origin → nav brīdinājuma -->
+            <iframe id="frame" class="frame" sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups allow-modals"></iframe>
+          </div>
+        </div>
       </div>
       <aside id="log" class="log" aria-live="polite">
         <h4>Iframe konsoles žurnāls</h4>
@@ -93,6 +100,8 @@
   const frame = document.getElementById('frame');
   const device = document.getElementById('device');
   const dims = document.getElementById('dims');
+  const viewport = document.getElementById('viewport');
+  const scaler = document.getElementById('scaler');
   const btnLoad = document.getElementById('load');
   const btnReload = document.getElementById('reload');
   const btnLog = document.getElementById('toggleLog');
@@ -108,7 +117,7 @@
       const [w,h]=b.dataset.sz.split('x').map(Number);
       device.style.width = w+'px';
       device.style.height = h+'px';
-      dims.textContent = `${w}×${h} @ DPR?`;
+      applyFit();
     });
   });
 
@@ -116,6 +125,8 @@
   btnReload.addEventListener('click', ()=>{ if (frame.contentWindow) frame.contentWindow.location.reload(); });
   btnLoad.addEventListener('click', ()=> loadTarget(url.value.trim() || 'index.html'));
   url.addEventListener('keydown', e=>{ if(e.key==='Enter') loadTarget(url.value.trim()||'index.html'); });
+  window.addEventListener('resize', ()=> applyFit(), {passive:true});
+  chk('fitWidth').addEventListener('change', applyFit);
 
   // saņem ziņas no child
   window.addEventListener('message', (e)=>{
@@ -127,8 +138,16 @@
     logc.appendChild(pre);
     log.style.display = 'block';
     log.scrollTop = log.scrollHeight;
-    if(d.type==='meta' && d.dpr){ dims.textContent = `${device.style.width.replace('px','')}×${device.style.height.replace('px','')} @ DPR${d.dpr}`; }
+    if(d.type==='meta' && d.dpr){ updateDims(undefined, undefined, d.dpr); }
   });
+
+  function updateDims(w, h, dpr){
+    const W = w || parseInt(device.style.width) || device.clientWidth;
+    const H = h || parseInt(device.style.height) || device.clientHeight;
+    const DPR = (dpr!==undefined) ? dpr : '?';
+    const zoom = Number((getCurrentScale()||1).toFixed(2));
+    dims.textContent = `${W}×${H} @ DPR${DPR} • Zoom ${zoom}×`;
+  }
 
   function errorToLog(msg){
     const pre = document.createElement('pre');
@@ -213,8 +232,8 @@
       // IntersectionObserver
       '(function(){try{if(OPTS.useIOPoly && typeof window.IntersectionObserver==="undefined"){function IO(cb,opts){this.cb=cb;this.items=[];this.thresholds=[(opts&&opts.threshold)||0];}IO.prototype.observe=function(el){if(!this.items.find(function(i){return i.el===el;})){this.items.push({el:el,vis:false});}};IO.prototype.unobserve=function(el){this.items=this.items.filter(function(i){return i.el!==el;});};IO.prototype.disconnect=function(){this.items.length=0;};function vis(el){var r=el.getBoundingClientRect();return r.bottom>0&&r.right>0&&r.top<(innerHeight||document.documentElement.clientHeight)&&r.left<(innerWidth||document.documentElement.clientWidth);}var arr=[];function pump(){arr.forEach(function(io){var entries=[];io.items.forEach(function(it){var v=vis(it.el);if(v!==it.vis){it.vis=v;entries.push({target:it.el,isIntersecting:v,intersectionRatio:v?1:0});}});if(entries.length)try{io.cb(entries,io);}catch(e){console.error(e);}});}setInterval(pump,200);addEventListener("scroll",pump,{passive:true});addEventListener("resize",pump,{passive:true});window.IntersectionObserver=function(cb,opts){var io=new IO(cb,opts);arr.push(io);return io;};post("log","IntersectionObserver polyfill ieslēgts");}}catch(e){}})();'+
 
-      // flex-gap fallback
-      '(function(){if(!OPTS.flexGapFix) return;function px(n){return Number(String(n).replace("px",""))||0}function apply(root){var all=root.querySelectorAll("*");for(var i=0;i<all.length;i++){var el=all[i];var cs=getComputedStyle(el);if(cs.display!=="flex") continue;var rg=px(cs.rowGap),cg=px(cs.columnGap);if((rg||cg)&&!el.__gapFixed){el.__gapFixed=true;el.style.rowGap="0px";el.style.columnGap="0px";var isRow=cs.flexDirection.indexOf("row")===0;var kids=Array.prototype.slice.call(el.children);kids.forEach(function(ch,idx){var s=ch.style,gcs=getComputedStyle(ch);if(isRow){if(idx) s.marginLeft=(px(gcs.marginLeft)+cg)+"px";if(rg){s.marginTop=px(gcs.marginTop)+"px";s.marginBottom=px(gcs.marginBottom)+"px";}}else{if(idx) s.marginTop=(px(gcs.marginTop)+rg)+"px";if(cg){s.marginLeft=px(gcs.marginLeft)+"px";s.marginRight=px(gcs.marginRight)+"px";}}});}}}var mo=new MutationObserver(function(){apply(document.body);});mo.observe(document.documentElement,{childList:true,subtree:true});addEventListener("DOMContentLoaded",function(){apply(document.body);});setTimeout(function(){apply(document.body);},0);post("log","flex-gap → margin fallback ieslēgts");})();'+
+      // flex-gap fallback (SAFE)
+      '(function(){if(!OPTS.flexGapFix) return;function px(n){return Number(String(n).replace("px",""))||0}function apply(root){if(!root||!root.querySelectorAll) return;try{var all=root.querySelectorAll("*");for(var i=0;i<all.length;i++){var el=all[i];var cs=getComputedStyle(el);if(cs.display!=="flex") continue;var rg=px(cs.rowGap),cg=px(cs.columnGap);if((rg||cg)&&!el.__gapFixed){el.__gapFixed=true;el.style.rowGap="0px";el.style.columnGap="0px";var isRow=cs.flexDirection.indexOf("row")===0;var kids=Array.prototype.slice.call(el.children);kids.forEach(function(ch,idx){var s=ch.style,gcs=getComputedStyle(ch);if(isRow){if(idx) s.marginLeft=(px(gcs.marginLeft)+cg)+"px";if(rg){s.marginTop=px(gcs.marginTop)+"px";s.marginBottom=px(gcs.marginBottom)+"px";}}else{if(idx) s.marginTop=(px(gcs.marginTop)+rg)+"px";if(cg){s.marginLeft=px(gcs.marginLeft)+"px";s.marginRight=px(gcs.marginRight)+"px";}}});}}}catch(e){try{parent.postMessage({__em_sig:"chrome60",level:"warn",text:"flex-gap apply error: "+e.message},"*");}catch(_){}}}function run(){apply(document.body);}function ensureBodyThenRun(){if(document.body){run();return;}var moBody=new MutationObserver(function(){if(document.body){moBody.disconnect();run();}});moBody.observe(document.documentElement,{childList:true});}var mo=new MutationObserver(function(){apply(document.body);});mo.observe(document.documentElement,{childList:true,subtree:true});if(document.readyState==="complete"||document.readyState==="interactive"){ensureBodyThenRun();}else{addEventListener("DOMContentLoaded",ensureBodyThenRun,{once:true});}try{parent.postMessage({__em_sig:"chrome60",level:"log",text:"flex-gap → margin fallback ieslēgts (safe)"},"*");}catch(_){}})();'+
 
       // Prune modern APIs
       '(function(){if(!OPTS.pruneModern) return;try{try{delete String.prototype.replaceAll;}catch(e){try{String.prototype.replaceAll=undefined;}catch(e2){}}try{window.AbortController=undefined;}catch(e){}try{window.AbortSignal=undefined;}catch(e){}try{window.structuredClone=undefined;}catch(e){}try{window.crypto && (window.crypto.randomUUID=undefined);}catch(e){}try{if(window.CSS && window.CSS.supports){var orig=window.CSS.supports;window.CSS.supports=function(prop,val){if(arguments.length===2 && (prop==="gap"||prop==="row-gap"||prop==="column-gap")) return false;return orig.apply(this,arguments);};}}catch(e){}post("warn","Modernās API nogrieztas (replaceAll, AbortController, structuredClone, randomUUID, CSS.gap)");}catch(e){}})();'+
@@ -235,10 +254,37 @@
 
     // Rakstām child dokumentā ar SRC-DOC (nav vajadzīgs allow-same-origin)
     frame.srcdoc = finalHTML;
+
+    // Pielāgo mērogu
+    applyFit();
+  }
+
+  function getDeviceSize(){
+    const w = parseInt((device.style.width||'').replace('px','')) || device.clientWidth;
+    const h = parseInt((device.style.height||'').replace('px','')) || device.clientHeight;
+    return {w,h};
+  }
+  function getCurrentScale(){
+    const m = (scaler.style.transform||'').match(/scale\(([^)]+)\)/);
+    return m ? parseFloat(m[1]) : 1;
+  }
+  function applyFit(){
+    const {w,h} = getDeviceSize();
+    const fit = chk('fitWidth').checked;
+    const vw = Math.max(1, viewport.clientWidth - 16);
+    const vh = Math.max(1, viewport.clientHeight - 16);
+    let scale = 1;
+    if (fit) scale = Math.min(1, Math.min(vw / w, vh / h));
+    scaler.style.transform = 'scale(' + scale + ')';
+    scaler.style.width  = (w * scale) + 'px';
+    scaler.style.height = (h * scale) + 'px';
+    updateDims(w,h);
   }
 
   // noklusētais ceļš
   url.value = 'index.html';
+  // uzreiz ielādē
+  // loadTarget(url.value);  ← ja gribi auto ielādi, atkomentē
 })();
 </script>
 </body>
