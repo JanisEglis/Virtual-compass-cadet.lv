@@ -683,7 +683,6 @@
 
 
 
-
 <!-- Modern/Legacy loader BEZ document.write -->
 <script>
 (function(){
@@ -693,24 +692,24 @@
   function loadScript(src, attrs, onload){
     var s = document.createElement('script');
     s.src = src;
-    if (attrs) for (var k in attrs) s.setAttribute(k, attrs[k] === '' ? '' : attrs[k]);
+    if (attrs) for (var k in attrs) s.setAttribute(k, attrs[k] === '' ? '' : String(attrs[k]));
     if (onload) s.onload = onload;
     s.onerror = function(){ console.error('[loader] failed:', src); };
     document.head.appendChild(s);
   }
 
   if (supportsOptChain() && supportsNullish()){
-    // Modern – vienkārši ielādē app.js
+    // Modern — vienkārši ielādē app.js
     loadScript('app.js', {defer:''});
   } else {
-    // Legacy – 1) ielādē Babel Standalone, 2) atnes app.js, 3) transpilo un palaiž
+    // Legacy — Babel Standalone → transpilo app.js uz Chrome 60
     loadScript('https://unpkg.com/@babel/standalone/babel.min.js', {nomodule:''}, function(){
       var x = new XMLHttpRequest();
       x.open('GET','app.js');
       x.onload = function(){
         try{
           var out = Babel.transform(x.responseText, { presets: [['env', {targets:{chrome:'60'}}]] }).code;
-          (0,eval)(out);
+          (0,eval)(out); // palaist transpiled kodu
           console.info('[legacy] transpiled app.js on the fly');
         } catch(e){
           console.error('[legacy-transpile]', e);
@@ -721,40 +720,7 @@
     });
   }
 })();
-
-
-
-	    // Inject prelude at the earliest possible spot
-    let finalHTML;
-    const headIdx = html.search(/<head[^>]*>/i);
-    if(headIdx !== -1){
-      const insertPos = html.indexOf('>', headIdx) + 1;
-      finalHTML = html.slice(0, insertPos) + '\n' + prelude + '\n' + html.slice(insertPos);
-    } else {
-      // No <head> – inject at document start
-      finalHTML = prelude + '\n' + html;
-    }
-
-    // Write into iframe (same-origin about:blank with <base> to resolve assets)
-    frame.src = 'about:blank';
-    frame.addEventListener('load', function onBlank(){
-      frame.removeEventListener('load', onBlank);
-      try{
-        const doc = frame.contentDocument;
-        doc.open();
-        doc.write(finalHTML);
-        doc.close();
-      }catch(e){
-        errorToLog('Ieraksta kļūda iframe: '+e.message);
-      }
-    }, {once:true});
-  }
-
-  // Init: default URL
-  url.value = 'index.html';
-})();
 </script>
-
 
 
 
