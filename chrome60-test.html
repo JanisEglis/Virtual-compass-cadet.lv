@@ -47,7 +47,7 @@
     <header>
       <div class="bar">
         <div class="brand"><span class="dot"></span> Chrome 60 emulācija</div>
-        <input id="url" type="text" placeholder="/ (ievadi relatīvu ceļu jūsu vietnē, piem., /index.html)" />
+        <input id="url" type="text" placeholder="index.html (ievadi relatīvu ceļu jūsu vietnē, piem., index.html)" />
         <button id="load">Ielādēt</button>
         <div class="seg" role="group" aria-label="Ekrāna izmērs">
           <button data-sz="1366x768">1366×768</button>
@@ -142,59 +142,10 @@
       logc.textContent='';
       // Enforce same-origin usage hint
       if(/^(https?:)?\/\//i.test(path)){
-        console.warn('Ievadīts absolūts URL. Lai emulācija darbotos, saglabā šo HTML tajā pašā domēnā un ievadi relatīvu ceļu, piem., /index.html');
-      }
+        console.warn('Ievadīts absolūts URL. Projektu lapās (GitHub Pages) tas vedīs uz lietotāja sakni. Ievadi relatīvu ceļu, piem., index.html. Tavu ievadi pārveidojam par relatīvu.');
+      path = path.replace(/^\//,'');
       // Set src (let browser resolve relative path inside same origin)
-      frame.src = path;
-    }
-
-    frame.addEventListener('load', ()=>{
-      if(!sameOrigin(frame.contentWindow)){
-        console.error('Iframe ir citā domēnā — emulācijas injekcija bloķēta ar SOP. Ievieto šo failu savā vietnē un ielādē relatīvu ceļu.');
-        return;
-      }
-      hookConsole(frame.contentWindow);
-      injectCompat(frame.contentWindow, {
-        disableVV: chk('disableVV').checked,
-        useROPoly: chk('useROPoly').checked,
-        useIOPoly: chk('useIOPoly').checked,
-        flexGapFix: chk('flexGapFix').checked,
-        spoofUA: chk('spoofUA').checked
-      });
-    });
-
-    // --- Injection bundle that runs INSIDE the iframe ---
-    function injectCompat(win, opts){
-      const doc = win.document;
-      const script = doc.createElement('script');
-      script.type = 'text/javascript';
-      script.text = '('+function(options){
-        (function(){
-          const O = options || {};
-          // 1) Best‑effort UA spoof (dažreiz nav atļauts)
-          if(O.spoofUA){
-            try{
-              const ua60 = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36';
-              const Proto = Object.getPrototypeOf(navigator);
-              if(Proto){ Object.defineProperty(Proto, 'userAgent', { configurable:true, get(){ return ua60; }}); }
-              if('userAgentData' in navigator){ try{ Object.defineProperty(Proto, 'userAgentData', { configurable:true, get(){ return undefined; }});}catch(e){} }
-              console.log('UA spoof mēģināts.');
-            }catch(e){ console.warn('UA spoof neizdevās:', e.message); }
-          }
-
-          // 2) visualViewport — Chrome 60 nebija. Atspējo vai iedod plānu polyfill.
-          if(O.disableVV){
-            try{ Object.defineProperty(window, 'visualViewport', { configurable:true, value: undefined }); }catch{}
-          } else if(!('visualViewport' in window)){
-            const vv = (function(){
-              const obj = new (function VisualViewportPoly(){})();
-              let w = innerWidth, h = innerHeight, s = 1, x=0, y=0;
-              const evt = document.createDocumentFragment();
-              obj.addEventListener = evt.addEventListener.bind(evt);
-              obj.removeEventListener = evt.removeEventListener.bind(evt);
-              function update(){
-                const nw = innerWidth, nh = innerHeight;
-                if(nw!==w || nh!==h){ w=nw; h=nh; evt.dispatchEvent(new Event('resize')); }
+      frame.src = path; }
               }
               Object.defineProperties(obj, {
                 width:{ get(){ return w; }}, height:{ get(){ return h; }}, scale:{ get(){ return s; }}, pageTop:{ get(){ return y; }}, pageLeft:{ get(){ return x; }}
@@ -286,7 +237,7 @@
     }
 
     // Default: ielādē sakni
-    url.value = '/';
+    url.value = 'index.html';
     loadTarget(url.value);
   })();
   </script>
