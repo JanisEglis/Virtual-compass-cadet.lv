@@ -1,0 +1,137 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CADET.LV – Chrome 60 compat checks</title>
+<style>
+  :root{ --ok:#28a745; --bad:#e03e2f; --warn:#e0a800; --ink:#e7ebf3; --bg:#0f1115; --card:#14171c; --muted:#9aa4b2; --brand:#437e12;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,Segoe UI,Roboto,Arial}
+  .wrap{max-width:1000px;margin:32px auto;padding:0 16px}
+  h1{font-size:20px;margin:0 0 6px}
+  p.lead{margin:0 0 18px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1fr;gap:12px}
+  @media (min-width:900px){ .grid{grid-template-columns:1fr 1fr} }
+  .card{background:var(--card);border-radius:12px;padding:14px 16px;box-shadow:0 1px 0 #0004}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px 6px;border-bottom:1px solid #222831;vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  .k{color:#9fb2c8}
+  .ok{color:var(--ok);font-weight:600}
+  .bad{color:var(--bad);font-weight:600}
+  .warn{color:var(--warn);font-weight:600}
+  code{background:#1b1f25;color:#e9eef6;padding:.1rem .35rem;border-radius:6px}
+  .tag{display:inline-flex;align-items:center;padding:.2rem .5rem;border-radius:999px;background:#1b2118;border:1px solid #24361a;color:#cfe8c1;font-size:12px;margin-right:.4rem}
+  .brand{display:flex;align-items:center;gap:.5rem;margin-bottom:10px}
+  .brand strong{font-weight:700;color:#fff}
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--brand)}
+  .hint{color:var(--muted);font-size:12px}
+</style>
+<div class="wrap">
+  <div class="brand"><span class="dot"></span><strong>CADET.LV</strong><span>Interaktīvās tāfeles saderība</span></div>
+  <h1>Pārlūka pārbaude</h1>
+  <p class="lead">
+    Šī lapa pārbauda tipiskos API/CSS, kas bieži lūzt uz <b>Chrome 60</b>. Zaļš = OK, sarkans = vajag polyfill/fallback.
+  </p>
+
+  <div class="grid">
+    <div class="card">
+      <table>
+        <tr><th>Funkcija</th><th>Statuss</th><th>Ko darīt, ja nav</th></tr>
+        <tbody id="checks"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:8px">
+        <span class="tag">UA: <span id="ua"></span></span>
+        <span class="tag">Platums: <span id="w"></span></span>
+        <span class="tag">Augstums: <span id="h"></span></span>
+        <span class="tag">DPI: <span id="dpr"></span></span>
+      </div>
+      <div class="hint">
+        Ieteikumi Chrome 60: <code>nomodule</code> legacy bundls, Babel (ES5), polyfills
+        <code>IntersectionObserver</code>, <code>ResizeObserver</code>, rezerves <code>visualViewport</code>, un margin-gap triks flexiem.
+      </div>
+      <pre id="log" style="margin-top:10px;background:#0d0f13;border-radius:10px;padding:10px;max-height:300px;overflow:auto"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = (sel)=>document.querySelector(sel);
+  $('#ua').textContent = navigator.userAgent;
+  $('#w').textContent = window.innerWidth+'px';
+  $('#h').textContent = (window.visualViewport?visualViewport.height:window.innerHeight)+'px';
+  $('#dpr').textContent = (window.devicePixelRatio||1)+'x';
+
+  function add(name, ok, fix){
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td class="k">'+name+'</td><td>'+(ok?'<span class="ok">OK</span>':'<span class="bad">NAV</span>')+'</td><td class="hint">'+fix+'</td>';
+    document.getElementById('checks').appendChild(tr);
+  }
+
+  function supportsFlexGap(){
+    try{
+      const flex = document.createElement('div');
+      flex.style.display='flex';
+      flex.style.flexDirection='column';
+      flex.style.rowGap='1px';
+      flex.appendChild(document.createElement('div'));
+      flex.appendChild(document.createElement('div'));
+      document.body.appendChild(flex);
+      const isSupported = flex.scrollHeight === 1;
+      flex.parentNode.removeChild(flex);
+      return isSupported;
+    }catch(e){ return false; }
+  }
+
+  function supportsModule(){
+    const s=document.createElement('script');
+    return 'noModule' in s; // modern pārlūki atbalsta 'nomodule' atribūtu
+  }
+
+  function passiveSupport(){
+    let supported=false;
+    try{
+      const opts = Object.defineProperty({}, 'passive', {get(){ supported=true }});
+      window.addEventListener('test', null, opts);
+      window.removeEventListener('test', null, opts);
+    }catch(e){}
+    return supported;
+  }
+
+  const tests = [
+    ['ES modules (<code>type="module"</code>)', supportsModule(), 'Lieto <code>&lt;script nomodule&gt;</code> ar ES5 bundlu.'],
+    ['Optional chaining (<code>?.</code>)', (function(){try{eval('var x={}; x?.a'); return true}catch(e){return false}})(), 'Transpilē ar Babel.'],
+    ['Nullish coalescing (<code>??</code>)', (function(){try{eval('null ?? 1'); return true}catch(e){return false}})(), 'Transpilē ar Babel.'],
+    ['Promises', 'Promise' in window, 'Ieliec <code>promise</code> polyfill.'],
+    ['fetch()', 'fetch' in window, 'Ieliec <code>whatwg-fetch</code> polyfill.'],
+    ['URL & URLSearchParams', 'URL' in window && 'URLSearchParams' in window, 'Polyfill <code>url</code>/<code>URLSearchParams</code>, ja vajag.'],
+    ['IntersectionObserver', 'IntersectionObserver' in window, 'Polyfill vai rezerves skrolla klausītāji.'],
+    ['ResizeObserver', 'ResizeObserver' in window, 'Polyfill vai izmanto <code>resize</code>/MutationObserver rezervi.'],
+    ['visualViewport', 'visualViewport' in window, 'Rezerves: <code>window.innerHeight</code> + <code>resize</code> notikumi.'],
+    ['Pointer events', 'PointerEvent' in window, 'Lieto peles+touch klausītājus kā rezervi.'],
+    ['Passive listeners', passiveSupport(), 'Atstāj 3. argumentu parastu vai pārbaudi atbalstu pirms lieto.'],
+    ['CSS mainīgie', CSS && CSS.supports && CSS.supports('--a','0'), 'Ja nē – izmanto SASS vai iestati vērtības inline.'],
+    ['CSS position: sticky', CSS.supports('position','sticky')||CSS.supports('position','-webkit-sticky'), 'Ja nē – JS sticky polyfill.'],
+    ['CSS backdrop-filter', CSS.supports('backdrop-filter','blur(2px)')||CSS.supports('-webkit-backdrop-filter','blur(2px)'), 'Padari efektu izvēles (enhancement), nevis kritisku.'],
+    ['CSS flex gap', supportsFlexGap(), 'Aizstāj ar <code>.wrap &gt; * + *</code> margin triku.'],
+    ['CSS dvh/vh uzticamība', CSS.supports('height','100dvh'), 'Lieto Tavu <code>--vh</code> risinājumu ar <code>visualViewport</code> rezervi.']
+  ];
+
+  tests.forEach(([n, ok, fix]) => add(n, !!ok, fix));
+
+  // Log sistēma
+  const log = [];
+  function put(s){ log.push(s); $('#log').textContent = log.join('\n'); }
+  put('[info] Time: '+new Date().toISOString());
+  put('[info] Vendor: '+(navigator.vendor||'-'));
+  put('[info] Platform: '+(navigator.platform||'-'));
+
+  window.addEventListener('resize', function(){
+    $('#w').textContent = window.innerWidth+'px';
+    $('#h').textContent = (window.visualViewport?visualViewport.height:window.innerHeight)+'px';
+  });
+})();
+</script>
