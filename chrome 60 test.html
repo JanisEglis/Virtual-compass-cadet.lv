@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chrome 60 Emulācijas ietvars (vienas lapas tests)</title>
+  <style>
+    :root{
+      --bg:#0f1115; --panel:#151a21; --muted:#9aa4b2; --text:#eef2f7; --brand:#437e12; --red:#ff6b6b;
+      --card:#11161d; --border:#232b36;
+    }
+    html,body{height:100%;}
+    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui, Segoe UI, Roboto, Arial, sans-serif;}
+    .wrap{display:grid;grid-template-rows:auto 1fr; height:100%;}
+    header{background:var(--panel);border-bottom:1px solid var(--border);}
+    .bar{display:flex;flex-wrap:wrap; gap:.75rem; align-items:center; padding:.75rem 1rem;}
+    .brand{font-weight:700;letter-spacing:.2px;display:flex;align-items:center;gap:.65rem}
+    .dot{width:10px;height:10px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 4px color-mix(in srgb, var(--brand) 35%, transparent)}
+    .bar input[type="text"]{flex:1 1 380px; min-width:260px; background:#0c1016; color:var(--text); border:1px solid var(--border); border-radius:10px; padding:.6rem .8rem}
+    .bar button, .bar .seg button{appearance:none;border:1px solid var(--border);background:#0e141b;color:var(--text);border-radius:10px;padding:.55rem .8rem;cursor:pointer}
+    .bar button:hover{border-color:#2b3542}
+    .seg{display:inline-flex;background:#0e141b;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    .seg button{border:0;border-right:1px solid var(--border)}
+    .seg button:last-child{border-right:0}
+    .seg button[aria-pressed="true"]{background:var(--brand)}
+    .chk{display:flex;align-items:center;gap:.45rem}
+    .chk input{accent-color:var(--brand)}
+    .help{color:var(--muted);font-size:12px;padding:0 1rem .5rem}
+
+    .main{position:relative}
+    iframe{width:100%;height:100%;border:0;background:#0a0e13}
+
+    .log{position:absolute;inset:auto 8px 8px auto; width:min(520px, 92vw); max-height:42vh; overflow:auto; background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:.65rem .8rem; font:12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; display:none}
+    .log h4{margin:.2rem 0 .5rem;font-size:12px;color:var(--muted)}
+    .log pre{white-space:pre-wrap; word-break:break-word; margin:.1rem 0}
+    .log .err{color:#ffb4b4}
+    .log .warn{color:#ffd59e}
+    .log .ok{color:#b7ffb7}
+
+    .note{padding:.6rem .9rem; background:#0e1510; border:1px solid #1d2b1f; color:#cde7cf; border-radius:10px; margin:.4rem 1rem}
+    .warnline{padding:.6rem .9rem; background:#15100e; border:1px solid #2b1f1d; color:#f1c9c9; border-radius:10px; margin:.4rem 1rem}
+    .kbd{padding:.1rem .35rem;border:1px solid var(--border);border-radius:6px;background:#0c1016}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="bar">
+        <div class="brand"><span class="dot"></span> Chrome 60 emulācija</div>
+        <input id="url" type="text" placeholder="/ (ievadi relatīvu ceļu jūsu vietnē, piem., /index.html)" />
+        <button id="load">Ielādēt</button>
+        <div class="seg" role="group" aria-label="Ekrāna izmērs">
+          <button data-sz="1366x768">1366×768</button>
+          <button data-sz="1920x1080" aria-pressed="true">1920×1080</button>
+          <button data-sz="414x896">414×896</button>
+        </div>
+        <button id="reload">Pārlādēt</button>
+        <button id="toggleLog">Konsoles logs</button>
+      </div>
+      <div class="help">⚠️ Lai šis strādātu, <b>glabā šo failu tādā pašā domēnā</b> kā jūsu testējamā lapa (same‑origin). Tad iframe iekšā varēs injicēt poli‑filus un “nogriezt” jaunas API.
+      </div>
+      <div class="note">Pirms ielādes izvēlies, ko <b>Chrome 60</b> nemācēja — šie slēdži simulē veco vidi (slaidāks, bet pietiek reāliem bugiem):</div>
+      <div class="bar" style="border-top:1px solid var(--border)">
+        <label class="chk"><input id="disableVV" type="checkbox" checked> Atspējot <code>visualViewport</code> (Chrome 60 to nebija)</label>
+        <label class="chk"><input id="useROPoly" type="checkbox" checked> <code>ResizeObserver</code> polyfill (vai atspējot, ja vēlies)</label>
+        <label class="chk"><input id="useIOPoly" type="checkbox"> <code>IntersectionObserver</code> polyfill</label>
+        <label class="chk"><input id="flexGapFix" type="checkbox" checked> Fallback <code>flex-gap</code> → margin</label>
+        <label class="chk"><input id="spoofUA" type="checkbox"> Iestāsti UA ≈ Chrome 60 (best‑effort)</label>
+      </div>
+      <div class="warnline">Ja ievadīsi ārēju URL (citā domēnā), pārlūka drošība neļaus injicēt skriptus. Šādā gadījumā ieliec šo failu <b>tavā</b> vietnē un testē relatīvu ceļu.</div>
+    </header>
+
+    <section class="main">
+      <iframe id="frame" sandbox="allow-scripts allow-forms allow-same-origin allow-pointer-lock allow-popups allow-modals"></iframe>
+      <aside id="log" class="log" aria-live="polite">
+        <h4>Iframe konsoles žurnāls</h4>
+        <div id="logc"></div>
+      </aside>
+    </section>
+  </div>
+
+  <script>
+  (function(){
+    const url = document.getElementById('url');
+    const frame = document.getElementById('frame');
+    const btnLoad = document.getElementById('load');
+    const btnReload = document.getElementById('reload');
+    const btnLog = document.getElementById('toggleLog');
+    const log = document.getElementById('log');
+    const logc = document.getElementById('logc');
+
+    const chk = id => document.getElementById(id);
+
+    // Size segment
+    document.querySelectorAll('.seg [data-sz]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        document.querySelectorAll('.seg [data-sz]').forEach(x=>x.setAttribute('aria-pressed','false'));
+        b.setAttribute('aria-pressed','true');
+        const [w,h]=b.dataset.sz.split('x').map(Number);
+        frame.style.width = '100%';
+        frame.style.height = h+'px';
+      });
+    });
+
+    btnLog.addEventListener('click', ()=>{
+      log.style.display = (log.style.display==='block')?'none':'block';
+    });
+
+    btnReload.addEventListener('click', ()=>{
+      if(frame.src) frame.contentWindow.location.reload();
+    });
+
+    btnLoad.addEventListener('click', ()=>
+      loadTarget(url.value.trim() || '/')
+    );
+
+    // Helper: set up console proxy from iframe → panel
+    function hookConsole(win){
+      try{
+        const pass = (type, args) => {
+          const pre = document.createElement('pre');
+          pre.className = type;
+          pre.textContent = '['+type.toUpperCase()+'] '+ args.map(a=>{
+            try { return typeof a==='object'? JSON.stringify(a): String(a) } catch{ return String(a) }
+          }).join(' ');
+          logc.appendChild(pre); log.style.display='block'; log.scrollTop = log.scrollHeight;
+        };
+        ['log','warn','error'].forEach(type=>{
+          const orig = win.console[type];
+          win.console[type] = function(){ try{ pass(type, Array.from(arguments)); }catch{}; return orig.apply(this, arguments); };
+        });
+        win.addEventListener('error', e=> pass('err', [e.message+' @'+(e.filename||'')+':'+(e.lineno||'')]) );
+        win.addEventListener('unhandledrejection', e=> pass('err', ['Unhandled promise rejection:', e.reason]) );
+      }catch(e){ /* cross-origin → ignore */ }
+    }
+
+    function sameOrigin(win){
+      try{ void win.document; return true; }catch{ return false; }
+    }
+
+    function loadTarget(path){
+      logc.textContent='';
+      // Enforce same-origin usage hint
+      if(/^(https?:)?\/\//i.test(path)){
+        console.warn('Ievadīts absolūts URL. Lai emulācija darbotos, saglabā šo HTML tajā pašā domēnā un ievadi relatīvu ceļu, piem., /index.html');
+      }
+      // Set src (let browser resolve relative path inside same origin)
+      frame.src = path;
+    }
+
+    frame.addEventListener('load', ()=>{
+      if(!sameOrigin(frame.contentWindow)){
+        console.error('Iframe ir citā domēnā — emulācijas injekcija bloķēta ar SOP. Ievieto šo failu savā vietnē un ielādē relatīvu ceļu.');
+        return;
+      }
+      hookConsole(frame.contentWindow);
+      injectCompat(frame.contentWindow, {
+        disableVV: chk('disableVV').checked,
+        useROPoly: chk('useROPoly').checked,
+        useIOPoly: chk('useIOPoly').checked,
+        flexGapFix: chk('flexGapFix').checked,
+        spoofUA: chk('spoofUA').checked
+      });
+    });
+
+    // --- Injection bundle that runs INSIDE the iframe ---
+    function injectCompat(win, opts){
+      const doc = win.document;
+      const script = doc.createElement('script');
+      script.type = 'text/javascript';
+      script.text = '('+function(options){
+        (function(){
+          const O = options || {};
+          // 1) Best‑effort UA spoof (dažreiz nav atļauts)
+          if(O.spoofUA){
+            try{
+              const ua60 = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36';
+              const Proto = Object.getPrototypeOf(navigator);
+              if(Proto){ Object.defineProperty(Proto, 'userAgent', { configurable:true, get(){ return ua60; }}); }
+              if('userAgentData' in navigator){ try{ Object.defineProperty(Proto, 'userAgentData', { configurable:true, get(){ return undefined; }});}catch(e){} }
+              console.log('UA spoof mēģināts.');
+            }catch(e){ console.warn('UA spoof neizdevās:', e.message); }
+          }
+
+          // 2) visualViewport — Chrome 60 nebija. Atspējo vai iedod plānu polyfill.
+          if(O.disableVV){
+            try{ Object.defineProperty(window, 'visualViewport', { configurable:true, value: undefined }); }catch{}
+          } else if(!('visualViewport' in window)){
+            const vv = (function(){
+              const obj = new (function VisualViewportPoly(){})();
+              let w = innerWidth, h = innerHeight, s = 1, x=0, y=0;
+              const evt = document.createDocumentFragment();
+              obj.addEventListener = evt.addEventListener.bind(evt);
+              obj.removeEventListener = evt.removeEventListener.bind(evt);
+              function update(){
+                const nw = innerWidth, nh = innerHeight;
+                if(nw!==w || nh!==h){ w=nw; h=nh; evt.dispatchEvent(new Event('resize')); }
+              }
+              Object.defineProperties(obj, {
+                width:{ get(){ return w; }}, height:{ get(){ return h; }}, scale:{ get(){ return s; }}, pageTop:{ get(){ return y; }}, pageLeft:{ get(){ return x; }}
+              });
+              addEventListener('resize', update, {passive:true});
+              addEventListener('scroll', ()=>{ const ny = pageYOffset||document.documentElement.scrollTop; if(ny!==y){ y=ny; evt.dispatchEvent(new Event('scroll')); }}, {passive:true});
+              return obj;
+            })();
+            try{ Object.defineProperty(window, 'visualViewport', { configurable:true, value: vv }); console.log('visualViewport polyfill ieslēgts'); }catch{}
+          }
+
+          // 3) ResizeObserver — vienkāršs polyfill (polls + getBoundingClientRect)
+          if(O.useROPoly){
+            if(typeof window.ResizeObserver === 'undefined'){
+              (function(){
+                function RO(cb){ this.cb = cb; this.items=[]; }
+                RO.prototype.observe = function(el){ if(!this.items.find(i=>i.el===el)){ this.items.push({el, box:el.getBoundingClientRect()}); } };
+                RO.prototype.unobserve = function(el){ this.items = this.items.filter(i=>i.el!==el); };
+                RO.prototype.disconnect = function(){ this.items.length=0; };
+                const tick = (inst)=>{
+                  const entries=[]; inst.items.forEach(it=>{ const r=it.el.getBoundingClientRect();
+                    if(Math.abs(r.width-it.box.width)>0.5 || Math.abs(r.height-it.box.height)>0.5){ entries.push({target:it.el, contentRect:r}); it.box=r; }
+                  }); if(entries.length) try{ inst.cb(entries, inst); }catch(e){ console.error(e); }
+                };
+                const Observers = new Set();
+                setInterval(()=> Observers.forEach(tick), 250);
+                const Ctor = function(cb){ const ro = new RO(cb); Observers.add(ro); return ro; };
+                Ctor.toString = ()=> 'function ResizeObserver() { [polyfill] }';
+                window.ResizeObserver = Ctor;
+                console.log('ResizeObserver polyfill ieslēgts (aptuvens)');
+              })();
+            } else {
+              console.log('ResizeObserver jau atbalstīts – polyfill nav vajadzīgs');
+            }
+          } else {
+            try{ Object.defineProperty(window, 'ResizeObserver', { configurable:true, value: undefined }); console.warn('ResizeObserver atspējots (simulēts Chrome 60 trūkums)'); }catch{}
+          }
+
+          // 4) IntersectionObserver — vienkāršs polyfill pēc vajadzības
+          if(O.useIOPoly && typeof window.IntersectionObserver === 'undefined'){
+            (function(){
+              function IO(cb, opts){ this.cb=cb; this.items=[]; this.rootMargin=opts&&opts.rootMargin||'0px'; this.thresholds = Array.isArray(opts&&opts.threshold)? opts.threshold:[opts&&opts.threshold||0]; }
+              IO.prototype.observe = function(el){ if(!this.items.find(i=>i.el===el)){ this.items.push({el, vis:false}); } };
+              IO.prototype.unobserve = function(el){ this.items = this.items.filter(i=>i.el!==el); };
+              IO.prototype.disconnect = function(){ this.items.length=0; };
+              const isVisible = (el)=>{ const r=el.getBoundingClientRect(); return r.bottom>0 && r.right>0 && r.top < (innerHeight||document.documentElement.clientHeight) && r.left < (innerWidth||document.documentElement.clientWidth); };
+              const observers=[]; const tick=()=> observers.forEach(io=>{ const entries=[]; io.items.forEach(it=>{ const v=isVisible(it.el); if(v!==it.vis){ it.vis=v; entries.push({target:it.el, isIntersecting:v, intersectionRatio:v?1:0}); } }); if(entries.length) try{ io.cb(entries, io); }catch(e){ console.error(e); } });
+              setInterval(tick, 200); addEventListener('scroll', tick, {passive:true}); addEventListener('resize', tick, {passive:true});
+              window.IntersectionObserver = function(cb, opts){ const io = new IO(cb, opts); observers.push(io); return io; };
+              console.log('IntersectionObserver polyfill ieslēgts (aptuvens)');
+            })();
+          }
+
+          // 5) flex-gap → margins fallback (Chrome 60 neatbalstīja flex-gap)
+          if(O.flexGapFix){
+            (function(){
+              function px(n){ return Number(String(n).replace('px',''))||0 }
+              function apply(root){
+                const all = root.querySelectorAll('*');
+                all.forEach(el=>{
+                  const cs = getComputedStyle(el);
+                  if(cs.display!=='flex') return;
+                  const rg = px(cs.rowGap), cg = px(cs.columnGap);
+                  if((rg||cg) && !el.__gapFixed){
+                    el.__gapFixed = true;
+                    el.style.rowGap = '0px'; el.style.columnGap='0px';
+                    const isRow = cs.flexDirection.startsWith('row');
+                    const kids = Array.from(el.children);
+                    kids.forEach((ch, i)=>{
+                      const s = ch.style; if(isRow){ if(i) s.marginLeft = (px(getComputedStyle(ch).marginLeft)+cg)+'px'; if(rg){ s.marginTop = (px(getComputedStyle(ch).marginTop))+'px'; s.marginBottom = (px(getComputedStyle(ch).marginBottom))+'px'; } }
+                      else { if(i) s.marginTop = (px(getComputedStyle(ch).marginTop)+rg)+'px'; if(cg){ s.marginLeft = (px(getComputedStyle(ch).marginLeft))+'px'; s.marginRight = (px(getComputedStyle(ch).marginRight))+'px'; } }
+                    });
+                  }
+                });
+              }
+              const mo = new MutationObserver(m=> m.forEach(()=>apply(document.body)));
+              mo.observe(document.documentElement, {childList:true, subtree:true});
+              addEventListener('load', ()=>apply(document.body));
+              addEventListener('DOMContentLoaded', ()=>apply(document.body));
+              setTimeout(()=>apply(document.body), 0);
+              console.log('flex-gap → margin fallback ieslēgts');
+            })();
+          }
+
+          console.log('Chrome60 emulācijas komplekts injicēts.');
+        })();
+      }.toString()+')('+JSON.stringify(opts)+');';
+      (doc.head || doc.documentElement).appendChild(script);
+    }
+
+    // Default: ielādē sakni
+    url.value = '/';
+    loadTarget(url.value);
+  })();
+  </script>
+</body>
+</html>
