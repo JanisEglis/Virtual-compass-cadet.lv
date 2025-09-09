@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Chrome 60 Emulācijas ietvars (vienas lapas tests)</title>
+  <title>Chrome 60 Emulācijas ietvars (vienas lapas tests)</title>
   <style>
     :root{
       --bg:#0f1115; --panel:#151a21; --muted:#9aa4b2; --text:#eef2f7; --brand:#437e12; --red:#ff6b6b;
@@ -15,7 +15,7 @@
     header{background:var(--panel);border-bottom:1px solid var(--border);}
     .bar{display:flex;flex-wrap:wrap; gap:.75rem; align-items:center; padding:.75rem 1rem;}
     .brand{font-weight:700;letter-spacing:.2px;display:flex;align-items:center;gap:.65rem}
-    .dot{width:10px;height:10px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 4px color-mix(in srgb, var(--brand) 35%, transparent)}
+    .dot{width:10px;height:10px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 4px rgba(67,126,18,.35)}
     .bar input[type="text"]{flex:1 1 380px; min-width:260px; background:#0c1016; color:var(--text); border:1px solid var(--border); border-radius:10px; padding:.6rem .8rem}
     .bar button, .bar .seg button{appearance:none;border:1px solid var(--border);background:#0e141b;color:var(--text);border-radius:10px;padding:.55rem .8rem;cursor:pointer}
     .bar button:hover{border-color:#2b3542}
@@ -26,27 +26,30 @@
     .chk{display:flex;align-items:center;gap:.45rem}
     .chk input{accent-color:var(--brand)}
     .help{color:var(--muted);font-size:12px;padding:0 1rem .5rem}
+    .note{padding:.6rem .9rem; background:#0e1510; border:1px solid #1d2b1f; color:#cde7cf; border-radius:10px; margin:.4rem 1rem}
+    .warnline{padding:.6rem .9rem; background:#15100e; border:1px solid #2b1f1d; color:#f1c9c9; border-radius:10px; margin:.4rem 1rem}
+    .kbd{padding:.1rem .35rem;border:1px solid var(--border);border-radius:6px;background:#0c1016}
 
-    .main{position:relative}
-    iframe{width:100%;height:100%;border:0;background:#0a0e13}
-
-    .log{position:absolute;inset:auto 8px 8px auto; width:min(520px, 92vw); max-height:42vh; overflow:auto; background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:.65rem .8rem; font:12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; display:none}
+    .main{position:relative;display:grid;place-items:center;padding:10px}
+    .device{
+      position:relative; background:#0a0e13; border:1px solid var(--border); border-radius:14px; box-shadow:0 15px 40px rgba(0,0,0,.45);
+      overflow:hidden;
+    }
+    .device .frame{display:block;border:0; background:#0a0e13}
+    .badge{position:absolute;right:10px;top:10px;font-size:12px;color:var(--muted);background:#0c1117;border:1px solid var(--border);padding:.2rem .4rem;border-radius:6px}
+    .log{position:absolute;inset:auto 8px 8px auto; width:min(560px, 92vw); max-height:46vh; overflow:auto; background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:.65rem .8rem; font:12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; display:none}
     .log h4{margin:.2rem 0 .5rem;font-size:12px;color:var(--muted)}
     .log pre{white-space:pre-wrap; word-break:break-word; margin:.1rem 0}
     .log .err{color:#ffb4b4}
     .log .warn{color:#ffd59e}
     .log .ok{color:#b7ffb7}
-
-    .note{padding:.6rem .9rem; background:#0e1510; border:1px solid #1d2b1f; color:#cde7cf; border-radius:10px; margin:.4rem 1rem}
-    .warnline{padding:.6rem .9rem; background:#15100e; border:1px solid #2b1f1d; color:#f1c9c9; border-radius:10px; margin:.4rem 1rem}
-    .kbd{padding:.1rem .35rem;border:1px solid var(--border);border-radius:6px;background:#0c1016}
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <div class="bar">
-        <div class="brand"><span class="dot"></span> Chrome 60 emulācija</div>
+        <div class="brand"><span class="dot"></span> Chrome 60 emulācija</div>
         <input id="url" type="text" placeholder="index.html (ievadi relatīvu ceļu jūsu vietnē, piem., index.html)" />
         <button id="load">Ielādēt</button>
         <div class="seg" role="group" aria-label="Ekrāna izmērs">
@@ -57,21 +60,27 @@
         <button id="reload">Pārlādēt</button>
         <button id="toggleLog">Konsoles logs</button>
       </div>
-      <div class="help">⚠️ Lai šis strādātu, <b>glabā šo failu tādā pašā domēnā</b> kā jūsu testējamā lapa (same‑origin). Tad iframe iekšā varēs injicēt poli‑filus un “nogriezt” jaunas API.
-      </div>
-      <div class="note">Pirms ielādes izvēlies, ko <b>Chrome 60</b> nemācēja — šie slēdži simulē veco vidi (slaidāks, bet pietiek reāliem bugiem):</div>
+      <div class="help">⚠️ Lai injekcija darbotos, <b>glabā šo failu tajā pašā domēnā</b> kā testējamā lapa un ielādē to ar <b>relatīvu ceļu</b> (piem., <span class="kbd">index.html</span>).</div>
+      <div class="note">Izvēlies, ko <b>Chrome 60</b> nemācēja – šie slēdži simulē veco vidi (t.sk. bloķē <code>type="module"</code> un “nogriež” modernās API):</div>
       <div class="bar" style="border-top:1px solid var(--border)">
-        <label class="chk"><input id="disableVV" type="checkbox" checked> Atspējot <code>visualViewport</code> (Chrome 60 to nebija)</label>
-        <label class="chk"><input id="useROPoly" type="checkbox" checked> <code>ResizeObserver</code> polyfill (vai atspējot, ja vēlies)</label>
+        <label class="chk"><input id="disableVV" type="checkbox" checked> Atspējot <code>visualViewport</code></label>
+        <label class="chk"><input id="useROPoly" type="checkbox" checked> <code>ResizeObserver</code> polyfill</label>
         <label class="chk"><input id="useIOPoly" type="checkbox"> <code>IntersectionObserver</code> polyfill</label>
         <label class="chk"><input id="flexGapFix" type="checkbox" checked> Fallback <code>flex-gap</code> → margin</label>
-        <label class="chk"><input id="spoofUA" type="checkbox"> Iestāsti UA ≈ Chrome 60 (best‑effort)</label>
+        <label class="chk"><input id="spoofUA" type="checkbox"> UA ≈ Chrome 60</label>
+        <label class="chk"><input id="forceTouch" type="checkbox"> Iztēloties skārieniekārtu (maxTouchPoints=10)</label>
+        <label class="chk"><input id="forceDPR1" type="checkbox"> DevicePixelRatio=1</label>
+        <label class="chk"><input id="blockModule" type="checkbox" checked> Bloķēt <code>&lt;script type="module"&gt;</code></label>
+        <label class="chk"><input id="pruneModern" type="checkbox" checked> Nogriezt modernās API (<code>AbortController</code>, <code>replaceAll</code>, <code>structuredClone</code>…)</label>
       </div>
-      <div class="warnline">Ja ievadīsi ārēju URL (citā domēnā), pārlūka drošība neļaus injicēt skriptus. Šādā gadījumā ieliec šo failu <b>tavā</b> vietnē un testē relatīvu ceļu.</div>
+      <div class="warnline">Ja ievadīsi ārēju URL (citā domēnā), drošība bloķēs injekciju. Testē **relatīvu ceļu** vai ieliec šo failu tajā pašā domēnā.</div>
     </header>
 
     <section class="main">
-      <iframe id="frame" sandbox="allow-scripts allow-forms allow-same-origin allow-pointer-lock allow-popups allow-modals"></iframe>
+      <div id="device" class="device" style="width:1920px;height:1080px">
+        <div class="badge" id="dims">1920×1080 @ DPR?</div>
+        <iframe id="frame" class="frame" sandbox="allow-scripts allow-forms allow-same-origin allow-pointer-lock allow-popups allow-modals"></iframe>
+      </div>
       <aside id="log" class="log" aria-live="polite">
         <h4>Iframe konsoles žurnāls</h4>
         <div id="logc"></div>
@@ -79,14 +88,12 @@
     </section>
   </div>
 
-
-
-
-
 <script>
 (function(){
   const url = document.getElementById('url');
   const frame = document.getElementById('frame');
+  const device = document.getElementById('device');
+  const dims = document.getElementById('dims');
   const btnLoad = document.getElementById('load');
   const btnReload = document.getElementById('reload');
   const btnLog = document.getElementById('toggleLog');
@@ -94,240 +101,293 @@
   const logc = document.getElementById('logc');
   const chk = id => document.getElementById(id);
 
-  // Size segment
+  // Size buttons
   document.querySelectorAll('.seg [data-sz]').forEach(b=>{
     b.addEventListener('click', ()=>{
       document.querySelectorAll('.seg [data-sz]').forEach(x=>x.setAttribute('aria-pressed','false'));
       b.setAttribute('aria-pressed','true');
       const [w,h]=b.dataset.sz.split('x').map(Number);
+      device.style.width = w+'px';
+      device.style.height = h+'px';
       frame.style.width = '100%';
-      frame.style.height = h+'px';
+      frame.style.height = '100%';
+      dims.textContent = `${w}×${h} @ DPR?`;
     });
   });
 
-  btnLog.addEventListener('click', ()=>{
-    log.style.display = (log.style.display==='block')?'none':'block';
-  });
-
-  btnReload.addEventListener('click', ()=>{
-    if(frame.src) frame.contentWindow.location.reload();
-  });
+  btnLog.addEventListener('click', ()=>{ log.style.display = (log.style.display==='block')?'none':'block'; });
+  btnReload.addEventListener('click', ()=>{ if(frame.contentWindow){ frame.contentWindow.location.reload(); } });
 
   btnLoad.addEventListener('click', ()=> loadTarget(url.value.trim() || 'index.html'));
   url.addEventListener('keydown', e=>{ if(e.key==='Enter') loadTarget(url.value.trim()||'index.html'); });
 
-  // Helper: proxy iframe console → panel
-  function hookConsole(win){
+  // Pane console for messages coming from iframe prelude
+  window.addEventListener('message', (e)=>{
+    const d = e.data;
+    if(!d || d.__em_sig!=='chrome60') return;
+    const pre = document.createElement('pre');
+    pre.className = d.level || 'log';
+    pre.textContent = `[${(d.level||'log').toUpperCase()}] ` + (d.text||'');
+    logc.appendChild(pre);
+    log.style.display = 'block';
+    log.scrollTop = log.scrollHeight;
+    if(d.type==='meta' && d.dpr){ dims.textContent = `${device.style.width.replace('px','')}×${device.style.height.replace('px','')} @ DPR${d.dpr}`; }
+  });
+
+  function errorToLog(msg){
+    const pre = document.createElement('pre');
+    pre.className = 'err';
+    pre.textContent = `[ERR] ${msg}`;
+    logc.appendChild(pre);
+    log.style.display = 'block';
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function sameOriginAbsolute(u){
     try{
-      const pass = (type, args) => {
-        const pre = document.createElement('pre');
-        pre.className = type;
-        pre.textContent = '['+type.toUpperCase()+'] '+ args.map(a=>{
-          try { return typeof a==='object'? JSON.stringify(a): String(a) } catch{ return String(a) }
-        }).join(' ');
-        logc.appendChild(pre); log.style.display='block'; log.scrollTop = log.scrollHeight;
-      };
-      ['log','warn','error'].forEach(type=>{
-        const orig = win.console[type];
-        win.console[type] = function(){ try{ pass(type, Array.from(arguments)); }catch{}; return orig.apply(this, arguments); };
-      });
-      win.addEventListener('error', e=> pass('err', [e.message+' @'+(e.filename||'')+':'+(e.lineno||'')]) );
-      win.addEventListener('unhandledrejection', e=> pass('err', ['Unhandled promise rejection:', e.reason]) );
-    }catch(e){ /* cross-origin → ignore */ }
+      const full = new URL(u, location.href);
+      return full.origin === location.origin ? full : null;
+    }catch{ return null; }
   }
 
-  function sameOrigin(win){
-    try{ void win.document; return true; }catch{ return false; }
-  }
-
-  function loadTarget(path){
+  // Core: fetch HTML, inject prelude BEFORE page scripts, write into iframe
+  async function loadTarget(path){
     logc.textContent = '';
-
-    // Ļaujam pilnu URL vai relatīvu ceļu. Ja URL ir no šī paša origin, pārvēršam uz relatīvu.
-    if (/^(https?:)?\/\//i.test(path)) {
-      try {
-        const u = new URL(path, location.href);
-        if (u.origin === location.origin) {
-          path = u.pathname + u.search + u.hash;
-        } else {
-          console.error('URL ir citā domēnā — injekcija nebūs iespējama. Lieto relatīvu ceļu (piem., index.html) vai glabā failu tajā pašā domēnā.');
-        }
-      } catch(e){
-        console.warn('Neizdevās parsēt URL:', e.message);
-      }
-    }
-
-    frame.src = (path && path.trim()) || 'index.html';
-  }
-
-  // ŠIS bija pazudis: injekcija notiek pēc iframe ielādes
-  frame.addEventListener('load', ()=>{
-    if(!sameOrigin(frame.contentWindow)){
-      console.error('Iframe ir citā domēnā — emulācijas injekcija bloķēta ar SOP. Ievieto šo failu savā vietnē un ielādē relatīvu ceļu.');
+    const abs = sameOriginAbsolute(path);
+    if(!abs){
+      errorToLog('URL ir citā domēnā vai nederīgs – lieto relatīvu ceļu (piem., index.html).');
       return;
     }
-    hookConsole(frame.contentWindow);
-    injectCompat(frame.contentWindow, {
+    let html;
+    try{
+      const res = await fetch(abs.href, {cache:'no-store', credentials:'same-origin'});
+      if(!res.ok) throw new Error(res.status+' '+res.statusText);
+      html = await res.text();
+    }catch(e){
+      errorToLog('Neizdevās ielādēt mērķi: '+e.message);
+      return;
+    }
+
+    const opts = {
       disableVV: chk('disableVV').checked,
       useROPoly: chk('useROPoly').checked,
       useIOPoly: chk('useIOPoly').checked,
       flexGapFix: chk('flexGapFix').checked,
-      spoofUA: chk('spoofUA').checked
-    });
-  });
+      spoofUA: chk('spoofUA').checked,
+      forceTouch: chk('forceTouch').checked,
+      forceDPR1: chk('forceDPR1').checked,
+      blockModule: chk('blockModule').checked,
+      pruneModern: chk('pruneModern').checked
+    };
 
-  // --- Injection bundle that runs INSIDE the iframe ---
-  function injectCompat(win, opts){
-    const doc = win.document;
-    const script = doc.createElement('script');
-    script.type = 'text/javascript';
-    script.text = '('+function(options){
-      (function(){
-        const O = options || {};
-        // 1) UA spoof
-        if(O.spoofUA){
-          try{
-            const ua60 = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36';
-            const Proto = Object.getPrototypeOf(navigator);
-            if(Proto){ Object.defineProperty(Proto, 'userAgent', { configurable:true, get(){ return ua60; }}); }
-            if('userAgentData' in navigator){ try{ Object.defineProperty(Proto, 'userAgentData', { configurable:true, get(){ return undefined; }});}catch(e){} }
-            console.log('UA spoof mēģināts.');
-          }catch(e){ console.warn('UA spoof neizdevās:', e.message); }
+    // If blocking modules, rewrite existing <script type="module"> in raw HTML to prevent execution
+    if(opts.blockModule){
+      html = html.replace(/<script\b([^>]*?)\btype\s*=\s*["']module["']([^>]*)>/gi,
+                          '<script type="text/x-module-blocked"$1$2 data-blocked="module">');
+      // Also neutralize <link rel=modulepreload>
+      html = html.replace(/<link\b([^>]*?)\brel\s*=\s*["']modulepreload["']([^>]*)>/gi,
+                          '<!-- modulepreload blocked -->');
+    }
+
+    // Build prelude: runs BEFORE page scripts
+    const prelude =
+`<base href="${abs.href.replace(/"/g,'&quot;')}">
+<script>(function(){
+  var OPTS = ${JSON.stringify(opts)};
+  function post(level, text, extra){ try{ parent.postMessage({__em_sig:'chrome60', level:level, text:text, type: (extra&&extra.type)||'', dpr: (extra&&extra.dpr)||null}, '*'); }catch(e){} }
+  (function hookConsole(){
+    try{
+      var orig = {};
+      ['log','warn','error'].forEach(function(k){
+        orig[k] = console[k];
+        console[k] = function(){ try{ post(k, Array.prototype.map.call(arguments, function(a){ try{return typeof a==='object'? JSON.stringify(a): String(a);}catch(e){return String(a);} }).join(' ')); }catch(e){}; return orig[k].apply(this, arguments); };
+      });
+      window.addEventListener('error', function(e){ post('err', (e.message||'')+' @'+(e.filename||'')+':'+(e.lineno||'')); }, {passive:true});
+      window.addEventListener('unhandledrejection', function(e){ post('err', 'Unhandled promise rejection: '+(e.reason&&e.reason.message?e.reason.message:String(e.reason))); }, {passive:true});
+      post('ok','Emulācijas prelude ielādēts.', {type:'meta', dpr: window.devicePixelRatio||'?'} );
+    }catch(e){}
+  })();
+
+  try{
+    // UA spoof
+    if(OPTS.spoofUA){
+      try{
+        var ua60 = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36';
+        var Proto = Object.getPrototypeOf(navigator);
+        if(Proto){ Object.defineProperty(Proto, 'userAgent', {configurable:true, get:function(){return ua60;}}); }
+        if('userAgentData' in navigator){ try{ Object.defineProperty(Proto, 'userAgentData', {configurable:true, get:function(){return undefined;}});}catch(e){} }
+        post('log','UA spoof → Chrome 60');
+      }catch(e){ post('warn','UA spoof neizdevās: '+e.message); }
+    }
+
+    // Force touch + DPR
+    (function(){
+      try{
+        if(OPTS.forceTouch){
+          var Np = Object.getPrototypeOf(navigator);
+          if(Np){ Object.defineProperty(Np, 'maxTouchPoints', {configurable:true, get:function(){return 10;}}); }
+          try{ Object.defineProperty(window, 'ontouchstart', {configurable:true, value:null}); }catch(e){}
+          post('log','Touch režīms ieslēgts (maxTouchPoints=10)');
         }
+        if(OPTS.forceDPR1){
+          try{
+            Object.defineProperty(window, 'devicePixelRatio', {configurable:true, get:function(){return 1;}});
+            post('log','DPR fiksēts uz 1');
+          }catch(e){ post('warn','DPR piesaiste neizdevās: '+e.message); }
+        }
+      }catch(e){}
+    })();
 
-        // 2) visualViewport
-        if(O.disableVV){
-          try{ Object.defineProperty(window, 'visualViewport', { configurable:true, value: undefined }); }catch{}
+    // visualViewport
+    (function(){
+      try{
+        if(OPTS.disableVV){
+          try{ Object.defineProperty(window, 'visualViewport', { configurable:true, value: undefined }); post('log','visualViewport atspējots'); }catch(e){}
         } else if(!('visualViewport' in window)){
-          const vv = (function(){
-            const obj = new (function VisualViewportPoly(){})();
-            let w = innerWidth, h = innerHeight, s = 1, x=0, y=0;
-            const evt = document.createDocumentFragment();
+          var vv = (function(){
+            var obj = {}; var w=innerWidth, h=innerHeight, s=1, x=0, y=0;
+            var evt = document.createDocumentFragment();
             obj.addEventListener = evt.addEventListener.bind(evt);
             obj.removeEventListener = evt.removeEventListener.bind(evt);
-            function update(){
-              const nw = innerWidth, nh = innerHeight;
+            function upd(){
+              var nw=innerWidth, nh=innerHeight;
               if(nw!==w || nh!==h){ w=nw; h=nh; evt.dispatchEvent(new Event('resize')); }
             }
             Object.defineProperties(obj, {
-              width:{ get(){ return w; }}, height:{ get(){ return h; }}, scale:{ get(){ return s; }}, pageTop:{ get(){ return y; }}, pageLeft:{ get(){ return x; }}
+              width:{get:function(){return w;}}, height:{get:function(){return h;}}, scale:{get:function(){return s;}}, pageTop:{get:function(){return y;}}, pageLeft:{get:function(){return x;}}
             });
-            addEventListener('resize', update, {passive:true});
-            addEventListener('scroll', ()=>{
-              const ny = pageYOffset||document.documentElement.scrollTop;
-              if(ny!==y){ y=ny; evt.dispatchEvent(new Event('scroll')); }
-            }, {passive:true});
+            addEventListener('resize', upd, {passive:true});
+            addEventListener('scroll', function(){ var ny=pageYOffset||document.documentElement.scrollTop; if(ny!==y){ y=ny; evt.dispatchEvent(new Event('scroll')); } }, {passive:true});
             return obj;
           })();
-          try{
-            Object.defineProperty(window, 'visualViewport', { configurable:true, value: vv });
-            console.log('visualViewport polyfill ieslēgts');
-          }catch{}
+          Object.defineProperty(window, 'visualViewport', { configurable:true, value: vv });
+          post('log','visualViewport polyfill ieslēgts');
         }
+      }catch(e){}
+    })();
 
-        // 3) ResizeObserver polyfill (aptuvens)
-        if(O.useROPoly){
+    // ResizeObserver (aptuvens)
+    (function(){
+      try{
+        if(OPTS.useROPoly){
           if(typeof window.ResizeObserver === 'undefined'){
-            (function(){
-              function RO(cb){ this.cb = cb; this.items=[]; }
-              RO.prototype.observe = function(el){ if(!this.items.find(i=>i.el===el)){ this.items.push({el, box:el.getBoundingClientRect()}); } };
-              RO.prototype.unobserve = function(el){ this.items = this.items.filter(i=>i.el!==el); };
-              RO.prototype.disconnect = function(){ this.items.length=0; };
-              const tick = (inst)=>{
-                const entries=[]; inst.items.forEach(it=>{
-                  const r=it.el.getBoundingClientRect();
-                  if(Math.abs(r.width-it.box.width)>0.5 || Math.abs(r.height-it.box.height)>0.5){
-                    entries.push({target:it.el, contentRect:r}); it.box=r;
-                  }
-                });
-                if(entries.length) try{ inst.cb(entries, inst); }catch(e){ console.error(e); }
-              };
-              const Observers = new Set();
-              setInterval(()=> Observers.forEach(tick), 250);
-              const Ctor = function(cb){ const ro = new RO(cb); Observers.add(ro); return ro; };
-              Ctor.toString = ()=> 'function ResizeObserver() { [polyfill] }';
-              window.ResizeObserver = Ctor;
-              console.log('ResizeObserver polyfill ieslēgts (aptuvens)');
-            })();
-          } else {
-            console.log('ResizeObserver jau atbalstīts – polyfill nav vajadzīgs');
-          }
-        } else {
-          try{ Object.defineProperty(window, 'ResizeObserver', { configurable:true, value: undefined }); console.warn('ResizeObserver atspējots (simulēts Chrome 60 trūkums)'); }catch{}
-        }
-
-        // 4) IntersectionObserver polyfill (vienkāršots)
-        if(O.useIOPoly && typeof window.IntersectionObserver === 'undefined'){
-          (function(){
-            function IO(cb, opts){ this.cb=cb; this.items=[]; this.rootMargin=opts&&opts.rootMargin||'0px'; this.thresholds = Array.isArray(opts&&opts.threshold)? opts.threshold:[opts&&opts.threshold||0]; }
-            IO.prototype.observe = function(el){ if(!this.items.find(i=>i.el===el)){ this.items.push({el, vis:false}); } };
-            IO.prototype.unobserve = function(el){ this.items = this.items.filter(i=>i.el!==el); };
-            IO.prototype.disconnect = function(){ this.items.length=0; };
-            const isVisible = (el)=>{ const r=el.getBoundingClientRect(); return r.bottom>0 && r.right>0 && r.top < (innerHeight||document.documentElement.clientHeight) && r.left < (innerWidth||document.documentElement.clientWidth); };
-            const observers=[]; const tick=()=> observers.forEach(io=>{
-              const entries=[]; io.items.forEach(it=>{ const v=isVisible(it.el); if(v!==it.vis){ it.vis=v; entries.push({target:it.el, isIntersecting:v, intersectionRatio:v?1:0}); } });
-              if(entries.length) try{ io.cb(entries, io); }catch(e){ console.error(e); }
-            });
-            setInterval(tick, 200); addEventListener('scroll', tick, {passive:true}); addEventListener('resize', tick, {passive:true});
-            window.IntersectionObserver = function(cb, opts){ const io = new IO(cb, opts); observers.push(io); return io; };
-            console.log('IntersectionObserver polyfill ieslēgts (aptuvens)');
-          })();
-        }
-
-        // 5) flex-gap fallback
-        if(O.flexGapFix){
-          (function(){
-            function px(n){ return Number(String(n).replace('px',''))||0 }
-            function apply(root){
-              const all = root.querySelectorAll('*');
-              all.forEach(el=>{
-                const cs = getComputedStyle(el);
-                if(cs.display!=='flex') return;
-                const rg = px(cs.rowGap), cg = px(cs.columnGap);
-                if((rg||cg) && !el.__gapFixed){
-                  el.__gapFixed = true;
-                  el.style.rowGap = '0px'; el.style.columnGap='0px';
-                  const isRow = cs.flexDirection.startsWith('row');
-                  const kids = Array.from(el.children);
-                  kids.forEach((ch, i)=>{
-                    const s = ch.style;
-                    if(isRow){
-                      if(i) s.marginLeft = (px(getComputedStyle(ch).marginLeft)+cg)+'px';
-                      if(rg){ s.marginTop = (px(getComputedStyle(ch).marginTop))+'px'; s.marginBottom = (px(getComputedStyle(ch).marginBottom))+'px'; }
-                    } else {
-                      if(i) s.marginTop = (px(getComputedStyle(ch).marginTop)+rg)+'px';
-                      if(cg){ s.marginLeft = (px(getComputedStyle(ch).marginLeft))+'px'; s.marginRight = (px(getComputedStyle(ch).marginRight))+'px'; }
-                    }
-                  });
+            function RO(cb){ this.cb = cb; this.items=[]; }
+            RO.prototype.observe = function(el){ if(!this.items.find(function(i){return i.el===el;})){ this.items.push({el:el, box:el.getBoundingClientRect()}); } };
+            RO.prototype.unobserve = function(el){ this.items = this.items.filter(function(i){return i.el!==el;}); };
+            RO.prototype.disconnect = function(){ this.items.length=0; };
+            var Observers = new Set();
+            function tick(inst){
+              var entries=[]; inst.items.forEach(function(it){
+                var r=it.el.getBoundingClientRect();
+                if(Math.abs(r.width-it.box.width)>0.5 || Math.abs(r.height-it.box.height)>0.5){
+                  entries.push({target:it.el, contentRect:r}); it.box=r;
                 }
               });
+              if(entries.length) try{ inst.cb(entries, inst); }catch(e){ console.error(e); }
             }
-            const mo = new MutationObserver(m=> m.forEach(()=>apply(document.body)));
-            mo.observe(document.documentElement, {childList:true, subtree:true});
-            addEventListener('load', ()=>apply(document.body));
-            addEventListener('DOMContentLoaded', ()=>apply(document.body));
-            setTimeout(()=>apply(document.body), 0);
-            console.log('flex-gap → margin fallback ieslēgts');
-          })();
+            setInterval(function(){ Observers.forEach(tick); }, 250);
+            var Ctor = function(cb){ var ro = new RO(cb); Observers.add(ro); return ro; };
+            Ctor.toString = function(){ return 'function ResizeObserver() { [polyfill] }'; };
+            window.ResizeObserver = Ctor;
+            post('log','ResizeObserver polyfill ieslēgts');
+          } else {
+            post('log','ResizeObserver atbalstīts – polyfill nav vajadzīgs');
+          }
+        } else {
+          try{ Object.defineProperty(window, 'ResizeObserver', { configurable:true, value: undefined }); post('warn','ResizeObserver atspējots (Chrome 60 trūkums)'); }catch(e){}
         }
+      }catch(e){}
+    })();
 
-        console.log('Chrome60 emulācijas komplekts injicēts.');
-      })();
-    }.toString()+')('+JSON.stringify(opts)+');';
-    (doc.head || doc.documentElement).appendChild(script);
-  }
+    // IntersectionObserver (vienkāršots)
+    (function(){
+      try{
+        if(OPTS.useIOPoly && typeof window.IntersectionObserver === 'undefined'){
+          function IO(cb, opts){ this.cb=cb; this.items=[]; this.thresholds=[(opts&&opts.threshold)||0]; }
+          IO.prototype.observe = function(el){ if(!this.items.find(function(i){return i.el===el;})){ this.items.push({el:el, vis:false}); } };
+          IO.prototype.unobserve = function(el){ this.items = this.items.filter(function(i){return i.el!==el;}); };
+          IO.prototype.disconnect = function(){ this.items.length=0; };
+          function isVisible(el){ var r=el.getBoundingClientRect(); return r.bottom>0 && r.right>0 && r.top < (innerHeight||document.documentElement.clientHeight) && r.left < (innerWidth||document.documentElement.clientWidth); }
+          var observers=[]; function pump(){ observers.forEach(function(io){ var entries=[]; io.items.forEach(function(it){ var v=isVisible(it.el); if(v!==it.vis){ it.vis=v; entries.push({target:it.el, isIntersecting:v, intersectionRatio:v?1:0}); } }); if(entries.length) try{ io.cb(entries, io); }catch(e){ console.error(e); } }); }
+          setInterval(pump, 200); addEventListener('scroll', pump, {passive:true}); addEventListener('resize', pump, {passive:true});
+          window.IntersectionObserver = function(cb, opts){ var io = new IO(cb, opts); observers.push(io); return io; };
+          post('log','IntersectionObserver polyfill ieslēgts');
+        }
+      }catch(e){}
+    })();
 
-  // Noklusēti ielādē index.html
-  url.value = 'index.html';
-  loadTarget(url.value);
+    // flex-gap → margin fallback
+    (function(){
+      if(!OPTS.flexGapFix) return;
+      function px(n){ return Number(String(n).replace('px',''))||0 }
+      function apply(root){
+        var all = root.querySelectorAll('*');
+        for(var i=0;i<all.length;i++){
+          var el = all[i]; var cs = getComputedStyle(el);
+          if(cs.display!=='flex') continue;
+          var rg = px(cs.rowGap), cg = px(cs.columnGap);
+          if((rg||cg) && !el.__gapFixed){
+            el.__gapFixed = true;
+            el.style.rowGap = '0px'; el.style.columnGap='0px';
+            var isRow = cs.flexDirection.indexOf('row')===0;
+            var kids = Array.prototype.slice.call(el.children);
+            kids.forEach(function(ch, idx){
+              var s = ch.style, gcs = getComputedStyle(ch);
+              if(isRow){
+                if(idx) s.marginLeft = (px(gcs.marginLeft)+cg)+'px';
+                if(rg){ s.marginTop = (px(gcs.marginTop))+'px'; s.marginBottom = (px(gcs.marginBottom))+'px'; }
+              } else {
+                if(idx) s.marginTop = (px(gcs.marginTop)+rg)+'px';
+                if(cg){ s.marginLeft = (px(gcs.marginLeft))+'px'; s.marginRight = (px(gcs.marginRight))+'px'; }
+              }
+            });
+          }
+        }
+      }
+      var mo = new MutationObserver(function(){ apply(document.body); });
+      mo.observe(document.documentElement, {childList:true, subtree:true});
+      addEventListener('DOMContentLoaded', function(){ apply(document.body); });
+      setTimeout(function(){ apply(document.body); }, 0);
+      post('log','flex-gap → margin fallback ieslēgts');
+    })();
+
+    // Prune modern APIs (lai izsauciens "salūzt", kā Chrome60)
+    (function(){
+      if(!OPTS.pruneModern) return;
+      try{
+        try{ delete String.prototype.replaceAll; }catch(e){ try{ String.prototype.replaceAll = undefined; }catch(e2){} }
+        try{ window.AbortController = undefined; }catch(e){}
+        try{ window.AbortSignal = undefined; }catch(e){}
+        try{ window.structuredClone = undefined; }catch(e){}
+        try{ window.crypto && (window.crypto.randomUUID = undefined); }catch(e){}
+        try{ window.CSS && (window.CSS.supports = (function(orig){ return function(prop,val){ if(arguments.length===2 && (prop==='gap' || prop==='row-gap' || prop==='column-gap')) return false; return orig ? orig.apply(this, arguments) : false; }; })(window.CSS && window.CSS.supports)); }catch(e){}
+        post('warn','Modernās API nogrieztas (replaceAll, AbortController, structuredClone, randomUUID, CSS.gap)');
+      }catch(e){}
+    })();
+
+    // Bloķēt <script type="module">, arī dinamiskos
+    (function(){
+      if(!OPTS.blockModule) return;
+      try{
+        var stop = function(s){ try{ s.type='text/x-module-blocked'; s.setAttribute('data-blocked','module'); post('err','Bloķēts <script type=module>: '+(s.src||'[inline]')); }catch(e){} };
+        // Bloķē jau parsētos (ja kāds tomēr palicis)
+        Array.prototype.slice.call(document.querySelectorAll('script[type="module"]')).forEach(stop);
+        // Bloķē nākamos
+        var mo = new MutationObserver(function(muts){
+          muts.forEach(function(m){
+            Array.prototype.slice.call(m.addedNodes||[]).forEach(function(n){
+              if(n && n.tagName==='SCRIPT' && (n.type||'').toLowerCase()==='module'){ stop(n); }
+            });
+          });
+        });
+        mo.observe(document.documentElement, {childList:true, subtree:true});
+        post('warn','ES modules bloķēti (Chrome 60 nespēj palaist)');
+      }catch(e){}
+    })();
+
+    post('ok','Chrome60 emulācijas komplekts injicēts.');
+  }catch(e){ post('err','Prelude kļūda: '+e.message); }
 })();
-</script>
 
 
-
-
-
-
-
-</body>
-</html>
+</script>`;
