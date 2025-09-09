@@ -138,24 +138,24 @@
       try{ void win.document; return true; }catch{ return false; }
     }
 
-    function loadTarget(path){
-      logc.textContent='';
-      // Enforce same-origin usage hint
-      if(/^(https?:)?\/\//i.test(path)){
-        console.warn('Ievadīts absolūts URL. Projektu lapās (GitHub Pages) tas vedīs uz lietotāja sakni. Ievadi relatīvu ceļu, piem., index.html. Tavu ievadi pārveidojam par relatīvu.');
-      path = path.replace(/^\//,'');
-      // Set src (let browser resolve relative path inside same origin)
-      frame.src = path; }
-              }
-              Object.defineProperties(obj, {
-                width:{ get(){ return w; }}, height:{ get(){ return h; }}, scale:{ get(){ return s; }}, pageTop:{ get(){ return y; }}, pageLeft:{ get(){ return x; }}
-              });
-              addEventListener('resize', update, {passive:true});
-              addEventListener('scroll', ()=>{ const ny = pageYOffset||document.documentElement.scrollTop; if(ny!==y){ y=ny; evt.dispatchEvent(new Event('scroll')); }}, {passive:true});
-              return obj;
-            })();
-            try{ Object.defineProperty(window, 'visualViewport', { configurable:true, value: vv }); console.log('visualViewport polyfill ieslēgts'); }catch{}
-          }
+ function loadTarget(path){
+logc.textContent='';
+// Enforce same-origin usage hint
+if(/^(https?:)?\/\//i.test(path)){
+console.warn('Ievadīts absolūts URL. Projektu lapās (GitHub Pages) tas vedīs uz lietotāja sakni. Ievadi relatīvu ceļu, piem., index.html. Tavu ievadi pārveidojam par relatīvu.');
+path = path.replace(/^\//,'');
+// Set src (let browser resolve relative path inside same origin)
+frame.src = path; }
+}
+Object.defineProperties(obj, {
+width:{ get(){ return w; }}, height:{ get(){ return h; }}, scale:{ get(){ return s; }}, pageTop:{ get(){ return y; }}, pageLeft:{ get(){ return x; }}
+});
+addEventListener('resize', update, {passive:true});
+addEventListener('scroll', ()=>{ const ny = pageYOffset||document.documentElement.scrollTop; if(ny!==y){ y=ny; evt.dispatchEvent(new Event('scroll')); }}, {passive:true});
+return obj;
+})();
+try{ Object.defineProperty(window, 'visualViewport', { configurable:true, value: vv }); console.log('visualViewport polyfill ieslēgts'); }catch{}
+}
 
           // 3) ResizeObserver — vienkāršs polyfill (polls + getBoundingClientRect)
           if(O.useROPoly){
