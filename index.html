@@ -721,6 +721,38 @@
     });
   }
 })();
+
+
+
+	    // Inject prelude at the earliest possible spot
+    let finalHTML;
+    const headIdx = html.search(/<head[^>]*>/i);
+    if(headIdx !== -1){
+      const insertPos = html.indexOf('>', headIdx) + 1;
+      finalHTML = html.slice(0, insertPos) + '\n' + prelude + '\n' + html.slice(insertPos);
+    } else {
+      // No <head> – inject at document start
+      finalHTML = prelude + '\n' + html;
+    }
+
+    // Write into iframe (same-origin about:blank with <base> to resolve assets)
+    frame.src = 'about:blank';
+    frame.addEventListener('load', function onBlank(){
+      frame.removeEventListener('load', onBlank);
+      try{
+        const doc = frame.contentDocument;
+        doc.open();
+        doc.write(finalHTML);
+        doc.close();
+      }catch(e){
+        errorToLog('Ieraksta kļūda iframe: '+e.message);
+      }
+    }, {once:true});
+  }
+
+  // Init: default URL
+  url.value = 'index.html';
+})();
 </script>
 
 
