@@ -63,16 +63,17 @@
       <div class="note">Slēdži, lai atkārtotu Chrome 60 uzvedību:</div>
       <div class="bar" style="border-top:1px solid var(--border)">
         <label class="chk"><input id="disableVV" type="checkbox" checked> Atspējot <code>visualViewport</code></label>
-        <label class="chk"><input id="useROPoly" type="checkbox" checked> <code>ResizeObserver</code> polyfill</label>
+        <label class="chk"><input id="useROPoly" type="checkbox"> <code>ResizeObserver</code> polyfill</label>
         <label class="chk"><input id="useIOPoly" type="checkbox"> <code>IntersectionObserver</code> polyfill</label>
-        <label class="chk"><input id="flexGapFix" type="checkbox" checked> Fallback <code>flex-gap</code> → margin</label>
-        <label class="chk"><input id="spoofUA" type="checkbox"> UA ≈ Chrome 60</label>
-        <label class="chk"><input id="forceTouch" type="checkbox"> Simulēt skārienu (maxTouchPoints=10)</label>
-        <label class="chk"><input id="forceDPR1" type="checkbox"> DevicePixelRatio=1</label>
+        <label class="chk"><input id="flexGapFix" type="checkbox"> Fallback <code>flex-gap</code> → margin</label>
+        <label class="chk"><input id="spoofUA" type="checkbox" checked> UA ≈ Chrome 60</label>
+        <label class="chk"><input id="forceTouch" type="checkbox" checked> Simulēt skārienu (maxTouchPoints=10)</label>
+        <label class="chk"><input id="forceDPR1" type="checkbox" checked> DevicePixelRatio=1</label>
         <label class="chk"><input id="blockModule" type="checkbox" checked> Bloķēt <code>&lt;script type="module"&gt;</code></label>
         <label class="chk"><input id="pruneModern" type="checkbox" checked> Nogriezt modernās API</label>
         <label class="chk"><input id="fitWidth" type="checkbox" checked> Pielāgot (Auto-fit)</label>
         <label class="chk"><input id="sameOrigin" type="checkbox"> Same-origin režīms (localStorage/CORS)</label>
+        <label class="chk"><input id="disableStorage" type="checkbox"> Disable storage (SecurityError)</label>
       </div>
       <div class="warnline">Ja ievadīsi URL citā domēnā, injekcija netiks pielikta (SOP/CORS dēļ). Testē ar relatīvu ceļu.</div>
     </header>
@@ -108,8 +109,8 @@
   const logc = document.getElementById('logc');
   const chk = id => document.getElementById(id);
 
-  // ——— NEW: sandbox režīmu pārslēgšana (Same-origin) ———
-  function applySandboxFlags() {
+  // —— Sandbox režīms (Same-origin) ——
+  function applySandboxFlags(){
     const flags = [
       'allow-scripts',
       'allow-forms',
@@ -117,17 +118,13 @@
       'allow-popups',
       'allow-modals'
     ];
-    if (chk('sameOrigin') && chk('sameOrigin').checked) {
-      flags.push('allow-same-origin');
-    }
+    if (chk('sameOrigin').checked) flags.push('allow-same-origin');
     frame.setAttribute('sandbox', flags.join(' '));
   }
-  // Reaģē uz ķeksīti – pielieto un pārlādē iframe
   document.getElementById('sameOrigin').addEventListener('change', () => {
     applySandboxFlags();
     try { if (frame.contentWindow) frame.contentWindow.location.reload(); } catch(_) {}
   });
-  // ———————————————————————————————————————————————————————
 
   // izmēri
   document.querySelectorAll('.seg [data-sz]').forEach(b=>{
@@ -148,7 +145,7 @@
   window.addEventListener('resize', ()=> applyFit(), {passive:true});
   chk('fitWidth').addEventListener('change', applyFit);
 
-  // saņem ziņas no child
+  // Dev logi no child
   window.addEventListener('message', (e)=>{
     const d = e.data;
     if(!d || d.__em_sig!=='chrome60') return;
@@ -198,14 +195,12 @@
     return html;
   }
 
-  // Pievieno crossorigin="anonymous" ārējiem resursiem (lai errori nav anonīmi)
+  // Pievieno crossorigin="anonymous" ārējiem resursiem (pilnākiem erroriem)
   function addCrossorigin(html){
-    // <script src="https://...">
     html = html.replace(/<script\b([^>]*?)\bsrc\s*=\s*["']https?:\/\/[^"']+["']([^>]*)>/gi, (m, pre, post) => {
       if (/crossorigin\s*=/i.test(m)) return m;
       return `<script ${pre.trim()} crossorigin="anonymous" ${post}>`;
     });
-    // <link rel="stylesheet" href="https://...">
     html = html.replace(/<link\b([^>]*?)\brel\s*=\s*["']stylesheet["']([^>]*?)\bhref\s*=\s*["']https?:\/\/[^"']+["']([^>]*)>/gi, (m, a, b, c) => {
       if (/crossorigin\s*=/i.test(m)) return m;
       return `<link ${a} rel="stylesheet" ${b} crossorigin="anonymous" ${c}>`;
@@ -237,20 +232,21 @@
       forceTouch: chk('forceTouch').checked,
       forceDPR1: chk('forceDPR1').checked,
       blockModule: chk('blockModule').checked,
-      pruneModern: chk('pruneModern').checked
+      pruneModern: chk('pruneModern').checked,
+      disableStorage: chk('disableStorage').checked
     };
 
     if(opts.blockModule){ html = blockModules(html); }
-    html = addCrossorigin(html); // lai nebūtu "Script error."
+    html = addCrossorigin(html);
 
-    // PRELUDE – inline <script> iekš mērķa <head> agrāk par visu citu
+    // PRELUDE – inline <script> iekš mērķa <head>
     const prelude =
       '<base href="'+abs.href.replace(/"/g,'&quot;')+'">'+
       '<script>(function(){'+
       'var OPTS='+JSON.stringify(opts)+';'+
       'function post(l,t,x){try{parent.postMessage({__em_sig:"chrome60",level:l,text:t,type:(x&&x.type)||"",dpr:(x&&x.dpr)||null},"*");}catch(e){}}'+
 
-      // — konsoles hook + bagātīgi error listeneri —
+      // Konsoles hook + notikumi
       '(function hook(){try{var o={};["log","warn","error"].forEach(function(k){o[k]=console[k];console[k]=function(){try{post(k,Array.prototype.map.call(arguments,function(a){try{return typeof a==="object"?JSON.stringify(a):String(a);}catch(e){return String(a);}}).join(" "));}catch(e){};return o[k].apply(this,arguments);};});'+
       'window.addEventListener("error",function(e){var msg=e.message||"Script error.";var file=e.filename||"";var line=e.lineno||0;var col=e.colno||0;var stack=(e.error&&e.error.stack)?("\\n"+e.error.stack):"";post("err", msg+" @"+file+":"+line+":"+col+stack);}, true);'+
       'window.addEventListener("error", function(e){var t=e.target; if(!t || t===window) return; var tag=t.tagName ? t.tagName.toLowerCase() : "?"; var url=(t.src||t.href||""); post("warn","Resource load error: <"+tag+"> "+url);}, true);'+
@@ -266,23 +262,24 @@
       // visualViewport
       '(function(){try{if(OPTS.disableVV){try{Object.defineProperty(window,"visualViewport",{configurable:true,value:undefined});post("log","visualViewport atspējots");}catch(e){}}else if(!("visualViewport" in window)){var vv=(function(){var o={};var w=innerWidth,h=innerHeight,s=1,x=0,y=0;var evt=document.createDocumentFragment();o.addEventListener=evt.addEventListener.bind(evt);o.removeEventListener=evt.removeEventListener.bind(evt);function upd(){var nw=innerWidth,nh=innerHeight;if(nw!==w||nh!==h){w=nw;h=nh;evt.dispatchEvent(new Event("resize"));}}Object.defineProperties(o,{width:{get:function(){return w;}},height:{get:function(){return h;}},scale:{get:function(){return s;}},pageTop:{get:function(){return y;}},pageLeft:{get:function(){return x;}}});addEventListener("resize",upd,{passive:true});addEventListener("scroll",function(){var ny=pageYOffset||document.documentElement.scrollTop;if(ny!==y){y=ny;evt.dispatchEvent(new Event("scroll"));}},{passive:true});return o;})();Object.defineProperty(window,"visualViewport",{configurable:true,value:vv});post("log","visualViewport polyfill ieslēgts");}}catch(e){}})();'+
 
-      // ResizeObserver
-      '(function(){try{if(OPTS.useROPoly){if(typeof window.ResizeObserver==="undefined"){function RO(cb){this.cb=cb;this.items=[];}RO.prototype.observe=function(el){if(!this.items.find(function(i){return i.el===el;})){this.items.push({el:el,box:el.getBoundingClientRect()});}};RO.prototype.unobserve=function(el){this.items=this.items.filter(function(i){return i.el!==el;});};RO.prototype.disconnect=function(){this.items.length=0;};var Obs=new Set();function tick(inst){var entries=[];inst.items.forEach(function(it){var r=it.el.getBoundingClientRect();if(Math.abs(r.width-it.box.width)>0.5||Math.abs(r.height-it.box.height)>0.5){entries.push({target:it.el,contentRect:r});it.box=r;}});if(entries.length)try{inst.cb(entries,inst);}catch(e){console.error(e);}}setInterval(function(){Obs.forEach(tick);},250);var C=function(cb){var ro=new RO(cb);Obs.add(ro);return ro;};C.toString=function(){return "function ResizeObserver() { [polyfill] }";};window.ResizeObserver=C;post("log","ResizeObserver polyfill ieslēgts");}else{post("log","ResizeObserver atbalstīts");}}else{try{Object.defineProperty(window,"ResizeObserver",{configurable:true,value:undefined});post("warn","ResizeObserver atspējots");}catch(e){}}}catch(e){}})();'+
+      // Storage simulācija (SecurityError)
+      '(function(){if(!OPTS.disableStorage) return; try{var errMsg="Failed to read the \\'localStorage\\' property from \\'Window\\': The document is sandboxed and lacks the \\'allow-same-origin\\' flag.";var P=window;Object.defineProperty(P,"localStorage",{configurable:true,get:function(){throw new DOMException(errMsg,"SecurityError");}});Object.defineProperty(P,"sessionStorage",{configurable:true,get:function(){throw new DOMException(errMsg,"SecurityError");}});post("warn","Storage atspējots (SecurityError simulācija)");}catch(e){}})();'+
 
-      // IntersectionObserver
+      // ResizeObserver
+      '(function(){try{if(OPTS.useROPoly){if(typeof window.ResizeObserver==="undefined"){function RO(cb){this.cb=cb;this.items=[];}RO.prototype.observe=function(el){if(!this.items.find(function(i){return i.el===el;})){this.items.push({el:el,box:el.getBoundingClientRect()});}};RO.prototype.unobserve=function(el){this.items=this.items.filter(function(i){return i.el!==el;});};RO.prototype.disconnect=function(){this.items.length=0;};var Obs=new Set();function tick(inst){var entries=[];inst.items.forEach(function(it){var r=it.el.getBoundingClientRect();if(Math.abs(r.width-it.box.width)>0.5||Math.abs(r.height-it.box.height)>0.5){entries.push({target:it.el,contentRect:r});it.box=r;}});if(entries.length)try{inst.cb(entries,inst);}catch(e){console.error(e);}}setInterval(function(){Obs.forEach(tick);},250);var C=function(cb){var ro=new RO(cb);Obs.add(ro);return ro;};C.toString=function(){return "function ResizeObserver() { [polyfill] }";};window.ResizeObserver=C;post("log","ResizeObserver polyfill ieslēgts");}else{post("log","ResizeObserver atbalstīts");}}else{try{Object.defineProperty(window,"ResizeObserver",{configurable:true,value:undefined});post("log","ResizeObserver nav pieejams (Chrome 60)");}catch(e){}}}catch(e){}})();'+
+
+      // IntersectionObserver (Chrome 60 bija pieejams — polyfill pēc vajadzības)
       '(function(){try{if(OPTS.useIOPoly && typeof window.IntersectionObserver==="undefined"){function IO(cb,opts){this.cb=cb;this.items=[];this.thresholds=[(opts&&opts.threshold)||0];}IO.prototype.observe=function(el){if(!this.items.find(function(i){return i.el===el;})){this.items.push({el:el,vis:false});}};IO.prototype.unobserve=function(el){this.items=this.items.filter(function(i){return i.el!==el;});};IO.prototype.disconnect=function(){this.items.length=0;};function vis(el){var r=el.getBoundingClientRect();return r.bottom>0&&r.right>0&&r.top<(innerHeight||document.documentElement.clientHeight)&&r.left<(innerWidth||document.documentElement.clientWidth);}var arr=[];function pump(){arr.forEach(function(io){var entries=[];io.items.forEach(function(it){var v=vis(it.el);if(v!==it.vis){it.vis=v;entries.push({target:it.el,isIntersecting:v,intersectionRatio:v?1:0});}});if(entries.length)try{io.cb(entries,io);}catch(e){console.error(e);}});}setInterval(pump,200);addEventListener("scroll",pump,{passive:true});addEventListener("resize",pump,{passive:true});window.IntersectionObserver=function(cb,opts){var io=new IO(cb,opts);arr.push(io);return io;};post("log","IntersectionObserver polyfill ieslēgts");}}catch(e){}})();'+
 
-      // flex-gap fallback (SAFE)
-      '(function(){if(!OPTS.flexGapFix) return;function px(n){return Number(String(n).replace("px",""))||0}function apply(root){if(!root||!root.querySelectorAll) return;try{var all=root.querySelectorAll("*");for(var i=0;i<all.length;i++){var el=all[i];var cs=getComputedStyle(el);if(cs.display!=="flex") continue;var rg=px(cs.rowGap),cg=px(cs.columnGap);if((rg||cg)&&!el.__gapFixed){el.__gapFixed=true;el.style.rowGap="0px";el.style.columnGap="0px";var isRow=cs.flexDirection.indexOf("row")===0;var kids=Array.prototype.slice.call(el.children);kids.forEach(function(ch,idx){var s=ch.style,gcs=getComputedStyle(ch);if(isRow){if(idx) s.marginLeft=(px(gcs.marginLeft)+cg)+"px";if(rg){s.marginTop=px(gcs.marginTop)+"px";s.marginBottom=px(gcs.marginBottom)+"px";}}else{if(idx) s.marginTop=(px(gcs.marginTop)+rg)+"px";if(cg){s.marginLeft=px(gcs.marginLeft)+"px";s.marginRight=px(gcs.marginRight)+"px";}}});}}}catch(e){try{parent.postMessage({__em_sig:"chrome60",level:"warn",text:"flex-gap apply error: "+e.message},"*");}catch(_){}}}function run(){apply(document.body);}function ensureBodyThenRun(){if(document.body){run();return;}var moBody=new MutationObserver(function(){if(document.body){moBody.disconnect();run();}});moBody.observe(document.documentElement,{childList:true});}var mo=new MutationObserver(function(){apply(document.body);});mo.observe(document.documentElement,{childList:true,subtree:true});if(document.readyState==="complete"||document.readyState==="interactive"){ensureBodyThenRun();}else{addEventListener("DOMContentLoaded",ensureBodyThenRun,{once:true});}try{parent.postMessage({__em_sig:"chrome60",level:"log",text:"flex-gap → margin fallback ieslēgts (safe)"},"*");}catch(_){}})();'+
+      // flex-gap fallback
+      '(function(){if(!OPTS.flexGapFix) return;function px(n){return Number(String(n).replace("px",""))||0}function apply(root){if(!root||!root.querySelectorAll) return;try{var all=root.querySelectorAll("*");for(var i=0;i<all.length;i++){var el=all[i];var cs=getComputedStyle(el);if(cs.display!=="flex") continue;var rg=px(cs.rowGap),cg=px(cs.columnGap);if((rg||cg)&&!el.__gapFixed){el.__gapFixed=true;el.style.rowGap="0px";el.style.columnGap="0px";var isRow=cs.flexDirection.indexOf("row")===0;var kids=Array.prototype.slice.call(el.children);kids.forEach(function(ch,idx){var s=ch.style,gcs=getComputedStyle(ch);if(isRow){if(idx) s.marginLeft=(px(gcs.marginLeft)+cg)+"px";if(rg){s.marginTop=px(gcs.marginTop)+"px";s.marginBottom=px(gcs.marginBottom)+"px";}}else{if(idx) s.marginTop=(px(gcs.marginTop)+rg)+"px";if(cg){s.marginLeft=px(gcs.marginLeft)+"px";s.marginRight=px(gcs.marginRight)+"px";}}});}}}catch(e){post("warn","flex-gap apply error: "+e.message);} }function run(){apply(document.body);}var mo=new MutationObserver(function(){apply(document.body);});mo.observe(document.documentElement,{childList:true,subtree:true});if(document.readyState==="complete"||document.readyState==="interactive"){run();}else{addEventListener("DOMContentLoaded",run,{once:true});}post("log","flex-gap → margin fallback ieslēgts");})();'+
 
-      // Prune modern APIs
-      '(function(){if(!OPTS.pruneModern) return;try{try{delete String.prototype.replaceAll;}catch(e){try{String.prototype.replaceAll=undefined;}catch(e2){}}try{window.AbortController=undefined;}catch(e){}try{window.AbortSignal=undefined;}catch(e){}try{window.structuredClone=undefined;}catch(e){}try{window.crypto && (window.crypto.randomUUID=undefined);}catch(e){}try{if(window.CSS && window.CSS.supports){var orig=window.CSS.supports;window.CSS.supports=function(prop,val){if(arguments.length===2 && (prop==="gap"||prop==="row-gap"||prop==="column-gap")) return false;return orig.apply(this,arguments);};}}catch(e){}post("warn","Modernās API nogrieztas (replaceAll, AbortController, structuredClone, randomUUID, CSS.gap)");}catch(e){}})();'+
+      // Prune modern APIs (Chrome 60 nav)
+      '(function(){if(!OPTS.pruneModern) return;try{try{delete String.prototype.replaceAll;}catch(e){try{String.prototype.replaceAll=undefined;}catch(e2){}}try{if(Promise&&Promise.prototype) Promise.prototype.finally=undefined;}catch(e){}try{window.AbortController=undefined;}catch(e){}try{window.AbortSignal=undefined;}catch(e){}try{window.structuredClone=undefined;}catch(e){}try{window.crypto && (window.crypto.randomUUID=undefined);}catch(e){}try{if(window.Intl && window.Intl.RelativeTimeFormat){window.Intl.RelativeTimeFormat=undefined;}}catch(e){}try{if(window.CSS && window.CSS.supports){var orig=window.CSS.supports;window.CSS.supports=function(prop,val){if(arguments.length===2 && (prop==="gap"||prop==="row-gap"||prop==="column-gap")) return false;return orig.apply(this,arguments);};}}catch(e){}post("warn","Nogrieztas modernās API (replaceAll, Promise.finally, AbortController, structuredClone, randomUUID, Intl.RelativeTimeFormat, CSS.gap)");}catch(e){}})();'+
 
-      // Info
-      'post("ok","Chrome60 emulācijas komplekts injicēts.");'+
-      '})();' + '<' + '/script>';
+      'post("ok","Chrome60 emulācijas komplekts injicēts.");})();</'+'script>';
 
-    // Ievietojam prelude tieši aiz <head>
+    // Ievietojam prelude aiz <head>
     let finalHTML;
     const headIdx = html.search(/<head[^>]*>/i);
     if(headIdx !== -1){
@@ -292,11 +289,10 @@
       finalHTML = prelude + '\n' + html;
     }
 
-    // ❗ Pielieto sandbox flagus (iesk. same-origin), tad raksti dokumentu
+    // Sandbox pēc ķeksīšiem un rakstām
     applySandboxFlags();
     frame.srcdoc = finalHTML;
 
-    // Pielāgo mērogu
     applyFit();
   }
 
@@ -322,12 +318,14 @@
     updateDims(w,h);
   }
 
+  // Noklusējumi (tūlītēja 1:1 uzvedība ar opaque origin)
+  document.getElementById('sameOrigin').checked = false;
+  document.getElementById('fitWidth').checked = true;
+
   // noklusētais ceļš
   url.value = 'index.html';
-  // (pēc vajadzības) automātiski ielādēt: atkomentē nākamo rindu
-  // loadTarget(url.value);
 
-  // Uzreiz pielieto sandbox flagus pēc lapas atvēršanas (atbilstoši ķeksim)
+  // Uzreiz pielieto sandbox flagus
   applySandboxFlags();
 })();
 </script>
