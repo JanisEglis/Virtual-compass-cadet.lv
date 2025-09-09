@@ -102,7 +102,7 @@
   var logc = document.getElementById('logc');
   var chk = function(id){ return document.getElementById(id); };
 
-  // — Sandbox (same-origin) —
+  // Sandbox/Same-origin
   function applySandboxFlags(){
     var flags = ['allow-scripts','allow-forms','allow-pointer-lock','allow-popups','allow-modals'];
     if (chk('sameOrigin').checked) flags.push('allow-same-origin');
@@ -195,59 +195,48 @@
     return html;
   }
 
-  function buildPrelude(absHref, opts){
-    // Galva (<base>)
-    var parts = [];
-    parts.push('<base href="'+ absHref.replace(/"/g,'&quot;') +'">');
+  // — Prelude kā data: skripts (base64) — droši pret </script> un “dīvainām” zīmēm
+  function base64Unicode(str){
+    // droši Unicode -> base64
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,function(_,p){return String.fromCharCode('0x'+p);}));
+  }
 
-    // Atvērt/ aizvērt <script> droši
-    var openS = '<scr'+'ipt>';
-    var closeS = '</scr'+'ipt>';
+  function buildPreludeCode(opts){
+    var c = [];
+    c.push('(function(){');
+    c.push('var OPTS='+JSON.stringify(opts)+';');
+    c.push('function post(l,t,x){try{parent.postMessage({__em_sig:"chrome60",level:l,text:t,type:(x&&x.type)||"",dpr:(x&&x.dpr)||null},"*");}catch(e){}}');
 
-    // JS kods kā tīrs string (bez `)
-    var code = '';
-    code += '(function(){\n';
-    code += '  var OPTS='+JSON.stringify(opts)+';\n';
-    code += '  function post(l,t,x){try{parent.postMessage({__em_sig:"chrome60",level:l,text:t,type:(x&&x.type)||"",dpr:(x&&x.dpr)||null},"*");}catch(e){}}\n';
+    // Hooks
+    c.push('(function(){try{var o={};["log","warn","error"].forEach(function(k){o[k]=console[k];console[k]=function(){try{post(k,Array.prototype.map.call(arguments,function(a){try{return typeof a==="object"?JSON.stringify(a):String(a);}catch(e){return String(a);}}).join(" "));}catch(e){};return o[k].apply(this,arguments);};});window.addEventListener("error",function(e){var msg=e.message||"Script error.";var file=e.filename||"";var line=e.lineno||0;var col=e.colno||0;var stack=(e.error&&e.error.stack)?"\\n"+e.error.stack:"";post("err",msg+" @"+file+":"+line+":"+col+stack);},true);window.addEventListener("error",function(e){var t=e.target;if(!t||t===window)return;var tag=t.tagName?t.tagName.toLowerCase():"?";var url=(t.src||t.href||"");post("warn","Resource load error: <"+tag+"> "+url);},true);window.addEventListener("unhandledrejection",function(e){var r=e.reason;var txt=(r&&r.message)?r.message:String(r);var stack=(r&&r.stack)?"\\n"+r.stack:"";post("err","Unhandled promise rejection: "+txt+stack);},{passive:true});post("ok","Emulacijas prelude ieladets.",{type:"meta",dpr:window.devicePixelRatio||"?"});}catch(e){}})();');
 
-    // Konsoles hook + kļūdu notveršana
-    code += '  (function(){try{\n';
-    code += '    var o={};["log","warn","error"].forEach(function(k){ o[k]=console[k]; console[k]=function(){ try{post(k,Array.prototype.map.call(arguments,function(a){ try{return typeof a==="object"?JSON.stringify(a):String(a);}catch(e){return String(a);} }).join(" "));}catch(e){}; return o[k].apply(this,arguments); }; });\n';
-    code += '    window.addEventListener("error",function(e){ var msg=e.message||"Script error."; var file=e.filename||""; var line=e.lineno||0; var col=e.colno||0; var stack=(e.error&&e.error.stack)?"\\n"+e.error.stack:""; post("err", msg+" @"+file+":"+line+":"+col+stack); }, true);\n';
-    code += '    window.addEventListener("error",function(e){ var t=e.target; if(!t||t===window) return; var tag=t.tagName?t.tagName.toLowerCase():"?"; var url=(t.src||t.href||""); post("warn","Resource load error: <"+tag+"> "+url); }, true);\n';
-    code += '    window.addEventListener("unhandledrejection",function(e){ var r=e.reason; var txt=(r&&r.message)?r.message:String(r); var stack=(r&&r.stack)?"\\n"+r.stack:""; post("err","Unhandled promise rejection: "+txt+stack); },{passive:true});\n';
-    code += '    post("ok","Emulācijas prelude ielādēts.",{type:"meta",dpr:window.devicePixelRatio||"?"});\n';
-    code += '  }catch(e){}})();\n';
-
-    // UA spoof
-    code += '  (function(){ if(!OPTS.spoofUA) return; try{ var ua60="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"; var P=Object.getPrototypeOf(navigator); if(P){ Object.defineProperty(P,"userAgent",{configurable:true,get:function(){return ua60;}}); } if("userAgentData" in navigator){ try{ Object.defineProperty(P,"userAgentData",{configurable:true,get:function(){return undefined;}});}catch(e){} } post("log","UA spoof → Chrome 60"); }catch(e){ post("warn","UA spoof neizdevās: "+e.message); } })();\n';
+    // UA
+    c.push('(function(){if(!OPTS.spoofUA)return;try{var ua60="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36";var P=Object.getPrototypeOf(navigator);if(P){Object.defineProperty(P,"userAgent",{configurable:true,get:function(){return ua60;}});}if("userAgentData" in navigator){try{Object.defineProperty(P,"userAgentData",{configurable:true,get:function(){return undefined;}});}catch(e){}}post("log","UA spoof -> Chrome 60");}catch(e){post("warn","UA spoof neizdevas: "+e.message);}})();');
 
     // Touch & DPR
-    code += '  (function(){ try{ if(OPTS.forceTouch){ var P=Object.getPrototypeOf(navigator); if(P){ Object.defineProperty(P,"maxTouchPoints",{configurable:true,get:function(){return 10;}}); } try{ Object.defineProperty(window,"ontouchstart",{configurable:true,value:null}); }catch(e){} post("log","Touch režīms ieslēgts"); } if(OPTS.forceDPR1){ try{ Object.defineProperty(window,"devicePixelRatio",{configurable:true,get:function(){return 1;}}); post("log","DPR=1"); }catch(e){ post("warn","DPR piesaiste neizdevās: "+e.message); } } }catch(e){} })();\n';
+    c.push('(function(){try{if(OPTS.forceTouch){var P=Object.getPrototypeOf(navigator);if(P){Object.defineProperty(P,"maxTouchPoints",{configurable:true,get:function(){return 10;}});}try{Object.defineProperty(window,"ontouchstart",{configurable:true,value:null});}catch(e){}post("log","Touch rezims ieslegts");}if(OPTS.forceDPR1){try{Object.defineProperty(window,"devicePixelRatio",{configurable:true,get:function(){return 1;}});post("log","DPR=1");}catch(e){post("warn","DPR piesaiste neizdevas: "+e.message);}}}catch(e){}})();');
 
     // visualViewport
-    code += '  (function(){ try{ if(OPTS.disableVV){ try{ Object.defineProperty(window,"visualViewport",{configurable:true,value:undefined}); post("log","visualViewport atspējots"); }catch(e){} } else if(!("visualViewport" in window)){ var vv=(function(){ var o={}; var w=innerWidth,h=innerHeight,s=1,x=0,y=0; var evt=document.createDocumentFragment(); o.addEventListener=evt.addEventListener.bind(evt); o.removeEventListener=evt.removeEventListener.bind(evt); function upd(){ var nw=innerWidth,nh=innerHeight; if(nw!==w||nh!==h){ w=nw; h=nh; evt.dispatchEvent(new Event("resize")); } } Object.defineProperties(o,{ width:{get:function(){return w;}}, height:{get:function(){return h;}}, scale:{get:function(){return s;}}, pageTop:{get:function(){return y;}}, pageLeft:{get:function(){return x;}} }); addEventListener("resize",upd,{passive:true}); addEventListener("scroll",function(){ var ny=pageYOffset||document.documentElement.scrollTop; if(ny!==y){ y=ny; evt.dispatchEvent(new Event("scroll")); } },{passive:true}); return o; })(); Object.defineProperty(window,"visualViewport",{configurable:true,value:vv}); post("log","visualViewport polyfill ieslēgts"); } }catch(e){} })();\n';
+    c.push('(function(){try{if(OPTS.disableVV){try{Object.defineProperty(window,"visualViewport",{configurable:true,value:undefined});post("log","visualViewport atspejots");}catch(e){}}else if(!("visualViewport" in window)){var vv=(function(){var o={};var w=innerWidth,h=innerHeight,s=1,x=0,y=0;var evt=document.createDocumentFragment();o.addEventListener=evt.addEventListener.bind(evt);o.removeEventListener=evt.removeEventListener.bind(evt);function upd(){var nw=innerWidth,nh=innerHeight;if(nw!==w||nh!==h){w=nw;h=nh;evt.dispatchEvent(new Event("resize"));}}Object.defineProperties(o,{width:{get:function(){return w;}},height:{get:function(){return h;}},scale:{get:function(){return s;}},pageTop:{get:function(){return y;}},pageLeft:{get:function(){return x;}}});addEventListener("resize",upd,{passive:true});addEventListener("scroll",function(){var ny=pageYOffset||document.documentElement.scrollTop;if(ny!==y){y=ny;evt.dispatchEvent(new Event("scroll"));}},{passive:true});return o;})();Object.defineProperty(window,"visualViewport",{configurable:true,value:vv});post("log","visualViewport polyfill ieslegts");}}catch(e){}})();');
 
-    // Storage SecurityError simulācija
-    code += '  (function(){ if(!OPTS.disableStorage) return; try{ var msg="Failed to read the \\'localStorage\\' property from \\'Window\\': The document is sandboxed and lacks the \\'allow-same-origin\\' flag."; Object.defineProperty(window,"localStorage",{configurable:true,get:function(){throw new DOMException(msg,"SecurityError");}}); Object.defineProperty(window,"sessionStorage",{configurable:true,get:function(){throw new DOMException(msg,"SecurityError");}}); post("warn","Storage atspējots (SecurityError simulācija)"); }catch(e){} })();\n';
+    // Storage SecurityError
+    c.push('(function(){if(!OPTS.disableStorage)return;try{var msg="Failed to read the \\'localStorage\\' property from \\'Window\\': The document is sandboxed and lacks the \\'allow-same-origin\\' flag.";Object.defineProperty(window,"localStorage",{configurable:true,get:function(){throw new DOMException(msg,"SecurityError");}});Object.defineProperty(window,"sessionStorage",{configurable:true,get:function(){throw new DOMException(msg,"SecurityError");}});post("warn","Storage atspejots (SecurityError simulacija)");}catch(e){}})();');
 
     // ResizeObserver
-    code += '  (function(){ try{ if(OPTS.useROPoly){ if(typeof window.ResizeObserver==="undefined"){ function RO(cb){ this.cb=cb; this.items=[]; } RO.prototype.observe=function(el){ if(!this.items.find(function(i){return i.el===el;})){ this.items.push({el:el,box:el.getBoundingClientRect()}); } }; RO.prototype.unobserve=function(el){ this.items=this.items.filter(function(i){return i.el!==el;}); }; RO.prototype.disconnect=function(){ this.items.length=0; }; var Obs=new Set(); function tick(inst){ var entries=[]; inst.items.forEach(function(it){ var r=it.el.getBoundingClientRect(); if(Math.abs(r.width-it.box.width)>0.5||Math.abs(r.height-it.box.height)>0.5){ entries.push({target:it.el,contentRect:r}); it.box=r; } }); if(entries.length) try{ inst.cb(entries,inst);}catch(e){ console.error(e);} } setInterval(function(){ Obs.forEach(tick); },250); var C=function(cb){ var ro=new RO(cb); Obs.add(ro); return ro; }; C.toString=function(){ return "function ResizeObserver() { [polyfill] }"; }; window.ResizeObserver=C; post("log","ResizeObserver polyfill ieslēgts"); } else { post("log","ResizeObserver atbalstīts"); } } else { try{ Object.defineProperty(window,"ResizeObserver",{configurable:true,value:undefined}); post("log","ResizeObserver nav pieejams (Chrome 60)"); }catch(e){} } }catch(e){} })();\n';
+    c.push('(function(){try{if(OPTS.useROPoly){if(typeof window.ResizeObserver==="undefined"){function RO(cb){this.cb=cb;this.items=[];}RO.prototype.observe=function(el){if(!this.items.find(function(i){return i.el===el;})){this.items.push({el:el,box:el.getBoundingClientRect()});}};RO.prototype.unobserve=function(el){this.items=this.items.filter(function(i){return i.el!==el;});};RO.prototype.disconnect=function(){this.items.length=0;};var Obs=new Set();function tick(inst){var entries=[];inst.items.forEach(function(it){var r=it.el.getBoundingClientRect();if(Math.abs(r.width-it.box.width)>0.5||Math.abs(r.height-it.box.height)>0.5){entries.push({target:it.el,contentRect:r});it.box=r;}});if(entries.length)try{inst.cb(entries,inst);}catch(e){console.error(e);}}setInterval(function(){Obs.forEach(tick);},250);var C=function(cb){var ro=new RO(cb);Obs.add(ro);return ro;};C.toString=function(){return "function ResizeObserver() { [polyfill] }";};window.ResizeObserver=C;post("log","ResizeObserver polyfill ieslegts");}else{post("log","ResizeObserver atbalstits");}}else{try{Object.defineProperty(window,"ResizeObserver",{configurable:true,value:undefined});post("log","ResizeObserver nav (Chrome 60)");}catch(e){}}}catch(e){}})();');
 
     // IntersectionObserver
-    code += '  (function(){ try{ if(OPTS.useIOPoly && typeof window.IntersectionObserver==="undefined"){ function IO(cb,opts){ this.cb=cb; this.items=[]; this.thresholds=[(opts&&opts.threshold)||0]; } IO.prototype.observe=function(el){ if(!this.items.find(function(i){return i.el===el;})){ this.items.push({el:el,vis:false}); } }; IO.prototype.unobserve=function(el){ this.items=this.items.filter(function(i){return i.el!==el;}); }; IO.prototype.disconnect=function(){ this.items.length=0; }; function vis(el){ var r=el.getBoundingClientRect(); return r.bottom>0 && r.right>0 && r.top<(innerHeight||document.documentElement.clientHeight) && r.left<(innerWidth||document.documentElement.clientWidth); } var arr=[]; function pump(){ arr.forEach(function(io){ var entries=[]; io.items.forEach(function(it){ var v=vis(it.el); if(v!==it.vis){ it.vis=v; entries.push({target:it.el,isIntersecting:v,intersectionRatio:v?1:0}); } }); if(entries.length) try{ io.cb(entries,io);}catch(e){ console.error(e);} }); } setInterval(pump,200); addEventListener("scroll",pump,{passive:true}); addEventListener("resize",pump,{passive:true}); window.IntersectionObserver=function(cb,opts){ var io=new IO(cb,opts); arr.push(io); return io; }; post("log","IntersectionObserver polyfill ieslēgts"); } }catch(e){} })();\n';
+    c.push('(function(){try{if(OPTS.useIOPoly && typeof window.IntersectionObserver==="undefined"){function IO(cb,opts){this.cb=cb;this.items=[];this.thresholds=[(opts&&opts.threshold)||0];}IO.prototype.observe=function(el){if(!this.items.find(function(i){return i.el===el;})){this.items.push({el:el,vis:false});}};IO.prototype.unobserve=function(el){this.items=this.items.filter(function(i){return i.el!==el;});};IO.prototype.disconnect=function(){this.items.length=0;};function vis(el){var r=el.getBoundingClientRect();return r.bottom>0&&r.right>0&&r.top<(innerHeight||document.documentElement.clientHeight)&&r.left<(innerWidth||document.documentElement.clientWidth);}var arr=[];function pump(){arr.forEach(function(io){var entries=[];io.items.forEach(function(it){var v=vis(it.el);if(v!==it.vis){it.vis=v;entries.push({target:it.el,isIntersecting:v,intersectionRatio:v?1:0});}});if(entries.length)try{io.cb(entries,io);}catch(e){console.error(e);}});}setInterval(pump,200);addEventListener("scroll",pump,{passive:true});addEventListener("resize",pump,{passive:true});window.IntersectionObserver=function(cb,opts){var io=new IO(cb,opts);arr.push(io);return io;};post("log","IntersectionObserver polyfill ieslegts");}}catch(e){}})();');
 
-    // flex-gap fallback
-    code += '  (function(){ if(!OPTS.flexGapFix) return; function px(n){ return Number(String(n).replace("px",""))||0 } function apply(root){ if(!root||!root.querySelectorAll) return; try{ var all=root.querySelectorAll("*"); for(var i=0;i<all.length;i++){ var el=all[i]; var cs=getComputedStyle(el); if(cs.display!=="flex") continue; var rg=px(cs.rowGap),cg=px(cs.columnGap); if((rg||cg)&&!el.__gapFixed){ el.__gapFixed=true; el.style.rowGap="0px"; el.style.columnGap="0px"; var isRow=cs.flexDirection.indexOf("row")===0; var kids=Array.prototype.slice.call(el.children); kids.forEach(function(ch,idx){ var s=ch.style,gcs=getComputedStyle(ch); if(isRow){ if(idx) s.marginLeft=(px(gcs.marginLeft)+cg)+"px"; if(rg){ s.marginTop=px(gcs.marginTop)+"px"; s.marginBottom=px(gcs.marginBottom)+"px"; } } else { if(idx) s.marginTop=(px(gcs.marginTop)+rg)+"px"; if(cg){ s.marginLeft=px(gcs.marginLeft)+"px"; s.marginRight=px(gcs.marginRight)+"px"; } } }); } } } catch(e){ try{ parent.postMessage({__em_sig:"chrome60",level:"warn",text:"flex-gap apply error: "+e.message},"*"); }catch(_){} } } function run(){ apply(document.body); } var mo=new MutationObserver(function(){ apply(document.body); }); mo.observe(document.documentElement,{childList:true,subtree:true}); if(document.readyState==="complete"||document.readyState==="interactive"){ run(); } else { addEventListener("DOMContentLoaded",run,{once:true}); } post("log","flex-gap → margin fallback ieslēgts"); })();\n';
+    // flex-gap
+    c.push('(function(){if(!OPTS.flexGapFix)return;function px(n){return Number(String(n).replace("px",""))||0}function apply(root){if(!root||!root.querySelectorAll)return;try{var all=root.querySelectorAll("*");for(var i=0;i<all.length;i++){var el=all[i];var cs=getComputedStyle(el);if(cs.display!=="flex")continue;var rg=px(cs.rowGap),cg=px(cs.columnGap);if((rg||cg)&&!el.__gapFixed){el.__gapFixed=true;el.style.rowGap="0px";el.style.columnGap="0px";var isRow=cs.flexDirection.indexOf("row")===0;var kids=Array.prototype.slice.call(el.children);kids.forEach(function(ch,idx){var s=ch.style,gcs=getComputedStyle(ch);if(isRow){if(idx)s.marginLeft=(px(gcs.marginLeft)+cg)+"px";if(rg){s.marginTop=px(gcs.marginTop)+"px";s.marginBottom=px(gcs.marginBottom)+"px";}}else{if(idx)s.marginTop=(px(gcs.marginTop)+rg)+"px";if(cg){s.marginLeft=px(gcs.marginLeft)+"px";s.marginRight=px(gcs.marginRight)+"px";}}});}}}catch(e){try{parent.postMessage({__em_sig:"chrome60",level:"warn",text:"flex-gap apply error: "+e.message},"*");}catch(_){}}}function run(){apply(document.body);}var mo=new MutationObserver(function(){apply(document.body);});mo.observe(document.documentElement,{childList:true,subtree:true});if(document.readyState==="complete"||document.readyState==="interactive"){run();}else{addEventListener("DOMContentLoaded",run,{once:true});}post("log","flex-gap -> margin ieslegts");})();');
 
-    // Modern API “nogriešana”
-    code += '  (function(){ if(!OPTS.pruneModern) return; try{ try{ delete String.prototype.replaceAll; }catch(e){ try{ String.prototype.replaceAll=undefined; }catch(e2){} } try{ if(Promise&&Promise.prototype) Promise.prototype.finally=undefined; }catch(e){} try{ window.AbortController=undefined; }catch(e){} try{ window.AbortSignal=undefined; }catch(e){} try{ window.structuredClone=undefined; }catch(e){} try{ window.crypto && (window.crypto.randomUUID=undefined); }catch(e){} try{ if(window.Intl && window.Intl.RelativeTimeFormat){ window.Intl.RelativeTimeFormat=undefined; } }catch(e){} try{ if(window.CSS && window.CSS.supports){ var orig=window.CSS.supports; window.CSS.supports=function(prop,val){ if(arguments.length===2 && (prop==="gap"||prop==="row-gap"||prop==="column-gap")) return false; return orig.apply(this,arguments); }; } }catch(e){} post("warn","Nogrieztas modernās API (replaceAll, Promise.finally, AbortController, structuredClone, randomUUID, Intl.RelativeTimeFormat, CSS.gap)"); }catch(e){} })();\n';
+    // Prune modern
+    c.push('(function(){if(!OPTS.pruneModern)return;try{try{delete String.prototype.replaceAll;}catch(e){try{String.prototype.replaceAll=undefined;}catch(e2){}}try{if(Promise&&Promise.prototype)Promise.prototype.finally=undefined;}catch(e){}try{window.AbortController=undefined;}catch(e){}try{window.AbortSignal=undefined;}catch(e){}try{window.structuredClone=undefined;}catch(e){}try{window.crypto&&(window.crypto.randomUUID=undefined);}catch(e){}try{if(window.Intl&&window.Intl.RelativeTimeFormat){window.Intl.RelativeTimeFormat=undefined;}}catch(e){}try{if(window.CSS&&window.CSS.supports){var orig=window.CSS.supports;window.CSS.supports=function(prop,val){if(arguments.length===2&&(prop==="gap"||prop==="row-gap"||prop==="column-gap"))return false;return orig.apply(this,arguments);};}}catch(e){}post("log","Nogrieztas modernas API");}catch(e){}})();');
 
-    code += '  post("ok","Chrome60 emulācijas komplekts injicēts.");\n';
-    code += '})();\n';
-
-    parts.push(openS + code + closeS);
-    return parts.join('\n');
+    c.push('post("ok","Chrome60 emulacijas komplekts injicets.");');
+    c.push('})();');
+    return c.join('\n');
   }
 
   async function loadTarget(path){
@@ -281,15 +270,20 @@
     if(opts.blockModule) html = blockModules(html);
     html = addCrossorigin(html);
 
-    // Ieliekam PRELUDE aiz <head>
+    // Ievietojam <base> + <script src="data:...">
     var headIdx = html.search(/<head[^>]*>/i);
-    var prelude = buildPrelude(abs.href, opts);
+    var preludeCode = buildPreludeCode(opts);
+    var dataSrc = 'data:text/javascript;base64,' + base64Unicode(preludeCode);
+
+    var preludeHtml = '<base href="'+abs.href.replace(/"/g,'&quot;')+'">' +
+                      '<scr'+'ipt src="'+dataSrc+'"></scr'+'ipt>';
+
     var finalHTML;
     if(headIdx !== -1){
       var insertPos = html.indexOf('>', headIdx) + 1;
-      finalHTML = html.slice(0, insertPos) + '\n' + prelude + '\n' + html.slice(insertPos);
+      finalHTML = html.slice(0, insertPos) + '\n' + preludeHtml + '\n' + html.slice(insertPos);
     } else {
-      finalHTML = prelude + '\n' + html;
+      finalHTML = preludeHtml + '\n' + html;
     }
 
     applySandboxFlags();
