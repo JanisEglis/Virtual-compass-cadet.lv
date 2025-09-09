@@ -223,12 +223,12 @@
     if(opts.blockModule){ html = blockModules(html); }
     html = addCrossorigin(html);
 
-    // PRELUDE — droši ar template literal un sadalītu </script>
+    // --- PRELUDE — bez burtiska </script> (sadalīts)
     const prelude = (() => {
       const base = `<base href="${abs.href.replace(/"/g,'&quot;')}">`;
-      const endScript = '</scr' + 'ipt>';
-      const body = `
-<script>(function(){
+      const openScript = '<scr'+'ipt>';
+      const closeScript = '</scr'+'ipt>';
+      const code = `(function(){
   var OPTS=${JSON.stringify(opts)};
   function post(l,t,x){try{parent.postMessage({__em_sig:"chrome60",level:l,text:t,type:(x&&x.type)||"",dpr:(x&&x.dpr)||null},"*");}catch(e){}}
 
@@ -381,8 +381,8 @@
   }catch(e){}})();
 
   post("ok","Chrome60 emulācijas komplekts injicēts.");
-})();</script>`;
-      return base + body.replace('</script>', endScript); // drošībai
+})();`;
+      return base + openScript + code + closeScript;
     })();
 
     // Ievietojam prelude aiz <head>
@@ -395,8 +395,8 @@
       finalHTML = prelude + '\n' + html;
     }
 
-    applySandboxFlags();        // sandbox pēc slēdžiem
-    frame.srcdoc = finalHTML;   // rakstām dokumentu
+    applySandboxFlags();
+    frame.srcdoc = finalHTML;
     applyFit();
   }
 
