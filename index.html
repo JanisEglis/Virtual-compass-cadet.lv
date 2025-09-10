@@ -568,11 +568,75 @@
 
 
 
+
+
+
+
+
+
+<script>
+(function () {
+  // Drošs palīgs
+  function call(fn){ try { fn && fn(); } catch(_){ } }
+
+  // ATSAUKSME / ZIŅOT
+  window.toggleIframeAbout = function (event) {
+    if (event && event.preventDefault) event.preventDefault();
+    var el = document.getElementById('iframeContainerAbout');
+    if (!el) return;
+
+    // slēpts?
+    var isHidden = (el.style.display !== 'block') || (el.style.bottom === '-620px');
+
+    if (isHidden) {
+      el.style.display = 'block';
+      setTimeout(function(){ el.style.bottom = '35px'; }, 10);
+    } else {
+      el.style.bottom = '-620px';
+      setTimeout(function(){ el.style.display = 'none'; }, 500);
+    }
+    setTimeout(function(){
+      call(window.__updateMapSafeAreas);
+      call(window.__fitDock);
+    }, 0);
+  };
+
+  // KOPLIETOT (QR)
+  window.toggleIframeQR = function (event) {
+    if (event && event.preventDefault) event.preventDefault();
+    var el = document.getElementById('iframeContainerQR');
+    if (!el) return;
+
+    var isHidden = (el.style.display !== 'block') || (el.style.bottom === '-370px');
+
+    if (isHidden) {
+      el.style.display = 'block';
+      setTimeout(function(){ el.style.bottom = '35px'; }, 10);
+    } else {
+      el.style.bottom = '-370px';
+      setTimeout(function(){ el.style.display = 'none'; }, 500);
+    }
+    setTimeout(function(){
+      call(window.__updateMapSafeAreas);
+      call(window.__fitDock);
+    }, 0);
+  };
+
+  // Sākuma stāvoklis (abi paneļi paslēpti)
+  document.addEventListener('DOMContentLoaded', function () {
+    var about = document.getElementById('iframeContainerAbout');
+    if (about) { about.style.display = 'none'; about.style.bottom = '-620px'; }
+    var qr = document.getElementById('iframeContainerQR');
+    if (qr) { qr.style.display = 'none'; qr.style.bottom = '-370px'; }
+  });
+})();
+</script>
+
+
+
+
+	
 <style>
-
-
-
-
 
 /* body stāvoklis ielādes laikā */
 body.preloading { overflow: hidden; }
@@ -641,6 +705,19 @@ body.preloading { overflow: hidden; }
 
 
 
+#iframeContainerAbout,
+#iframeContainerQR {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4000;
+  transition: bottom .45s ease;
+  /* display un bottom kontrolē JS */
+}
+
+/* sākuma “paslēpts” stāvoklis – saskaņā ar JS */
+#iframeContainerAbout { bottom: -620px; display: none; }
+#iframeContainerQR    { bottom: -370px; display: none; }
 
 
 	
