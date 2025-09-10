@@ -1686,7 +1686,6 @@ function hideOnlineMap(){
   mapDiv.style.display = 'none';
   mapDim.style.display = 'none';
   canvas.style.display = 'block';
-	  positionResizeHandle(hasImage());              // ← parādīs tikai, ja ir bilde
   if (resizeH && typeof img !== 'undefined' && img && img.src) resizeH.style.display = 'block';
   if (btn) btn.classList.remove('active');              // ← bez ?.
   localStorage.setItem('onlineMapActive','0');
