@@ -1896,19 +1896,25 @@ function canvasTouchDistance(touch1, touch2) {
 						}
 
 						// Piesaiste rokturim pie attēla
-						function positionResizeHandle() {
-							if (window.innerWidth <= 768) { // Mobile adjustments
-								resizeHandle.style.left = (imgX + (imgWidth * imgScale) - resizeHandle.clientWidth - 5) + 'px';
-							} else { // Desktop adjustments
-								resizeHandle.style.left = (imgX + (imgWidth * imgScale) - resizeHandle.clientWidth) + 'px';
-							}
-							if (window.innerWidth <= 768) { // Mobile adjustments
-								resizeHandle.style.top = (imgY + (imgHeight * imgScale) - resizeHandle.clientHeight - 5) + 'px';
-							} else { // Desktop adjustments
-								resizeHandle.style.top = (imgY + (imgHeight * imgScale) - resizeHandle.clientHeight) + 'px';
-							}
-							resizeHandle.style.display = 'flex';
-						}
+function positionResizeHandle(show) {
+  if (!resizeHandle) return;
+
+  if (!show || !hasImage()) {
+    resizeHandle.style.display = 'none';
+    return;
+  }
+
+  // nodrošinām, ka izmērs ir atjaunināts (ja logs mainījies)
+  sizeResizeHandle();
+
+  const left = imgX + (imgWidth * imgScale) - resizeHandle.offsetWidth  - (window.innerWidth <= 768 ? 5 : 0);
+  const top  = imgY + (imgHeight * imgScale) - resizeHandle.offsetHeight - (window.innerWidth <= 768 ? 5 : 0);
+
+  resizeHandle.style.left = left + 'px';
+  resizeHandle.style.top  = top  + 'px';
+  resizeHandle.style.display = 'block';
+}
+
 
 
 						// Attēla augšupielāde
