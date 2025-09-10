@@ -1644,28 +1644,28 @@ window.__bindDimmer = function(inputEl){
 };
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
 function showOnlineMap(){
-  mapDiv.style.display = 'none';
-	 if (resizeH) resizeH.style.display = 'none'; 
+  // PARĀDĀM karti, paslēpjam kanvu + rokturi
+  mapDiv.style.display = 'block';
+  mapDim.style.display = 'block';
+  canvas.style.display = 'none';
+  if (resizeH) resizeH.style.display = 'none';
 
+  // nodrošinam izmēru pirms init/invalidate
   if (!mapDiv.offsetWidth || !mapDiv.offsetHeight){
     const p = mapDiv.parentElement;
     mapDiv.style.width  = (p && p.clientWidth  ? p.clientWidth  : window.innerWidth)  + 'px';
     mapDiv.style.height = (p && p.clientHeight ? p.clientHeight : window.innerHeight) + 'px';
   }
 
-  mapDim.style.display = 'block';
-
   const v = +(localStorage.getItem('mapDarken') || 0);
   setDarkness(v);
 
-  canvas.style.display = 'none';
-  if (resizeH && typeof img !== 'undefined' && img && img.src) resizeH.style.display = 'block';
-
   if (!initMap()){
+    // Atpakaļ uz kanvu, ja Leaflet nav
     mapDiv.style.display = 'none';
     mapDim.style.display = 'none';
     canvas.style.display = 'block';
-    if (resizeH && typeof img !== 'undefined' && img && img.src) resizeH.style.display = 'block';
+    if (resizeH && hasImage()) positionResizeHandle(true);
     localStorage.setItem('onlineMapActive','0');
     alert('Leaflet nav ielādējies — tiešsaistes karte izslēgta.');
     return;
@@ -1674,7 +1674,7 @@ function showOnlineMap(){
   requestAnimationFrame(()=> map && map.invalidateSize(true));
   setTimeout(()=> map && map.invalidateSize(true), 100);
 
-  if (btn) btn.classList.add('active');                 // ← bez ?.
+  if (btn) btn.classList.add('active');
   localStorage.setItem('onlineMapActive','1');
 
   syncDimOverlay();
@@ -1900,29 +1900,46 @@ function canvasTouchDistance(touch1, touch2) {
 function positionResizeHandle(show) {
   if (!resizeHandle) return;
 
-  // paslēp, ja nav ko rādīt vai kanva nav redzama
   const canvasHidden = getComputedStyle(canvas).display === 'none';
   if (!show || !hasImage() || canvasHidden) {
     resizeHandle.style.display = 'none';
     return;
   }
 
-  // atjauno roktura izmēru
   sizeResizeHandle();
 
-  // ņemam vērā kanvas pozīciju lapā + skrollu
-  const rect = canvas.getBoundingClientRect();
-  const pageX = rect.left + window.scrollX;
-  const pageY = rect.top  + window.scrollY;
+  // Kanvas izmēri CSS pikseļos pret iekšējiem pikseļiem
+  const rect   = canvas.getBoundingClientRect();
+  const pageX  = rect.left + window.scrollX;
+  const pageY  = rect.top  + window.scrollY;
+  const scaleX = rect.width  / canvas.width;
+  const scaleY = rect.height / canvas.height;
 
   const pad = (window.innerWidth <= 768 ? 5 : 0);
-  const left = pageX + imgX + (imgWidth  * imgScale) - resizeHandle.offsetWidth  - pad;
-  const top  = pageY + imgY + (imgHeight * imgScale) - resizeHandle.offsetHeight - pad;
+
+  // Aprēķins iekš attēla apakšējā labā stūrī
+  const imgCssW = imgWidth  * imgScale * scaleX;
+  const imgCssH = imgHeight * imgScale * scaleY;
+  const imgCssX = pageX + (imgX * scaleX);
+  const imgCssY = pageY + (imgY * scaleY);
+
+  let left = imgCssX + imgCssW - resizeHandle.offsetWidth  - pad;
+  let top  = imgCssY + imgCssH - resizeHandle.offsetHeight - pad;
+
+  // STINGRA robežošana (paliek iekš attēla)
+  const minLeft = imgCssX;
+  const minTop  = imgCssY;
+  const maxLeft = imgCssX + imgCssW - resizeHandle.offsetWidth;
+  const maxTop  = imgCssY + imgCssH - resizeHandle.offsetHeight;
+
+  left = Math.max(minLeft, Math.min(maxLeft, left));
+  top  = Math.max(minTop,  Math.min(maxTop,  top));
 
   resizeHandle.style.left = left + 'px';
   resizeHandle.style.top  = top  + 'px';
   resizeHandle.style.display = 'block';
 }
+
 
 
 
