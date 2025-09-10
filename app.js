@@ -580,27 +580,47 @@ function setDarkness(percent){
 
 const resizeHandle = document.getElementById('resizeHandle');
 
+
+if (resizeHandle && !resizeHandle.dataset.bound) {
+  resizeHandle.addEventListener('mousedown', startResize);
+  resizeHandle.addEventListener('touchstart', startResize, { passive: false });
+  resizeHandle.dataset.bound = '1';
+}
+
+
 const RH_MIN = 44;     // sākotnējais “sākotnējās versijas” izmērs uz mazākiem ekrāniem
 const RH_MAX = 88;     // griesti lieliem ekrāniem
 
-function sizeResizeHandle(){
-  if(!resizeHandle) return;
+function sizeResizeHandle() {
+  if (!resizeHandle) return;
   const shortSide = Math.min(window.innerWidth, window.innerHeight);
   const s = Math.round(Math.max(RH_MIN, Math.min(RH_MAX, shortSide * 0.08)));
 
   Object.assign(resizeHandle.style, {
     position: 'absolute',
-    zIndex: '10',
+    zIndex: '9999',
     width:  s + 'px',
     height: s + 'px',
-    backgroundImage: 'url("https://site-710050.mozfiles.com/files/710050/resize_map__1_.png")',
-    backgroundSize: 'contain',
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'center',
-    cursor: 'se-resize'
-    // (noņem debug sarkano apmali)
+    cursor: 'se-resize',
+    background: 'transparent'  // ⬅️ nekādu backgroundImage
   });
+
+  // lai roktura <img> aizņem visu un netraucē klikam
+  const icon = resizeHandle.querySelector('img');
+  if (icon) {
+    Object.assign(icon.style, {
+      width: '100%', height: '100%', display: 'block', pointerEvents: 'none'
+    });
+  }
 }
+
+
+
+
+
+
+
+
 sizeResizeHandle();
 window.addEventListener('resize', sizeResizeHandle);
 
