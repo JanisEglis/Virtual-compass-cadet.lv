@@ -1723,24 +1723,24 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 //							resizeHandle.style.display = 'block';
 //						};
 //
-//						function adjustImageSize() {
-//						const aspectRatio = img.naturalWidth / img.naturalHeight;
-//						const scaleFactor = 0.85; // 📌 Pielāgojam attēlu uz 90% no sākotnējā izmēra
-//
-//						if (canvas.width / canvas.height > aspectRatio) {
-//							imgWidth = canvas.height * aspectRatio * scaleFactor;
-//							imgHeight = canvas.height * scaleFactor;
-//						} else {
-//							imgWidth = canvas.width * scaleFactor;
-//							imgHeight = (canvas.width / aspectRatio) * scaleFactor;
-//						}
-//
-//						// ✅ Centrējam attēlu kanvā
-//						imgX = (canvas.width - imgWidth) / 2;
-//						imgY = (canvas.height - imgHeight) / 2;
-//
-//						imgScale = 1; // 📌 Nodrošina sākotnējo mērogu (bez tālummaiņas)
-//						}
+				function adjustImageSize() {
+					const aspectRatio = img.naturalWidth / img.naturalHeight;
+					const scaleFactor = 0.85; // 📌 Pielāgojam attēlu uz 90% no sākotnējā izmēra
+
+					if (canvas.width / canvas.height > aspectRatio) {
+						imgWidth = canvas.height * aspectRatio * scaleFactor;
+						imgHeight = canvas.height * scaleFactor;
+				} else {
+					imgWidth = canvas.width * scaleFactor;
+					imgHeight = (canvas.width / aspectRatio) * scaleFactor;
+					}
+					
+						// ✅ Centrējam attēlu kanvā
+						imgX = (canvas.width - imgWidth) / 2;
+						imgY = (canvas.height - imgHeight) / 2;
+
+						imgScale = 1; // 📌 Nodrošina sākotnējo mērogu (bez tālummaiņas)
+						}
 
 
 
