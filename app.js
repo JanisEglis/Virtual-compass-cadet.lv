@@ -599,8 +599,8 @@ function sizeResizeHandle() {
   Object.assign(resizeHandle.style, {
     position: 'absolute',
    
-    width:  s + 'px',
-    height: s + 'px',
+ //   width:  s + 'px',
+  //  height: s + 'px',
     cursor: 'se-resize',
     
   });
