@@ -476,6 +476,55 @@
 
 	
 
+
+<!-- Fallbacks, ja pārlūks neatbalsta flex-gap (Chrome < 84) -->
+<script>
+(function(){
+  function supportsGap(){
+    try{
+      var f=document.createElement('div'); f.style.display='flex'; f.style.gap='1px';
+      f.appendChild(document.createElement('div')); f.appendChild(document.createElement('div'));
+      document.body.appendChild(f);
+      var ok=(f.scrollHeight===1); document.body.removeChild(f); return ok;
+    }catch(_){ return false; }
+  }
+  if (supportsGap()) return;
+
+  function px(n){ return Number(String(n).replace('px',''))||0; }
+  function apply(root){
+    if(!root||!root.querySelectorAll) return;
+    var all=root.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var el=all[i], cs=getComputedStyle(el);
+      if(cs.display!=='flex') continue;
+      var rg=px(cs.rowGap), cg=px(cs.columnGap);
+      if((!rg && !cg) || el.__gapFixed) continue;
+      el.__gapFixed=true;
+      el.style.rowGap='0px'; el.style.columnGap='0px';
+      var isRow=cs.flexDirection.indexOf('row')===0;
+      var kids=[].slice.call(el.children);
+      for(var k=0;k<kids.length;k++){
+        var ch=kids[k], s=ch.style, gcs=getComputedStyle(ch);
+        if(isRow){
+          if(k) s.marginLeft=(px(gcs.marginLeft)+cg)+'px';
+          if(rg){ s.marginTop=px(gcs.marginTop)+'px'; s.marginBottom=px(gcs.marginBottom)+'px'; }
+        }else{
+          if(k) s.marginTop=(px(gcs.marginTop)+rg)+'px';
+          if(cg){ s.marginLeft=px(gcs.marginLeft)+'px'; s.marginRight=px(gcs.marginRight)+'px'; }
+        }
+      }
+    }
+  }
+  function run(){ try{ apply(document.body); }catch(_){ } }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', run, {once:true}); } else { run(); }
+  try{ new MutationObserver(function(){ run(); }).observe(document.documentElement,{childList:true,subtree:true}); }catch(_){}
+})();
+</script>
+
+
+
+
+
 	
 </head>
 <body>
