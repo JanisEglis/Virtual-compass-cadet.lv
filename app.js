@@ -1644,7 +1644,8 @@ window.__bindDimmer = function(inputEl){
 };
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
 function showOnlineMap(){
-  mapDiv.style.display = 'block';
+  mapDiv.style.display = 'none';
+	 if (resizeH) resizeH.style.display = 'none'; 
 
   if (!mapDiv.offsetWidth || !mapDiv.offsetHeight){
     const p = mapDiv.parentElement;
@@ -1685,6 +1686,7 @@ function hideOnlineMap(){
   mapDiv.style.display = 'none';
   mapDim.style.display = 'none';
   canvas.style.display = 'block';
+	  positionResizeHandle(hasImage());              // ← parādīs tikai, ja ir bilde
   if (resizeH && typeof img !== 'undefined' && img && img.src) resizeH.style.display = 'block';
   if (btn) btn.classList.remove('active');              // ← bez ?.
   localStorage.setItem('onlineMapActive','0');
@@ -1899,21 +1901,30 @@ function canvasTouchDistance(touch1, touch2) {
 function positionResizeHandle(show) {
   if (!resizeHandle) return;
 
-  if (!show || !hasImage()) {
+  // paslēp, ja nav ko rādīt vai kanva nav redzama
+  const canvasHidden = getComputedStyle(canvas).display === 'none';
+  if (!show || !hasImage() || canvasHidden) {
     resizeHandle.style.display = 'none';
     return;
   }
 
-  // nodrošinām, ka izmērs ir atjaunināts (ja logs mainījies)
+  // atjauno roktura izmēru
   sizeResizeHandle();
 
-  const left = imgX + (imgWidth * imgScale) - resizeHandle.offsetWidth  - (window.innerWidth <= 768 ? 5 : 0);
-  const top  = imgY + (imgHeight * imgScale) - resizeHandle.offsetHeight - (window.innerWidth <= 768 ? 5 : 0);
+  // ņemam vērā kanvas pozīciju lapā + skrollu
+  const rect = canvas.getBoundingClientRect();
+  const pageX = rect.left + window.scrollX;
+  const pageY = rect.top  + window.scrollY;
+
+  const pad = (window.innerWidth <= 768 ? 5 : 0);
+  const left = pageX + imgX + (imgWidth  * imgScale) - resizeHandle.offsetWidth  - pad;
+  const top  = pageY + imgY + (imgHeight * imgScale) - resizeHandle.offsetHeight - pad;
 
   resizeHandle.style.left = left + 'px';
   resizeHandle.style.top  = top  + 'px';
   resizeHandle.style.display = 'block';
 }
+
 
 
 
@@ -1971,7 +1982,10 @@ function drawImage() {
   ctx.strokeRect(imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
 
   // 4) Roktura pozīcija + parādīšana
-  positionResizeHandle(true);
+// Vecais
+//	positionResizeHandle(true);
+// jaunais
+positionResizeHandle(getComputedStyle(canvas).display !== 'none');
 }
 
 						
