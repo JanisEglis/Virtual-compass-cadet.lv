@@ -602,7 +602,7 @@ function sizeResizeHandle() {
     width:  s + 'px',
     height: s + 'px',
     cursor: 'se-resize',
-    background: 'transparent'  // ⬅️ nekādu backgroundImage
+    
   });
 
   // lai roktura <img> aizņem visu un netraucē klikam
