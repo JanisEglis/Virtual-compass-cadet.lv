@@ -511,7 +511,7 @@ updateButtonContainerPosition = function(position){
 //							}
 						});
 
-						
+})();						
 
 
 
