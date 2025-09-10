@@ -682,36 +682,45 @@
 
 
 
-
+<!-- Legacy/modern loader priekš Chrome 60–75 + mini-polyfilli -->
 <script>
 (function(){
-  function supportsOptChain(){ try { return new Function("var a={b:1}; return a?.b")()===1; } catch(e){ return false; } }
-  function supportsNullish(){ try { return new Function("var a=null; return a ?? 5")()===5; } catch(e){ return false; } }
-  function loadScript(src, attrs, onload){
-    var s = document.createElement('script');
-    s.src = src;
-    if (attrs) for (var k in attrs) s.setAttribute(k, attrs[k] === '' ? '' : String(attrs[k]));
-    if (onload) s.onload = onload;
-    s.onerror = function(){ console.error('[loader] failed:', src); };
-    document.head.appendChild(s);
+  // sapratīsim, vai drīkst dot "modern" (atbalsta ?. un ??)
+  function supports(code){ try{ new Function(code)(); return true; } catch(e){ return false; } }
+  var modern = supports('var a={b:1}; a?.b') && supports('var a=null; a ?? 5');
+
+  // Uzkarinam galveno skriptu: modern → app.js, legacy → legacy-app.js
+  var main = document.createElement('script');
+  main.defer = true;
+  main.src = modern ? 'app.js' : 'legacy-app.js';
+  main.onerror = function(){ console.error('[loader] failed:', this.src); };
+  document.head.appendChild(main);
+
+  // --- Mini polyfill komplekts Chrome ≤ 75 ---
+  // Element.matches/closest
+  if(!Element.prototype.matches){
+    Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
   }
-  if (supportsOptChain() && supportsNullish()){
-    loadScript('app.js', {defer:''}); // modern
-  } else {
-    loadScript('https://unpkg.com/@babel/standalone/babel.min.js', {nomodule:''}, function(){
-      var x = new XMLHttpRequest();
-      x.open('GET','app.js');
-      x.onload = function(){
-        try{
-          var out = Babel.transform(x.responseText, { presets: [['env', {targets:{chrome:'60'}}]] }).code;
-          (0,eval)(out);
-          console.info('[legacy] transpiled app.js on the fly');
-        } catch(e){ console.error('[legacy-transpile]', e); }
-      };
-      x.onerror = function(){ console.error('[legacy-transpile] failed to load app.js'); };
-      x.send();
-    });
+  if(!Element.prototype.closest){
+    Element.prototype.closest = function(sel){ var el=this; while(el && el.nodeType===1){ if(el.matches(sel)) return el; el=el.parentElement; } return null; };
   }
+  // replaceChildren
+  if(!Element.prototype.replaceChildren){
+    Element.prototype.replaceChildren = function(){
+      while(this.firstChild) this.removeChild(this.firstChild);
+      this.append.apply(this, arguments);
+    };
+  }
+  // ResizeObserver: “kukulis”, lai nekrit, ja kodā tiek lietots
+  if(typeof window.ResizeObserver === 'undefined'){
+    window.ResizeObserver = function(){ return {observe:function(){}, unobserve:function(){}, disconnect:function(){}}; };
+  }
+  // Drošā localStorage pieeja
+  window.safeStorage = {
+    get: function(k, def){ try{ var v=localStorage.getItem(k); return v==null?def:v; }catch(_){ return def; } },
+    set: function(k,v){ try{ localStorage.setItem(k,v); }catch(_){ } },
+    del: function(k){ try{ localStorage.removeItem(k); }catch(_){ } }
+  };
 })();
 </script>
 
