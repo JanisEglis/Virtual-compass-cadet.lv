@@ -376,29 +376,38 @@ function showMobileWarning() {
 window.__updateMapSafeAreas && window.__updateMapSafeAreas();
 						}
 
-						// Labās puses pogas klausītājs
-						const toggleButton = document.querySelector('.toggle-selector');
-						const positionSelector = document.querySelector('.position-selector');
-						toggleButton.addEventListener('click', () => {
-							if (positionSelector.classList.contains('hidden')) {
-								positionSelector.classList.remove('hidden');
-								toggleButton.textContent = '❯'; // Bultiņa norāda uz aizvēršanu
-							} else {
-								closeBothMenus(); // Aizver abas izvēlnes
-							}
-						});
+// Labās puses pogas klausītājs
+(function(){
+  const toggleButton     = document.querySelector('.toggle-selector');
+  const positionSelector = document.querySelector('.position-selector');
+  if (!toggleButton || !positionSelector) return;  // ← Svarīgi
 
-						// Kreisās puses pogas klausītājs
-						const leftToggleButton = document.querySelector('.toggle-selector-left');
-						const leftPositionSelector = document.querySelector('.position-selector-left');
-						leftToggleButton.addEventListener('click', () => {
-							if (leftPositionSelector.classList.contains('hidden-left')) {
-								leftPositionSelector.classList.remove('hidden-left');
-								leftToggleButton.textContent = '❮'; // Bultiņa norāda uz aizvēršanu
-							} else {
-								closeBothMenus(); // Aizver abas izvēlnes
-							}
-						});
+  toggleButton.addEventListener('click', () => {
+    if (positionSelector.classList.contains('hidden')) {
+      positionSelector.classList.remove('hidden');
+      toggleButton.textContent = '❯';
+    } else {
+      closeBothMenus();
+    }
+  });
+})();
+
+// Kreisās puses pogas klausītājs
+(function(){
+  const leftToggleButton     = document.querySelector('.toggle-selector-left');
+  const leftPositionSelector = document.querySelector('.position-selector-left');
+  if (!leftToggleButton || !leftPositionSelector) return; // ← Svarīgi
+
+  leftToggleButton.addEventListener('click', () => {
+    if (leftPositionSelector.classList.contains('hidden-left')) {
+      leftPositionSelector.classList.remove('hidden-left');
+      leftToggleButton.textContent = '❮';
+    } else {
+      closeBothMenus();
+    }
+  });
+})();
+
 
 
 						// Funkcija, kas sinhronizē izvēles abās izvēlnēs
