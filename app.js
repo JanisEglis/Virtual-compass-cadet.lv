@@ -588,21 +588,7 @@ if (resizeHandle && !resizeHandle.dataset.bound) {
 }
 
 
-const RH_MIN = 44;     // sākotnējais “sākotnējās versijas” izmērs uz mazākiem ekrāniem
-const RH_MAX = 88;     // griesti lieliem ekrāniem
 
-function sizeResizeHandle() {
-  if (!resizeHandle) return;
-  const shortSide = Math.min(window.innerWidth, window.innerHeight);
-  const s = Math.round(Math.max(RH_MIN, Math.min(RH_MAX, shortSide * 0.08)));
-
-  Object.assign(resizeHandle.style, {
-    position: 'absolute',
-	width:  s + 'px',
-	height: s + 'px',
-    cursor: 'se-resize',
-    
-  });
 
   // lai roktura <img> aizņem visu un netraucē klikam
   const icon = resizeHandle.querySelector('img');
@@ -620,8 +606,7 @@ function sizeResizeHandle() {
 
 
 
-sizeResizeHandle();
-window.addEventListener('resize', sizeResizeHandle);
+
 
 
 
@@ -1928,7 +1913,6 @@ function positionResizeHandle(show) {
     return;
   }
 
-  sizeResizeHandle();
 
   // Padarām mērāmu, bet neredzamu, lai iegūtu pareizos offsetWidth/Height
   const prevVis  = resizeHandle.style.visibility;
@@ -1942,8 +1926,10 @@ function positionResizeHandle(show) {
   const scaleX = rect.width  / canvas.width;
   const scaleY = rect.height / canvas.height;
 
-  const w = resizeHandle.offsetWidth  || parseInt(resizeHandle.style.width)  || RH_MIN;
-  const h = resizeHandle.offsetHeight || parseInt(resizeHandle.style.height) || RH_MIN;
+const cs = getComputedStyle(resizeHandle);
+const w = resizeHandle.offsetWidth  || parseInt(cs.width)  || 12;
+const h = resizeHandle.offsetHeight || parseInt(cs.height) || 12;
+
 
   const imgCssW = imgWidth  * imgScale * scaleX;
   const imgCssH = imgHeight * imgScale * scaleY;
