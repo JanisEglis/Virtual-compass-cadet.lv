@@ -848,8 +848,8 @@ body.preloading{ overflow: hidden; }
 								display: none;
 								align-items: center; /* Vertikāli centrē attēlu */
 								justify-content: center; /* Horizontāli centrē attēlu */	 
-								width: 12px;
-								height: 12px;
+								width: 50px;
+								height: 50px;
 								border-radius:5px;
 								position: absolute;
 								background-color:rgba(255, 0, 0, 0.5);
