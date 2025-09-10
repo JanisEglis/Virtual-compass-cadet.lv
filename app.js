@@ -521,6 +521,29 @@ updateButtonContainerPosition = function(position){
 img.src = '';
 
 
+
+function hasImage(){
+  return !!img.src && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0;
+}
+
+img.addEventListener('load', () => {
+  adjustImageSize();
+  drawImage();              // drawImage pati parādīs rokturi tikai, ja bilde ir gatava
+}, { once: false });
+
+img.addEventListener('error', () => {
+  console.warn('Attēlu neizdevās ielādēt');
+  drawImage();              // izsauksies ar “tukšu” stāvokli – rokturis paliks paslēpts
+});
+
+
+
+
+
+
+
+
+
 						let imgX = 0, imgY = 0;
 						let imgScale = 1;
 						let imgWidth, imgHeight;
@@ -556,19 +579,38 @@ function setDarkness(percent){
 
 
 const resizeHandle = document.getElementById('resizeHandle');
-if (resizeHandle) {
-  resizeHandle.style.display = 'block';
-  resizeHandle.style.position = 'absolute';
-  resizeHandle.style.zIndex = '10';
-  resizeHandle.style.width = Math.max(40, window.innerWidth * 0.05) + 'px';
-  resizeHandle.style.height = Math.max(40, window.innerHeight * 0.05) + 'px';
-  resizeHandle.style.backgroundImage = 'url("https://site-710050.mozfiles.com/files/710050/resize_map__1_.png")';
-  resizeHandle.style.cursor = 'se-resize';
-  resizeHandle.style.border = '3px solid red';
 
+const RH_MIN = 44;     // sākotnējais “sākotnējās versijas” izmērs uz mazākiem ekrāniem
+const RH_MAX = 88;     // griesti lieliem ekrāniem
+
+function sizeResizeHandle(){
+  if(!resizeHandle) return;
+  const shortSide = Math.min(window.innerWidth, window.innerHeight);
+  const s = Math.round(Math.max(RH_MIN, Math.min(RH_MAX, shortSide * 0.08)));
+
+  Object.assign(resizeHandle.style, {
+    display: 'none',                 // ⬅️ sākumā paslēpts
+    position: 'absolute',
+    zIndex: '10',
+    width:  s + 'px',
+    height: s + 'px',
+    backgroundImage: 'url("https://site-710050.mozfiles.com/files/710050/resize_map__1_.png")',
+    backgroundSize: 'contain',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center',
+    cursor: 'se-resize',
+    border: '3px solid red'
+  });
+}
+sizeResizeHandle();
+window.addEventListener('resize', sizeResizeHandle);
+
+// Piesaistām notikumus (atstāj atsevišķi no stila uzlikšanas)
+if (resizeHandle) {
   on(resizeHandle, 'mousedown', startResize);
   on(resizeHandle, 'touchstart', startResize);
 }
+
 
 
 
@@ -1674,6 +1716,32 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 
 
 
+//						img.onload = function () {
+//							adjustImageSize();
+//							drawImage();
+//							positionResizeHandle();
+//							resizeHandle.style.display = 'block';
+//						};
+//
+//						function adjustImageSize() {
+//						const aspectRatio = img.naturalWidth / img.naturalHeight;
+//						const scaleFactor = 0.85; // 📌 Pielāgojam attēlu uz 90% no sākotnējā izmēra
+//
+//						if (canvas.width / canvas.height > aspectRatio) {
+//							imgWidth = canvas.height * aspectRatio * scaleFactor;
+//							imgHeight = canvas.height * scaleFactor;
+//						} else {
+//							imgWidth = canvas.width * scaleFactor;
+//							imgHeight = (canvas.width / aspectRatio) * scaleFactor;
+//						}
+//
+//						// ✅ Centrējam attēlu kanvā
+//						imgX = (canvas.width - imgWidth) / 2;
+//						imgY = (canvas.height - imgHeight) / 2;
+//
+//						imgScale = 1; // 📌 Nodrošina sākotnējo mērogu (bez tālummaiņas)
+//						}
+
 
 
 
@@ -1681,32 +1749,6 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 
 								
 
-						img.onload = function () {
-							adjustImageSize();
-							drawImage();
-							positionResizeHandle();
-							resizeHandle.style.display = 'block';
-						};
-
-						function adjustImageSize() {
-						const aspectRatio = img.naturalWidth / img.naturalHeight;
-						const scaleFactor = 0.85; // 📌 Pielāgojam attēlu uz 90% no sākotnējā izmēra
-
-						if (canvas.width / canvas.height > aspectRatio) {
-							imgWidth = canvas.height * aspectRatio * scaleFactor;
-							imgHeight = canvas.height * scaleFactor;
-						} else {
-							imgWidth = canvas.width * scaleFactor;
-							imgHeight = (canvas.width / aspectRatio) * scaleFactor;
-						}
-
-						// ✅ Centrējam attēlu kanvā
-						imgX = (canvas.width - imgWidth) / 2;
-						imgY = (canvas.height - imgHeight) / 2;
-
-						imgScale = 1; // 📌 Nodrošina sākotnējo mērogu (bez tālummaiņas)
-						}
-	
 
 						
 
@@ -1897,28 +1939,35 @@ function canvasTouchDistance(touch1, touch2) {
 
 
 
-						function drawImage() {
-						  ctx.clearRect(0, 0, canvas.width, canvas.height);
-						
-						  // 1) Karte
-						  ctx.drawImage(img, imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
-						
-						  // 2) Tumšošanas pārklājums tikai kartes laukumam
-						  if (mapDarken > 0) {
-						    ctx.save();
-						    ctx.fillStyle = 'rgba(0,0,0,' + mapDarken + ')'; // 0..0.8
-						    ctx.fillRect(imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
-						    ctx.restore();
-						  }
-						
-						  // 3) Sarkanais rāmis virs pārklājuma
-						  ctx.lineWidth = 2;
-						  ctx.strokeStyle = "red";
-						  ctx.strokeRect(imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
-						
-						  // 4) Roktura pozīcija
-						  positionResizeHandle();
-						}
+function drawImage() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!hasImage()) {
+    // nav vēl bilde – NEzīmējam neko un slēpjam rokturi
+    positionResizeHandle(false);
+    return;
+  }
+
+  // 1) Karte
+  ctx.drawImage(img, imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
+
+  // 2) Tumšošana tikai virs kartes
+  if (mapDarken > 0) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,' + mapDarken + ')';
+    ctx.fillRect(imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
+    ctx.restore();
+  }
+
+  // 3) Sarkanais rāmis
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'red';
+  ctx.strokeRect(imgX, imgY, imgWidth * imgScale, imgHeight * imgScale);
+
+  // 4) Roktura pozīcija + parādīšana
+  positionResizeHandle(true);
+}
+
 						
 
 
