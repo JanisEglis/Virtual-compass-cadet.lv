@@ -589,7 +589,6 @@ function sizeResizeHandle(){
   const s = Math.round(Math.max(RH_MIN, Math.min(RH_MAX, shortSide * 0.08)));
 
   Object.assign(resizeHandle.style, {
-    display: 'none',                 // ⬅️ sākumā paslēpts
     position: 'absolute',
     zIndex: '10',
     width:  s + 'px',
@@ -598,12 +597,13 @@ function sizeResizeHandle(){
     backgroundSize: 'contain',
     backgroundRepeat: 'no-repeat',
     backgroundPosition: 'center',
-    cursor: 'se-resize',
-    border: '3px solid red'
+    cursor: 'se-resize'
+    // (noņem debug sarkano apmali)
   });
 }
 sizeResizeHandle();
 window.addEventListener('resize', sizeResizeHandle);
+
 
 // Piesaistām notikumus (atstāj atsevišķi no stila uzlikšanas)
 if (resizeHandle) {
@@ -1686,12 +1686,20 @@ function hideOnlineMap(){
   mapDiv.style.display = 'none';
   mapDim.style.display = 'none';
   canvas.style.display = 'block';
-  if (resizeH && typeof img !== 'undefined' && img && img.src) resizeH.style.display = 'block';
-  if (btn) btn.classList.remove('active');              // ← bez ?.
+
+  // rokturi rādām tikai tad, ja tiešām ir bilde
+  if (resizeH && hasImage()) {
+    positionResizeHandle(true);
+  } else if (resizeH) {
+    resizeH.style.display = 'none';
+  }
+
+  if (btn) btn.classList.remove('active');
   localStorage.setItem('onlineMapActive','0');
   window.__updateDimmerWidth && window.__updateDimmerWidth();
   window.__fitDock && window.__fitDock();
 }
+
 
 
 
@@ -1908,37 +1916,39 @@ function positionResizeHandle(show) {
 
   sizeResizeHandle();
 
-  // Kanvas izmēri CSS pikseļos pret iekšējiem pikseļiem
+  // Padarām mērāmu, bet neredzamu, lai iegūtu pareizos offsetWidth/Height
+  const prevVis  = resizeHandle.style.visibility;
+  const prevDisp = resizeHandle.style.display;
+  resizeHandle.style.visibility = 'hidden';
+  resizeHandle.style.display    = 'block';
+
   const rect   = canvas.getBoundingClientRect();
   const pageX  = rect.left + window.scrollX;
   const pageY  = rect.top  + window.scrollY;
   const scaleX = rect.width  / canvas.width;
   const scaleY = rect.height / canvas.height;
 
-  const pad = (window.innerWidth <= 768 ? 5 : 0);
+  const w = resizeHandle.offsetWidth  || parseInt(resizeHandle.style.width)  || RH_MIN;
+  const h = resizeHandle.offsetHeight || parseInt(resizeHandle.style.height) || RH_MIN;
 
-  // Aprēķins iekš attēla apakšējā labā stūrī
   const imgCssW = imgWidth  * imgScale * scaleX;
   const imgCssH = imgHeight * imgScale * scaleY;
   const imgCssX = pageX + (imgX * scaleX);
   const imgCssY = pageY + (imgY * scaleY);
 
-  let left = imgCssX + imgCssW - resizeHandle.offsetWidth  - pad;
-  let top  = imgCssY + imgCssH - resizeHandle.offsetHeight - pad;
+  let left = imgCssX + imgCssW - w;
+  let top  = imgCssY + imgCssH - h;
 
-  // STINGRA robežošana (paliek iekš attēla)
-  const minLeft = imgCssX;
-  const minTop  = imgCssY;
-  const maxLeft = imgCssX + imgCssW - resizeHandle.offsetWidth;
-  const maxTop  = imgCssY + imgCssH - resizeHandle.offsetHeight;
+  // Stingri iekš attēla robežām
+  left = Math.max(imgCssX, Math.min(imgCssX + imgCssW - w, left));
+  top  = Math.max(imgCssY, Math.min(imgCssY + imgCssH - h, top));
 
-  left = Math.max(minLeft, Math.min(maxLeft, left));
-  top  = Math.max(minTop,  Math.min(maxTop,  top));
-
-  resizeHandle.style.left = left + 'px';
-  resizeHandle.style.top  = top  + 'px';
-  resizeHandle.style.display = 'block';
+  resizeHandle.style.left       = left + 'px';
+  resizeHandle.style.top        = top  + 'px';
+  resizeHandle.style.visibility = prevVis || 'visible';
+  resizeHandle.style.display    = 'block';
 }
+
 
 
 
