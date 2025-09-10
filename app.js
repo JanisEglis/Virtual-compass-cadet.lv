@@ -593,23 +593,26 @@ function sizeResizeHandle(){
     zIndex: '10',
     width:  s + 'px',
     height: s + 'px',
-    backgroundImage: 'url("https://site-710050.mozfiles.com/files/710050/resize_map__1_.png")',
-    backgroundSize: 'contain',
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'center',
+    background: 'transparent',    // ← vairs NEzīmējam ikonai fonu
     cursor: 'se-resize'
-    // (noņem debug sarkano apmali)
   });
-}
-sizeResizeHandle();
-window.addEventListener('resize', sizeResizeHandle);
 
-
-// Piesaistām notikumus (atstāj atsevišķi no stila uzlikšanas)
-if (resizeHandle) {
-  on(resizeHandle, 'mousedown', startResize);
-  on(resizeHandle, 'touchstart', startResize);
+  // stilējam iekšējo <img>, lai tas aizņem rokturi un netraucē notikumiem
+  const handleImg = resizeHandle.querySelector('img');
+  if (handleImg) {
+    Object.assign(handleImg.style, {
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain',
+      display: 'block',
+      pointerEvents: 'none',   // lai mousedown nokļūst uz #resizeHandle
+      userSelect: 'none',
+      WebkitUserDrag: 'none'
+    });
+    handleImg.draggable = false;
+  }
 }
+
 
 
 
