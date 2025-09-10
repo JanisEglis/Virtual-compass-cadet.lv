@@ -360,81 +360,78 @@ function showMobileWarning() {
 						window.addEventListener('orientationchange', checkOrientation);
 
 						// Funkcija, kas aizver abas izvēlnes
-						function closeBothMenus() {
-							const leftPositionSelector = document.querySelector('.position-selector-left');
-							const rightPositionSelector = document.querySelector('.position-selector');
+// 1) closeBothMenus – ar null sargiem
+function closeBothMenus() {
+  const left  = document.querySelector('.position-selector-left');
+  const right = document.querySelector('.position-selector');
 
-							// Pievieno slēpšanas klases abām izvēlnēm
-							leftPositionSelector.classList.add('hidden-left');
-							rightPositionSelector.classList.add('hidden');
-							
-							// Atjauno bultiņu simbolus
-							const leftToggleButton = document.querySelector('.toggle-selector-left');
-							const rightToggleButton = document.querySelector('.toggle-selector');
-							leftToggleButton.textContent = '❯';
-							rightToggleButton.textContent = '❮';
-window.__updateMapSafeAreas && window.__updateMapSafeAreas();
-						}
+  left  && left.classList.add('hidden-left');
+  right && right.classList.add('hidden');
 
-// Labās puses pogas klausītājs
+  const leftBtn  = document.querySelector('.toggle-selector-left');
+  const rightBtn = document.querySelector('.toggle-selector');
+  if (leftBtn)  leftBtn.textContent  = '❯';
+  if (rightBtn) rightBtn.textContent = '❮';
+
+  window.__updateMapSafeAreas && window.__updateMapSafeAreas();
+}
+
+// === DROŠI sasienam pozīciju paneļu pogas un <select>us ===
 (function(){
-  const toggleButton     = document.querySelector('.toggle-selector');
-  const positionSelector = document.querySelector('.position-selector');
-  if (!toggleButton || !positionSelector) return;  // ← Svarīgi
+  const rightToggleBtn  = document.querySelector('.toggle-selector');
+  const rightPanel      = document.querySelector('.position-selector');
+  const leftToggleBtn   = document.querySelector('.toggle-selector-left');
+  const leftPanel       = document.querySelector('.position-selector-left');
 
-  toggleButton.addEventListener('click', () => {
-    if (positionSelector.classList.contains('hidden')) {
-      positionSelector.classList.remove('hidden');
-      toggleButton.textContent = '❯';
+  // labā poga
+  on(rightToggleBtn, 'click', () => {
+    if (!rightPanel) return;
+    if (rightPanel.classList.contains('hidden')) {
+      rightPanel.classList.remove('hidden');
+      rightToggleBtn && (rightToggleBtn.textContent = '❯'); // bultiņa uz aizvēršanu
     } else {
       closeBothMenus();
     }
   });
-})();
 
-// Kreisās puses pogas klausītājs
-(function(){
-  const leftToggleButton     = document.querySelector('.toggle-selector-left');
-  const leftPositionSelector = document.querySelector('.position-selector-left');
-  if (!leftToggleButton || !leftPositionSelector) return; // ← Svarīgi
-
-  leftToggleButton.addEventListener('click', () => {
-    if (leftPositionSelector.classList.contains('hidden-left')) {
-      leftPositionSelector.classList.remove('hidden-left');
-      leftToggleButton.textContent = '❮';
+  // kreisā poga
+  on(leftToggleBtn, 'click', () => {
+    if (!leftPanel) return;
+    if (leftPanel.classList.contains('hidden-left')) {
+      leftPanel.classList.remove('hidden-left');
+      leftToggleBtn && (leftToggleBtn.textContent = '❮'); // bultiņa uz aizvēršanu
     } else {
       closeBothMenus();
     }
   });
-})();
-
 
 
 						// Funkcija, kas sinhronizē izvēles abās izvēlnēs
-						function syncSelectOptions(selectedValue) {
-							const leftSelectElement = document.getElementById('positionSelectLeft');
-							const rightSelectElement = document.getElementById('positionSelect');
-							leftSelectElement.value = selectedValue;
-							rightSelectElement.value = selectedValue;
-						}
+// 2) syncSelectOptions – arī ar null sargiem
+function syncSelectOptions(selectedValue) {
+  const leftSel  = document.getElementById('positionSelectLeft');
+  const rightSel = document.getElementById('positionSelect');
+  if (leftSel)  leftSel.value  = selectedValue;
+  if (rightSel) rightSel.value = selectedValue;
+}
 
-						// Klausītājs kreisās puses izvēlei, kas sinhronizē izvēli un aizver abas izvēlnes
-						const leftSelectElement = document.getElementById('positionSelectLeft');
-						leftSelectElement.addEventListener('change', () => {
-							const selectedValue = leftSelectElement.value;
-							syncSelectOptions(selectedValue); // Sinhronizē izvēli abās izvēlnēs
-							closeBothMenus(); // Aizver abas izvēlnes
-							updateButtonContainerPosition(selectedValue); // Atjaunina pogu novietojumu
-						});
+ // <select> klausītāji (sinhronizē abos paneļos)
+  const leftSelect  = document.getElementById('positionSelectLeft');
+  const rightSelect = document.getElementById('positionSelect');
 
-						// Klausītājs labās puses izvēlei, kas sinhronizē izvēli un aizver abas izvēlnes
-						const rightSelectElement = document.getElementById('positionSelect');
-						rightSelectElement.addEventListener('change', () => {
-							const selectedValue = rightSelectElement.value;
-							syncSelectOptions(selectedValue); // Sinhronizē izvēli abās izvēlnēs
-							closeBothMenus(); // Aizver abas izvēlnes
-							updateButtonContainerPosition(selectedValue); // Atjaunina pogu novietojumu
-						});
+  on(leftSelect,  'change', () => {
+    const v = leftSelect.value;
+    syncSelectOptions(v);
+    closeBothMenus();
+    updateButtonContainerPosition(v);
+  });
+
+  on(rightSelect, 'change', () => {
+    const v = rightSelect.value;
+    syncSelectOptions(v);
+    closeBothMenus();
+    updateButtonContainerPosition(v);
+  });
 
 
 						const savedPosition = localStorage.getItem('buttonPosition');
@@ -446,16 +443,22 @@ window.__updateMapSafeAreas && window.__updateMapSafeAreas();
 
 
 						// Funkcija, kas atjaunina pogas konteinera novietojumu atkarībā no izvēlētās vērtības
-						function updateButtonContainerPosition(position){
-						  const buttonContainer = document.getElementById('buttonContainer');
-						  buttonContainer.classList.remove('bottom','right','left');
-						  buttonContainer.classList.add(position);
-						
-						  localStorage.setItem('buttonPosition', position);
-						
-						  window.__fitDock && window.__fitDock();
-						  window.__updateDimmerWidth && window.__updateDimmerWidth(); // ← paliek
-						}
+// 3) updateButtonContainerPosition – izsauc arī slīdņa orientāciju
+function updateButtonContainerPosition(position){
+  const buttonContainer = document.getElementById('buttonContainer');
+  if (!buttonContainer) return;
+
+  buttonContainer.classList.remove('bottom','right','left');
+  buttonContainer.classList.add(position);
+
+  localStorage.setItem('buttonPosition', position);
+
+  window.__fitDock && window.__fitDock();
+  window.__updateDimmerWidth && window.__updateDimmerWidth();
+
+  // ← lai uzreiz pārslēdzas vert./horiz. slīdnis
+  syncRangeOrientation();
+}
 
 
 
