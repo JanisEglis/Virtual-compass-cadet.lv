@@ -5,6 +5,41 @@
 
 
 
+
+
+
+
+<script>
+	/*  VH mainīgais */
+(function(){
+  function setVH(){
+    var h = (window.visualViewport ? visualViewport.height : window.innerHeight) || window.innerHeight;
+    document.documentElement.style.setProperty('--vh', (h * 0.01) + 'px');
+  }
+  setVH();
+  addEventListener('resize', setVH, {passive:true});
+  if (window.visualViewport){
+    visualViewport.addEventListener('resize', setVH, {passive:true});
+    visualViewport.addEventListener('scroll', setVH, {passive:true});
+  }
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
 <script>
 /* ==============================================================
    DEVTOOL V1 — compact, early-capture, one-file, safe
@@ -523,7 +558,83 @@
 
 
 
+<style>
 
+
+
+
+
+/* body stāvoklis ielādes laikā */
+body.preloading { overflow: hidden; }
+
+/* pilnekrāna pārklājums – strādā arī vecā Chrome */
+#app-preloader{
+  position: fixed;               /* nevis absolute */
+  top: 0; left: 0; right: 0; bottom: 0;  /* sedz visu viewport */
+  z-index: 2147483647;           /* virs visa */
+  display: grid; place-items: center;
+  padding: 16px;
+  background: linear-gradient(180deg,#0b0f14,#11161d);
+  color: #eef2f7;
+}
+
+/* 100vh “smilšu maisi” — nav obligāti, jo izmantojam fixed,
+   bet noder dažiem OEM/Android variantiem */
+#app-preloader{ 
+  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
+}
+
+#app-preloader .box{
+  width: min(540px, 94vw);
+  background: rgba(0,0,0,.25);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  padding: 16px 18px 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.45);
+  text-align: center;
+}
+#app-preloader .logo{ font-weight: 700; margin-bottom: 6px; letter-spacing: .3px; }
+#app-preloader .msg{ margin: .2rem 0 .6rem; opacity: .9; }
+
+/* progress */
+#app-preloader .progress{
+  height: 10px; border-radius: 999px; overflow: hidden;
+  background: rgba(255,255,255,.09);
+  border: 1px solid rgba(255,255,255,.12);
+}
+#app-preloader .progress > span{
+  display:block; height:100%; width:0%;
+  background: linear-gradient(90deg,#aa2d2d,#d63c3c);
+  transition: width .25s ease;
+}
+
+/* poga parādās pēc ~6s (to ieslēdz JS ar .show-skip) */
+#preloaderSkip{
+  display: none; margin-top: .8rem;
+  padding: .5rem .8rem;
+  background:#2b2f36; color:#fff;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:10px; cursor:pointer;
+}
+#app-preloader.show-skip #preloaderSkip{ display: inline-block; }
+
+/* noņemšana ar fade — to uzliek JS ar .hidden */
+#app-preloader.hidden{
+  opacity: 0; visibility: hidden;
+  transition: opacity .36s ease, visibility 0s linear .4s;
+}
+
+
+
+
+
+
+
+
+
+	
+</style>
 
 	
 </head>
