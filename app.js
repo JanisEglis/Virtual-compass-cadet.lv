@@ -2297,7 +2297,7 @@ function openChooserModal(){
     wrap.innerHTML = `
       <div class="uploader-card">
         <h3>Ielādēt karti</h3>
-        <p>Vari augšupielādēt no <b>faila</b> vai ielikt <b>URL</b> (attēls vai PDF).</p>
+        <p>Augšupielādēt no <b>faila</b> vai ielikt <b>URL</b> (attēls vai PDF).</p>
         <div class="uploader-row">
           <button id="chFile">No faila…</button>
           <button id="chUrl">No URL…</button>
