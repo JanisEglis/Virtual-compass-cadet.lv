@@ -490,7 +490,7 @@ updateButtonContainerPosition = function(position){
   syncRangeOrientation();
   window.__updateDimmerWidth && window.__updateDimmerWidth();
   window.__fitDock && window.__fitDock();
-  window.__updateMapSafeAreas && window.__updateMapSafeAreas(); // 👈 pievieno šo
+  window.__updateMapSafeAreas && window.__updateMapSafeAreas(); //  pievieno šo
 };
 
 
@@ -498,6 +498,7 @@ updateButtonContainerPosition = function(position){
 							// Atlasām kreisās puses pogu
 							const leftToggleButton = document.querySelector('.toggle-selector-left');
 							const leftPositionSelector = document.querySelector('.position-selector-left');
+							if (!leftToggleButton || !leftPositionSelector) return; //  pievieno šo
 
 						// Pārbaudām, vai izvēlne ir redzama vai paslēpta, un iestatām bultiņas virzienu
 						if (leftPositionSelector.classList.contains('hidden-left')) {
@@ -2152,6 +2153,38 @@ if (toggleRotationModeButton) {
 								baseRotation = 0;       // sākotnējā rotācija
 								scaleRotation = 70;      // sākotnējā skalas rotācija
 
+
+// Atjaunojam kompasu
+    updateCompassTransform();
+
+
+
+
+
+
+
+const COMPASS_INIT = { left: 550, top: 60, scale: 1, base: 0, scaleRot: 70 };
+
+function resetCompassToInitial(){
+  compassStartLeft = COMPASS_INIT.left;
+  compassStartTop  = COMPASS_INIT.top;
+  globalScale      = COMPASS_INIT.scale;
+  baseRotation     = COMPASS_INIT.base;
+  scaleRotation    = COMPASS_INIT.scaleRot;
+  updateCompassTransform();
+}
+
+
+
+
+
+
+
+
+
+
+
+								
 								// Atjaunojam kompasu (tiek pārvietots atpakaļ sākuma stāvoklī)
 								updateCompassTransform();
 
@@ -2174,16 +2207,17 @@ function updateCompassTransform() {
   const inner       = document.getElementById('compassInner');
   const scaleWrap   = document.getElementById('compassScaleContainer');
   const scaleInner  = document.getElementById('compassScaleInner');
-
   if (!container || !inner || !scaleWrap || !scaleInner) return;
 
-  container.style.left = compassStartLeft + 'px';
-  container.style.top  = compassStartTop  + 'px';
+  // ‘important’ palīdz pret agresīvu CSS
+  container.style.setProperty('left', compassStartLeft + 'px', 'important');
+  container.style.setProperty('top',  compassStartTop  + 'px', 'important');
 
   scaleWrap.style.transform  = 'scale(' + globalScale + ')';
   inner.style.transform      = 'rotate(' + baseRotation + 'deg)';
   scaleInner.style.transform = 'rotate(' + scaleRotation + 'deg)';
 }
+
 
 
 
@@ -2199,7 +2233,16 @@ function updateCompassTransform() {
 
     if (!ok) { requestAnimationFrame(start); return; }
 
-    updateCompassTransform();
+    // 1) iestati sākuma stāvokli
+    resetCompassToInitial();
+
+    // 2) pārvelc vēlreiz nākamajā kadrā — vecie pārlūki ķeras tieši šeit
+    requestAnimationFrame(updateCompassTransform);
+
+    // 3) drošības pēc arī pēc pilnas ielādes
+    window.addEventListener('load', updateCompassTransform, { once:true });
+
+    // uzturi saskaņotu uz izmēru maiņām
     window.addEventListener('resize',            updateCompassTransform);
     window.addEventListener('orientationchange', updateCompassTransform);
   };
@@ -2210,6 +2253,7 @@ function updateCompassTransform() {
     start();
   }
 })();
+
 
 
 
@@ -2583,7 +2627,7 @@ on(byId("toggleInstruction"), "click", function() {
 
 
 							// Aizver iframe un atgriež sākotnējo pogu un iframe pozīciju MACIBU MATERIALI
-							document.getElementById("toggleMaterials").addEventListener("click", function () {
+							on(byId("toggleMaterials"),  "click", function() {
 								let iframe = document.getElementById('contentFrame');
 								let dropdownMenus = document.querySelectorAll('.dropdown-menu');
 
@@ -2619,7 +2663,7 @@ on(byId("toggleInstruction"), "click", function() {
 							});
 
 							// Aizver iframe un atjauno sākotnējo pogu un iframe pozīciju priekš "Lietotāja ceļveža"
-							document.getElementById("toggleInstruction").addEventListener("click", function () {
+							on(byId("toggleInstruction"),"click", function() {
 								let iframe = document.getElementById('instructionFrame'); // Lietotāja ceļveža iframe
 								let dropdownMenus = document.getElementById('dropdownInstruction');
 
