@@ -332,7 +332,15 @@ body.preloading{ overflow: hidden; }
 /* Kreisās puses slēpšana/atvēršana – paliek kā tev */
 .position-selector-left.hidden { transform: translateX(-100%); }
 
+/* Pievieno arī šo (jo JS lieto 'hidden-left') */
+.position-selector-left.hidden-left { transform: translateX(-100%); }
 
+/* Kad paneļi paslēpti – lai neķer klikšķus */
+.position-selector.hidden,
+.position-selector-left.hidden,
+.position-selector-left.hidden-left {
+  pointer-events: none !important;
+}
 
 /* Bultiņas virziens BEZ papildus JS (der, ja poga DOMā ir pēc paneļa) */
 .position-selector-container-left .toggle-selector-left::before{ content: "❮"; }          /* atvērts */
