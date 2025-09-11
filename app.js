@@ -2168,23 +2168,49 @@ if (toggleRotationModeButton) {
 
 
 						// Atjauno transformācijas
-						function updateCompassTransform() {
-							compassContainer.style.left = compassStartLeft + 'px';
-							compassContainer.style.top = compassStartTop + 'px';
+// DROŠA versija: vienmēr pārvaicā DOM un iziet, ja kas nav gatavs
+function updateCompassTransform() {
+  const container   = document.getElementById('compassContainer');
+  const inner       = document.getElementById('compassInner');
+  const scaleWrap   = document.getElementById('compassScaleContainer');
+  const scaleInner  = document.getElementById('compassScaleInner');
 
-							// Mērogošana visam kompasam
-							compassScaleContainer.style.transform = 'scale(' + globalScale + ')';
+  if (!container || !inner || !scaleWrap || !scaleInner) return;
 
-							// Bāzes rotācija
-							compassInner.style.transform = 'rotate(' + baseRotation + 'deg)';
+  container.style.left = compassStartLeft + 'px';
+  container.style.top  = compassStartTop  + 'px';
 
-							// Skalās rotācija
-							compassScaleInner.style.transform = 'rotate(' + scaleRotation + 'deg)';
-						}
+  scaleWrap.style.transform  = 'scale(' + globalScale + ')';
+  inner.style.transform      = 'rotate(' + baseRotation + 'deg)';
+  scaleInner.style.transform = 'rotate(' + scaleRotation + 'deg)';
+}
 
 
-						// Nodrošinām, lai stili tiek piemēroti
-							updateCompassTransform();
+
+// Nodrošinām, lai stili tiek piemēroti
+// Inicializē kompasu tikai tad, kad elementi tiešām ir DOM
+(function initCompassSafe(){
+  const start = () => {
+    const ok =
+      document.getElementById('compassContainer') &&
+      document.getElementById('compassInner') &&
+      document.getElementById('compassScaleContainer') &&
+      document.getElementById('compassScaleInner');
+
+    if (!ok) { requestAnimationFrame(start); return; }
+
+    updateCompassTransform();
+    window.addEventListener('resize',            updateCompassTransform);
+    window.addEventListener('orientationchange', updateCompassTransform);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, {once:true});
+  } else {
+    start();
+  }
+})();
+
 
 
 
@@ -2395,8 +2421,7 @@ if (toggleRotationModeButton) {
 								window.addEventListener('load', () => {
 								  const windowWidth = window.innerWidth;
 								  const windowHeight = window.innerHeight;
-								  const compassWidth = compassContainer.offsetWidth;
-								  const compassHeight = compassContainer.offsetHeight;
+
 
 								  // Varat pielāgot sākuma pozīciju pēc vajadzības
 								  compassStartLeft = 550;
