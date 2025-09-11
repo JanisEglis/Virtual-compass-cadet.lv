@@ -30,6 +30,7 @@ window.cancelIdleCallback  ||= (id) => clearTimeout(id);
 
 
 
+
 (function(){
   const pre = document.getElementById('app-preloader');
   if(!pre) return;
@@ -2506,6 +2507,14 @@ if (uploadBtn){
 (function injectUploadCSS(){
   const id='upload-ui-css';
   const css = `
+
+/* Lielāks logs uz datoriem, mobīlajiem paliek kā bija */
+@media (min-width: 992px){
+  .uploader-card{
+    width: clamp(520px, 50vw, 720px); /* patīkami plašs uz desktopa */
+  }
+}
+  
 /* Backdrop ar blur (ar fallback) */
 .uploader-backdrop{
   position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;
@@ -2604,39 +2613,26 @@ if (uploadBtn){
 
 
 /* === POGAS === */
-/* Bāzes stils visām modāļa pogām (ar drošu fallbacku vecākiem pārlūkiem) */
+/* Bāzes poga: radius 10px, 2px robeža, drošs pāreju komplekts */
 .uploader-card button,
 .uploader-card .btn{
   -webkit-appearance:none; -moz-appearance:none; appearance:none;
-  border-radius:10px;
-  border:2px solid #c06a6a;               /* izteiktāks “shell” */
-  background:#502626;                      /* fallback veciem pārlūkiem */
-  background:linear-gradient(180deg,#6f3030,#4e2424);  /* nedaudz blāvāks fons */
-  color:#fff;
-  padding:10px 18px;
-  font:700 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial;
-  letter-spacing:.2px;
-  cursor:pointer;
-  box-shadow:inset 0 0 0 1px #ffffff10, 0 8px 20px rgba(0,0,0,.35);
-  -webkit-tap-highlight-color:transparent;
-  touch-action:manipulation;
+  border-radius:10px !important;
+  border-width:2px !important; border-style:solid !important;
   transition:
     background-color .15s ease,
     filter .15s ease,
     transform .06s ease,
     box-shadow .15s ease;
+  color:#fff;
+  padding:10px 18px;
+  font:700 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  letter-spacing:.2px;
+  box-shadow:inset 0 0 0 1px #ffffff10, 0 8px 20px rgba(0,0,0,.35);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
 }
 
-/* Hover — kļūst gaišākas + nedaudz “paceļas”.
-   Fallback: papildus gaišāks gradients, ja nav filter atbalsta. */
-.uploader-card button:hover,
-.uploader-card .btn:hover{
-  filter:brightness(1.08);
-  box-shadow:inset 0 0 0 1px #ffffff12, 0 10px 24px rgba(0,0,0,.40);
-  background:linear-gradient(180deg,#7a3a3a,#5a2e2e);
-  /* ↑ vecākiem pārlūkiem, kas neprot filter */
-  transform:translateY(-1px);
-}
 
 /* Active — neliels nospiediens */
 .uploader-card button:active,
@@ -2650,26 +2646,9 @@ if (uploadBtn){
 .uploader-card button[disabled],
 .uploader-card .btn[disabled]{ opacity:.6; cursor:not-allowed; filter:none; transform:none; box-shadow:none }
 
-/* — Tonējumi — */
-/* Neitrālāks “primārais” sarkanais (pēc noklusējuma) */
-.uploader-card .btn.primary{
-  border-color:#b56c6c;
-  background:#5b2c2c;
-  background:linear-gradient(180deg,#8d3b3b,#6a2f2f);
-}
 
-/* “Atcelt” — izteikti sarkans. Derēs gan klasei, gan ID, ja markupā nav klašu. */
-.uploader-card .btn.danger,
-#chCancel,#pCancel,#urlCancel{
-  border-color:#ff6e6e;
-  background:#b92020;
-  background:linear-gradient(180deg,#e53935,#b71c1c);
-}
-.uploader-card .btn.danger:hover,
-#chCancel:hover,#pCancel:hover,#urlCancel:hover{
-  filter:brightness(1.06);
-  background:linear-gradient(180deg,#f14642,#c62828);
-}
+
+
 
 /* — Rindu izlīdzinājums (ja vajag) — */
 .uploader-row,
@@ -2683,7 +2662,44 @@ if (uploadBtn){
 
 
 
+/* === ZAĻĀS DARBĪBAS ===
+   No faila, No URL, Importēt */
+.uploader-card .btn.primary,
+#chFile,#chUrl,#urlGo,#pOk{
+  border-color:#11cb1e !important;
+  background:#0d631d !important;       /* precīzā vēlamā pamatkrāsa */
+}
+.uploader-card .btn.primary:hover,
+#chFile:hover,#chUrl:hover,#urlGo:hover,#pOk:hover{
+  filter:brightness(1.12);
+  background:#117a26 !important;       /* nedaudz gaišāks hover */
+  box-shadow:inset 0 0 0 1px #ffffff12, 0 12px 28px rgba(0,0,0,.45);
+}
+.uploader-card .btn.primary:active,
+#chFile:active,#chUrl:active,#urlGo:active,#pOk:active{
+  filter:brightness(1.06); transform:translateY(0);
+}
 
+/* === SARKANĀS DARBĪBAS ===
+   Atcelt, Aizvērt */
+.uploader-card .btn.danger,
+#chCancel,#pCancel,#urlCancel{
+  border-color:#ff0000 !important;
+  background:#A61D00 !important;
+}
+.uploader-card .btn.danger:hover,
+#chCancel:hover,#pCancel:hover,#urlCancel:hover{
+  filter:brightness(1.10);
+  background:#c02400 !important;       /* izteiktāks hover tonis */
+  box-shadow:inset 0 0 0 1px #ffffff12, 0 12px 28px rgba(0,0,0,.45);
+}
+.uploader-card .btn.danger:active,
+#chCancel:active,#pCancel:active,#urlCancel:active{
+  filter:brightness(1.04); transform:translateY(0);
+}
+
+/* Lai rindas izskatās sakārtotas arī uz plašiem ekrāniem */
+.uploader-row,.uploader-actions{ justify-content:center; }
 
 
 
