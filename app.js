@@ -550,6 +550,110 @@ updateButtonContainerPosition = function(position){
 
 
 
+
+
+
+// === Auto-aizvēršana, ja panelī nav aktivitātes N sekundes ===
+(function(){
+  // iedarbina taimeri konkrētam panelim (labais vai kreisais)
+  function armSelectorIdleClose(panel, delayMs = 5000){
+    if (!panel) return;
+    const isLeft = panel.classList.contains('position-selector-left');
+    const btn = document.querySelector(isLeft ? '.toggle-selector-left' : '.toggle-selector');
+
+    // jau esošo “watcheru” noņemam, ja bija
+    if (panel._idleCleanup) { panel._idleCleanup(); }
+
+    let tId = null;
+    const useCapture = true; // konsekvents capture, lai pēc tam var noņemt
+
+    const close = () => {
+      if (isLeft) {
+        panel.classList.add('hidden-left');
+        btn && (btn.textContent = '❯');   // kreisais aizvērts
+      } else {
+        panel.classList.add('hidden');
+        btn && (btn.textContent = '❮');   // labais aizvērts
+      }
+      window.__updateMapSafeAreas && window.__updateMapSafeAreas();
+      cleanup();
+    };
+
+    const reset = () => {
+      clearTimeout(tId);
+      tId = setTimeout(close, Math.max(0, +delayMs||0));
+    };
+
+    // notikumi, kas skaitās “lieto paneli” → pārstartē taimeri
+    const evs = ['pointerdown','pointermove','wheel','touchstart','keydown','input','change','focusin','mousemove'];
+    const handler = () => reset();
+    evs.forEach(ev => panel.addEventListener(ev, handler, useCapture));
+
+    // startējam pirmo reizi
+    reset();
+
+    function cleanup(){
+      clearTimeout(tId);
+      evs.forEach(ev => panel.removeEventListener(ev, handler, useCapture));
+      panel._idleCleanup = null;
+    }
+    panel._idleCleanup = cleanup;
+  }
+
+  // piesaistām pie TAVĀM toggle pogām — kad panelis atvērts, iedarbina taimeri
+  const rightToggleBtn  = document.querySelector('.toggle-selector');
+  const rightPanel      = document.querySelector('.position-selector');
+  const leftToggleBtn   = document.querySelector('.toggle-selector-left');
+  const leftPanel       = document.querySelector('.position-selector-left');
+
+  if (rightToggleBtn && rightPanel){
+    rightToggleBtn.addEventListener('click', () => {
+      // ja pēc klikšķa LABAIS ir atvērts → armējam auto-close
+      if (!rightPanel.classList.contains('hidden')) {
+        armSelectorIdleClose(rightPanel, 5000);
+      } else if (rightPanel._idleCleanup){
+        rightPanel._idleCleanup(); // ja aizvēra manuāli – notīra listenerus
+      }
+    });
+  }
+
+  if (leftToggleBtn && leftPanel){
+    leftToggleBtn.addEventListener('click', () => {
+      // ja pēc klikšķa KREISAIS ir atvērts → armējam auto-close
+      if (!leftPanel.classList.contains('hidden-left')) {
+        armSelectorIdleClose(leftPanel, 5000);
+      } else if (leftPanel._idleCleanup){
+        leftPanel._idleCleanup();
+      }
+    });
+  }
+
+  // publiska palīgfunkcija, ja atver ar JS un gribi iedarbināt taimeri manuāli:
+  window.armSelectorIdleClose = armSelectorIdleClose;
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Parādām abus paneļus, pēc delay aizveram un pārslēdzam bultiņas uz "aizvērts"
 function demoSelectorsAutoClose(delayMs = 5000){
   const leftPanel  = document.querySelector('.position-selector-left');
