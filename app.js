@@ -2502,54 +2502,74 @@ if (uploadBtn){
 							
 
 // === Modal dizains (upsert: ja #upload-ui-css jau ir, pārrakstām) ===
-// — DEVTOOL dizains, tikai CSS (upsert) —
+// — DEVTOOL dizains + moderns drop-laukums (UPsert) —
 (function injectUploadCSS(){
-  const id = 'upload-ui-css';
+  const id='upload-ui-css';
   const css = `
-/* Backdrop ar blur (ar fallback vecākiem pārlūkiem) */
+/* Backdrop ar blur (ar fallback) */
 .uploader-backdrop{
-  position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483000;
-  display:grid;place-items:center;background:rgba(0,0,0,.55)
+  position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;
+  background:rgba(0,0,0,.55)
 }
 @supports ((backdrop-filter:blur(8px)) or (-webkit-backdrop-filter:blur(8px))){
   .uploader-backdrop{backdrop-filter:saturate(1.2) blur(8px);-webkit-backdrop-filter:saturate(1.2) blur(8px)}
 }
 
-/* Kārte (devtool tumšais tonis) */
+/* Karte */
 .uploader-card{
-  min-width:300px;max-width:92vw;
+  min-width:320px;max-width:92vw;
   background:linear-gradient(180deg,#1b1f25 0%, #2a0f0faa 100%);
   color:#eef2f7;border:1px solid rgba(255,255,255,.08);
   border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.55);
-  padding:14px 14px 10px
+  padding:14px 14px 12px
 }
 
-/* Virsraksts: rādam “Augšupādēt karti”, bet neko nemainām funkcijās */
+/* Head — rādam “Augšupādēt karti” bez JS izmaiņām */
 .uploader-card h3{
-  margin:0 0 8px;font:600 16px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Arial;letter-spacing:.2px;
-  position:relative;color:transparent
+  margin:0 0 6px;font:700 16px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Arial;letter-spacing:.2px;
+  color:transparent;position:relative
 }
-.uploader-card h3::after{
-  content:"Augšupādēt karti";
-  color:#eef2f7
-}
+.uploader-card h3::after{content:"Augšupādēt karti";color:#eef2f7}
 
-/* Teksta rindkopa (atstājam kā ir) */
-.uploader-card p{margin:6px 0 12px;opacity:.9;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+/* Info */
+.uploader-card p{margin:6px 0 10px;opacity:.9;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial}
 .small{opacity:.85;font-size:12px}
 
-/* Centrētas pogas abās rindās */
+/* Moderns dalītājs */
+.divider{
+  height:1px;margin:10px 0;border:0; background:
+  linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent)
+}
+
+/* Drop laukums */
+.dropzone{
+  user-select:none; -webkit-user-select:none;
+  border:1px dashed rgba(255,255,255,.28);
+  background:rgba(255,255,255,.04);
+  padding:16px; text-align:center; border-radius:10px;
+  cursor:pointer; transition:background .15s ease,border-color .15s ease, box-shadow .15s ease, transform .06s ease
+}
+.dropzone .big{font:600 13px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+.dropzone small{display:block;margin-top:6px;opacity:.8}
+.dropzone:hover{background:rgba(255,255,255,.06)}
+.dropzone:active{transform:translateY(1px)}
+.dropzone.is-dragover{
+  border-color:#6ea2ff; box-shadow:0 0 0 3px #6ea2ff33 inset
+}
+
+/* Centrētas pogas */
 .uploader-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;justify-content:center}
 .uploader-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;justify-content:center}
 
-/* Pogu “čaulas” stils — kvadrātiskas, hover/active, skārienam draudzīgas */
+/* Modernas “plakanas čaulas” pogas (bez apaļiem stūriem) */
 .uploader-card button{
   appearance:none;border-radius:0;
   border:1px solid #7f3a3a55;
   background:linear-gradient(180deg,#8d3b3b,#6a2f2f); /* neitrāls sarkanais */
-  color:#fff;padding:10px 16px;font:600 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial;
-  cursor:pointer;box-shadow:inset 0 0 0 1px #ffffff10,0 6px 18px rgba(0,0,0,.35);
-  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  color:#fff;padding:10px 18px;font:700 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  letter-spacing:.2px; cursor:pointer;
+  box-shadow:inset 0 0 0 1px #ffffff10, 0 6px 18px rgba(0,0,0,.35);
+  -webkit-tap-highlight-color:transparent; touch-action:manipulation;
   transition:filter .12s ease, transform .06s ease, box-shadow .12s ease
 }
 .uploader-card button:hover{filter:brightness(1.06)}
@@ -2557,15 +2577,15 @@ if (uploadBtn){
 .uploader-card button:focus{outline:none}
 .uploader-card button:focus-visible{outline:2px solid #ffd2d2;outline-offset:1px}
 
-/* “Atcelt” — izteikti sarkans visiem atcelšanas ID (nemainot markup) */
-#chCancel, #pCancel, #urlCancel{
+/* “Atcelt” — izteikti sarkana */
+#chCancel,#pCancel,#urlCancel{
   background:linear-gradient(180deg,#e53935,#b71c1c)!important;
   border-color:#ff6e6e88!important
 }
-#chCancel:hover, #pCancel:hover, #urlCancel:hover{filter:brightness(1.04)}
-#chCancel:active, #pCancel:active, #urlCancel:active{transform:translateY(1px)}
+#chCancel:hover,#pCancel:hover,#urlCancel:hover{filter:brightness(1.04)}
+#chCancel:active,#pCancel:active,#urlCancel:active{transform:translateY(1px)}
 
-/* Lauki */
+/* Ievades lauki */
 .uploader-card input[type="url"], .uploader-card input[type="number"]{
   width:100%;box-sizing:border-box;background:#0f1318;color:#fff;border:1px solid rgba(255,255,255,.18);
   border-radius:10px;padding:9px 10px;font:13px system-ui,-apple-system,Segoe UI,Roboto,Arial
@@ -2575,15 +2595,98 @@ if (uploadBtn){
 }
 
 /* Mobilais */
-@media (max-width:760px){
-  .uploader-card{max-width:92vw}
-  .uploader-card button{padding:12px 16px}
-}
+@media (max-width:760px){ .uploader-card{max-width:92vw} .uploader-card button{padding:12px 18px} }
   `;
-  let st = document.getElementById(id);
-  if (!st){ st = document.createElement('style'); st.id=id; (document.head||document.documentElement).appendChild(st); }
-  st.textContent = css;
+  let st=document.getElementById(id);
+  if(!st){ st=document.createElement('style'); st.id=id; (document.head||document.documentElement).appendChild(st); }
+  st.textContent=css;
 })();
+
+// — MODĀĻA markup + drop-laukums (funkcijas atgrieztās vērtības nemainām) —
+function openChooserModal(){
+  return new Promise((resolve)=>{
+    const wrap = document.createElement('div');
+    wrap.className='uploader-backdrop';
+    wrap.innerHTML = `
+      <div class="uploader-card">
+        <h3>Ielādēt karti</h3>
+        <hr class="divider">
+        <p>Vari augšupielādēt no <b>faila</b> vai ielikt <b>URL</b> (attēls vai PDF).</p>
+        <hr class="divider">
+        <div class="dropzone" id="dropZone" role="button" tabindex="0" aria-label="Nomet failu vai izvēlies">
+          <div class="big">Nomet failu šeit</div>
+          <small>vai pieskaries/klikšķini, lai izvēlētos</small>
+        </div>
+        <hr class="divider">
+        <div class="uploader-row">
+          <button id="chFile">No faila…</button>
+          <button id="chUrl">No URL…</button>
+          <button id="chCancel">Atcelt</button>
+        </div>
+      </div>`;
+    document.body.appendChild(wrap);
+
+    const done = (v)=>{ try{ document.body.removeChild(wrap); }catch(_){ } resolve(v); };
+
+    // Aizvēršana
+    wrap.querySelector('#chCancel').onclick = ()=> done(null);
+    wrap.addEventListener('click', (e)=>{ if (e.target===wrap) done(null); });
+
+    // Faila izvēle (poga)
+    wrap.querySelector('#chFile').onclick = ()=>{
+      const inp = document.createElement('input');
+      inp.type='file'; inp.accept='image/*,application/pdf';
+      inp.onchange=()=>{ const f=inp.files && inp.files[0]; done(f ? {kind:'file', file:f} : null); };
+      inp.click();
+    };
+
+    // URL režīms
+    wrap.querySelector('#chUrl').onclick = ()=>{
+      const card = wrap.querySelector('.uploader-card');
+      card.innerHTML = `
+        <h3>Ielādēt karti</h3>
+        <hr class="divider">
+        <p>Vari augšupielādēt no <b>faila</b> vai ielikt <b>URL</b> (attēls vai PDF).</p>
+        <input id="urlInput" type="url" placeholder="https://…">
+        <div class="uploader-actions">
+          <button id="urlGo">Ielādēt</button>
+          <button id="urlCancel">Atcelt</button>
+        </div>
+        <p class="small">PDF ar vairākām lapām tiks importēta <b>viena</b> izvēlēta lapa.</p>`;
+      card.querySelector('#urlCancel').onclick = ()=> done(null);
+      card.querySelector('#urlGo').onclick = ()=>{
+        const url = card.querySelector('#urlInput').value.trim();
+        if (!url) return;
+        done({kind:'url', url});
+      };
+    };
+
+    // — Drop zona (drag & drop + click) —
+    const drop = wrap.querySelector('#dropZone');
+    const prevent = e=>{ e.preventDefault(); e.stopPropagation(); };
+    ['dragenter','dragover','dragleave','drop'].forEach(ev=>{
+      drop.addEventListener(ev, prevent, false);
+    });
+    drop.addEventListener('dragenter', ()=> drop.classList.add('is-dragover'));
+    drop.addEventListener('dragover',  ()=> drop.classList.add('is-dragover'));
+    drop.addEventListener('dragleave', ()=> drop.classList.remove('is-dragover'));
+    drop.addEventListener('drop', (e)=>{
+      drop.classList.remove('is-dragover');
+      const dt = e.dataTransfer;
+      const file = (dt && dt.files && dt.files[0]) ? dt.files[0] : null;
+      if (file) done({kind:'file', file});
+    });
+    // klikšķis -> file picker
+    const pick = ()=>{
+      const inp = document.createElement('input');
+      inp.type='file'; inp.accept='image/*,application/pdf';
+      inp.onchange=()=>{ const f=inp.files && inp.files[0]; done(f ? {kind:'file', file:f} : null); };
+      inp.click();
+    };
+    drop.addEventListener('click', pick);
+    drop.addEventListener('keydown', (e)=>{ if (e.key==='Enter' || e.key===' ') { e.preventDefault(); pick(); } });
+  });
+}
 
 
 					
