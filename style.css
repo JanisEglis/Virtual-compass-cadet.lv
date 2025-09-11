@@ -1285,32 +1285,31 @@ body.preloading{ overflow: hidden; }
 							  -webkit-tap-highlight-color:transparent;
 							}
 /* riņķītis ap pogu — saderīgi arī vecos pārlūkos */
+/* riņķis ap pogu – ar legacy fallbacku */
 #buttonContainer .dock-shell > button::before{
   content:"";
   position:absolute;
-
-  /* vietā "inset:0" lietojam klasiku */
-  top:0; right:0; bottom:0; left:0;
-
-  /* lai border 3px nerautos ārpus izmēra */
-  display:block;
-  width:100%;
-  height:100%;
+  top:0; right:0; bottom:0; left:0;   /* vietā “inset:0” */
+  width:100%; height:100%;
   box-sizing:border-box;
-
   border-radius:50%;
-  border:3px solid var(--dock-ring, #8b0202); /* ← fallback krāsa veciem dzinējiem */
+
+  /* Fallback veciem pārlūkiem (bez var()) */
+  border:3px solid #8b0202;
+  /* Modernie pārraksta ar CSS mainīgo */
+  border:3px solid var(--dock-ring);
+
   box-shadow:0 6px 16px rgba(210,34,34,.35);
   transition:transform .18s ease, opacity .18s ease, border-color .18s ease, box-shadow .18s ease;
-
-  /* drošībai, lai nenoķer klikus vecos pārlūkos */
   pointer-events:none;
 }
-/* aktīvai pogai – arī ar fallback krāsu */
+
+/* aktīvai – arī ar legacy pierakstu */
 #buttonContainer .dock-shell > button.active::before{
-  border-color:#ff0000; /* var arī var(--dock-ring, #ff0000) ja gribi būt vienā sistēmā */
+  border:3px solid #ff0000;                 /* ne tikai border-color */
   box-shadow:0 0 0 4px rgba(255,77,77,.12);
 }
+
 							/* Aktīvajām (Tavā kodā tiek pievienota .active) – neliels izcelums */
 							#buttonContainer .dock-shell > button.active::before{
 							  border-color:#ff0000; box-shadow:0 0 0 4px rgba(255,77,77,.12);
