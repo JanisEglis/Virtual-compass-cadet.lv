@@ -1426,17 +1426,20 @@ body.preloading{ overflow: hidden; }
 
 
 
-/* Fallback atstarpēm apakšā (strādā arī bez flex-gap) */
+/* Fallback atstarpēm apakšā (bez flex-gap, veciem pārlūkiem) */
 #buttonContainer.bottom .dock-shell{
   --gap-x: 22px;  /* horizontālā atstarpe starp pogām */
   --gap-y: 12px;  /* vertikālā atstarpe starp rindām */
 
-  gap: 0 !important; /* nelietojam flex-gap, lai visur vienādi */
-  /* kompensējam iekšējos margin, lai čaulai nemainās ārējais izmērs */
-  margin: calc(-0.5 * var(--gap-y)) calc(-0.5 * var(--gap-x));
+  gap: 0 !important;                     /* nelietojam flex-gap */
+  /* BIJA: margin: calc(-0.5 * var(--gap-y)) calc(-0.5 * var(--gap-x)); */
+  margin: 0 !important;                  /* noņem negatīvos margin */
+  padding: calc(0.5 * var(--gap-y)) calc(0.5 * var(--gap-x)); /* kompensācija bez gļukiem */
+  align-content: center;                  /* sakārto rindas, ja ir wrap */
 }
 
 #buttonContainer.bottom .dock-shell > button{
+  flex: 0 0 auto !important;             /* drošs fiksētais izmērs */
   margin: calc(0.5 * var(--gap-y)) calc(0.5 * var(--gap-x));
 }
 
@@ -1444,6 +1447,7 @@ body.preloading{ overflow: hidden; }
 #buttonContainer.bottom .dock-dimmer{
   margin: calc(0.5 * var(--gap-y)) auto 0 !important;
 }
+
 
 
 
