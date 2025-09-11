@@ -2554,9 +2554,9 @@ if (uploadBtn){
 /* Head — rādam “Augšupādēt karti” bez JS izmaiņām */
 .uploader-card h3{
   margin:0 0 6px;font:700 16px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Arial;letter-spacing:.2px;
-  color:transparent;position:relative
+  position:relative
 }
-.uploader-card h3::after{content:"Augšupādēt karti";color:#eef2f7}
+
 
 /* Info */
 .uploader-card p{margin:6px 0 10px;opacity:.9;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial}
