@@ -2224,11 +2224,7 @@ const h = resizeHandle.offsetHeight || parseInt(cs.height) || 12;
   box-shadow:0 16px 40px rgba(0,0,0,.55);
   padding:14px 14px 10px;
 }
-.uploader-card h3{
-  margin:0 0 8px;
-  font:600 16px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  letter-spacing:.2px;
-}
+.
 .uploader-card p{
   margin:6px 0 12px; opacity:.9;
   font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
@@ -2770,6 +2766,20 @@ if (uploadBtn){
   justify-content: center;
   padding: 3vh 2vw;    /* lai karte nav pie ekrāna malām uz desktopa */
 }
+
+
+/* drop zonas saturs centrēts gan horizontāli, gan vertikāli */
+.dropzone{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  min-height:200px;          /* jūties brīvi koriģēt (180–240px) */
+}
+
+
+
+
 
 
   `;
