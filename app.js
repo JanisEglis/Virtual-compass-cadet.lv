@@ -2173,95 +2173,254 @@ const h = resizeHandle.offsetHeight || parseInt(cs.height) || 12;
 
 
 
-// Attēla / PDF (1 lapa) augšupielāde
-const uploadBtn = document.getElementById('uploadMap');
-if (uploadBtn) {
-  uploadBtn.addEventListener('click', function () {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*,application/pdf';
-    fileInput.addEventListener('change', function (event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
 
-      const isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
 
-      if (isPdf) {
-        if (!window.pdfjsLib) {
-          alert('PDF atbalsts nav pieejams (trūkst PDF.js). Lūdzu, ielādē attēlu vai ieslēdz PDF.js.');
-          return;
-        }
-        loadPdfAsPngDataURL(file, function (dataURL) {
-          img.src = dataURL; // pēc tam strādā tieši kā ar IMG
-        }, function (errMsg) {
-          alert(errMsg || 'Neizdevās ielādēt PDF.');
-        });
-      } else if (/^image\//i.test(file.type)) {
-        const reader = new FileReader();
-        reader.onload = function (e) { img.src = e.target.result; };
-        reader.onerror = function () { alert('Neizdevās nolasīt attēlu.'); };
-        reader.readAsDataURL(file);
-      } else {
-        alert('Atbalstīti ir attēli vai 1-lapas PDF.');
-      }
-    }, { once: true });
-    fileInput.click();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// === Attēla / PDF (ar lappuses izvēli) augšupielāde — fails vai URL ===
+
+// Neliels stiliņš iekšā (vienkāršs modālis)
+(function injectUploadCSS(){
+  if (document.getElementById('upload-ui-css')) return;
+  const css = `
+.uploader-backdrop{position:fixed;inset:0;z-index:5000;display:grid;place-items:center;background:rgba(0,0,0,.55)}
+.uploader-card{min-width:280px;max-width:92vw;background:#1b1f25;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:12px;box-shadow:0 18px 46px rgba(0,0,0,.55);padding:14px}
+.uploader-card h3{margin:0 0 8px;font:600 16px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+.uploader-card p{margin:6px 0 12px;opacity:.9;font:13px/1.4 system-ui}
+.uploader-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.uploader-card button{appearance:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:8px 12px;font:600 13px/1 system-ui;cursor:pointer}
+.uploader-card button:hover{background:rgba(255,255,255,.14)}
+.uploader-card input[type="url"], .uploader-card input[type="number"]{width:100%;box-sizing:border-box;background:#0f1318;color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:8px 10px;font:13px system-ui}
+.uploader-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+.small{opacity:.85;font-size:12px}
+  `;
+  const st = document.createElement('style');
+  st.id='upload-ui-css';
+  st.textContent = css;
+  document.head.appendChild(st);
+})();
+
+function openChooserModal(){
+  return new Promise((resolve)=>{
+    const wrap = document.createElement('div');
+    wrap.className='uploader-backdrop';
+    wrap.innerHTML = `
+      <div class="uploader-card">
+        <h3>Ielādēt karti</h3>
+        <p>Vari augšupielādēt no <b>faila</b> vai ielikt <b>URL</b> (attēls vai PDF).</p>
+        <div class="uploader-row">
+          <button id="chFile">No faila…</button>
+          <button id="chUrl">No URL…</button>
+          <button id="chCancel">Atcelt</button>
+        </div>
+      </div>`;
+    document.body.appendChild(wrap);
+
+    const done = (v)=>{ try{document.body.removeChild(wrap);}catch(_){ } resolve(v); };
+
+    wrap.querySelector('#chCancel').onclick = ()=> done(null);
+    wrap.addEventListener('click', (e)=>{ if (e.target===wrap) done(null); });
+
+    wrap.querySelector('#chFile').onclick = ()=>{
+      const inp = document.createElement('input');
+      inp.type='file';
+      inp.accept='image/*,application/pdf';
+      inp.onchange = ()=> {
+        const file = inp.files && inp.files[0];
+        done(file ? {kind:'file', file} : null);
+      };
+      inp.click();
+    };
+
+    wrap.querySelector('#chUrl').onclick = ()=>{
+      const card = wrap.querySelector('.uploader-card');
+      card.innerHTML = `
+        <h3>Ielādēt no URL</h3>
+        <p>Ievadi attēla vai PDF saiti. (Ja serveris bloķē CORS, ielāde var neizdoties.)</p>
+        <input id="urlInput" type="url" placeholder="https://…">
+        <div class="uploader-actions">
+          <button id="urlCancel">Atcelt</button>
+          <button id="urlGo">Ielādēt</button>
+        </div>
+        <p class="small">Padoms: PDF ar vairākām lapām tiks importēta <b>viena</b> izvēlēta lapa.</p>`;
+      card.querySelector('#urlCancel').onclick = ()=>{ done(null); };
+      card.querySelector('#urlGo').onclick = ()=>{
+        const url = card.querySelector('#urlInput').value.trim();
+        if (!url) return;
+        done({kind:'url', url});
+      };
+    };
   });
 }
 
-// PDF → PNG dataURL (tikai 1 lapas PDF)
-function loadPdfAsPngDataURL(file, onOk, onErr) {
-  const fr = new FileReader();
-  fr.onload = function (e) {
-    const bytes = e.target.result;
-    const task = pdfjsLib.getDocument({ data: bytes });
+function openPdfPagePicker(total){
+  return new Promise((resolve)=>{
+    const wrap = document.createElement('div');
+    wrap.className='uploader-backdrop';
+    wrap.innerHTML = `
+      <div class="uploader-card">
+        <h3>PDF ar ${total} lapām</h3>
+        <p>Šī lietotne importē <b>vienu</b> lapu kā attēlu. Izvēlies lapu vai atcel.</p>
+        <input id="pg" type="number" min="1" max="${total}" value="1">
+        <div class="uploader-actions">
+          <button id="pCancel">Aizvērt</button>
+          <button id="pOk">Importēt</button>
+        </div>
+      </div>`;
+    document.body.appendChild(wrap);
+    const done=(v)=>{ try{document.body.removeChild(wrap);}catch(_){ } resolve(v); };
+    wrap.querySelector('#pCancel').onclick = ()=> done(null);
+    wrap.addEventListener('click', (e)=>{ if (e.target===wrap) done(null); });
 
-    task.promise.then(function (pdf) {
-      if (pdf.numPages !== 1) {
-        onErr && onErr('PDF jābūt tieši ar 1 lapu. Šim ir: ' + pdf.numPages + '.');
-        return;
+    wrap.querySelector('#pOk').onclick = ()=>{
+      const n = +wrap.querySelector('#pg').value || 1;
+      const pg = Math.min(total, Math.max(1, n));
+      done(pg);
+    };
+  });
+}
+
+// PDF → PNG dataURL (viena izvēlēta lapa)
+function renderPdfToDataURL(pdfBytes, pageNum, targetW=2000){
+  return pdfjsLib.getDocument({data:pdfBytes}).promise.then(pdf=>{
+    pageNum = Math.min(pdf.numPages, Math.max(1, pageNum||1));
+    return pdf.getPage(pageNum).then(page=>{
+      const v1 = page.getViewport({scale:1});
+      const scale = Math.max(1, targetW / v1.width);
+      const vp = page.getViewport({scale});
+      const c = document.createElement('canvas');
+      const cx = c.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      c.width  = Math.round(vp.width  * dpr);
+      c.height = Math.round(vp.height * dpr);
+      c.style.width  = Math.round(vp.width)  + 'px';
+      c.style.height = Math.round(vp.height) + 'px';
+      const rc = { canvasContext: cx, viewport: vp, transform: dpr!==1 ? [dpr,0,0,dpr,0,0] : null };
+      return page.render(rc).promise.then(()=>{
+        return c.toDataURL('image/png');
+      });
+    });
+  });
+}
+
+// Ielāde no URL (attēls vai PDF)
+function loadFromURL(url){
+  // PDF?
+  if (/\.pdf(\?|#|$)/i.test(url)) {
+    if (!window.pdfjsLib) { alert('PDF.js nav ielādēts.'); return; }
+    fetch(url).then(r=>{
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.arrayBuffer();
+    }).then(bytes=>{
+      return pdfjsLib.getDocument({data:bytes}).promise.then(async(pdf)=>{
+        let page = 1;
+        if (pdf.numPages>1){
+          const pick = await openPdfPagePicker(pdf.numPages);
+          if (!pick) return; // atcelts
+          page = pick;
+        }
+        return renderPdfToDataURL(bytes, page);
+      });
+    }).then(dataURL=>{
+      img.src = dataURL; // tālāk viss kā ar bildi
+    }).catch(err=>{
+      console.error(err);
+      alert('Neizdevās ielādēt PDF no URL (CORS vai kļūda).');
+    });
+    return;
+  }
+
+  // Attēls
+  try {
+    img.crossOrigin = 'anonymous'; // ja CORS atļauts, netaintos canvas
+  } catch(_){}
+  img.src = url;
+}
+
+// Ielāde no faila (attēls vai PDF)
+function loadFromFile(file){
+  const isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
+  if (isPdf){
+    if (!window.pdfjsLib) { alert('PDF.js nav ielādēts.'); return; }
+    const fr = new FileReader();
+    fr.onload = async (e)=>{
+      const bytes = e.target.result;
+      try{
+        const pdf = await pdfjsLib.getDocument({data:bytes}).promise;
+        let page = 1;
+        if (pdf.numPages>1){
+          const pick = await openPdfPagePicker(pdf.numPages);
+          if (!pick) return; // atcelts
+          page = pick;
+        }
+        const dataURL = await renderPdfToDataURL(bytes, page);
+        img.src = dataURL;
+      }catch(err){
+        console.error(err);
+        alert('Neizdevās apstrādāt PDF.');
       }
-      pdf.getPage(1).then(function (page) {
-        // renderē ~2000px platumā (vari mainīt)
-        const viewport1 = page.getViewport({ scale: 1 });
-        const targetW = 2000;
-        const scale = Math.max(1, targetW / viewport1.width);
-        const viewport = page.getViewport({ scale: scale });
+    };
+    fr.onerror = ()=> alert('Neizdevās nolasīt PDF failu.');
+    fr.readAsArrayBuffer(file);
+  } else if (/^image\//i.test(file.type)){
+    const r = new FileReader();
+    r.onload = e => { img.src = e.target.result; };
+    r.onerror = ()=> alert('Neizdevās nolasīt attēlu.');
+    r.readAsDataURL(file);
+  } else {
+    alert('Atbalstīti ir attēli vai PDF.');
+  }
+}
 
-        const c = document.createElement('canvas');
-        const cx = c.getContext('2d');
-        const dpr = window.devicePixelRatio || 1;
-
-        c.width = Math.round(viewport.width * dpr);
-        c.height = Math.round(viewport.height * dpr);
-        c.style.width = Math.round(viewport.width) + 'px';
-        c.style.height = Math.round(viewport.height) + 'px';
-
-        const renderCtx = {
-          canvasContext: cx,
-          viewport: viewport,
-          transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null
-        };
-
-        page.render(renderCtx).promise.then(function () {
-          try {
-            const dataURL = c.toDataURL('image/png');
-            onOk && onOk(dataURL);
-          } catch (ex) {
-            onErr && onErr('Neizdevās ģenerēt PNG no PDF.');
-          }
-        }, function () { onErr && onErr('Neizdevās uzzīmēt PDF lapu.'); });
-      }, function () { onErr && onErr('Neizdevās atvērt PDF lapu.'); });
-    }, function () { onErr && onErr('PDF fails nav nolasāms.'); });
-  };
-  fr.onerror = function () { onErr && onErr('Neizdevās nolasīt PDF failu.'); };
-  fr.readAsArrayBuffer(file);
+// Poga “Ielādēt karti”
+const uploadBtn = document.getElementById('uploadMap');
+if (uploadBtn){
+  uploadBtn.addEventListener('click', ()=>{
+    openChooserModal().then(choice=>{
+      if (!choice) return; // atcelts
+      if (choice.kind === 'file') loadFromFile(choice.file);
+      else if (choice.kind === 'url') loadFromURL(choice.url);
+    });
+  });
 }
 
 
 							
 
 						
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
