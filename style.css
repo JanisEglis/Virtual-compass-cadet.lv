@@ -1423,6 +1423,39 @@ body.preloading{ overflow: hidden; }
 							  grid-template-columns:unset;
 							  grid-auto-rows:unset;
 							}
+
+
+
+/* Fallback atstarpēm apakšā (strādā arī bez flex-gap) */
+#buttonContainer.bottom .dock-shell{
+  --gap-x: 22px;  /* horizontālā atstarpe starp pogām */
+  --gap-y: 12px;  /* vertikālā atstarpe starp rindām */
+
+  gap: 0 !important; /* nelietojam flex-gap, lai visur vienādi */
+  /* kompensējam iekšējos margin, lai čaulai nemainās ārējais izmērs */
+  margin: calc(-0.5 * var(--gap-y)) calc(-0.5 * var(--gap-x));
+}
+
+#buttonContainer.bottom .dock-shell > button{
+  margin: calc(0.5 * var(--gap-y)) calc(0.5 * var(--gap-x));
+}
+
+/* atstarpe starp pēdējo pogu rindu un slīdni */
+#buttonContainer.bottom .dock-dimmer{
+  margin: calc(0.5 * var(--gap-y)) auto 0 !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 							
 							/* Pogu bērni – fiksēts satura izmērs, lai nerautos pa 100% */
 							#buttonContainer.bottom .dock-shell > button{
