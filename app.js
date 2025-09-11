@@ -2196,7 +2196,7 @@ const h = resizeHandle.offsetHeight || parseInt(cs.height) || 12;
 
 // === Attēla / PDF (ar lappuses izvēli) augšupielāde — fails vai URL ===
 
-// Neliels stiliņš iekšā (vienkāršs modālis)
+// — mazs CSS modālim —
 (function injectUploadCSS(){
   if (document.getElementById('upload-ui-css')) return;
   const css = `
@@ -2259,7 +2259,7 @@ function openChooserModal(){
           <button id="urlCancel">Atcelt</button>
           <button id="urlGo">Ielādēt</button>
         </div>
-        <p class="small">Padoms: PDF ar vairākām lapām tiks importēta <b>viena</b> izvēlēta lapa.</p>`;
+        <p class="small">PDF ar vairākām lapām tiks importēta <b>viena</b> izvēlēta lapa.</p>`;
       card.querySelector('#urlCancel').onclick = ()=>{ done(null); };
       card.querySelector('#urlGo').onclick = ()=>{
         const url = card.querySelector('#urlInput').value.trim();
@@ -2288,7 +2288,6 @@ function openPdfPagePicker(total){
     const done=(v)=>{ try{document.body.removeChild(wrap);}catch(_){ } resolve(v); };
     wrap.querySelector('#pCancel').onclick = ()=> done(null);
     wrap.addEventListener('click', (e)=>{ if (e.target===wrap) done(null); });
-
     wrap.querySelector('#pOk').onclick = ()=>{
       const n = +wrap.querySelector('#pg').value || 1;
       const pg = Math.min(total, Math.max(1, n));
@@ -2297,15 +2296,34 @@ function openPdfPagePicker(total){
   });
 }
 
+// — palīgs: droša Uint8Array kopija (novērš “detached ArrayBuffer”) —
+function toPdfBytes(input){
+  if (input instanceof Uint8Array) {
+    // atgriežam kopiju, lai workeram būtu savs buferis
+    const {buffer, byteOffset, byteLength} = input;
+    return new Uint8Array(buffer.slice(byteOffset, byteOffset + byteLength));
+  }
+  if (input instanceof ArrayBuffer) {
+    return new Uint8Array(input.slice(0));
+  }
+  // citi TypedArray
+  if (ArrayBuffer.isView(input)) {
+    const {buffer, byteOffset, byteLength} = input;
+    return new Uint8Array(buffer.slice(byteOffset, byteOffset + byteLength));
+  }
+  throw new Error('Unsupported PDF bytes');
+}
+
 // PDF → PNG dataURL (viena izvēlēta lapa)
 function renderPdfToDataURL(pdfBytes, pageNum, targetW=2000){
-  return pdfjsLib.getDocument({data:pdfBytes}).promise.then(pdf=>{
+  const bytes = toPdfBytes(pdfBytes);
+  return pdfjsLib.getDocument({ data: bytes }).promise.then(pdf=>{
     pageNum = Math.min(pdf.numPages, Math.max(1, pageNum||1));
     return pdf.getPage(pageNum).then(page=>{
       const v1 = page.getViewport({scale:1});
       const scale = Math.max(1, targetW / v1.width);
       const vp = page.getViewport({scale});
-      const c = document.createElement('canvas');
+      const c  = document.createElement('canvas');
       const cx = c.getContext('2d');
       const dpr = window.devicePixelRatio || 1;
       c.width  = Math.round(vp.width  * dpr);
@@ -2313,72 +2331,80 @@ function renderPdfToDataURL(pdfBytes, pageNum, targetW=2000){
       c.style.width  = Math.round(vp.width)  + 'px';
       c.style.height = Math.round(vp.height) + 'px';
       const rc = { canvasContext: cx, viewport: vp, transform: dpr!==1 ? [dpr,0,0,dpr,0,0] : null };
-      return page.render(rc).promise.then(()=>{
-        return c.toDataURL('image/png');
-      });
+      return page.render(rc).promise.then(()=> c.toDataURL('image/png'));
     });
   });
 }
 
 // Ielāde no URL (attēls vai PDF)
 function loadFromURL(url){
-  // PDF?
-  if (/\.pdf(\?|#|$)/i.test(url)) {
-    if (!window.pdfjsLib) { alert('PDF.js nav ielādēts.'); return; }
-    fetch(url).then(r=>{
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      return r.arrayBuffer();
-    }).then(bytes=>{
-      return pdfjsLib.getDocument({data:bytes}).promise.then(async(pdf)=>{
-        let page = 1;
-        if (pdf.numPages>1){
-          const pick = await openPdfPagePicker(pdf.numPages);
-          if (!pick) return; // atcelts
-          page = pick;
-        }
-        return renderPdfToDataURL(bytes, page);
-      });
-    }).then(dataURL=>{
-      img.src = dataURL; // tālāk viss kā ar bildi
-    }).catch(err=>{
-      console.error(err);
-      alert('Neizdevās ielādēt PDF no URL (CORS vai kļūda).');
-    });
-    return;
-  }
+  const looksPdf = /\.pdf(\?|#|$)/i.test(url);
 
-  // Attēls
-  try {
-    img.crossOrigin = 'anonymous'; // ja CORS atļauts, netaintos canvas
-  } catch(_){}
-  img.src = url;
+  // Mēģinām ar fetch (CORS). Ja neizdodas un nav PDF — krītam atpakaļ uz <img src>.
+  fetch(url, { mode: 'cors' })
+    .then(async r=>{
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const ct = (r.headers.get('content-type')||'').toLowerCase();
+      if (looksPdf || ct.includes('application/pdf')) {
+        if (!window.pdfjsLib) throw new Error('PDF.js nav ielādēts');
+        const ab = await r.arrayBuffer();
+        return pdfjsLib.getDocument({ data: toPdfBytes(ab) }).promise.then(async(pdf)=>{
+          let page = 1;
+          if (pdf.numPages>1){
+            const pick = await openPdfPagePicker(pdf.numPages);
+            if (!pick) return null; // atcelts
+            page = pick;
+          }
+          return renderPdfToDataURL(ab, page);
+        });
+      } else if (ct.startsWith('image/')) {
+        const blob = await r.blob();
+        const urlObj = URL.createObjectURL(blob);
+        img.onload = () => { try{ URL.revokeObjectURL(urlObj); }catch(_){ } };
+        img.src = urlObj;
+        return null;
+      } else {
+        // nezināms tips — mēģinām kā <img src>
+        img.src = url;
+        return null;
+      }
+    })
+    .then(dataURL=>{
+      if (dataURL) img.src = dataURL; // PDF gadījums
+    })
+    .catch(err=>{
+      console.warn('[URL load]', err);
+      if (looksPdf) {
+        alert('Neizdevās ielādēt PDF no URL (CORS vai kļūda).');
+      } else {
+        // Fallback: vienkārši ieliekam <img src>, pat ja CORS nav
+        try { img.crossOrigin = 'anonymous'; } catch(_){}
+        img.src = url;
+      }
+    });
 }
 
 // Ielāde no faila (attēls vai PDF)
-function loadFromFile(file){
+async function loadFromFile(file){
   const isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
   if (isPdf){
     if (!window.pdfjsLib) { alert('PDF.js nav ielādēts.'); return; }
-    const fr = new FileReader();
-    fr.onload = async (e)=>{
-      const bytes = e.target.result;
-      try{
-        const pdf = await pdfjsLib.getDocument({data:bytes}).promise;
-        let page = 1;
-        if (pdf.numPages>1){
-          const pick = await openPdfPagePicker(pdf.numPages);
-          if (!pick) return; // atcelts
-          page = pick;
-        }
-        const dataURL = await renderPdfToDataURL(bytes, page);
-        img.src = dataURL;
-      }catch(err){
-        console.error(err);
-        alert('Neizdevās apstrādāt PDF.');
+    try{
+      // Stabilāk par FileReader + novērš “detached ArrayBuffer”
+      const ab = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: toPdfBytes(ab) }).promise;
+      let page = 1;
+      if (pdf.numPages>1){
+        const pick = await openPdfPagePicker(pdf.numPages);
+        if (!pick) return; // atcelts
+        page = pick;
       }
-    };
-    fr.onerror = ()=> alert('Neizdevās nolasīt PDF failu.');
-    fr.readAsArrayBuffer(file);
+      const dataURL = await renderPdfToDataURL(ab, page);
+      img.src = dataURL;
+    }catch(err){
+      console.error('[PDF faila ielāde]', err);
+      alert('Neizdevās apstrādāt PDF.');
+    }
   } else if (/^image\//i.test(file.type)){
     const r = new FileReader();
     r.onload = e => { img.src = e.target.result; };
@@ -2400,6 +2426,7 @@ if (uploadBtn){
     });
   });
 }
+
 
 
 							
