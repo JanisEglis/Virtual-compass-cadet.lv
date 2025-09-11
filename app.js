@@ -2779,7 +2779,12 @@ if (uploadBtn){
 
 
 
-
+/* Virsraksts + info centrēti, droši pārrakstam citu stilu ietekmi */
+.uploader-card > h3,
+.uploader-card > p{
+  text-align:center !important;
+  margin-left:auto; margin-right:auto;
+}
 
 
   `;
@@ -2848,50 +2853,51 @@ function openChooserModal(){
     };
 
 // — Drop zona (drag & drop + click) —
-(function(){
-  const drop = wrap.querySelector('#dropZone');
-  if (!drop) return; // ja marķups bez drop zonas — neko nedaram
+(function initDrop(){
+  var drop = wrap.querySelector('#dropZone');
+  if (!drop) return; // nav markup -> nav listeners
 
-  // neļaujam pārlūkam atvērt failu lapā
-  const prevent = (e)=>{ e.preventDefault(); e.stopPropagation(); };
-  ['dragenter','dragover','dragleave','drop'].forEach(ev=>{
+  // Nelaižam pārlūku “atvērt” failu lapā
+  var prevent = function(e){ e.preventDefault(); e.stopPropagation(); };
+  ['dragenter','dragover','dragleave','drop'].forEach(function(ev){
     drop.addEventListener(ev, prevent, false);
   });
 
-  // dziļuma skaitītājs, lai 'dragleave' no bērniem nenoņemtu stilu
-  let dragDepth = 0;
-  drop.addEventListener('dragenter', ()=>{ if (++dragDepth > 0) drop.classList.add('is-dragover'); });
-  drop.addEventListener('dragover',  ()=>{ drop.classList.add('is-dragover'); });
-  drop.addEventListener('dragleave', ()=>{ if (--dragDepth <= 0){ dragDepth = 0; drop.classList.remove('is-dragover'); }});
-  drop.addEventListener('drop', (e)=>{
-    dragDepth = 0;
-    drop.classList.remove('is-dragover');
-    const dt   = e.dataTransfer;
-    const file = (dt && dt.files && dt.files.length) ? dt.files[0] : null;
-    if (file) done({ kind:'file', file });
-  });
+  // Uzturam dziļumu, lai 'dragleave' no bērniem nenoņemtu stilu
+  var dragDepth = 0;
+  drop.addEventListener('dragenter', function(){ dragDepth++; drop.classList.add('is-dragover'); }, false);
+  drop.addEventListener('dragover',  function(){ drop.classList.add('is-dragover'); }, false);
+  drop.addEventListener('dragleave', function(){
+    dragDepth = Math.max(0, dragDepth-1);
+    if (!dragDepth) drop.classList.remove('is-dragover');
+  }, false);
+  drop.addEventListener('drop', function(e){
+    dragDepth = 0; drop.classList.remove('is-dragover');
+    var dt = e.dataTransfer;
+    var file = (dt && dt.files && dt.files.length) ? dt.files[0] : null;
+    if (file) done({ kind:'file', file: file });
+  }, false);
 
-  // klikšķis/tastatūra -> file picker
-  const pick = ()=>{
-    const inp = document.createElement('input');
+  // Klikšķis/tastatūra -> failu izvēle
+  function pick(){
+    var inp = document.createElement('input');
     inp.type = 'file';
     inp.accept = 'image/*,application/pdf';
-    inp.onchange = ()=> {
-      const f = inp.files && inp.files[0];
+    inp.onchange = function(){
+      var f = inp.files && inp.files[0];
       done(f ? { kind:'file', file:f } : null);
     };
     inp.click();
-  };
-
-  drop.addEventListener('click', pick);
-  drop.addEventListener('keydown', (e)=>{
-    const k = e.key || e.code;
-    if (k === 'Enter' || k === ' ' || k === 'Spacebar' || e.keyCode === 13 || e.keyCode === 32){
-      e.preventDefault();
-      pick();
+  }
+  drop.addEventListener('click', pick, false);
+  drop.addEventListener('keydown', function(e){
+    var k = e.key || e.code, kc = e.keyCode;
+    if (k === 'Enter' || k === ' ' || k === 'Spacebar' || kc === 13 || kc === 32){
+      e.preventDefault(); pick();
     }
-  });
+  }, false);
 })();
+
 
   });
 }
