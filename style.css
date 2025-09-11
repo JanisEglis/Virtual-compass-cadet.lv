@@ -448,15 +448,16 @@ body.preloading{ overflow: hidden; }
 							}
 
 							/* Nodrošinām, ka kompass vienmēr būs virs kanvas */
-							#compassContainer {
-							  position: absolute;
-							  width: 25vw;
-							  height: 14vw;
-							  z-index: 3; /* Ļoti liels z-index, lai pārietu pāri canvasa */
-							  transform-origin: center center;
-							  pointer-events: none;
-							  image-rendering: crisp-edges;
-							}
+/* defaulti modernajiem */
+#compassContainer{
+  position:absolute;
+  left: var(--compass-left, 50%);
+  top:  var(--compass-top,  50%);
+  transform: translate(-50%, -50%) rotate(var(--compass-rot, 0deg));
+  -webkit-transform: translate(-50%, -50%) rotate(var(--compass-rot, 0deg)); /* vecs WebKit */
+  -ms-transform: translate(-50%, -50%) rotate(var(--compass-rot, 0deg));      /* IE9+ */
+}
+
 
 							#rotateCompass90 {
 								background-color: rgba(91, 16, 16, 0.8);
