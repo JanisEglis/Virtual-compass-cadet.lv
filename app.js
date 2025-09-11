@@ -2501,30 +2501,34 @@ if (uploadBtn){
 
 							
 
-	// — DEVTOOL stila CSS modālim (kvadrātiskas pogas, centrētas, hover) —
-(function injectUploadCSS(){
-  if (document.getElementById('upload-ui-css')) return;
+// === Modal dizains (upsert: ja #upload-ui-css jau ir, pārrakstām) ===
+(function upsertUploadCSS(){
   const css = `
-.uploader-backdrop{position:fixed;inset:0;z-index:5000;display:grid;place-items:center;background:rgba(0,0,0,.55)}
+.uploader-backdrop{
+  position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483000;
+  display:grid;place-items:center;background:rgba(0,0,0,.55)
+}
 @supports ((backdrop-filter:blur(8px)) or (-webkit-backdrop-filter:blur(8px))){
-  .uploader-backdrop{backdrop-filter:saturate(1.2) blur(8px);-webkit-backdrop-filter:saturate(1.2) blur(8px);}
+  .uploader-backdrop{backdrop-filter:saturate(1.2) blur(8px);-webkit-backdrop-filter:saturate(1.2) blur(8px)}
 }
 .uploader-card{
-  min-width:300px;max-width:92vw;background:linear-gradient(180deg,#1b1f25,#2a0f0faa);
-  color:#eef2f7;border:1px solid rgba(255,255,255,.08);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.55);padding:14px
+  min-width:300px;max-width:92vw;
+  background:linear-gradient(180deg,#1b1f25,#2a0f0faa);
+  color:#eef2f7;border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.55);
+  padding:14px 14px 10px
 }
 .uploader-card h3{margin:0 0 8px;font:600 16px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Arial;letter-spacing:.2px}
 .uploader-card p{margin:6px 0 12px;opacity:.9;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial}
 .small{opacity:.85;font-size:12px}
 
-/* Centrētas pogas */
+/* centrētas pogas */
 .uploader-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;justify-content:center}
 .uploader-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;justify-content:center}
 
-/* Čaulas tipa pogas – bez noapaļojuma, ar hover/active */
+/* čaulas tipa, kvadrātiskas pogas */
 .uploader-card .btn{
-  appearance:none;border-radius:0;
-  border:1px solid #7f3a3a55;
+  appearance:none;border-radius:0;border:1px solid #7f3a3a55;
   background:linear-gradient(180deg,#7e2e2e,#5c2323);
   color:#fff;padding:10px 16px;font:600 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial;
   cursor:pointer;box-shadow:inset 0 0 0 1px #ffffff10,0 6px 18px rgba(0,0,0,.35);
@@ -2536,21 +2540,20 @@ if (uploadBtn){
 .uploader-card .btn:focus{outline:none}
 .uploader-card .btn:focus-visible{outline:2px solid #ffd2d2;outline-offset:1px}
 
-/* Neitrālāks sarkanais (primārās) */
+/* neitrālāks sarkanais (primārās) */
 .uploader-card .btn.primary{
   background:linear-gradient(180deg,#8d3b3b,#6a2f2f);
-  border-color:#b36a6a66;
+  border-color:#b36a6a66
 }
-
-/* Izteikti sarkana “Atcelt” */
+/* izteikti sarkana “Atcelt” */
 .uploader-card .btn.danger{
   background:linear-gradient(180deg,#e53935,#b71c1c);
-  border-color:#ff6e6e88;
+  border-color:#ff6e6e88
 }
 .uploader-card .btn.danger:hover{filter:brightness(1.04)}
 .uploader-card .btn.danger:active{transform:translateY(1px)}
 
-/* Lauki */
+/* lauki */
 .uploader-card input[type="url"], .uploader-card input[type="number"]{
   width:100%;box-sizing:border-box;background:#0f1318;color:#fff;border:1px solid rgba(255,255,255,.18);
   border-radius:10px;padding:9px 10px;font:13px system-ui,-apple-system,Segoe UI,Roboto,Arial
@@ -2558,15 +2561,18 @@ if (uploadBtn){
 .uploader-card input[type="url"]:focus, .uploader-card input[type="number"]:focus{
   outline:none;border-color:#ff9a9a66;box-shadow:0 0 0 2px #ff9a9a33 inset
 }
-@media (max-width:760px){.uploader-card{max-width:92vw}}
+@media (max-width:760px){.uploader-card{max-width:92vw}.uploader-card .btn{padding:12px 16px}}
   `;
-  const st = document.createElement('style');
-  st.id='upload-ui-css';
+  let st = document.getElementById('upload-ui-css');
+  if (!st) {
+    st = document.createElement('style');
+    st.id = 'upload-ui-css';
+    (document.head||document.documentElement).appendChild(st);
+  }
   st.textContent = css;
-  (document.head||document.documentElement).appendChild(st);
 })();
 
-// === markup izmaiņas: virsraksts, centrētas pogas, klases .btn/.primary/.danger ===
+// === Modāļi ar jauno galveni + klasēm ==============================
 function openChooserModal(){
   return new Promise((resolve)=>{
     const wrap = document.createElement('div');
@@ -2641,6 +2647,7 @@ function openPdfPagePicker(total){
     };
   });
 }
+
 					
 
 
