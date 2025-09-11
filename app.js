@@ -656,10 +656,6 @@ if (resizeHandle && !resizeHandle.dataset.bound) {
     const st = getComputedStyle(el);
 
 
-// nelietot polifilu uz doka vai tā pēcnācējiem
-if (el.closest('[data-no-gap-fix]')) continue;
-
-if (cs.display !== 'flex') continue;
 
 
 
@@ -2726,9 +2722,8 @@ on(byId("toggleInstruction"), "click", function() {
 							  shell.className = 'dock-shell';
 
 shell.setAttribute('data-no-gap-fix', '1');
+if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 
-const bc = document.getElementById('buttonContainer');
-if (bc) bc.setAttribute('data-no-gap-fix', '1');
 							
 							  // savācam tikai tiešos bērnus, kas ir pogas:
 							  var btns = [];
