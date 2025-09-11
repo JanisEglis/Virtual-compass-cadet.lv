@@ -2800,7 +2800,7 @@ function openChooserModal(){
     wrap.className='uploader-backdrop';
     wrap.innerHTML = `
       <div class="uploader-card">
-        <h3>Ielādēt karti</h3>
+        <h3>Augšuplādēt karti</h3>
         <hr class="divider">
         <p>Vari augšupielādēt no <b>faila</b> vai ielikt <b>URL</b> (attēls vai PDF).</p>
         <hr class="divider">
