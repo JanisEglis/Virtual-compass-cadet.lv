@@ -1393,13 +1393,15 @@ body.preloading{ overflow: hidden; }
 
 							/* === DIMMER (slīdnis) — izkārtojums un izmēri (PATCH) === */
 							
-							/* GRID čaula */
-							#buttonContainer .dock-shell{
-							  display:inline-grid;
-							  grid-column-gap:22px;
-							  grid-row-gap:12px;
-							  align-items:center;
-							}
+/* GRID čaula */
+
+#buttonContainer .dock-shell{
+  display:inline-grid;
+  /* gap strādā gan Grid, gan Flex */
+  gap: 12px 22px;          /* row-gap  column-gap */
+  /* ja gribi explicit: row-gap:12px; column-gap:22px; */
+  align-items:center;
+}
 							
 							/* APakšā: pati čaula ir flex-rinda, bez fiksēta platuma */
 							#buttonContainer.bottom .dock-shell{
