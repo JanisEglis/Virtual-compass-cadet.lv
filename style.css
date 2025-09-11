@@ -343,10 +343,10 @@ body.preloading{ overflow: hidden; }
 }
 
 /* Bultiņas virziens BEZ papildus JS (der, ja poga DOMā ir pēc paneļa) */
-.position-selector-container-left .toggle-selector-left::before{ content: "❮"; }          /* atvērts */
-.position-selector-container-left .position-selector-left.hidden ~ .toggle-selector-left::before{
+/*.position-selector-container-left .toggle-selector-left::before{ content: "❮"; }          /* atvērts */
+/*.position-selector-container-left .position-selector-left.hidden ~ .toggle-selector-left::before{
   content: "❯";                                                                                 /* aizvērts */
-}
+/*}*/
 
 						
 
