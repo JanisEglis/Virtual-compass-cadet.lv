@@ -543,6 +543,61 @@ updateButtonContainerPosition = function(position){
 
 
 
+
+
+
+
+
+
+
+// Pēc ielādes parāda abus selektorus uz brīdi un pēc 5s aizver
+function demoSelectorsAutoClose(delayMs = 5000){
+  const leftPanel  = document.querySelector('.position-selector-left');
+  const rightPanel = document.querySelector('.position-selector');
+  if (!leftPanel && !rightPanel) return;
+
+  // 1) Parādam (noņemam slēpšanas klases)
+  leftPanel  && leftPanel.classList.remove('hidden', 'hidden-left');
+  rightPanel && rightPanel.classList.remove('hidden');
+
+  // pārrēķinam drošās zonas
+  window.__updateMapSafeAreas && window.__updateMapSafeAreas();
+
+  // 2) Pēc delay aizveram abus
+  setTimeout(() => {
+    leftPanel  && leftPanel.classList.add('hidden-left');
+    rightPanel && rightPanel.classList.add('hidden');
+    window.__updateMapSafeAreas && window.__updateMapSafeAreas();
+  }, Math.max(0, +delayMs || 0));
+}
+
+// startējam pēc lapas ielādes
+window.addEventListener('load', () => demoSelectorsAutoClose(5000));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 						const canvas = document.getElementById('mapCanvas');
 						const ctx = canvas.getContext('2d');
 						const img = new Image();
