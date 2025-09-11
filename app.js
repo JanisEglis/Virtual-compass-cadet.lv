@@ -534,10 +534,10 @@ updateButtonContainerPosition = function(position){
 							}
 						
 	// kreisais panelis			
-							if (!leftPositionSelector.classList.contains('hidden-left')) {
-							leftPositionSelector.classList.add('hidden-left'); 
-							}
-						});
+	//						if (!leftPositionSelector.classList.contains('hidden-left')) {
+	//						leftPositionSelector.classList.add('hidden-left'); 
+	//						}
+	//					});
 
 })();						
 
