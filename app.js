@@ -2,6 +2,31 @@ console.info('[modern] app.js start');
 
 
 
+// RAF/CAF
+window.requestAnimationFrame = window.requestAnimationFrame
+  || window.webkitRequestAnimationFrame
+  || window.mozRequestAnimationFrame
+  || function(cb){ return setTimeout(cb, 16); };
+
+window.cancelAnimationFrame = window.cancelAnimationFrame
+  || window.webkitCancelAnimationFrame
+  || window.mozCancelAnimationFrame
+  || clearTimeout;
+
+// Idle
+window.requestIdleCallback ||= (cb, o={}) => setTimeout(cb, o.timeout || 1);
+window.cancelIdleCallback  ||= (id) => clearTimeout(id);
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2256,6 +2281,56 @@ function updateCompassTransform() {
 })();
 
 setTimeout(updateCompassTransform, 0);
+
+
+
+// LongTask → pārkrāso kompasu nākamajā kadra brīdī
+(function longTaskHeal(){
+  if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes?.includes('longtask')) {
+    const po = new PerformanceObserver(() => {
+      requestAnimationFrame(() => {
+        try { updateCompassTransform(); } catch(e){}
+      });
+    });
+    po.observe({ entryTypes: ['longtask'] });
+  }
+})();
+
+// “Watchdog” – līdz kompasa inline stāvoklis tiešām ir uzlikts
+(function compassWatchdog(){
+  const MAX_MS = 2000, STEP = 80;
+  let t = 0, id = null;
+
+  function tick(){
+    try { resetCompassToInitial(); updateCompassTransform(); } catch(e){}
+    const c = document.getElementById('compassContainer');
+    if (!c) { id = setTimeout(tick, STEP); t+=STEP; return; }
+
+    const cs   = getComputedStyle(c);
+    const left = parseFloat(cs.left)  || 0;
+    const top  = parseFloat(cs.top)   || 0;
+    const ok   = Math.abs(left - (COMPASS_INIT.left || 0)) < 1 &&
+                 Math.abs(top  - (COMPASS_INIT.top  || 0)) < 1;
+
+    if (!ok && t < MAX_MS) { id = setTimeout(tick, STEP); t+=STEP; }
+  }
+
+  // startē drīz, bet ne uzreiz (dod vietu citiem starta darbiem)
+  setTimeout(tick, 0);
+  window.addEventListener('load', tick, {once:true});
+})();
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
