@@ -446,8 +446,12 @@
 <script nomodule src="https://cdn.jsdelivr.net/npm/core-js-bundle/minified.js"></script>
 <script nomodule src="https://cdn.jsdelivr.net/npm/resize-observer-polyfill@1.5.1/dist/ResizeObserver.global.js"></script>
 
-
-
+<!-- PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js"></script>
+<script>
+  // obligāti norādi worker src (tā pati versija / ceļš, kas augstāk)
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.js";
+</script>
 
 
 <!-- Legacy/modern loader priekš Chrome 60–75 + mini-polyfilli (LABOTĀ VERSIJA) -->
