@@ -553,141 +553,155 @@ updateButtonContainerPosition = function(position){
 
 
 
-// === Auto-aizvēršana, ja panelī nav aktivitātes N sekundes ===
-(function(){
-  // iedarbina taimeri konkrētam panelim (labais vai kreisais)
-  function armSelectorIdleClose(panel, delayMs = 5000){
-    if (!panel) return;
-    const isLeft = panel.classList.contains('position-selector-left');
-    const btn = document.querySelector(isLeft ? '.toggle-selector-left' : '.toggle-selector');
 
-    // jau esošo “watcheru” noņemam, ja bija
-    if (panel._idleCleanup) { panel._idleCleanup(); }
+// ===== LEGACY-SAFE paneļu auto-demonstrācija un auto-aizvēršana =====
 
-    let tId = null;
-    const useCapture = true; // konsekvents capture, lai pēc tam var noņemt
+// Palīgi veciem pārlūkiem
+function qs(sel){ return document.querySelector(sel); }
+function hasClass(el, c){ if(!el) return false; return ('classList' in el) ? el.classList.contains(c) : new RegExp('(^|\\s)'+c+'(\\s|$)').test(el.className); }
+function addClass(el, c){
+  if(!el) return;
+  if('classList' in el){ el.classList.add(c); }
+  else if(!hasClass(el,c)){ el.className = (el.className+' '+c).replace(/\s+/g,' ').trim(); }
+}
+function removeClass(el, c){
+  if(!el) return;
+  if('classList' in el){ el.classList.remove(c); }
+  else { el.className = el.className.replace(new RegExp('(^|\\s)'+c+'(\\s|$)','g'),' ').replace(/\s+/g,' ').trim(); }
+}
+function setBtnText(btn, txt){ if(!btn) return; if('textContent' in btn) btn.textContent = txt; else btn.innerText = txt; }
 
-    const close = () => {
-      if (isLeft) {
-        panel.classList.add('hidden-left');
-        btn && (btn.textContent = '❯');   // kreisais aizvērts
-      } else {
-        panel.classList.add('hidden');
-        btn && (btn.textContent = '❮');   // labais aizvērts
-      }
-      window.__updateMapSafeAreas && window.__updateMapSafeAreas();
-      cleanup();
-    };
+// Konstantes
+var LEFT_PANEL_SEL  = '.position-selector-left';
+var RIGHT_PANEL_SEL = '.position-selector';
+var LEFT_BTN_SEL    = '.toggle-selector-left';
+var RIGHT_BTN_SEL   = '.toggle-selector';
 
-    const reset = () => {
-      clearTimeout(tId);
-      tId = setTimeout(close, Math.max(0, +delayMs||0));
-    };
+// Drošs “closeBoth” ar bultiņu sinhronizāciju
+function closeBothSelectorsLegacy(){
+  var leftPanel  = qs(LEFT_PANEL_SEL);
+  var rightPanel = qs(RIGHT_PANEL_SEL);
+  var leftBtn    = qs(LEFT_BTN_SEL);
+  var rightBtn   = qs(RIGHT_BTN_SEL);
 
-    // notikumi, kas skaitās “lieto paneli” → pārstartē taimeri
-    const evs = ['pointerdown','pointermove','wheel','touchstart','keydown','input','change','focusin','mousemove'];
-    const handler = () => reset();
-    evs.forEach(ev => panel.addEventListener(ev, handler, useCapture));
+  if(leftPanel){ addClass(leftPanel, 'hidden-left'); }
+  if(rightPanel){ addClass(rightPanel, 'hidden'); }
 
-    // startējam pirmo reizi
-    reset();
+  // bultiņas “AIZVĒRTS” stāvoklim
+  setBtnText(leftBtn,  '❯'); // kreisais aizvērts = “atvērt pa labi”
+  setBtnText(rightBtn, '❮'); // labais  aizvērts = “atvērt pa kreisi”
 
-    function cleanup(){
-      clearTimeout(tId);
-      evs.forEach(ev => panel.removeEventListener(ev, handler, useCapture));
-      panel._idleCleanup = null;
-    }
-    panel._idleCleanup = cleanup;
-  }
-
-  // piesaistām pie TAVĀM toggle pogām — kad panelis atvērts, iedarbina taimeri
-  const rightToggleBtn  = document.querySelector('.toggle-selector');
-  const rightPanel      = document.querySelector('.position-selector');
-  const leftToggleBtn   = document.querySelector('.toggle-selector-left');
-  const leftPanel       = document.querySelector('.position-selector-left');
-
-  if (rightToggleBtn && rightPanel){
-    rightToggleBtn.addEventListener('click', () => {
-      // ja pēc klikšķa LABAIS ir atvērts → armējam auto-close
-      if (!rightPanel.classList.contains('hidden')) {
-        armSelectorIdleClose(rightPanel, 5000);
-      } else if (rightPanel._idleCleanup){
-        rightPanel._idleCleanup(); // ja aizvēra manuāli – notīra listenerus
-      }
-    });
-  }
-
-  if (leftToggleBtn && leftPanel){
-    leftToggleBtn.addEventListener('click', () => {
-      // ja pēc klikšķa KREISAIS ir atvērts → armējam auto-close
-      if (!leftPanel.classList.contains('hidden-left')) {
-        armSelectorIdleClose(leftPanel, 5000);
-      } else if (leftPanel._idleCleanup){
-        leftPanel._idleCleanup();
-      }
-    });
-  }
-
-  // publiska palīgfunkcija, ja atver ar JS un gribi iedarbināt taimeri manuāli:
-  window.armSelectorIdleClose = armSelectorIdleClose;
-})();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Parādām abus paneļus, pēc delay aizveram un pārslēdzam bultiņas uz "aizvērts"
-function demoSelectorsAutoClose(delayMs = 5000){
-  const leftPanel  = document.querySelector('.position-selector-left');
-  const rightPanel = document.querySelector('.position-selector');
-
-  if (!leftPanel && !rightPanel) return;
-
-  // 1) īsi parādām
-  leftPanel  && leftPanel.classList.remove('hidden', 'hidden-left');
-  rightPanel && rightPanel.classList.remove('hidden');
-  window.__updateMapSafeAreas && window.__updateMapSafeAreas();
-
-  // 2) pēc delay aizveram (un bultiņas uz aizvērto virzienu)
-  clearTimeout(demoSelectorsAutoClose._t);
-  demoSelectorsAutoClose._t = setTimeout(() => {
-    if (typeof closeBothMenus === 'function') {
-      closeBothMenus(); // jau izdara: .hidden/.hidden-left + bultiņu tekstus
-    } else {
-      // rezerves variants, ja closeBothMenus nav
-      leftPanel  && leftPanel.classList.add('hidden-left');
-      rightPanel && rightPanel.classList.add('hidden');
-
-      const leftBtn  = document.querySelector('.toggle-selector-left');
-      const rightBtn = document.querySelector('.toggle-selector');
-      leftBtn  && (leftBtn.textContent  = '❯'); // kreisais: aizvērts = "atvērt pa labi"
-      rightBtn && (rightBtn.textContent = '❮'); // labais:  aizvērts = "atvērt pa kreisi"
-
-      window.__updateMapSafeAreas && window.__updateMapSafeAreas();
-    }
-  }, Math.max(0, +delayMs || 0));
+  if(window.__updateMapSafeAreas) window.__updateMapSafeAreas();
 }
 
-// startē pēc ielādes
-window.addEventListener('load', () => demoSelectorsAutoClose(5000));
+// Parādīt abus (uz īsu brīdi)
+function showBothSelectorsOnce(){
+  var leftPanel  = qs(LEFT_PANEL_SEL);
+  var rightPanel = qs(RIGHT_PANEL_SEL);
+  if(leftPanel){ removeClass(leftPanel, 'hidden-left'); removeClass(leftPanel, 'hidden'); }
+  if(rightPanel){ removeClass(rightPanel, 'hidden'); }
+  if(window.__updateMapSafeAreas) window.__updateMapSafeAreas();
+}
+
+// DEMO: pēc ielādes parāda un pēc N ms aizver ar pareizām bultiņām
+function demoSelectorsAutoCloseLegacy(delayMs){
+  delayMs = (+delayMs||0) > 0 ? +delayMs : 5000;
+  showBothSelectorsOnce();
+  if(demoSelectorsAutoCloseLegacy._t) clearTimeout(demoSelectorsAutoCloseLegacy._t);
+  demoSelectorsAutoCloseLegacy._t = setTimeout(closeBothSelectorsLegacy, delayMs);
+}
+
+// === Auto-aizvēršana bez aktivitātes panelī N sekundes (legacy events) ===
+function armSelectorIdleCloseLegacy(panel, delayMs){
+  if(!panel) return;
+  delayMs = (+delayMs||0) > 0 ? +delayMs : 5000;
+
+  // Notīri iepriekšējo “watcher”
+  if(panel._idleCleanup){ panel._idleCleanup(); }
+
+  var isLeft = hasClass(panel, 'position-selector-left');
+  var btn = qs(isLeft ? LEFT_BTN_SEL : RIGHT_BTN_SEL);
+  var tId = null;
+
+  function close(){
+    if(isLeft){ addClass(panel, 'hidden-left'); setBtnText(btn,'❯'); }
+    else      { addClass(panel, 'hidden');      setBtnText(btn,'❮'); }
+    if(window.__updateMapSafeAreas) window.__updateMapSafeAreas();
+    cleanup();
+  }
+  function reset(){
+    if(tId) clearTimeout(tId);
+    tId = setTimeout(close, delayMs);
+  }
+
+  // “Aktivitātes” notikumi ar legacy variantiem
+  var evs = [
+    'pointerdown','pointermove',       // moderni
+    'mousedown','mousemove','mouseup', // pele (fallback)
+    'touchstart','touchmove','touchend', // touch (legacy)
+    'wheel','mousewheel','DOMMouseScroll', // ritenis (vecie Firefox/IE)
+    'keydown','keyup','input','change','focus','focusin','click'
+  ];
+  function handler(){ reset(); }
+
+  for(var i=0;i<evs.length;i++){
+    try{ panel.addEventListener(evs[i], handler, true); }catch(e){}
+  }
+  // startē pirmais countdown
+  reset();
+
+  function cleanup(){
+    if(tId) clearTimeout(tId);
+    for(var i=0;i<evs.length;i++){
+      try{ panel.removeEventListener(evs[i], handler, true); }catch(e){}
+    }
+    panel._idleCleanup = null;
+  }
+  panel._idleCleanup = cleanup;
+}
+
+// Piesaisti taimeri tūlīt pēc atvēršanas ar tavu pogu
+function bindAutoCloseOnToggleLegacy(){
+  var leftBtn  = qs(LEFT_BTN_SEL);
+  var rightBtn = qs(RIGHT_BTN_SEL);
+  var leftPanel  = qs(LEFT_PANEL_SEL);
+  var rightPanel = qs(RIGHT_PANEL_SEL);
+
+  if(rightBtn && rightPanel){
+    rightBtn.addEventListener('click', function(){
+      // ja pēc klikšķa panelis ir atvērts, armē taimeri; ja aizvērts — notīri
+      if(!hasClass(rightPanel, 'hidden')) armSelectorIdleCloseLegacy(rightPanel, 5000);
+      else if(rightPanel._idleCleanup) rightPanel._idleCleanup();
+    }, false);
+  }
+  if(leftBtn && leftPanel){
+    leftBtn.addEventListener('click', function(){
+      if(!hasClass(leftPanel, 'hidden-left')) armSelectorIdleCloseLegacy(leftPanel, 5000);
+      else if(leftPanel._idleCleanup) leftPanel._idleCleanup();
+    }, false);
+  }
+}
+
+// Startē gan uz DOMContentLoaded, gan uz load (legacy drošībai)
+(function(){
+  function startAll(){
+    bindAutoCloseOnToggleLegacy();
+    // DEMO: parādi abus un aizver pēc 5s (bultiņas pareizi)
+    demoSelectorsAutoCloseLegacy(5000);
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', startAll, false);
+    window.addEventListener('load', startAll, false);
+  }else{
+    startAll();
+  }
+})();
+
+// Ja citur kodā gribi manuāli aizvērt abus ar pareizām bultiņām:
+window.closeBothSelectorsLegacy = closeBothSelectorsLegacy;
+// Ja vajag manuāli “armēt” idle-close, pieejams arī:
+window.armSelectorIdleCloseLegacy = armSelectorIdleCloseLegacy;
+
 
 
 
