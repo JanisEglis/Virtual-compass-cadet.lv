@@ -2067,12 +2067,12 @@ positionResizeHandle(getComputedStyle(canvas).display !== 'none');
 							const toggleRotationModeButton = document.getElementById('toggleRotationMode');
 							const lockRotationModeButton = document.getElementById('lockRotationMode');
 							const resetCompassButton = document.getElementById('resetCompass');
-							// Sākotnējās vērtības, lai atjaunotu kompasu
-							const initialCompassLeft = 550; // Sākotnējā X pozīcija
-							const initialCompassTop = 60; // Sākotnējā Y pozīcija
-							const initialGlobalScale = 1; // Sākotnējais mērogs
-							const initialBaseRotation = 0; // Sākotnējā bāzes rotācija
-							const initialScaleRotation = 70; // Sākotnējā skalas rotācija
+//							// Sākotnējās vērtības, lai atjaunotu kompasu
+//							const initialCompassLeft = 550; // Sākotnējā X pozīcija
+//							const initialCompassTop = 60; // Sākotnējā Y pozīcija
+//							const initialGlobalScale = 1; // Sākotnējais mērogs
+//							const initialBaseRotation = 0; // Sākotnējā bāzes rotācija
+//							const initialScaleRotation = 70; // Sākotnējā skalas rotācija
 
 
 						// Sākotnējie mainīgie priekš pārvietošanas, rotācijas, mēroga
@@ -2155,64 +2155,27 @@ if (toggleRotationModeButton) {
 						}
 
 						// Pārbaudām, vai poga eksistē
-						if (resetCompassButton) {
-							// Pievienojam klikšķa notikumu
-							resetCompassButton.addEventListener('click', () => {
-								
-								// Pievienojam CSS klasi, kas aktivizē pāreju
-								
-								compassContainer.classList.add('with-transition');
-								compassInner.classList.add('with-transition');
-								compassScaleInner.classList.add('with-transition');
-								compassScaleContainer.classList.add('with-transition'); // Jaunā daļa
-								
-							
+if (resetCompassButton) {
+  resetCompassButton.addEventListener('click', () => {
+    // gludai animācijai
+    compassContainer.classList.add('with-transition');
+    compassInner.classList.add('with-transition');
+    compassScaleInner.classList.add('with-transition');
+    compassScaleContainer.classList.add('with-transition');
 
+    // reāli atjauno sākumstāvokli
+    resetCompassToInitial();
 
-// Atjaunojam kompasu
-    updateCompassTransform();
-
-
-
-
-
-
-
-const COMPASS_INIT = { left: 550, top: 60, scale: 1, base: 0, scaleRot: 70 };
-
-function resetCompassToInitial(){
-  compassStartLeft = COMPASS_INIT.left;
-  compassStartTop  = COMPASS_INIT.top;
-  globalScale      = COMPASS_INIT.scale;
-  baseRotation     = COMPASS_INIT.base;
-  scaleRotation    = COMPASS_INIT.scaleRot;
-  updateCompassTransform();
+    // pēc pārejas noņem klases
+    setTimeout(() => {
+      compassContainer.classList.remove('with-transition');
+      compassInner.classList.remove('with-transition');
+      compassScaleInner.classList.remove('with-transition');
+      compassScaleContainer.classList.remove('with-transition');
+    }, 500);
+  });
 }
 
-
-
-
-
-
-
-
-
-
-
-								
-								// Atjaunojam kompasu (tiek pārvietots atpakaļ sākuma stāvoklī)
-								updateCompassTransform();
-
-								// Noņemam klasi pēc 0.5 sekundēm (pēc pārejas beigām)
-								setTimeout(() => {
-								 
-									compassContainer.classList.remove('with-transition');
-									compassInner.classList.remove('with-transition');
-									compassScaleInner.classList.remove('with-transition');
-									compassScaleContainer.classList.remove('with-transition');
-								}, 500); // Pārejas ilgums (0.5s)
-							});
-						}
 
 
 						// Atjauno transformācijas
@@ -2224,14 +2187,36 @@ function updateCompassTransform() {
   const scaleInner  = document.getElementById('compassScaleInner');
   if (!container || !inner || !scaleWrap || !scaleInner) return;
 
-  // ‘important’ palīdz pret agresīvu CSS
+  // 1) FORCĒTA pozicionēšana (der arī vecajiem dzinējiem)
+  container.style.setProperty('position','absolute','important');
   container.style.setProperty('left', compassStartLeft + 'px', 'important');
   container.style.setProperty('top',  compassStartTop  + 'px', 'important');
 
-  scaleWrap.style.transform  = 'scale(' + globalScale + ')';
-  inner.style.transform      = 'rotate(' + baseRotation + 'deg)';
-  scaleInner.style.transform = 'rotate(' + scaleRotation + 'deg)';
+  // 2) NEITRALIZĒ jebkuru CSS translate uz konteinera
+  var t0 = 'translate(0,0)';
+  container.style.transform       = t0;
+  container.style.webkitTransform = t0;  // vecs WebKit
+  container.style.msTransform     = t0;  // IE9–11
+
+  // 3) Mērogs visam kompasam
+  var s = 'scale(' + globalScale + ')';
+  scaleWrap.style.transform       = s;
+  scaleWrap.style.webkitTransform = s;
+  scaleWrap.style.msTransform     = s;
+
+  // 4) Rotācija bāzei
+  var r1 = 'rotate(' + baseRotation + 'deg)';
+  inner.style.transform       = r1;
+  inner.style.webkitTransform = r1;
+  inner.style.msTransform     = r1;
+
+  // 5) Rotācija skalai
+  var r2 = 'rotate(' + scaleRotation + 'deg)';
+  scaleInner.style.transform       = r2;
+  scaleInner.style.webkitTransform = r2;
+  scaleInner.style.msTransform     = r2;
 }
+
 
 
 
@@ -2269,6 +2254,7 @@ function updateCompassTransform() {
   }
 })();
 
+setTimeout(updateCompassTransform, 0);
 
 
 
