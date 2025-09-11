@@ -550,29 +550,41 @@ updateButtonContainerPosition = function(position){
 
 
 
-// Pēc ielādes parāda abus selektorus uz brīdi un pēc 5s aizver
+// Parādām abus paneļus, pēc delay aizveram un pārslēdzam bultiņas uz "aizvērts"
 function demoSelectorsAutoClose(delayMs = 5000){
   const leftPanel  = document.querySelector('.position-selector-left');
   const rightPanel = document.querySelector('.position-selector');
+
   if (!leftPanel && !rightPanel) return;
 
-  // 1) Parādam (noņemam slēpšanas klases)
+  // 1) īsi parādām
   leftPanel  && leftPanel.classList.remove('hidden', 'hidden-left');
   rightPanel && rightPanel.classList.remove('hidden');
-
-  // pārrēķinam drošās zonas
   window.__updateMapSafeAreas && window.__updateMapSafeAreas();
 
-  // 2) Pēc delay aizveram abus
-  setTimeout(() => {
-    leftPanel  && leftPanel.classList.add('hidden-left');
-    rightPanel && rightPanel.classList.add('hidden');
-    window.__updateMapSafeAreas && window.__updateMapSafeAreas();
+  // 2) pēc delay aizveram (un bultiņas uz aizvērto virzienu)
+  clearTimeout(demoSelectorsAutoClose._t);
+  demoSelectorsAutoClose._t = setTimeout(() => {
+    if (typeof closeBothMenus === 'function') {
+      closeBothMenus(); // jau izdara: .hidden/.hidden-left + bultiņu tekstus
+    } else {
+      // rezerves variants, ja closeBothMenus nav
+      leftPanel  && leftPanel.classList.add('hidden-left');
+      rightPanel && rightPanel.classList.add('hidden');
+
+      const leftBtn  = document.querySelector('.toggle-selector-left');
+      const rightBtn = document.querySelector('.toggle-selector');
+      leftBtn  && (leftBtn.textContent  = '❯'); // kreisais: aizvērts = "atvērt pa labi"
+      rightBtn && (rightBtn.textContent = '❮'); // labais:  aizvērts = "atvērt pa kreisi"
+
+      window.__updateMapSafeAreas && window.__updateMapSafeAreas();
+    }
   }, Math.max(0, +delayMs || 0));
 }
 
-// startējam pēc lapas ielādes
+// startē pēc ielādes
 window.addEventListener('load', () => demoSelectorsAutoClose(5000));
+
 
 
 
