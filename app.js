@@ -2502,8 +2502,11 @@ if (uploadBtn){
 							
 
 // === Modal dizains (upsert: ja #upload-ui-css jau ir, pārrakstām) ===
-(function upsertUploadCSS(){
+// — DEVTOOL dizains, tikai CSS (upsert) —
+(function injectUploadCSS(){
+  const id = 'upload-ui-css';
   const css = `
+/* Backdrop ar blur (ar fallback vecākiem pārlūkiem) */
 .uploader-backdrop{
   position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483000;
   display:grid;place-items:center;background:rgba(0,0,0,.55)
@@ -2511,49 +2514,58 @@ if (uploadBtn){
 @supports ((backdrop-filter:blur(8px)) or (-webkit-backdrop-filter:blur(8px))){
   .uploader-backdrop{backdrop-filter:saturate(1.2) blur(8px);-webkit-backdrop-filter:saturate(1.2) blur(8px)}
 }
+
+/* Kārte (devtool tumšais tonis) */
 .uploader-card{
   min-width:300px;max-width:92vw;
-  background:linear-gradient(180deg,#1b1f25,#2a0f0faa);
+  background:linear-gradient(180deg,#1b1f25 0%, #2a0f0faa 100%);
   color:#eef2f7;border:1px solid rgba(255,255,255,.08);
   border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.55);
   padding:14px 14px 10px
 }
-.uploader-card h3{margin:0 0 8px;font:600 16px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Arial;letter-spacing:.2px}
+
+/* Virsraksts: rādam “Augšupādēt karti”, bet neko nemainām funkcijās */
+.uploader-card h3{
+  margin:0 0 8px;font:600 16px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Arial;letter-spacing:.2px;
+  position:relative;color:transparent
+}
+.uploader-card h3::after{
+  content:"Augšupādēt karti";
+  color:#eef2f7
+}
+
+/* Teksta rindkopa (atstājam kā ir) */
 .uploader-card p{margin:6px 0 12px;opacity:.9;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial}
 .small{opacity:.85;font-size:12px}
 
-/* centrētas pogas */
+/* Centrētas pogas abās rindās */
 .uploader-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;justify-content:center}
 .uploader-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;justify-content:center}
 
-/* čaulas tipa, kvadrātiskas pogas */
-.uploader-card .btn{
-  appearance:none;border-radius:0;border:1px solid #7f3a3a55;
-  background:linear-gradient(180deg,#7e2e2e,#5c2323);
+/* Pogu “čaulas” stils — kvadrātiskas, hover/active, skārienam draudzīgas */
+.uploader-card button{
+  appearance:none;border-radius:0;
+  border:1px solid #7f3a3a55;
+  background:linear-gradient(180deg,#8d3b3b,#6a2f2f); /* neitrāls sarkanais */
   color:#fff;padding:10px 16px;font:600 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial;
   cursor:pointer;box-shadow:inset 0 0 0 1px #ffffff10,0 6px 18px rgba(0,0,0,.35);
   -webkit-tap-highlight-color:transparent;touch-action:manipulation;
   transition:filter .12s ease, transform .06s ease, box-shadow .12s ease
 }
-.uploader-card .btn:hover{filter:brightness(1.06)}
-.uploader-card .btn:active{transform:translateY(1px)}
-.uploader-card .btn:focus{outline:none}
-.uploader-card .btn:focus-visible{outline:2px solid #ffd2d2;outline-offset:1px}
+.uploader-card button:hover{filter:brightness(1.06)}
+.uploader-card button:active{transform:translateY(1px)}
+.uploader-card button:focus{outline:none}
+.uploader-card button:focus-visible{outline:2px solid #ffd2d2;outline-offset:1px}
 
-/* neitrālāks sarkanais (primārās) */
-.uploader-card .btn.primary{
-  background:linear-gradient(180deg,#8d3b3b,#6a2f2f);
-  border-color:#b36a6a66
+/* “Atcelt” — izteikti sarkans visiem atcelšanas ID (nemainot markup) */
+#chCancel, #pCancel, #urlCancel{
+  background:linear-gradient(180deg,#e53935,#b71c1c)!important;
+  border-color:#ff6e6e88!important
 }
-/* izteikti sarkana “Atcelt” */
-.uploader-card .btn.danger{
-  background:linear-gradient(180deg,#e53935,#b71c1c);
-  border-color:#ff6e6e88
-}
-.uploader-card .btn.danger:hover{filter:brightness(1.04)}
-.uploader-card .btn.danger:active{transform:translateY(1px)}
+#chCancel:hover, #pCancel:hover, #urlCancel:hover{filter:brightness(1.04)}
+#chCancel:active, #pCancel:active, #urlCancel:active{transform:translateY(1px)}
 
-/* lauki */
+/* Lauki */
 .uploader-card input[type="url"], .uploader-card input[type="number"]{
   width:100%;box-sizing:border-box;background:#0f1318;color:#fff;border:1px solid rgba(255,255,255,.18);
   border-radius:10px;padding:9px 10px;font:13px system-ui,-apple-system,Segoe UI,Roboto,Arial
@@ -2561,92 +2573,18 @@ if (uploadBtn){
 .uploader-card input[type="url"]:focus, .uploader-card input[type="number"]:focus{
   outline:none;border-color:#ff9a9a66;box-shadow:0 0 0 2px #ff9a9a33 inset
 }
-@media (max-width:760px){.uploader-card{max-width:92vw}.uploader-card .btn{padding:12px 16px}}
+
+/* Mobilais */
+@media (max-width:760px){
+  .uploader-card{max-width:92vw}
+  .uploader-card button{padding:12px 16px}
+}
   `;
-  let st = document.getElementById('upload-ui-css');
-  if (!st) {
-    st = document.createElement('style');
-    st.id = 'upload-ui-css';
-    (document.head||document.documentElement).appendChild(st);
-  }
+  let st = document.getElementById(id);
+  if (!st){ st = document.createElement('style'); st.id=id; (document.head||document.documentElement).appendChild(st); }
   st.textContent = css;
 })();
 
-// === Modāļi ar jauno galveni + klasēm ==============================
-function openChooserModal(){
-  return new Promise((resolve)=>{
-    const wrap = document.createElement('div');
-    wrap.className='uploader-backdrop';
-    wrap.innerHTML = `
-      <div class="uploader-card">
-        <h3>Augšupādēt karti</h3>
-        <p>Vari augšupielādēt no <b>faila</b> vai ielikt <b>URL</b> (attēls vai PDF).</p>
-        <div class="uploader-row">
-          <button class="btn primary" id="chFile">No faila…</button>
-          <button class="btn primary" id="chUrl">No URL…</button>
-          <button class="btn danger"  id="chCancel">Atcelt</button>
-        </div>
-      </div>`;
-    document.body.appendChild(wrap);
-
-    const done = (v)=>{ try{document.body.removeChild(wrap);}catch(_){ } resolve(v); };
-
-    wrap.querySelector('#chCancel').onclick = ()=> done(null);
-    wrap.addEventListener('click', (e)=>{ if (e.target===wrap) done(null); });
-
-    wrap.querySelector('#chFile').onclick = ()=>{
-      const inp = document.createElement('input');
-      inp.type='file'; inp.accept='image/*,application/pdf';
-      inp.onchange = ()=> { const file = inp.files && inp.files[0]; done(file ? {kind:'file', file} : null); };
-      inp.click();
-    };
-
-    wrap.querySelector('#chUrl').onclick = ()=>{
-      const card = wrap.querySelector('.uploader-card');
-      card.innerHTML = `
-        <h3>Augšupādēt karti</h3>
-        <p>Vari augšupielādēt no <b>faila</b> vai ielikt <b>URL</b> (attēls vai PDF).</p>
-        <input id="urlInput" type="url" placeholder="https://…">
-        <div class="uploader-actions">
-          <button class="btn danger"  id="urlCancel">Atcelt</button>
-          <button class="btn primary" id="urlGo">Ielādēt</button>
-        </div>
-        <p class="small">PDF ar vairākām lapām tiks importēta <b>viena</b> izvēlēta lapa.</p>`;
-      card.querySelector('#urlCancel').onclick = ()=>{ done(null); };
-      card.querySelector('#urlGo').onclick = ()=>{
-        const url = card.querySelector('#urlInput').value.trim();
-        if (!url) return;
-        done({kind:'url', url});
-      };
-    };
-  });
-}
-
-function openPdfPagePicker(total){
-  return new Promise((resolve)=>{
-    const wrap = document.createElement('div');
-    wrap.className='uploader-backdrop';
-    wrap.innerHTML = `
-      <div class="uploader-card">
-        <h3>Augšupādēt karti</h3>
-        <p>Šī lietotne importē <b>vienu</b> lapu kā attēlu. Izvēlies lapu vai atcel.</p>
-        <input id="pg" type="number" min="1" max="${total}" value="1">
-        <div class="uploader-actions">
-          <button class="btn danger"  id="pCancel">Atcelt</button>
-          <button class="btn primary" id="pOk">Importēt</button>
-        </div>
-      </div>`;
-    document.body.appendChild(wrap);
-    const done=(v)=>{ try{document.body.removeChild(wrap);}catch(_){ } resolve(v); };
-    wrap.querySelector('#pCancel').onclick = ()=> done(null);
-    wrap.addEventListener('click', (e)=>{ if (e.target===wrap) done(null); });
-    wrap.querySelector('#pOk').onclick = ()=>{
-      const n = +wrap.querySelector('#pg').value || 1;
-      const pg = Math.min(total, Math.max(1, n));
-      done(pg);
-    };
-  });
-}
 
 					
 
