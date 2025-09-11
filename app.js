@@ -2094,6 +2094,26 @@ positionResizeHandle(getComputedStyle(canvas).display !== 'none');
 let lastRotation = 0;     // pinch/rotate aprēķinam
 
 
+
+
+// Sākumstāvoklis vienuviet
+const COMPASS_INIT = { left: 550, top: 60, scale: 1, base: 0, scaleRot: 70 };
+
+function resetCompassToInitial(){
+  compassStartLeft = COMPASS_INIT.left;
+  compassStartTop  = COMPASS_INIT.top;
+  globalScale      = COMPASS_INIT.scale;
+  baseRotation     = COMPASS_INIT.base;
+  scaleRotation    = COMPASS_INIT.scaleRot;
+  updateCompassTransform();
+}
+
+
+
+
+
+
+
 						// Helper funkcijas
 						function getDistance(touch1, touch2) {
 						  const dx = touch2.clientX - touch1.clientX;
@@ -2146,12 +2166,7 @@ if (toggleRotationModeButton) {
 								compassScaleInner.classList.add('with-transition');
 								compassScaleContainer.classList.add('with-transition'); // Jaunā daļa
 								
-								// Atjaunojam sākotnējos mainīgos
-								compassStartLeft = 550; // sākotnējā pozīcija pa kreisi
-								compassStartTop = 60;   // sākotnējā pozīcija pa augšu
-								globalScale = 1;        // sākotnējais mērogs
-								baseRotation = 0;       // sākotnējā rotācija
-								scaleRotation = 70;      // sākotnējā skalas rotācija
+							
 
 
 // Atjaunojam kompasu
@@ -2462,16 +2477,8 @@ function updateCompassTransform() {
 								});
 
 							// Kad logs ielādējas, novietojam kompasu sākuma pozīcijā
-								window.addEventListener('load', () => {
-								  const windowWidth = window.innerWidth;
-								  const windowHeight = window.innerHeight;
+window.addEventListener('load', resetCompassToInitial);
 
-
-								  // Varat pielāgot sākuma pozīciju pēc vajadzības
-								  compassStartLeft = 550;
-								  compassStartTop = 60;
-								  updateCompassTransform();
-								});
 							
 
 	
