@@ -326,27 +326,19 @@ body.preloading{ overflow: hidden; }
 							}
 
 							/* Kreisās puses bultiņa */
-							.position-selector-container-left .toggle-selector-left {
-								position: absolute;
-								top: 50%;
-								right: -30px; 
-								transform: translateY(-50%);
-								background-color: rgba(255, 0, 51, 0.7);
-								border: none;
-								color: white;
-								border-radius: 0 10px 10px 0; 
-								width: 30px;
-								height: 100%;
-								cursor: pointer;
-								font-size: 14px;
-								text-align: center;
-								line-height: 30px;
-							}
 
-							.position-selector-container-left .toggle-selector-left:hover {
-								background-color: rgba(255, 0, 0, 0.9);
-							}
 
+
+/* Kreisās puses slēpšana/atvēršana – paliek kā tev */
+.position-selector-left.hidden { transform: translateX(-100%); }
+
+
+
+/* Bultiņas virziens BEZ papildus JS (der, ja poga DOMā ir pēc paneļa) */
+.position-selector-container-left .toggle-selector-left::before{ content: "❮"; }          /* atvērts */
+.position-selector-container-left .position-selector-left.hidden ~ .toggle-selector-left::before{
+  content: "❯";                                                                                 /* aizvērts */
+}
 
 						
 
@@ -636,38 +628,54 @@ body.preloading{ overflow: hidden; }
 							}
 
 							/* Kreisās puses slēpšanas animācija */
-							.position-selector-left.hidden-left {
+							.position-selector-left.hidden {
 								transform: translateX(-100%); /* Pilnībā paslēpta kreisajā malā */
 							}
 
-							.position-selector-left {
-								transform: translateX(0); /* Redzama */
-							}
+							
 
 
 
 							/* Kreisās puses bultiņa */
-							.toggle-selector-left {
-								position: absolute;
-								top: 50%;
-								
-								transform: translateY(-50%);
-								background-color: rgba(255, 0, 51, 0.7);
-								border: none;
-								color: white;
-								border-radius: 0 10px 10px 0; /* Tikai labā puse noapaļota */
-								width: 30px;
-								height: 100%;
-								cursor: pointer;
-								font-size: 14px;
-								text-align: center;
-								line-height: 30px;
-							}
+
+
+
+/* Kreisā bultiņa – piesieta pie konteinera un izstumta pa labo malu */
+.position-selector-container-left .toggle-selector-left{
+  position: absolute;
+  top: 50%;
+  right: -30px;
+  transform: translateY(-50%);
+  background-color: rgba(255, 0, 51, 0.7);
+  border: none;
+  color: #fff;
+  border-radius: 0 10px 10px 0;
+  width: 30px;
+  height: 100%;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.position-selector-container-left .toggle-selector-left:hover{
+  background-color: rgba(255, 0, 0, 0.9);
+}
+
+
+
+
+
+
+
+
+
 
 							/* Hover efekts bultiņai */
-							.toggle-selector-left:hover {
-								background-color: rgba(255, 0, 0, 0.9);
-							}
+							
 
 							/* Izvēles lodziņš */
 							.position-selector-left select {
@@ -2154,7 +2162,7 @@ body.preloading{ overflow: hidden; }
 
 /* Kad paneļi paslēpti – lai tie vispār neķertu peles/touch */
 .position-selector.hidden,
-.position-selector-left.hidden-left {
+.position-selector-left.hidden {
   pointer-events: none !important; /* ja gribi animāciju, atstāj display un lieto opacity */
   /* display: none;  ← ja animācijas nevajag, šis arī der */
 }
