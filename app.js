@@ -2173,26 +2173,91 @@ const h = resizeHandle.offsetHeight || parseInt(cs.height) || 12;
 
 
 
-						// Attēla augšupielāde
-						const uploadBtn = document.getElementById('uploadMap');
-						if (uploadBtn) {
-							uploadBtn.addEventListener('click', () => {
-								const fileInput = document.createElement('input');
-								fileInput.type = 'file';
-								fileInput.accept = 'image/*';
-								fileInput.addEventListener('change', (event) => {
-									const file = event.target.files[0];
-									if (file) {
-										const reader = new FileReader();
-										reader.onload = (e) => {
-											img.src = e.target.result; // Ielādē attēlu
-										};
-										reader.readAsDataURL(file);
-									}
-								});
-								fileInput.click();
-							});
-						}
+// Attēla / PDF (1 lapa) augšupielāde
+const uploadBtn = document.getElementById('uploadMap');
+if (uploadBtn) {
+  uploadBtn.addEventListener('click', function () {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*,application/pdf';
+    fileInput.addEventListener('change', function (event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
+
+      if (isPdf) {
+        if (!window.pdfjsLib) {
+          alert('PDF atbalsts nav pieejams (trūkst PDF.js). Lūdzu, ielādē attēlu vai ieslēdz PDF.js.');
+          return;
+        }
+        loadPdfAsPngDataURL(file, function (dataURL) {
+          img.src = dataURL; // pēc tam strādā tieši kā ar IMG
+        }, function (errMsg) {
+          alert(errMsg || 'Neizdevās ielādēt PDF.');
+        });
+      } else if (/^image\//i.test(file.type)) {
+        const reader = new FileReader();
+        reader.onload = function (e) { img.src = e.target.result; };
+        reader.onerror = function () { alert('Neizdevās nolasīt attēlu.'); };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Atbalstīti ir attēli vai 1-lapas PDF.');
+      }
+    }, { once: true });
+    fileInput.click();
+  });
+}
+
+// PDF → PNG dataURL (tikai 1 lapas PDF)
+function loadPdfAsPngDataURL(file, onOk, onErr) {
+  const fr = new FileReader();
+  fr.onload = function (e) {
+    const bytes = e.target.result;
+    const task = pdfjsLib.getDocument({ data: bytes });
+
+    task.promise.then(function (pdf) {
+      if (pdf.numPages !== 1) {
+        onErr && onErr('PDF jābūt tieši ar 1 lapu. Šim ir: ' + pdf.numPages + '.');
+        return;
+      }
+      pdf.getPage(1).then(function (page) {
+        // renderē ~2000px platumā (vari mainīt)
+        const viewport1 = page.getViewport({ scale: 1 });
+        const targetW = 2000;
+        const scale = Math.max(1, targetW / viewport1.width);
+        const viewport = page.getViewport({ scale: scale });
+
+        const c = document.createElement('canvas');
+        const cx = c.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+
+        c.width = Math.round(viewport.width * dpr);
+        c.height = Math.round(viewport.height * dpr);
+        c.style.width = Math.round(viewport.width) + 'px';
+        c.style.height = Math.round(viewport.height) + 'px';
+
+        const renderCtx = {
+          canvasContext: cx,
+          viewport: viewport,
+          transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null
+        };
+
+        page.render(renderCtx).promise.then(function () {
+          try {
+            const dataURL = c.toDataURL('image/png');
+            onOk && onOk(dataURL);
+          } catch (ex) {
+            onErr && onErr('Neizdevās ģenerēt PNG no PDF.');
+          }
+        }, function () { onErr && onErr('Neizdevās uzzīmēt PDF lapu.'); });
+      }, function () { onErr && onErr('Neizdevās atvērt PDF lapu.'); });
+    }, function () { onErr && onErr('PDF fails nav nolasāms.'); });
+  };
+  fr.onerror = function () { onErr && onErr('Neizdevās nolasīt PDF failu.'); };
+  fr.readAsArrayBuffer(file);
+}
+
 
 							
 
