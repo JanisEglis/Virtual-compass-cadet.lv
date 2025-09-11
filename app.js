@@ -537,7 +537,7 @@ updateButtonContainerPosition = function(position){
 	//						if (!leftPositionSelector.classList.contains('hidden-left')) {
 	//						leftPositionSelector.classList.add('hidden-left'); 
 	//						}
-	//					});
+						});
 
 })();						
 
