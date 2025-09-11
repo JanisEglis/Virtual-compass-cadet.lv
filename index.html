@@ -436,21 +436,12 @@
 
 
 	<!-- Ievieto ŠO bloku <head> daļā pirms jebkā, kas izmanto PDF.js -->
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.min.js"></script>
 <script>
-(function () {
-  var s = document.createElement('script');
-  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js';
-  s.onload = function () {
-    console.log('PDF.js loaded:', !!window.pdfjsLib);
-    // uzstādi workeru
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.js';
-  };
-  s.onerror = function (e) {
-    console.error('PDF.js load error', e);
-  };
-  document.head.appendChild(s);
-})();
+  // norādi workera failu
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.worker.min.js";
+  console.log('PDF.js OK?', !!window.pdfjsLib, pdfjsLib && pdfjsLib.version);
 </script>
 
 
