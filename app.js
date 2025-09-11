@@ -2971,7 +2971,31 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 							  if(isVertical()) shell.classList.remove('show-cap');
 							  window.__fitDock && window.__fitDock();
 							})();
-							
+
+
+
+(function keepDockMarginsFromCSS(){
+  const shell = document.querySelector('#buttonContainer .dock-shell');
+  if (!shell) return;
+  const strip = () => shell.querySelectorAll('button').forEach(b=>{
+    b.style.removeProperty('margin');
+    b.style.removeProperty('margin-left');
+    b.style.removeProperty('margin-right');
+    b.style.removeProperty('margin-top');
+    b.style.removeProperty('margin-bottom');
+  });
+  strip();
+  new MutationObserver(strip).observe(shell, {subtree:true, attributes:true, attributeFilter:['style']});
+})();
+
+
+
+
+
+
+
+
+
 							
 							// === Auto-fit dokam (#buttonContainer .dock-shell) — ar apakšējās joslas korekciju ===
 							(function(){
