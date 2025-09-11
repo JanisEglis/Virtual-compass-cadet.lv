@@ -654,6 +654,16 @@ if (resizeHandle && !resizeHandle.dataset.bound) {
 
   function visibleOverlapTop(el){
     const st = getComputedStyle(el);
+
+
+// nelietot polifilu uz doka vai tā pēcnācējiem
+if (el.closest('[data-no-gap-fix]')) continue;
+
+if (cs.display !== 'flex') continue;
+
+
+
+	  
     const r = el.getBoundingClientRect();
     // “nederīgs/neredzams” elements
     if (st.display === 'none' || st.visibility === 'hidden' || r.width === 0 || r.height === 0) return 0;
@@ -2714,6 +2724,11 @@ on(byId("toggleInstruction"), "click", function() {
 							        + pievieno etiķeti un kupola SVG */
 							  var shell = document.createElement('div');
 							  shell.className = 'dock-shell';
+
+shell.setAttribute('data-no-gap-fix', '1');
+
+const bc = document.getElementById('buttonContainer');
+if (bc) bc.setAttribute('data-no-gap-fix', '1');
 							
 							  // savācam tikai tiešos bērnus, kas ir pogas:
 							  var btns = [];
