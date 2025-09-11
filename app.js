@@ -2551,20 +2551,49 @@ if (uploadBtn){
 }
 
 /* Drop laukums */
+/* DROP LAUKUMS — moderns, radius 10px, zilgans hover */
 .dropzone{
   user-select:none; -webkit-user-select:none;
-  border:1px dashed rgba(255,255,255,.28);
-  background:rgba(255,255,255,.04);
-  padding:16px; text-align:center; border-radius:10px;
-  cursor:pointer; transition:background .15s ease,border-color .15s ease, box-shadow .15s ease, transform .06s ease
+  border:2px dashed rgba(255,255,255,.34);
+  background:rgba(255,255,255,.05);
+  padding:16px;
+  text-align:center;
+  border-radius:10px;
+  cursor:pointer;
+  transition:
+    background-color .15s ease,
+    border-color .15s ease,
+    box-shadow .15s ease,
+    transform .06s ease;
 }
-.dropzone .big{font:600 13px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial}
-.dropzone small{display:block;margin-top:6px;opacity:.8}
-.dropzone:hover{background:rgba(255,255,255,.06)}
-.dropzone:active{transform:translateY(1px)}
+.dropzone .big{
+  font:700 13px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+.dropzone small{
+  display:block; margin-top:6px; opacity:.82;
+}
+
+/* Hover — gaiši zilāks tonis */
+.dropzone:hover{
+  border-color:#8FC2FF;                  /* gaišā zila */
+  background:rgba(143,194,255,.10);
+  box-shadow:0 0 0 3px rgba(143,194,255,.22) inset;
+}
+
+/* Drag-over — izteiktāka zilā */
 .dropzone.is-dragover{
-  border-color:#6ea2ff; box-shadow:0 0 0 3px #6ea2ff33 inset
+  border-color:#6EA2FF;
+  background:rgba(110,162,255,.16);
+  box-shadow:0 0 0 3px rgba(110,162,255,.32) inset;
 }
+
+/* Fokuss (tastatūra/mobilais) — fallback arī vecākiem pārlūkiem */
+.dropzone:focus { outline:2px solid #8FC2FF; outline-offset:2px; }
+.dropzone:focus-visible { outline:2px solid #8FC2FF; outline-offset:2px; }
+
+/* Press efekts */
+.dropzone:active{ transform:translateY(1px); }
+
 
 /* Centrētas pogas */
 .uploader-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;justify-content:center}
@@ -2770,30 +2799,52 @@ function openChooserModal(){
       };
     };
 
-    // — Drop zona (drag & drop + click) —
-    const drop = wrap.querySelector('#dropZone');
-    const prevent = e=>{ e.preventDefault(); e.stopPropagation(); };
-    ['dragenter','dragover','dragleave','drop'].forEach(ev=>{
-      drop.addEventListener(ev, prevent, false);
-    });
-    drop.addEventListener('dragenter', ()=> drop.classList.add('is-dragover'));
-    drop.addEventListener('dragover',  ()=> drop.classList.add('is-dragover'));
-    drop.addEventListener('dragleave', ()=> drop.classList.remove('is-dragover'));
-    drop.addEventListener('drop', (e)=>{
-      drop.classList.remove('is-dragover');
-      const dt = e.dataTransfer;
-      const file = (dt && dt.files && dt.files[0]) ? dt.files[0] : null;
-      if (file) done({kind:'file', file});
-    });
-    // klikšķis -> file picker
-    const pick = ()=>{
-      const inp = document.createElement('input');
-      inp.type='file'; inp.accept='image/*,application/pdf';
-      inp.onchange=()=>{ const f=inp.files && inp.files[0]; done(f ? {kind:'file', file:f} : null); };
-      inp.click();
+// — Drop zona (drag & drop + click) —
+(function(){
+  const drop = wrap.querySelector('#dropZone');
+  if (!drop) return; // ja marķups bez drop zonas — neko nedaram
+
+  // neļaujam pārlūkam atvērt failu lapā
+  const prevent = (e)=>{ e.preventDefault(); e.stopPropagation(); };
+  ['dragenter','dragover','dragleave','drop'].forEach(ev=>{
+    drop.addEventListener(ev, prevent, false);
+  });
+
+  // dziļuma skaitītājs, lai 'dragleave' no bērniem nenoņemtu stilu
+  let dragDepth = 0;
+  drop.addEventListener('dragenter', ()=>{ if (++dragDepth > 0) drop.classList.add('is-dragover'); });
+  drop.addEventListener('dragover',  ()=>{ drop.classList.add('is-dragover'); });
+  drop.addEventListener('dragleave', ()=>{ if (--dragDepth <= 0){ dragDepth = 0; drop.classList.remove('is-dragover'); }});
+  drop.addEventListener('drop', (e)=>{
+    dragDepth = 0;
+    drop.classList.remove('is-dragover');
+    const dt   = e.dataTransfer;
+    const file = (dt && dt.files && dt.files.length) ? dt.files[0] : null;
+    if (file) done({ kind:'file', file });
+  });
+
+  // klikšķis/tastatūra -> file picker
+  const pick = ()=>{
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*,application/pdf';
+    inp.onchange = ()=> {
+      const f = inp.files && inp.files[0];
+      done(f ? { kind:'file', file:f } : null);
     };
-    drop.addEventListener('click', pick);
-    drop.addEventListener('keydown', (e)=>{ if (e.key==='Enter' || e.key===' ') { e.preventDefault(); pick(); } });
+    inp.click();
+  };
+
+  drop.addEventListener('click', pick);
+  drop.addEventListener('keydown', (e)=>{
+    const k = e.key || e.code;
+    if (k === 'Enter' || k === ' ' || k === 'Spacebar' || e.keyCode === 13 || e.keyCode === 32){
+      e.preventDefault();
+      pick();
+    }
+  });
+})();
+
   });
 }
 
