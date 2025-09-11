@@ -2514,6 +2514,28 @@ if (uploadBtn){
     width: clamp(520px, 50vw, 720px); /* patīkami plašs uz desktopa */
   }
 }
+
+
+
+/* === KARTE: palielināts augstums desktopā, lai nebūtu “desa” === */
+@media (min-width: 992px){
+  .uploader-card{
+    width: clamp(560px, 48vw, 840px);
+    min-height: 480px;     /* ← šis reāli dod lielāku “loga” augstumu */
+    max-height: 80vh;      /* neļaujam pāraugt ekrānu */
+    display: flex;
+    flex-direction: column;
+  }
+  .dropzone{ min-height: 180px; }  /* lai saturs vizuāli sabalansēts */
+}
+
+
+
+
+
+
+
+
   
 /* Backdrop ar blur (ar fallback) */
 .uploader-backdrop{
@@ -2731,7 +2753,23 @@ if (uploadBtn){
 .uploader-row,.uploader-actions{ justify-content:center; }
 
 
+/* Virsraksts un info centrēti */
+.uploader-card h3,
+.uploader-card p{
+  text-align: center;
+}
 
+/* === BACKDROP: garantēta pilna augstuma aizņemšana + komforta atstarpes === */
+.uploader-backdrop{
+  position: fixed;
+  inset: 0;
+  min-height: 100vh;   /* fallback vecākiem pārlūkiem */
+  min-height: 100dvh;  /* moderniem pārlūkiem ar dinamisko viewport */
+  display: flex;       /* uzticamāks par grid center dažos engine'os */
+  align-items: center;
+  justify-content: center;
+  padding: 3vh 2vw;    /* lai karte nav pie ekrāna malām uz desktopa */
+}
 
 
   `;
