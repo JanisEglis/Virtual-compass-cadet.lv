@@ -2596,6 +2596,99 @@ if (uploadBtn){
 
 /* Mobilais */
 @media (max-width:760px){ .uploader-card{max-width:92vw} .uploader-card button{padding:12px 18px} }
+
+
+
+
+
+
+
+/* === POGAS === */
+/* Bāzes stils visām modāļa pogām (ar drošu fallbacku vecākiem pārlūkiem) */
+.uploader-card button,
+.uploader-card .btn{
+  -webkit-appearance:none; -moz-appearance:none; appearance:none;
+  border-radius:10px;
+  border:2px solid #c06a6a;               /* izteiktāks “shell” */
+  background:#502626;                      /* fallback veciem pārlūkiem */
+  background:linear-gradient(180deg,#6f3030,#4e2424);  /* nedaudz blāvāks fons */
+  color:#fff;
+  padding:10px 18px;
+  font:700 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  letter-spacing:.2px;
+  cursor:pointer;
+  box-shadow:inset 0 0 0 1px #ffffff10, 0 8px 20px rgba(0,0,0,.35);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  transition:
+    background-color .15s ease,
+    filter .15s ease,
+    transform .06s ease,
+    box-shadow .15s ease;
+}
+
+/* Hover — kļūst gaišākas + nedaudz “paceļas”.
+   Fallback: papildus gaišāks gradients, ja nav filter atbalsta. */
+.uploader-card button:hover,
+.uploader-card .btn:hover{
+  filter:brightness(1.08);
+  box-shadow:inset 0 0 0 1px #ffffff12, 0 10px 24px rgba(0,0,0,.40);
+  background:linear-gradient(180deg,#7a3a3a,#5a2e2e);
+  /* ↑ vecākiem pārlūkiem, kas neprot filter */
+  transform:translateY(-1px);
+}
+
+/* Active — neliels nospiediens */
+.uploader-card button:active,
+.uploader-card .btn:active{ transform:translateY(0); box-shadow:inset 0 0 0 1px #ffffff12, 0 6px 18px rgba(0,0,0,.30) }
+
+/* Focus redzams gan jaunā, gan vecā stilā */
+.uploader-card button:focus,
+.uploader-card .btn:focus{ outline:2px solid #ffd2d2; outline-offset:2px }
+
+/* Disabled drošībai */
+.uploader-card button[disabled],
+.uploader-card .btn[disabled]{ opacity:.6; cursor:not-allowed; filter:none; transform:none; box-shadow:none }
+
+/* — Tonējumi — */
+/* Neitrālāks “primārais” sarkanais (pēc noklusējuma) */
+.uploader-card .btn.primary{
+  border-color:#b56c6c;
+  background:#5b2c2c;
+  background:linear-gradient(180deg,#8d3b3b,#6a2f2f);
+}
+
+/* “Atcelt” — izteikti sarkans. Derēs gan klasei, gan ID, ja markupā nav klašu. */
+.uploader-card .btn.danger,
+#chCancel,#pCancel,#urlCancel{
+  border-color:#ff6e6e;
+  background:#b92020;
+  background:linear-gradient(180deg,#e53935,#b71c1c);
+}
+.uploader-card .btn.danger:hover,
+#chCancel:hover,#pCancel:hover,#urlCancel:hover{
+  filter:brightness(1.06);
+  background:linear-gradient(180deg,#f14642,#c62828);
+}
+
+/* — Rindu izlīdzinājums (ja vajag) — */
+.uploader-row,
+.uploader-actions{
+  display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
+}
+
+/* — Dropzonai saglabājam esošo dizainu; ja gribi, varam tonēt robežu saskaņā ar pogām — */
+.dropzone{ border-color:rgba(255,255,255,.28); }
+.dropzone.is-dragover{ box-shadow:0 0 0 3px #6ea2ff33 inset; border-color:#6ea2ff; }
+
+
+
+
+
+
+
+
+
   `;
   let st=document.getElementById(id);
   if(!st){ st=document.createElement('style'); st.id=id; (document.head||document.documentElement).appendChild(st); }
