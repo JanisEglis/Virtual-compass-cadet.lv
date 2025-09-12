@@ -2612,6 +2612,15 @@ if (uploadBtn){
 /* Press efekts */
 .dropzone:active{ transform:translateY(1px); }
 
+/* URL rinda: ievade + “Importēt” vienā līnijā (mobilē – stāvus) */
+.url-row{ display:flex; gap:10px; align-items:stretch }
+.url-row input[type="url"]{
+  flex:1 1 auto; width:1%;
+  background:#0f1318; color:#fff; border:1px solid rgba(255,255,255,.18);
+  border-radius:10px; padding:10px; font:13px system-ui,-apple-system,Segoe UI,Roboto,Arial
+}
+.url-row input[type="url"]:focus{ outline:none; border-color:#6ea2ff66; box-shadow:0 0 0 2px #6ea2ff33 inset }
+@media (max-width:640px){ .url-row{ flex-direction:column } }
 
 /* Centrētas pogas */
 .uploader-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;justify-content:center}
@@ -2800,19 +2809,21 @@ function openChooserModal(){
     wrap.className='uploader-backdrop';
     wrap.innerHTML = `
       <div class="uploader-card">
-        <h3>Augšuplādēt karti</h3>
+        <h3>Augšupielādēt karti</h3>
         <hr class="divider">
-        <p>Vari augšupielādēt no <b>faila</b> vai ielikt <b>URL</b> (attēls vai PDF).</p>
+        <p>Vari augšupielādēt no <b>faila</b> (nomet/klikšķini zemāk) vai ielikt <b>URL</b> (attēls vai PDF).</p>
         <hr class="divider">
         <div class="dropzone" id="dropZone" role="button" tabindex="0" aria-label="Nomet failu vai izvēlies">
           <div class="big">Nomet failu šeit</div>
-          <small>vai pieskaries/klikšķini, lai izvēlētos</small>
+          <small>vai pieskaries/klikšķini, lai izvēlētos no datora</small>
         </div>
         <hr class="divider">
-        <div class="uploader-row">
-          <button id="chFile">No faila…</button>
-          <button id="chUrl">No URL…</button>
-          <button id="chCancel">Atcelt</button>
+        <div class="url-row">
+          <input id="urlInput" type="url" placeholder="https://…">
+          <button id="urlGo" class="btn-primary">Importēt</button>
+        </div>
+        <div class="footer-row" style="margin-top:10px">
+          <button id="chCancel" class="btn-danger">Atcelt</button>
         </div>
       </div>`;
     document.body.appendChild(wrap);
@@ -2823,34 +2834,21 @@ function openChooserModal(){
     wrap.querySelector('#chCancel').onclick = ()=> done(null);
     wrap.addEventListener('click', (e)=>{ if (e.target===wrap) done(null); });
 
-    // Faila izvēle (poga)
-    wrap.querySelector('#chFile').onclick = ()=>{
-      const inp = document.createElement('input');
-      inp.type='file'; inp.accept='image/*,application/pdf';
-      inp.onchange=()=>{ const f=inp.files && inp.files[0]; done(f ? {kind:'file', file:f} : null); };
-      inp.click();
-    };
 
-    // URL režīms
-    wrap.querySelector('#chUrl').onclick = ()=>{
-      const card = wrap.querySelector('.uploader-card');
-      card.innerHTML = `
-        <h3>Ielādēt karti</h3>
-        <hr class="divider">
-        <p>Vari augšupielādēt no <b>faila</b> vai ielikt <b>URL</b> (attēls vai PDF).</p>
-        <input id="urlInput" type="url" placeholder="https://…">
-        <div class="uploader-actions">
-          <button id="urlGo">Ielādēt</button>
-          <button id="urlCancel">Atcelt</button>
-        </div>
-        <p class="small">PDF ar vairākām lapām tiks importēta <b>viena</b> izvēlēta lapa.</p>`;
-      card.querySelector('#urlCancel').onclick = ()=> done(null);
-      card.querySelector('#urlGo').onclick = ()=>{
-        const url = card.querySelector('#urlInput').value.trim();
+
+    // URL importēšana
+    (function(){
+      const go = wrap.querySelector('#urlGo');
+      const inp= wrap.querySelector('#urlInput');
+      if (!go || !inp) return;
+      const submit = ()=>{
+        const url = (inp.value||'').trim();
         if (!url) return;
-        done({kind:'url', url});
+        done({ kind:'url', url });
       };
-    };
+      go.addEventListener('click', submit);
+      inp.addEventListener('keydown', (e)=>{ if (e.key==='Enter'){ e.preventDefault(); submit(); } });
+    })();
 
 // — Drop zona (drag & drop + click) —
 (function initDrop(){
