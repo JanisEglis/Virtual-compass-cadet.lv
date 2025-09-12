@@ -2853,7 +2853,7 @@ function openChooserModal(){
 
   
           <div class="big">Nomet failu šeit</div>
-          <small>vai pieskaries/klikšķini, lai izvēlētos no datora</small>
+          <small>vai pieskaries/klikšķini, lai izvēlētos no ierīces</small>
         </div>
         <hr class="divider">
         <div class="url-row">
