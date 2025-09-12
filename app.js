@@ -2526,7 +2526,31 @@ if (uploadBtn){
 
 
 
+/* === DROP ikona === */
+:root{ --drop-ico: 48px; }       /* pamata izmērs; droši maini */
 
+.dropzone .ico{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:calc(var(--drop-ico) + 16px); height:calc(var(--drop-ico) + 16px);
+  margin-bottom:10px;
+  border-radius:50%;
+  border:1px solid rgba(143,194,255,.35);
+  background:rgba(143,194,255,.10);
+  color:#e9f2ff;                 /* ikonas krāsa (caur currentColor) */
+  box-shadow:inset 0 0 0 1px #ffffff10;
+}
+.dropzone .ico svg{
+  width:var(--drop-ico); height:var(--drop-ico);
+  display:block; fill:currentColor; stroke:currentColor;
+}
+
+/* hover/dragover – nedaudz izteiktāks tonis */
+.dropzone:hover .ico{
+  border-color:#8FC2FF; background:rgba(143,194,255,.18); color:#ffffff;
+}
+.dropzone.is-dragover .ico{
+  border-color:#6EA2FF; background:rgba(110,162,255,.22); color:#ffffff;
+}
 
 
 
@@ -2816,6 +2840,18 @@ function openChooserModal(){
         <p>Vari augšupielādēt no <b>faila</b> (nomet/klikšķini zemāk) vai ielikt <b>URL</b> (attēls vai PDF).</p>
         <hr class="divider">
         <div class="dropzone" id="dropZone" role="button" tabindex="0" aria-label="Nomet failu vai izvēlies">
+
+
+ <span class="ico" aria-hidden="true">
+    <!-- vienkāršots “upload” SVG; krāsojas ar currentColor -->
+    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M20 22a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 1 0v8a.5.5 0 0 1-.5.5z"/>
+      <path d="M23 16.5a.5.5 0 0 1-.35-.15L20 13.7l-2.65 2.65a.5.5 0 1 1-.7-.7l3-3a.5.5 0 0 1 .7 0l3 3a.5.5 0 0 1-.35.85z"/>
+      <path d="M25 27.5H15A2.5 2.5 0 0 1 12.5 25v-2a.5.5 0 0 1 1 0v2c0 .83.67 1.5 1.5 1.5h10c.83 0 1.5-.67 1.5-1.5v-2a.5.5 0 0 1 1 0v2A2.5 2.5 0 0 1 25 27.5z"/>
+    </svg>
+  </span>
+
+  
           <div class="big">Nomet failu šeit</div>
           <small>vai pieskaries/klikšķini, lai izvēlētos no datora</small>
         </div>
