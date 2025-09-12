@@ -2794,7 +2794,8 @@ if (uploadBtn){
   text-align:center !important;
   margin-left:auto; margin-right:auto;
 }
-
+/* Kājene ar Atcelt centrā */
+.footer-row{ display:flex; justify-content:center }
 
   `;
   let st=document.getElementById(id);
