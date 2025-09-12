@@ -2299,8 +2299,7 @@ function openChooserModal(){
         <h3>Ielādēt karti</h3>
         <p>Augšupielādēt no <b>faila</b> vai ielikt <b>URL</b> (attēls vai PDF).</p>
         <div class="uploader-row">
-          <button id="chFile">No faila…</button>
-          <button id="chUrl">No URL…</button>
+
           <button id="chCancel">Atcelt</button>
         </div>
       </div>`;
@@ -2740,8 +2739,10 @@ if (uploadBtn){
    Atcelt, Aizvērt */
 .uploader-card .btn.danger,
 #chCancel,#pCancel,#urlCancel{
-  border-color:#ff0000 !important;
-  background:#A61D00 !important;
+    border-color: #ff0000 !important;
+    background: #791905 !important;
+    margin-top: 10px;
+    width: 50%;
 }
 .uploader-card .btn.danger:hover,
 #chCancel:hover,#pCancel:hover,#urlCancel:hover{
