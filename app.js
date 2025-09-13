@@ -29,9 +29,18 @@ window.cancelAnimationFrame = window.cancelAnimationFrame
   || window.mozCancelAnimationFrame
   || clearTimeout;
 
-// Idle
-window.requestIdleCallback ||= (cb, o={}) => setTimeout(cb, o.timeout || 1);
-window.cancelIdleCallback  ||= (id) => clearTimeout(id);
+// Idle (Chrome 60 safe)
+if (!('requestIdleCallback' in window)) {
+  window.requestIdleCallback = function (cb, o) {
+    o = o || {};
+    return setTimeout(cb, o.timeout || 1);
+  };
+}
+if (!('cancelIdleCallback' in window)) {
+  window.cancelIdleCallback = function (id) {
+    clearTimeout(id);
+  };
+}
 
 
 
@@ -3508,13 +3517,21 @@ window.resetCompassToInitial  = resetCompassToInitial;
 
 // LongTask → pārkrāso kompasu nākamajā kadra brīdī
 (function longTaskHeal(){
-  if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes?.includes('longtask')) {
-    const po = new PerformanceObserver(() => {
-      requestAnimationFrame(() => {
-        try { updateCompassTransform(); } catch(e){}
+  try {
+    if (
+      window.PerformanceObserver &&
+      PerformanceObserver.supportedEntryTypes &&
+      PerformanceObserver.supportedEntryTypes.indexOf('longtask') !== -1
+    ) {
+      var po = new PerformanceObserver(function(){
+        requestAnimationFrame(function(){
+          try { updateCompassTransform(); } catch(e){}
+        });
       });
-    });
-    po.observe({ entryTypes: ['longtask'] });
+      po.observe({ entryTypes: ['longtask'] });
+    }
+  } catch (e) {
+    // vecs pārlūks – vienkārši izlaižam bez kļūdas
   }
 })();
 
