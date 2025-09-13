@@ -426,12 +426,12 @@
 
 
 <script>
-/* ========== Legacy browser brīdinājums (uploader stils) – v3 ========== */
+/* ========== Legacy browser brīdinājums – vienkāršs teksts, vienādas pogas ========== */
 (function () {
   // Sliekšņi: viss ZEM šiem tiks brīdināts
-  var MIN_CHROME   = 90;  // Chrome / Chromium / CriOS
-  var MIN_EDGE     = 90;  // Chromium-Edge (Edg/)
-  var MIN_FIREFOX  = 90;  // Firefox
+  var MIN_CHROME  = 90;   // Chrome / Chromium / CriOS
+  var MIN_EDGE    = 90;   // Chromium Edge (Edg/)
+  var MIN_FIREFOX = 90;   // Firefox
   // Legacy EdgeHTML (Edge/12–18) – vienmēr brīdinām
 
   function onDomReady(fn){
@@ -443,24 +443,19 @@
   function getBrowserInfo(){
     var ua = navigator.userAgent || '';
     var m;
-
     // Legacy Edge (EdgeHTML)
     m = ua.match(/\bEdge\/(\d+)/);
-    if (m) return { name:'Edge (Legacy)', major: parseInt(m[1],10)||0, engine:'edgehtml', warn:true, site:'https://www.microsoft.com/edge' };
-
+    if (m) return { name:'Edge (Legacy)', major: parseInt(m[1],10)||0, engine:'edgehtml', site:'https://www.microsoft.com/edge' };
     // Chromium Edge
     m = ua.match(/\bEdg(?:A|iOS)?\/(\d+)/);
-    if (m) return { name:'Edge', major: parseInt(m[1],10)||0, engine:'chromium', warn:false, site:'https://www.microsoft.com/edge' };
-
-    // Chrome/Chromium/CriOS/HeadlessChrome
+    if (m) return { name:'Edge', major: parseInt(m[1],10)||0, engine:'chromium', site:'https://www.microsoft.com/edge' };
+    // Chrome/Chromium/CriOS
     m = ua.match(/(?:HeadlessChrome|Chrom(?:e|ium)|CriOS)\/(\d+)/);
-    if (m) return { name:'Chrome', major: parseInt(m[1],10)||0, engine:'chromium', warn:false, site:'https://www.google.com/chrome/' };
-
+    if (m) return { name:'Chrome', major: parseInt(m[1],10)||0, engine:'chromium', site:'https://www.google.com/chrome/' };
     // Firefox
     m = ua.match(/\bFirefox\/(\d+)/);
-    if (m) return { name:'Firefox', major: parseInt(m[1],10)||0, engine:'gecko', warn:false, site:'https://www.mozilla.org/firefox/new/' };
-
-    return { name:'Cits pārlūks', major:0, engine:'other', warn:false, site:'https://browsehappy.com/' };
+    if (m) return { name:'Firefox', major: parseInt(m[1],10)||0, engine:'gecko', site:'https://www.mozilla.org/firefox/new/' };
+    return { name:'Nezināms pārlūks', major:0, engine:'other', site:'https://browsehappy.com/' };
   }
 
   function detectMissingFeatures() {
@@ -482,60 +477,80 @@
     var old = false;
 
     if (b.engine === 'edgehtml') {
-      old = true; // Legacy Edge – vienmēr
+      old = true;
     } else if (b.engine === 'chromium') {
-      // Edge (Edg/) un Chrome sliekšņi atsevišķi
-      if (b.name === 'Edge')   old = b.major && b.major < MIN_EDGE;
-      else                     old = b.major && b.major < MIN_CHROME;
+      if (b.name === 'Edge') old = b.major && b.major < MIN_EDGE;
+      else                   old = b.major && b.major < MIN_CHROME;
     } else if (b.engine === 'gecko') {
       old = b.major && b.major < MIN_FIREFOX;
     }
 
     var missing = detectMissingFeatures();
-    // Rādam, ja pārlūks vecs VAI pietrūkst vismaz 2 svarīgu iespēju
+    // Rādam, ja pārlūks vecs VAI pietrūkst vismaz 2 svarīgas iespējas
     var show = old || (missing.length >= 2);
 
     return { show: show, missing: missing, browser: b, old: old };
   }
 
+  function injectScopedCSS(){
+    if (document.getElementById('legacy-warn-css')) return;
+    var css =
+      '#legacyWarnBackdrop{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:3vh 2vw;background:rgba(0,0,0,.55)}' +
+      '@supports ((backdrop-filter:blur(8px)) or (-webkit-backdrop-filter:blur(8px))){#legacyWarnBackdrop{backdrop-filter:saturate(1.2) blur(8px);-webkit-backdrop-filter:saturate(1.2) blur(8px)}}' +
+      '#legacyWarnBackdrop .uploader-card{min-width:320px;max-width:92vw;background:linear-gradient(180deg,#1b1f25 0%, #2a0f0faa 100%);color:#eef2f7;border:1px solid rgba(255,255,255,.08);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.55);padding:14px}' +
+      '#legacyWarnBackdrop h3{margin:0 0 6px;font:700 16px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Arial}' +
+      '#legacyWarnBackdrop .divider{height:1px;margin:10px 0;border:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent)}' +
+      '#legacyWarnText{font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;opacity:.95;margin:8px 0}' +
+      '#legacyWarnList{margin:8px 0 0 18px;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;opacity:.9}' +
+      '#legacyWarnList li{margin:4px 0}' +
+      '#legacyWarnBackdrop .uploader-actions{display:flex;justify-content:space-between;margin-top:12px}' +
+      '#legacyWarnBackdrop .uploader-actions .btn{display:inline-block;text-align:center;border:2px solid; border-radius:10px; padding:10px 18px; font:700 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial; color:#fff; box-shadow:inset 0 0 0 1px #ffffff10,0 8px 20px rgba(0,0,0,.35); cursor:pointer; -webkit-tap-highlight-color:transparent}' +
+      '#legacyUpdate{width:48%;max-width:260px;min-width:160px;border-color:#11cb1e;background:#0d631d}' +
+      '#legacyUpdate:hover{filter:brightness(1.12);background:#117a26}' +
+      '#legacyClose{width:48%;max-width:260px;min-width:160px;border-color:#ff0000;background:#791905}' +
+      '#legacyClose:hover{filter:brightness(1.10);background:#c02400}' +
+      '@media (min-width: 992px){#legacyWarnBackdrop .uploader-card{width:clamp(560px,48vw,760px)}}';
+    var el = document.createElement('style');
+    el.id = 'legacy-warn-css';
+    el.type = 'text/css';
+    el.appendChild(document.createTextNode(css));
+    (document.head || document.documentElement).appendChild(el);
+  }
+
   function showLegacyBrowserWarning(info) {
     if (document.getElementById('legacyWarnBackdrop')) return;
 
-    var b = info.browser || {name:'Pārlūks', major:0, site:'https://browsehappy.com/'};
-    var missingList = info.missing || [];
+    injectScopedCSS();
 
+    var b = info.browser || {name:'Pārlūks', major:0, site:'https://browsehappy.com/'};
     var wrap = document.createElement('div');
-    wrap.className = 'uploader-backdrop';
     wrap.id = 'legacyWarnBackdrop';
 
-    var note = 'Dažas rīka funkcijas var nedarboties (piem., PDF importēšana, tiešsaistes karte vai gludas animācijas). ' +
-               'Lai izmantotu visu funkcionalitāti, lūdzu, atjauniniet pārlūku.';
     var headline = 'Jūsu pārlūks ir novecojis';
     var sub = b.major ? ('Konstatēts: ' + b.name + ' ' + b.major) : b.name;
 
-    var missingHTML = '';
-    if (missingList.length) {
-      missingHTML =
-        '<div class="dropzone" style="cursor:default">' +
-          '<div class="big">Trūkstošās iespējas:</div>' +
-          '<small>' + missingList.join(', ') + '</small>' +
-        '</div>' +
-        '<hr class="divider">';
-    }
-
-    wrap.innerHTML =
+    // Vienkāršs, skaidri salasāms teksts (bez “drop” bloka)
+    var html =
       '<div class="uploader-card" role="dialog" aria-labelledby="legacyWarnTitle" aria-describedby="legacyWarnText">' +
         '<h3 id="legacyWarnTitle">' + headline + '</h3>' +
         '<hr class="divider">' +
         '<p style="margin-top:4px"><b>' + sub + '</b></p>' +
-        '<p id="legacyWarnText">' + note + '</p>' +
-        missingHTML +
+        '<p id="legacyWarnText">' +
+          'Dažas rīka funkcijas šajā pārlūka versijā var nedarboties pilnībā. ' +
+          'Lai izmantotu visu funkcionalitāti, lūdzu, atjauniniet pārlūku.' +
+        '</p>' +
+        '<ul id="legacyWarnList">' +
+          '<li>PDF importēšana</li>' +
+          '<li>Tiešsaistes karte un režģi</li>' +
+          '<li>Gludākas animācijas un veiktspēja</li>' +
+        '</ul>' +
         '<div class="uploader-actions">' +
-          '<button id="legacyUpdate" class="btn primary" type="button">Atjaunināt pārlūku</button>' +
-          '<button id="legacyClose"  class="btn danger"  type="button">Turpināt</button>' +
+          '<button id="legacyUpdate" class="btn" type="button">Atjaunināt pārlūku</button>' +
+          '<button id="legacyClose"  class="btn" type="button">Turpināt</button>' +
         '</div>' +
       '</div>';
 
+    wrap.innerHTML = html;
     document.body.appendChild(wrap);
 
     var upd = document.getElementById('legacyUpdate');
@@ -545,9 +560,8 @@
         try { window.open(url, '_blank', 'noopener'); } catch (_e) { location.href = url; }
       }, false);
     }
-
-    function closeWarn(){ try { document.body.removeChild(wrap); } catch (_e) {} }
     var closeBtn = document.getElementById('legacyClose');
+    function closeWarn(){ try { document.body.removeChild(wrap); } catch (_e) {} }
     if (closeBtn) closeBtn.addEventListener('click', closeWarn, false);
     wrap.addEventListener('click', function (e) { if (e.target === wrap) closeWarn(); }, false);
     document.addEventListener('keydown', function esc(e){
@@ -571,6 +585,7 @@
   });
 })();
 </script>
+
 
 
 
