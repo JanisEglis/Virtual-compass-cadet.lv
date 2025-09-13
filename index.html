@@ -422,7 +422,172 @@
 
 
 
-	<!-- Ievieto ŠO bloku <head> daļā pirms jebkā, kas izmanto PDF.js -->
+
+
+
+<script>
+/* ========== Legacy browser brīdinājums (uploader stils) – v3 ========== */
+(function () {
+  // Sliekšņi: viss ZEM šiem tiks brīdināts
+  var MIN_CHROME   = 90;  // Chrome / Chromium / CriOS
+  var MIN_EDGE     = 90;  // Chromium-Edge (Edg/)
+  var MIN_FIREFOX  = 90;  // Firefox
+  // Legacy EdgeHTML (Edge/12–18) – vienmēr brīdinām
+
+  function onDomReady(fn){
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fn, false);
+    } else { fn(); }
+  }
+
+  function getBrowserInfo(){
+    var ua = navigator.userAgent || '';
+    var m;
+
+    // Legacy Edge (EdgeHTML)
+    m = ua.match(/\bEdge\/(\d+)/);
+    if (m) return { name:'Edge (Legacy)', major: parseInt(m[1],10)||0, engine:'edgehtml', warn:true, site:'https://www.microsoft.com/edge' };
+
+    // Chromium Edge
+    m = ua.match(/\bEdg(?:A|iOS)?\/(\d+)/);
+    if (m) return { name:'Edge', major: parseInt(m[1],10)||0, engine:'chromium', warn:false, site:'https://www.microsoft.com/edge' };
+
+    // Chrome/Chromium/CriOS/HeadlessChrome
+    m = ua.match(/(?:HeadlessChrome|Chrom(?:e|ium)|CriOS)\/(\d+)/);
+    if (m) return { name:'Chrome', major: parseInt(m[1],10)||0, engine:'chromium', warn:false, site:'https://www.google.com/chrome/' };
+
+    // Firefox
+    m = ua.match(/\bFirefox\/(\d+)/);
+    if (m) return { name:'Firefox', major: parseInt(m[1],10)||0, engine:'gecko', warn:false, site:'https://www.mozilla.org/firefox/new/' };
+
+    return { name:'Cits pārlūks', major:0, engine:'other', warn:false, site:'https://browsehappy.com/' };
+  }
+
+  function detectMissingFeatures() {
+    var missing = [];
+    if (!window.Promise) missing.push('Promise');
+    if (!(window.Promise && Promise.allSettled)) missing.push('Promise.allSettled');
+    if (!window.fetch) missing.push('fetch');
+    try { new URL('https://example.com'); } catch (_e) { missing.push('URL'); }
+    if (!('IntersectionObserver' in window)) missing.push('IntersectionObserver');
+    if (!('requestIdleCallback' in window)) missing.push('requestIdleCallback');
+    if (!('Map' in window)) missing.push('Map');
+    if (!('assign' in Object)) missing.push('Object.assign');
+    if (!('from' in Array)) missing.push('Array.from');
+    return missing;
+  }
+
+  function shouldWarn() {
+    var b = getBrowserInfo();
+    var old = false;
+
+    if (b.engine === 'edgehtml') {
+      old = true; // Legacy Edge – vienmēr
+    } else if (b.engine === 'chromium') {
+      // Edge (Edg/) un Chrome sliekšņi atsevišķi
+      if (b.name === 'Edge')   old = b.major && b.major < MIN_EDGE;
+      else                     old = b.major && b.major < MIN_CHROME;
+    } else if (b.engine === 'gecko') {
+      old = b.major && b.major < MIN_FIREFOX;
+    }
+
+    var missing = detectMissingFeatures();
+    // Rādam, ja pārlūks vecs VAI pietrūkst vismaz 2 svarīgu iespēju
+    var show = old || (missing.length >= 2);
+
+    return { show: show, missing: missing, browser: b, old: old };
+  }
+
+  function showLegacyBrowserWarning(info) {
+    if (document.getElementById('legacyWarnBackdrop')) return;
+
+    var b = info.browser || {name:'Pārlūks', major:0, site:'https://browsehappy.com/'};
+    var missingList = info.missing || [];
+
+    var wrap = document.createElement('div');
+    wrap.className = 'uploader-backdrop';
+    wrap.id = 'legacyWarnBackdrop';
+
+    var note = 'Dažas rīka funkcijas var nedarboties (piem., PDF importēšana, tiešsaistes karte vai gludas animācijas). ' +
+               'Lai izmantotu visu funkcionalitāti, lūdzu, atjauniniet pārlūku.';
+    var headline = 'Jūsu pārlūks ir novecojis';
+    var sub = b.major ? ('Konstatēts: ' + b.name + ' ' + b.major) : b.name;
+
+    var missingHTML = '';
+    if (missingList.length) {
+      missingHTML =
+        '<div class="dropzone" style="cursor:default">' +
+          '<div class="big">Trūkstošās iespējas:</div>' +
+          '<small>' + missingList.join(', ') + '</small>' +
+        '</div>' +
+        '<hr class="divider">';
+    }
+
+    wrap.innerHTML =
+      '<div class="uploader-card" role="dialog" aria-labelledby="legacyWarnTitle" aria-describedby="legacyWarnText">' +
+        '<h3 id="legacyWarnTitle">' + headline + '</h3>' +
+        '<hr class="divider">' +
+        '<p style="margin-top:4px"><b>' + sub + '</b></p>' +
+        '<p id="legacyWarnText">' + note + '</p>' +
+        missingHTML +
+        '<div class="uploader-actions">' +
+          '<button id="legacyUpdate" class="btn primary" type="button">Atjaunināt pārlūku</button>' +
+          '<button id="legacyClose"  class="btn danger"  type="button">Turpināt</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(wrap);
+
+    var upd = document.getElementById('legacyUpdate');
+    if (upd) {
+      upd.addEventListener('click', function () {
+        var url = b.site || 'https://browsehappy.com/';
+        try { window.open(url, '_blank', 'noopener'); } catch (_e) { location.href = url; }
+      }, false);
+    }
+
+    function closeWarn(){ try { document.body.removeChild(wrap); } catch (_e) {} }
+    var closeBtn = document.getElementById('legacyClose');
+    if (closeBtn) closeBtn.addEventListener('click', closeWarn, false);
+    wrap.addEventListener('click', function (e) { if (e.target === wrap) closeWarn(); }, false);
+    document.addEventListener('keydown', function esc(e){
+      if (e.key === 'Escape' || e.keyCode === 27) { closeWarn(); document.removeEventListener('keydown', esc, false); }
+    }, false);
+  }
+
+  onDomReady(function () {
+    // testa režīms: ?legacytest=1 – piespiedu brīdinājums
+    var test = false;
+    try { test = /\blegacytest=1\b/.test(location.search); } catch (_e) {}
+
+    // nerādām 2x vienā sesijā (ja vien nav tests)
+    try { if (!test && sessionStorage.getItem('legacyWarnShown') === '1') return; } catch (_e) {}
+
+    var res = shouldWarn();
+    if (res.show || test) {
+      showLegacyBrowserWarning(res);
+      try { sessionStorage.setItem('legacyWarnShown', '1'); } catch (_e) {}
+    }
+  });
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
 <!-- PDF.js 3.x (ļoti stabila) -->
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script>
