@@ -4464,4 +4464,23 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 
 
 
+(function(){
+  const ctl = window.__layersCtl;
+  if (!ctl) return console.warn('[layers] nav __layersCtl — ieslēdz tiešsaistes karti!');
+  const c = ctl._container;
+  const link = ctl._layersLink || c.querySelector('.leaflet-control-layers-toggle');
+  console.info('[layers] probe attached', { hasLink: !!link });
+
+  c.addEventListener('click', (e)=>{
+    if (e.target.closest('.leaflet-control-layers-toggle')) {
+      setTimeout(()=> {
+        const open = c.classList.contains('leaflet-control-layers-expanded');
+        console.info('[layers] toggle →', open ? 'OPEN' : 'CLOSED');
+      }, 0);
+    }
+    if (e.target.matches('input[type=radio],input[type=checkbox]')) {
+      console.info('[layers] choice', e.target.value, e.target.checked);
+    }
+  }, true);
+})();
 
