@@ -804,7 +804,9 @@ if (resizeHandle && !resizeHandle.dataset.bound) {
 
 
   // lai roktura <img> aizņem visu un netraucē klikam
-  const icon = resizeHandle.querySelector('img');
+ // const icon = resizeHandle.querySelector('img');
+// lai roktura <img> aizņem visu un netraucē klikam
+const icon = resizeHandle ? resizeHandle.querySelector('img') : null;
   if (icon) {
     Object.assign(icon.style, {
       width: '100%', height: '100%', display: 'block', pointerEvents: 'none'
