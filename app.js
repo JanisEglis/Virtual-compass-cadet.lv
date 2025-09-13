@@ -1654,58 +1654,69 @@ function llToUTMInZone(lat, lon, zone){
 function makeLayersClickOnly(layersCtl){
   if (!layersCtl) return;
   const c = layersCtl._container;
-  if (!c) { requestAnimationFrame(()=>makeLayersClickOnly(layersCtl)); return; }
+  if (!c) { requestAnimationFrame(() => makeLayersClickOnly(layersCtl)); return; }
 
-  const isOpen = () => L.DomUtil.hasClass(c, 'leaflet-control-layers-expanded');
-  const open   = () => (layersCtl.expand   || layersCtl._expand).call(layersCtl);
-  const close  = () => (layersCtl.collapse || layersCtl._collapse).call(layersCtl);
+  const isOpen = () => L.DomUtil.hasClass(c,'leaflet-control-layers-expanded');
+  const open   = () => (layersCtl.expand||layersCtl._expand).call(layersCtl);
+  const close  = () => (layersCtl.collapse||layersCtl._collapse).call(layersCtl);
 
-  // atslēdzam hover-uzvedību
-  L.DomEvent.off(c, 'mouseover');
-  L.DomEvent.off(c, 'mouseout');
+  // atslēdz "hover" uzvedību
+  L.DomEvent.off(c,'mouseover');
+  L.DomEvent.off(c,'mouseout');
 
-  // 1) Droša piesaiste ar Pointer Events
+  // ── Toggler ar pareiziem fallbackiem ─────────────────────────
   function bindToggle(){
     const link = layersCtl._layersLink || c.querySelector('.leaflet-control-layers-toggle');
-    if (!link || link.__boundPE) return;
-    link.__boundPE = true;
+    if (!link || link.__bound) return;
+    link.__bound = true;
 
-    // samazina “ghost click”/300ms
     link.style.touchAction = 'manipulation';
 
-    const onToggle = (e)=>{
+    let last = 0;
+    const onToggle = (e) => {
       e.preventDefault(); e.stopPropagation();
+      const now = (window.performance && performance.now) ? performance.now() : Date.now();
+      if (now - last < 250) return; // novāc dubulto "touchend→click"
+      last = now;
       isOpen() ? close() : open();
     };
 
-    // notīri iespējamās vecās piesaistes un piesien tikai pointerup
-    ['click','touchstart','touchend','pointerdown','pointerup'].forEach(ev=>{
+    const supportsPointer = !!window.PointerEvent && ('onpointerup' in window);
+
+    // noņemam tikai mūsu (ja bija) – nevis Leaflet savējos
+    ['click','touchend','pointerup'].forEach(ev => {
       try{ link.removeEventListener(ev, onToggle, false); }catch(_){}
     });
-    link.addEventListener('pointerup', onToggle, { passive:false });
+
+    if (supportsPointer) {
+      link.addEventListener('pointerup', onToggle, {passive:false});
+    } else if ('ontouchend' in window) {
+      link.addEventListener('touchend', onToggle, {passive:false});
+      link.addEventListener('click',    onToggle, {passive:false}); // dažiem browseriem vajag arī šo
+    } else {
+      link.addEventListener('click',    onToggle, {passive:false});
+    }
   }
   bindToggle();
+  new MutationObserver(bindToggle).observe(c, {childList:true, subtree:true});
 
-  // 2) Ja Leaflet pārzīmē DOM – pārsienam
-  const mo = new MutationObserver(() => bindToggle());
-  mo.observe(c, { childList:true, subtree:true });
-
-  // 3) Aizver pēc izvēles (ja netur Shift)
+  // pēc izvēles – aizver pēc slāņa izvēles (atstāj, ja tā gribi)
   function wireInputs(){
     const form = c.querySelector('.leaflet-control-layers-list') || c;
     form.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(inp=>{
-      if (inp.__boundPE) return;
-      inp.__boundPE = true;
-      inp.addEventListener('click', (ev)=>{ if (ev.shiftKey) return; setTimeout(close, 80); }, false);
+      if (inp.__bound) return;
+      inp.__bound = true;
+      inp.addEventListener('click', (ev)=>{ if (ev.shiftKey) return; setTimeout(close,80); }, false);
     });
   }
   wireInputs();
-  new MutationObserver(wireInputs).observe(c, { childList:true, subtree:true });
+  new MutationObserver(wireInputs).observe(c, {childList:true, subtree:true});
 
-  // neļaujam klikam nokrist uz kartes, bet netraucējam pašai kontrolei
+  // lai klikšķi nekrit uz kartes
   L.DomEvent.disableClickPropagation(c);
   L.DomEvent.disableScrollPropagation(c);
 }
+
 
 
 
