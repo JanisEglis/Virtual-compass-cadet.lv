@@ -1888,6 +1888,29 @@ body.preloading{ overflow: hidden; }
 #onlineMap .leaflet-bottom{ bottom: var(--map-bottom-safe-plus-pad, 0px) !important; }
 
 
+/* === ONLY attribution (bottom-right) offset === */
+/* 1) uz augšu/lējup regulē šeit: */
+:root{
+  --leaflet-attrib-bottom: 20px;   /* cik tālu no apakšas; palielini, ja vajag "zemāk" */
+  --leaflet-attrib-right:  8px;   /* cik tālu no labās malas */
+}
+
+/* 2) pārraksta tikai apakšējo-labo kolonnu ar attribution */
+#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-right{
+  bottom: calc(
+    var(--leaflet-attrib-bottom)
+    + var(--map-bottom-safe, 0px)
+    + env(safe-area-inset-bottom, 0px)
+  ) !important;
+  right: var(--leaflet-attrib-right) !important;
+}
+
+/* (opcija) ja vēlies arī pašu teksta kapsulu “piestumt” mazliet uz leju */
+#onlineMap .leaflet-control-attribution{
+  margin-bottom: 0 !important;   /* vari mainīt uz, piemēram, -4px vai +4px */
+}
+
+
 /* pārklājums, kas netraucē klikus */
 #onlineMapDim{ pointer-events: none; }
 
