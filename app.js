@@ -3310,95 +3310,118 @@ setTimeout(updateCompassTransform, 0);
 
 
 
-						const rotateCompass90Button = document.getElementById('rotateCompass90');
-						let isCompassLocked = false; // Lai sekotu, vai kompass ir bloķēts
+// ✅ Rotate 90° popup — droši ar helperi
+let isCompassLocked = false;
 
-						if (rotateCompass90Button) {
-							rotateCompass90Button.addEventListener('click', function () {
-								if (!isCompassLocked) {
-									// Izveido popup izvēlni
-									const popupMenu = document.createElement('div');
-									popupMenu.id = 'popupMenu';
+on(byId('rotateCompass90'), 'click', function (ev) {
+  ev.preventDefault();
+  ev.stopPropagation();
 
-									// Izveido popup saturu
-									const menuTitle = document.createElement('p');
-									menuTitle.textContent = 'Izvēlieties noteikšanas metodi:';
-									popupMenu.appendChild(menuTitle);
+  const compassInner      = byId('compassInner');
+  const compassScaleInner = byId('compassScaleInner');
+  const lockBtn           = byId('lockRotationMode');
+  const rotateBtn         = byId('rotateCompass90');
 
-									// Izveido pogu rindu
-									const buttonRow = document.createElement('div');
-									buttonRow.className = 'button-row';
+  // ja kāds elements nav, vienkārši izejam
+  if (!compassInner || !compassScaleInner || !lockBtn || !rotateBtn) return;
 
-									// 1. poga ar jauno attēlu
-									const rotate90Button = document.createElement('button');
-									rotate90Button.id = 'rotateTo90';
-									rotate90Button.className = 'popup-button';
-									const rotate90Image = document.createElement('img');
-									rotate90Image.src = 'https://site-710050.mozfiles.com/files/710050/GRID_VIEW_1_1.png';
-									rotate90Image.alt = 'Rotēt 90°';
-									rotate90Button.appendChild(rotate90Image);
-									buttonRow.appendChild(rotate90Button);
+  if (!isCompassLocked) {
+    // uztaisām popup
+    const popupMenu = document.createElement('div');
+    popupMenu.id = 'popupMenu';
 
-									// 2. poga ar jauno attēlu
-									const rotateNegative90Button = document.createElement('button');
-									rotateNegative90Button.id = 'rotateToNegative90';
-									rotateNegative90Button.className = 'popup-button';
-									const rotateNegative90Image = document.createElement('img');
-									rotateNegative90Image.src = 'https://site-710050.mozfiles.com/files/710050/GRID_VIEW_2.png';
-									rotateNegative90Image.alt = 'Rotēt -90°';
-									rotateNegative90Button.appendChild(rotateNegative90Image);
-									buttonRow.appendChild(rotateNegative90Button);
+    const menuTitle = document.createElement('p');
+    menuTitle.textContent = 'Izvēlieties noteikšanas metodi:';
+    popupMenu.appendChild(menuTitle);
 
-									popupMenu.appendChild(buttonRow);
-									document.body.appendChild(popupMenu);
+    const row = document.createElement('div');
+    row.className = 'button-row';
 
-									rotate90Button.addEventListener('click', () => {
-										compassInner.classList.add('with-transition'); 
-										compassScaleInner.classList.add('with-transition');
+    // +90°
+    const b90 = document.createElement('button');
+    b90.id = 'rotateTo90';
+    b90.className = 'popup-button';
+    const img90 = document.createElement('img');
+    img90.src = 'https://site-710050.mozfiles.com/files/710050/GRID_VIEW_1_1.png';
+    img90.alt = 'Rotēt 90°';
+    b90.appendChild(img90);
+    row.appendChild(b90);
 
-										baseRotation = 90; 
-										updateCompassTransform(); 
+    // -90°
+    const b_90 = document.createElement('button');
+    b_90.id = 'rotateToNegative90';
+    b_90.className = 'popup-button';
+    const img_90 = document.createElement('img');
+    img_90.src = 'https://site-710050.mozfiles.com/files/710050/GRID_VIEW_2.png';
+    img_90.alt = 'Rotēt -90°';
+    b_90.appendChild(img_90);
+    row.appendChild(b_90);
 
-										isRotationLocked = true; 
-										lockRotationModeButton.classList.add('active'); 
-										rotateCompass90Button.classList.add('active'); 
-										isCompassLocked = true;
+    popupMenu.appendChild(row);
+    document.body.appendChild(popupMenu);
 
-										setTimeout(() => {
-											compassInner.classList.remove('with-transition');
-											compassScaleInner.classList.remove('with-transition');
-										}, 500);
+    const closePopup = () => { try { document.body.removeChild(popupMenu); } catch(_){} };
 
-										document.body.removeChild(popupMenu); 
-									});
+    b90.addEventListener('click', () => {
+      compassInner.classList.add('with-transition');
+      compassScaleInner.classList.add('with-transition');
 
-									rotateNegative90Button.addEventListener('click', () => {
-										compassInner.classList.add('with-transition'); 
-										compassScaleInner.classList.add('with-transition'); 
+      baseRotation = 90;                 // ← izmanto tavu globālo
+      updateCompassTransform();
 
-										baseRotation = -90; 
-										updateCompassTransform(); 
+      isRotationLocked = true;           // ← arī tavs globālais
+      lockBtn.classList.add('active');
+      rotateBtn.classList.add('active');
+      isCompassLocked = true;
 
-										isRotationLocked = true; 
-										lockRotationModeButton.classList.add('active'); 
-										rotateCompass90Button.classList.add('active'); 
-										isCompassLocked = true;
+      setTimeout(() => {
+        compassInner.classList.remove('with-transition');
+        compassScaleInner.classList.remove('with-transition');
+      }, 500);
 
-										setTimeout(() => {
-											compassInner.classList.remove('with-transition');
-											compassScaleInner.classList.remove('with-transition');
-										}, 500);
+      closePopup();
+    });
 
-										document.body.removeChild(popupMenu); 
-									});
-								} else {
-									isRotationLocked = false; 
-									lockRotationModeButton.classList.remove('active'); 
-									rotateCompass90Button.classList.remove('active'); 
-									isCompassLocked = false;
-								}
-							});
-						}
+    b_90.addEventListener('click', () => {
+      compassInner.classList.add('with-transition');
+      compassScaleInner.classList.add('with-transition');
+
+      baseRotation = -90;
+      updateCompassTransform();
+
+      isRotationLocked = true;
+      lockBtn.classList.add('active');
+      rotateBtn.classList.add('active');
+      isCompassLocked = true;
+
+      setTimeout(() => {
+        compassInner.classList.remove('with-transition');
+        compassScaleInner.classList.remove('with-transition');
+      }, 500);
+
+      closePopup();
+    });
+
+    // klikšķis ārpus popup — aizver
+    setTimeout(() => {
+      const onDocClick = (e) => {
+        if (!popupMenu.contains(e.target)) {
+          document.removeEventListener('click', onDocClick, true);
+          closePopup();
+        }
+      };
+      document.addEventListener('click', onDocClick, true);
+    }, 0);
+
+  } else {
+    // atbloķējam
+    isRotationLocked = false;
+    lockBtn.classList.remove('active');
+    rotateBtn.classList.remove('active');
+    isCompassLocked = false;
+  }
+});
+
 
 
 
