@@ -1658,69 +1658,50 @@ function makeLayersClickOnly(layersCtl){
   if (!c) { requestAnimationFrame(() => makeLayersClickOnly(layersCtl)); return; }
   const link = layersCtl._layersLink || c.querySelector('.leaflet-control-layers-toggle');
 
-  // noņemam hover/focus uzvedību
-  L.DomEvent.off(c, 'mouseover');
-  L.DomEvent.off(c, 'mouseout');
-  if (link) {
-    L.DomEvent.off(link, 'focus');
-    L.DomEvent.off(link, 'blur');
-    // un – vissvarīgākais – noņemam iepriekš piesieto klik/pointerup
-    L.DomEvent.off(link, 'click');
-    L.DomEvent.off(link, 'pointerup');
-  }
-
+  // Palīgi
   const isOpen = () => L.DomUtil.hasClass(c, 'leaflet-control-layers-expanded');
-  const open   = () => {
-    (layersCtl.expand || layersCtl._expand).call(layersCtl);
-    justOpened = true; setTimeout(()=> justOpened = false, 300);
-  };
+  const open   = () => (layersCtl.expand   || layersCtl._expand).call(layersCtl);
   const close  = () => (layersCtl.collapse || layersCtl._collapse).call(layersCtl);
 
-  let lastToggleTs = 0;
-  let justOpened   = false;
-
-  function onToggle(e){
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    const now = Date.now();
-    if (now - lastToggleTs < 250) return; // debounce pret dubult-notikumiem
-    lastToggleTs = now;
-    isOpen() ? close() : open();
+  // Īslaicīgs vairogs pret “spoku klikšķi”, kas nāk uzreiz pēc atvēršanas uz touch
+  function shieldClicks(ms=300){
+    function stopper(e){ e.preventDefault(); e.stopPropagation(); }
+    c.addEventListener('click', stopper, true);
+    setTimeout(()=> c.removeEventListener('click', stopper, true), ms);
   }
 
-  if (link) {
-    // TIKAI pointerdown (strādā pele/touch/pen) + norijam click
-    link.addEventListener('pointerdown', onToggle, { passive:false });
-    link.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); }, true);
-    // vecākiem dzinējiem – touchstart kā rezerves variants
-    link.addEventListener('touchstart', onToggle, { passive:false });
-    link.addEventListener('touchend', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); }, { passive:false });
-
-    // klaviatūra
-    link.addEventListener('keydown', (e)=>{
-      if (e.key === 'Enter' || e.key === ' ') onToggle(e);
-    });
+  // Notīri vecos klausītājus (ja bija)
+  if (link && link.__toggleHandler) {
+    link.removeEventListener('click', link.__toggleHandler, false);
+    link.removeEventListener('keydown', link.__keyHandler,  false);
   }
 
-  // Aizver pēc izvēles (ja netur Shift)
+  if (link){
+    link.__toggleHandler = (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      if (!isOpen()) { open(); shieldClicks(300); } else { close(); }
+    };
+    link.__keyHandler = (e)=>{
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); link.__toggleHandler(e); }
+    };
+
+    // Tikai “click” (strādā pele/touch/pen), bez pointerdown/touchstart
+    link.addEventListener('click', link.__toggleHandler, false);
+    link.addEventListener('keydown', link.__keyHandler,  false);
+  }
+
+  // Pēc izvēles (radio/checkbox) aizver, ja neturi Shift
   const form = c.querySelector('.leaflet-control-layers-list') || c;
+  form.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(inp=>{
+    inp.addEventListener('click', (ev)=>{
+      if (ev.shiftKey) return;
+      setTimeout(()=> close(), 80);
+    });
+  });
 
-  // Vairogs 300ms pēc atvēršanas – neļauj nejauši “paķeksēt” pirmo input
-  form.addEventListener('click', (ev)=>{
-    if (justOpened) { ev.preventDefault(); ev.stopPropagation(); }
-  }, true);
-
-  Array.prototype.forEach.call(
-    form.querySelectorAll('input[type=radio], input[type=checkbox]'),
-    (inp)=>{
-      inp.addEventListener('click', (ev)=>{
-        if (ev.shiftKey) return;
-        setTimeout(()=> { if (isOpen()) close(); }, 80);
-      });
-    }
-  );
-
-  // Nenopludinām uz karti + norijam arī pointer/touch
-  L.DomEvent.on(c, 'click mousedown dblclick pointerdown pointerup touchstart touchend', L.DomEvent.stop);
+  // Ļaujam ķeksīšiem strādāt, bet nenolaižam klikus uz kartes
+  L.DomEvent.disableClickPropagation(c);
+  L.DomEvent.disableScrollPropagation(c);
 }
 
 
