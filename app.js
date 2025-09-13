@@ -1596,6 +1596,11 @@ function llToUTMInZone(lat, lon, zone){
 
   // ▶ Slāņu panelis: atveras ar klikšķi, aizveras pēc izvēles
   makeLayersClickOnly(layersCtl);
+
+
+// 👇 Pievieno šo 2 rindiņas
+window.__layersCtl = layersCtl;                             // (pēc vajadzības: lai var piekļūt no konsoles)
+window.__probeLayers && window.__probeLayers(layersCtl);    // ← te notiek piesiešana
 });
 
 
