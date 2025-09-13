@@ -2204,7 +2204,7 @@ const h = resizeHandle.offsetHeight || parseInt(cs.height) || 12;
 /* Backdrop ar blur (ja pieejams) un drošu fallbacku vecākiem pārlūkiem */
 .uploader-backdrop{
   position:fixed; left:0; top:0; right:0; bottom:0;
-  z-index:2147483000; display:grid; place-items:center;
+  z-index:14; display:grid; place-items:center;
   background:rgba(0,0,0,.55);
 }
 @supports ((backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px))){
