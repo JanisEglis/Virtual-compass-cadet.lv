@@ -3271,9 +3271,9 @@ function updateCompassTransform() {
     start();
   }
 })();
-}); // ===== END onDomReady wrapper for COMPASS =====
-setTimeout(updateCompassTransform, 0);
 
+setTimeout(updateCompassTransform, 0);
+}); // ===== END onDomReady wrapper for COMPASS =====
 
 
 // LongTask → pārkrāso kompasu nākamajā kadra brīdī
