@@ -1986,6 +1986,16 @@ if (dimRange){ window.__bindDimmer(dimRange); }
   drawImage();
 });
 
+
+
+
+
+
+// === CANVAS LISTENERI TIKAI, JA KANVA IR =========================
+if (canvas) {
+
+
+
 						// Attēla pārvietošana
 						canvas.addEventListener('mousedown', (e) => {
 							if (e.target === resizeHandle) return;
@@ -2082,6 +2092,7 @@ if (dimRange){ window.__bindDimmer(dimRange); }
 						canvas.addEventListener('touchend', () => {
 							dragging = false;
 						});
+	} // ← BEIGAS: CANVAS LISTENERI
 
 function canvasTouchDistance(touch1, touch2) {
   const dx = touch1.clientX - touch2.clientX;
