@@ -2732,6 +2732,55 @@ if (uploadBtn){
 /* Kājene ar Atcelt centrā */
 .footer-row{ display:flex; justify-content:center }
 
+
+
+/* pdf lapu izvēle */
+
+
+/* PDF lapas izvēle: ievade + "Importēt" vienā līnijā (mobilē – stāvus) */
+.picker-row{
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.picker-row input[type="number"]{
+  /* tāpat kā URL ievade */
+  flex: 1 1 auto;
+  width: 1%;                 /* Flex bug fix (Safari/Edge) – ļauj aizpildīt brīvo vietu */
+  min-width: 0;              /* lai var samazināties šaurā konteinerā */
+
+  background:#0f1318; color:#fff;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:10px;
+  padding:10px;
+  font:13px system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+.picker-row input[type="number"]:focus{
+  outline:none;
+  border-color:#6ea2ff66;
+  box-shadow:0 0 0 2px #6ea2ff33 inset;
+}
+
+/* poga neizstiepjas, paliek blakus */
+#pOk{
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* uz šauriem ekrāniem, ja gribi uz 2 rindām (tāpat kā URL rindai) */
+@media (max-width:640px){
+  .picker-row{ flex-direction: column; }
+}
+
+
+
+
+
+
+
+
+
   `;
   let st=document.getElementById(id);
   if(!st){ st=document.createElement('style'); st.id=id; (document.head||document.documentElement).appendChild(st); }
