@@ -896,6 +896,83 @@ const icon = resizeHandle ? resizeHandle.querySelector('img') : null;
 
 
 
+// === DEVTOOL bridge: __devtoolSend(channel, type, data) ======================
+(function(){
+  if (window.__devtoolSend) return;
+
+  const q = [];
+  function tryDispatch(msg){
+    // 1) Mans devtool ar .push(msg) vai .event(channel,type,data)
+    const d = window.__devtool;
+    if (d && typeof d.push === 'function') { d.push(msg); return true; }
+    if (d && typeof d.event === 'function'){ d.event(msg.channel, msg.type, msg.data); return true; }
+    // 2) Alternatīva globāla funkcija
+    if (typeof window.__devlog === 'function'){ window.__devlog(msg); return true; }
+    return false;
+  }
+  function flush(){
+    let sent = false;
+    for (let i=0;i<q.length;i++){
+      if (tryDispatch(q[i])) { q.splice(i,1); i--; sent = true; }
+      else break;
+    }
+    return sent;
+  }
+
+  window.__devtoolSend = function(channel, type, data){
+    const msg = { channel, type, data, t: Date.now() };
+    // sūti uz devtool, ja jau gatavs; citādi rindā
+    if (!tryDispatch(msg)) q.push(msg);
+    // broadcast arī ar postMessage (ja tavs devtool to klausās)
+    try { window.postMessage({ __devtool: true, ...msg }, '*'); } catch(_){}
+  };
+
+  // ik pa laikam pamēģini izsūtīt rindā sakrājušos
+  setInterval(flush, 800);
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 (function(){
   const mapDiv   = document.getElementById('onlineMap');
   const mapDim   = document.getElementById('onlineMapDim');
@@ -1575,6 +1652,109 @@ function llToUTMInZone(lat, lon, zone){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// === Layers → devtool sūtītājs ===============================================
+(function attachLayersToDevtool(){
+  const ctl = window.__layersCtl;
+  if (!ctl) return; // nav vēl gatavs
+
+  const send = (type, data) => window.__devtoolSend && __devtoolSend('layers', type, data);
+  const c    = ctl._container;
+  const list = c.querySelector('.leaflet-control-layers-list') || c;
+
+  // — Toggle (OPEN/CLOSED) ar dublējuma filtru —
+  let lastOpen = null;
+  const reportState = () => {
+    const open = c.classList.contains('leaflet-control-layers-expanded');
+    if (open !== lastOpen) { lastOpen = open; send('toggle', { open }); }
+  };
+
+  const link = ctl._layersLink || c.querySelector('.leaflet-control-layers-toggle');
+  if (link){
+    const onTgl = (e)=>{ e && e.preventDefault(); setTimeout(reportState, 0); };
+    if ('onpointerup' in window) {
+      link.addEventListener('pointerup', onTgl, { passive:false });
+    } else {
+      link.addEventListener('touchend', onTgl, { passive:false });
+      link.addEventListener('click',    onTgl, { passive:false });
+    }
+  }
+
+  // — Slāņa izvēles (radio/checkbox), strādā arī ar <label> klikšķiem —
+  const onChoice = (e)=>{
+    const inp = e.target && e.target.closest('input[type=radio],input[type=checkbox]');
+    if (!inp) return;
+    const labelTxt = (inp.closest('label') || inp.parentElement)?.textContent?.trim() || '';
+    send('choice', {
+      kind: inp.type, checked: !!inp.checked, name: inp.name || null,
+      value: inp.value || null, label: labelTxt
+    });
+  };
+  list.addEventListener('change', onChoice, true);
+  list.addEventListener('click',  onChoice, true);
+
+  // (neobligāti) izejošie zemā līmeņa notikumi, ja gribi redzēt tap’iem
+  c.addEventListener('pointerdown', () => send('raw', { type:'pointerdown' , open: c.classList.contains('leaflet-control-layers-expanded') }), true);
+  c.addEventListener('touchstart',  () => send('raw', { type:'touchstart'  , open: c.classList.contains('leaflet-control-layers-expanded') }), true);
+
+  // sākuma “heartbeat”, lai devtools zin, ka esam piesieti
+  send('ready', { hasLink: !!link });
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
 	
   // saņemam ABUS slāņus no funkcijas
   const { grid, labels } = createUTMGridLayers();
@@ -4518,4 +4698,13 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 
   console.info('[layers] better logs armed');
 })();
+
+
+
+
+
+
+
+
+
 
