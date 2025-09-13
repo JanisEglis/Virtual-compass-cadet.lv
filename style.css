@@ -1891,7 +1891,7 @@ body.preloading{ overflow: hidden; }
 /* === ONLY attribution (bottom-right) offset === */
 /* 1) uz augšu/lējup regulē šeit: */
 :root{
-  --leaflet-attrib-bottom: 20px;   /* cik tālu no apakšas; palielini, ja vajag "zemāk" */
+  --leaflet-attrib-bottom: 1px;   /* cik tālu no apakšas; palielini, ja vajag "zemāk" */
   --leaflet-attrib-right:  8px;   /* cik tālu no labās malas */
 }
 
