@@ -4484,3 +4484,38 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
   }, true);
 })();
 
+
+
+(function attachBetterLayerLogs(){
+  const ctl = window.__layersCtl;
+  if (!ctl) return console.warn('[layers] no __layersCtl (ieslēdz tiešsaistes karti)');
+  const c = ctl._container;
+  const list = c.querySelector('.leaflet-control-layers-list') || c;
+  if (c.__betterLogs) return; // neliekam divreiz
+  c.__betterLogs = true;
+
+  function logChoice(inp){
+    const labelTxt = (inp.closest('label') || inp.parentElement)?.textContent?.trim() || '';
+    console.info('[layers] choice', {
+      type: inp.type, checked: inp.checked, name: inp.name || null, value: inp.value || null, label: labelTxt
+    });
+  }
+
+  // ķer gan click (ar labeliem), gan change (drošāk)
+  list.addEventListener('click',  (e)=>{ const inp = e.target.closest('input[type=radio],input[type=checkbox]'); if (inp) logChoice(inp); }, true);
+  list.addEventListener('change', (e)=>{ const inp = e.target.closest('input[type=radio],input[type=checkbox]'); if (inp) logChoice(inp); }, true);
+
+  const link = ctl._layersLink || c.querySelector('.leaflet-control-layers-toggle');
+  const onTgl = ()=> setTimeout(()=> {
+    const open = c.classList.contains('leaflet-control-layers-expanded');
+    console.info('[layers] toggle →', open ? 'OPEN' : 'CLOSED');
+  }, 0);
+
+  if (link){
+    if ('onpointerup' in window) link.addEventListener('pointerup', onTgl, {passive:false});
+    else { link.addEventListener('touchend', onTgl, {passive:false}); link.addEventListener('click', onTgl, {passive:false}); }
+  }
+
+  console.info('[layers] better logs armed');
+})();
+
