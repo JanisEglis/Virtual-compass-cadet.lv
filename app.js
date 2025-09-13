@@ -1656,50 +1656,75 @@ function makeLayersClickOnly(layersCtl){
 
   const c = layersCtl._container;
   if (!c) { requestAnimationFrame(() => makeLayersClickOnly(layersCtl)); return; }
-  const link = layersCtl._layersLink || c.querySelector('.leaflet-control-layers-toggle');
 
-  // Palīgi
+  // helperi
   const isOpen = () => L.DomUtil.hasClass(c, 'leaflet-control-layers-expanded');
   const open   = () => (layersCtl.expand   || layersCtl._expand).call(layersCtl);
   const close  = () => (layersCtl.collapse || layersCtl._collapse).call(layersCtl);
 
-  // Īslaicīgs vairogs pret “spoku klikšķi”, kas nāk uzreiz pēc atvēršanas uz touch
-  function shieldClicks(ms=300){
-    function stopper(e){ e.preventDefault(); e.stopPropagation(); }
+  // nolaužam hover uzvedību (ja tāda bija)
+  L.DomEvent.off(c, 'mouseover');
+  L.DomEvent.off(c, 'mouseout');
+
+  // “spoku klikšķa” vairogs uz īsu brīdi pēc atvēršanas
+  function armClickShield(ms){
+    const until = Date.now() + (ms || 380);
+    function stopper(e){
+      if (Date.now() < until) { e.preventDefault(); e.stopPropagation(); }
+      else {
+        c.removeEventListener('click', stopper, true);
+        c.removeEventListener('touchend', stopper, true);
+      }
+    }
     c.addEventListener('click', stopper, true);
-    setTimeout(()=> c.removeEventListener('click', stopper, true), ms);
+    c.addEventListener('touchend', stopper, true);
+    setTimeout(() => {
+      c.removeEventListener('click', stopper, true);
+      c.removeEventListener('touchend', stopper, true);
+    }, (ms || 380) + 50);
   }
 
-  // Notīri vecos klausītājus (ja bija)
-  if (link && link.__toggleHandler) {
-    link.removeEventListener('click', link.__toggleHandler, false);
-    link.removeEventListener('keydown', link.__keyHandler,  false);
+  function doToggle(e){
+    if (e){ e.preventDefault(); e.stopPropagation(); }
+    if (!isOpen()) { open(); armClickShield(380); }
+    else { close(); }
   }
 
-  if (link){
-    link.__toggleHandler = (e)=>{
-      e.preventDefault(); e.stopPropagation();
-      if (!isOpen()) { open(); shieldClicks(300); } else { close(); }
-    };
-    link.__keyHandler = (e)=>{
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); link.__toggleHandler(e); }
-    };
+  // --- droša piesaiste toggle pogai + auto-rebind, ja DOM mainās ---
+  function bindToggle(){
+    const link = layersCtl._layersLink || c.querySelector('.leaflet-control-layers-toggle');
+    if (!link || link.__boundClickOnly) return;
+    link.__boundClickOnly = true;
 
-    // Tikai “click” (strādā pele/touch/pen), bez pointerdown/touchstart
-    link.addEventListener('click', link.__toggleHandler, false);
-    link.addEventListener('keydown', link.__keyHandler,  false);
+    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    if (isTouch){
+      link.addEventListener('touchend', doToggle, false);
+    } else {
+      link.addEventListener('click', doToggle, false);
+      link.addEventListener('keydown', (e)=>{
+        if (e.key === 'Enter' || e.key === ' ') doToggle(e);
+      }, false);
+    }
   }
 
-  // Pēc izvēles (radio/checkbox) aizver, ja neturi Shift
-  const form = c.querySelector('.leaflet-control-layers-list') || c;
-  form.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(inp=>{
-    inp.addEventListener('click', (ev)=>{
-      if (ev.shiftKey) return;
-      setTimeout(()=> close(), 80);
+  bindToggle();
+  // Ja Leaflet pārzīmē saturu, piesienam atkārtoti
+  const mo = new MutationObserver(() => bindToggle());
+  mo.observe(c, { childList: true, subtree: true });
+
+  // --- aizver pēc izvēles (ja netur Shift) ---
+  function wireInputs(){
+    const form = c.querySelector('.leaflet-control-layers-list') || c;
+    form.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(inp=>{
+      if (inp.__boundClickOnly) return;
+      inp.__boundClickOnly = true;
+      inp.addEventListener('click', (ev)=>{ if (ev.shiftKey) return; setTimeout(close, 80); }, false);
     });
-  });
+  }
+  wireInputs();
+  new MutationObserver(wireInputs).observe(c, { childList:true, subtree:true });
 
-  // Ļaujam ķeksīšiem strādāt, bet nenolaižam klikus uz kartes
+  // Nenolaižam klikus uz kartes, bet netraucējam pašas kontroles inputiem
   L.DomEvent.disableClickPropagation(c);
   L.DomEvent.disableScrollPropagation(c);
 }
