@@ -2570,9 +2570,23 @@ if (uploadBtn){
 #chCancel:active,#pCancel:active,#urlCancel:active{transform:translateY(1px)}
 
 /* Ievades lauki */
-.uploader-card input[type="url"], .uploader-card input[type="number"]{
-  width:100%;box-sizing:border-box;background:#0f1318;color:#fff;border:1px solid rgba(255,255,255,.18);
-  border-radius:10px;padding:9px 10px;font:13px system-ui,-apple-system,Segoe UI,Roboto,Arial
+/* URL var palikt 100% */
+.uploader-card input[type="url"]{
+  width:100%;
+  box-sizing:border-box;
+  background:#0f1318; color:#fff;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:10px; padding:9px 10px;
+  font:13px system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+
+/* NUMBER – bez 100% platuma! */
+.uploader-card input[type="number"]{
+  box-sizing:border-box;
+  background:#0f1318; color:#fff;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:10px; padding:9px 10px;
+  font:13px system-ui,-apple-system,Segoe UI,Roboto,Arial;
 }
 .uploader-card input[type="url"]:focus, .uploader-card input[type="number"]:focus{
   outline:none;border-color:#ff9a9a66;box-shadow:0 0 0 2px #ff9a9a33 inset
