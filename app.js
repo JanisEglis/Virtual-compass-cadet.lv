@@ -1637,19 +1637,25 @@ function makeLayersClickOnly(layersCtl){
   const link = layersCtl._layersLink || c.querySelector('.leaflet-control-layers-toggle');
 
   // — droši noņemam hover/focus uzvedību —
-  try { L.DomEvent.off(c,    'mouseover', layersCtl._expand,   layersCtl); } catch(e){}
-  try { L.DomEvent.off(c,    'mouseout',  layersCtl._collapse, layersCtl); } catch(e){}
-  if (link) {
-    try { L.DomEvent.off(link, 'focus',   layersCtl._expand,   layersCtl); } catch(e){}
-    try { L.DomEvent.off(link, 'blur',    layersCtl._collapse, layersCtl); } catch(e){}
-  }
+ L.DomEvent.off(c, 'mouseover');
+L.DomEvent.off(c, 'mouseout');
+if (link) {
+  L.DomEvent.off(link, 'focus');
+  L.DomEvent.off(link, 'blur');
+}
 
   // — pārslēgšana tikai ar klikšķi / Enter / Space —
-  function toggle(e){
-    L.DomEvent.stop(e);
-    const open = L.DomUtil.hasClass(c, 'leaflet-control-layers-expanded');
-    open ? layersCtl._collapse() : layersCtl._expand();
+function toggle(e){
+  L.DomEvent.stop(e);
+  const open = L.DomUtil.hasClass(c, 'leaflet-control-layers-expanded');
+  if (open) {
+    if (typeof layersCtl.collapse === 'function') layersCtl.collapse();
+    else if (typeof layersCtl._collapse === 'function') layersCtl._collapse(); // fallback uz vecāku Leaflet
+  } else {
+    if (typeof layersCtl.expand === 'function') layersCtl.expand();
+    else if (typeof layersCtl._expand === 'function') layersCtl._expand();     // fallback uz vecāku Leaflet
   }
+}
 
   if (link) {
     L.DomEvent.on(link, 'click',     toggle);
