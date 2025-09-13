@@ -1781,62 +1781,84 @@ function makeLayersClickOnly(layersCtl){
   const open   = () => (layersCtl.expand||layersCtl._expand).call(layersCtl);
   const close  = () => (layersCtl.collapse||layersCtl._collapse).call(layersCtl);
 
-  // atslēdz "hover" uzvedību
+  // noņem hover uzvedību
   L.DomEvent.off(c,'mouseover');
   L.DomEvent.off(c,'mouseout');
 
-  // ── Toggler ar pareiziem fallbackiem ─────────────────────────
+  // ─── Ghost-click aizsargs (pēc atvēršanas) ───
+  let suppressUntil = 0;
+  const SUPPRESS_MS = 360;
+  // CAPTURE klausītājs, lai apturētu pirmo klikšķi panelī
+  c.addEventListener('click', (e) => {
+    if ((performance.now ? performance.now() : Date.now()) < suppressUntil) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, true);
+
   function bindToggle(){
     const link = layersCtl._layersLink || c.querySelector('.leaflet-control-layers-toggle');
     if (!link || link.__bound) return;
     link.__bound = true;
 
-    link.style.touchAction = 'manipulation';
+    // svarīgi skārienam
+    link.style.touchAction = 'none';
 
-    let last = 0;
     const onToggle = (e) => {
-      e.preventDefault(); e.stopPropagation();
-      const now = (window.performance && performance.now) ? performance.now() : Date.now();
-      if (now - last < 250) return; // novāc dubulto "touchend→click"
-      last = now;
-      isOpen() ? close() : open();
+      // NEĻAUJAM pārlūkam ģenerēt papildu klikšķus
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (isOpen()) {
+        close();
+      } else {
+        open();
+        // bloķē pirmo klikšķi panelī, lai spoku klikšķis neuzsit pa label/input
+        const now = (performance.now ? performance.now() : Date.now());
+        suppressUntil = now + SUPPRESS_MS;
+      }
     };
 
-    const supportsPointer = !!window.PointerEvent && ('onpointerup' in window);
+    const supportsPointer = !!window.PointerEvent && ('onpointerdown' in window);
 
-    // noņemam tikai mūsu (ja bija) – nevis Leaflet savējos
-    ['click','touchend','pointerup'].forEach(ev => {
+    // notīrām iepriekšējās saites (ja bija)
+    ['click','touchstart','pointerdown','mousedown'].forEach(ev => {
       try{ link.removeEventListener(ev, onToggle, false); }catch(_){}
     });
 
     if (supportsPointer) {
-      link.addEventListener('pointerup', onToggle, {passive:false});
-    } else if ('ontouchend' in window) {
-      link.addEventListener('touchend', onToggle, {passive:false});
-      link.addEventListener('click',    onToggle, {passive:false}); // dažiem browseriem vajag arī šo
+      link.addEventListener('pointerdown', onToggle, {passive:false});
+    } else if ('ontouchstart' in window) {
+      link.addEventListener('touchstart', onToggle, {passive:false});
+      link.addEventListener('mousedown',   onToggle, {passive:false}); // rezerve
     } else {
-      link.addEventListener('click',    onToggle, {passive:false});
+      link.addEventListener('mousedown',   onToggle, {passive:false});
     }
   }
   bindToggle();
   new MutationObserver(bindToggle).observe(c, {childList:true, subtree:true});
 
-  // pēc izvēles – aizver pēc slāņa izvēles (atstāj, ja tā gribi)
+  // ─── Aizveram pēc izvēles, bet ne uzreiz ghost-click laikā ───
   function wireInputs(){
     const form = c.querySelector('.leaflet-control-layers-list') || c;
     form.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(inp=>{
       if (inp.__bound) return;
       inp.__bound = true;
-      inp.addEventListener('click', (ev)=>{ if (ev.shiftKey) return; setTimeout(close,80); }, false);
+      inp.addEventListener('change', (ev) => {
+        const now = (performance.now ? performance.now() : Date.now());
+        if (now < suppressUntil) return;   // ignorē ghost-click logu
+        setTimeout(close, 80);
+      }, false);
     });
   }
   wireInputs();
   new MutationObserver(wireInputs).observe(c, {childList:true, subtree:true});
 
-  // lai klikšķi nekrit uz kartes
+  // neļaujam notikumiem iziet uz karti
   L.DomEvent.disableClickPropagation(c);
   L.DomEvent.disableScrollPropagation(c);
 }
+
 
 
 
