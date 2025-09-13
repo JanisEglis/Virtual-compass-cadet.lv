@@ -1664,7 +1664,11 @@ function makeLayersClickOnly(layersCtl){
   form.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(inp => {
     inp.addEventListener('click', (ev) => {
       if (ev.shiftKey) return;
-      setTimeout(() => layersCtl._collapse(), 80);
+      setTimeout(() => {
+  if (layersCtl && typeof layersCtl.collapse === 'function') {
+    layersCtl.collapse();
+  }
+}, 80);
     });
   });
 
