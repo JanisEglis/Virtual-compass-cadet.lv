@@ -3274,57 +3274,111 @@ function updateCompassTransform() {
 })();
 
 setTimeout(updateCompassTransform, 0);
-}); // ===== END onDomReady wrapper for COMPASS =====
 
 
-// LongTask → pārkrāso kompasu nākamajā kadra brīdī
-(function longTaskHeal(){
-  if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes?.includes('longtask')) {
-    const po = new PerformanceObserver(() => {
-      requestAnimationFrame(() => {
-        try { updateCompassTransform(); } catch(e){}
-      });
+
+
+
+
+// === Kompasa klausītāji ar helperi; droši pret “null” un dubultpiesaisti ===
+(function bindCompassSection(){
+  function bindCompassListeners(){
+    const cc = byId('compassContainer');
+    if (!cc) { requestAnimationFrame(bindCompassListeners); return; } // gaida, līdz elements parādās
+    if (cc.__boundCompass) return;  // nerindē dubulti
+    cc.__boundCompass = true;
+
+    // Peles vilkšana
+    on(cc, 'mousedown', (e) => {
+      e.preventDefault();
+      const rect = cc.getBoundingClientRect();
+      compassIsDragging = true;
+      compassDragStartX = e.clientX - rect.left;
+      compassDragStartY = e.clientY - rect.top;
+      e.stopPropagation();
     });
-    po.observe({ entryTypes: ['longtask'] });
+
+
+
+document.addEventListener('mousemove', (e) => {
+  if (compassIsDragging) {
+    compassStartLeft = e.clientX - compassDragStartX;
+    compassStartTop  = e.clientY - compassDragStartY;
+    updateCompassTransform();
   }
-})();
+});
+document.addEventListener('mouseup', () => { compassIsDragging = false; });
+	  
 
-// “Watchdog” – līdz kompasa inline stāvoklis tiešām ir uzlikts
-(function compassWatchdog(){
-  const MAX_MS = 2000, STEP = 80;
-  let t = 0, id = null;
+    // Skārieni: start
+    on(cc, 'touchstart', (e) => {
+      e.preventDefault();
+      if (e.touches.length === 1) {
+        isTouchingCompass = true;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        compassDragStartX = e.touches[0].clientX - compassStartLeft;
+        compassDragStartY = e.touches[0].clientY - compassStartTop;
+      } else if (e.touches.length === 2) {
+        lastTouchDistance = getDistance(e.touches[0], e.touches[1]);
+        lastRotation = getAngle(e.touches[0], e.touches[1]);
+      }
+    }, { passive:false });
 
-  function tick(){
-    try { resetCompassToInitial(); updateCompassTransform(); } catch(e){}
-    const c = document.getElementById('compassContainer');
-    if (!c) { id = setTimeout(tick, STEP); t+=STEP; return; }
+    // Skārieni: move (drag / pinch / rotate)
+    on(cc, 'touchmove', (e) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && isTouchingCompass) {
+        compassStartLeft = e.touches[0].clientX - compassDragStartX;
+        compassStartTop  = e.touches[0].clientY - compassDragStartY;
+        updateCompassTransform();
+      } else if (e.touches.length === 2) {
+        const newDistance = getDistance(e.touches[0], e.touches[1]);
+        globalScale *= newDistance / lastTouchDistance;
+        lastTouchDistance = newDistance;
 
-    const cs   = getComputedStyle(c);
-    const left = parseFloat(cs.left)  || 0;
-    const top  = parseFloat(cs.top)   || 0;
-const init = window.COMPASS_INIT || { left: 0, top: 0 };
-const ok = Math.abs(left - init.left) < 1 &&
-          Math.abs(top  - init.top ) < 1;
+        if (!isRotationLocked) {
+          const newRotation = getAngle(e.touches[0], e.touches[1]);
+          if (activeRotationTarget === 'compassInner') {
+            baseRotation  += newRotation - lastRotation;
+          } else if (activeRotationTarget === 'compassScaleInner') {
+            scaleRotation += newRotation - lastRotation;
+          }
+          lastRotation = newRotation;
+        }
+        updateCompassTransform();
+      }
+    }, { passive:false });
 
-    if (!ok && t < MAX_MS) { id = setTimeout(tick, STEP); t+=STEP; }
+    // Skārieni: end
+    on(cc, 'touchend', () => { isTouchingCompass = false; });
+
+    // Ritenītis (zoom/rotācija)
+    on(cc, 'wheel', (e) => {
+      e.preventDefault();
+      if (e.shiftKey) {
+        baseRotation += e.deltaY * 0.005;
+      } else if (e.altKey) {
+        globalScale += e.deltaY * -0.0005;
+        globalScale  = Math.min(Math.max(0.5, globalScale), 5);
+      } else if (e.ctrlKey) {
+        scaleRotation += e.deltaY * 0.005;
+      }
+      updateCompassTransform();
+    }, { passive:false });
   }
 
-  // startē drīz, bet ne uzreiz (dod vietu citiem starta darbiem)
-  setTimeout(tick, 0);
-  window.addEventListener('load', tick, {once:true});
+  // Piesaista, kad DOM gatavs (un vēlreiz kā rezerve pēc window.load)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindCompassListeners, { once:true });
+  } else {
+    bindCompassListeners();
+  }
+  window.addEventListener('load', bindCompassListeners, { once:true });
+
+  // Sākumstāvoklis pēc ielādes
+  window.addEventListener('load', resetCompassToInitial, { once:true });
 })();
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3441,112 +3495,77 @@ on(byId('rotateCompass90'), 'click', function (ev) {
   }
 });
 
+	
 
 
+window.updateCompassTransform = updateCompassTransform;
+window.resetCompassToInitial  = resetCompassToInitial;
 
 
+	
+}); // ===== END onDomReady wrapper for COMPASS =====
 
-// === Kompasa klausītāji ar helperi; droši pret “null” un dubultpiesaisti ===
-(function bindCompassSection(){
-  function bindCompassListeners(){
-    const cc = byId('compassContainer');
-    if (!cc) { requestAnimationFrame(bindCompassListeners); return; } // gaida, līdz elements parādās
-    if (cc.__boundCompass) return;  // nerindē dubulti
-    cc.__boundCompass = true;
 
-    // Peles vilkšana
-    on(cc, 'mousedown', (e) => {
-      e.preventDefault();
-      const rect = cc.getBoundingClientRect();
-      compassIsDragging = true;
-      compassDragStartX = e.clientX - rect.left;
-      compassDragStartY = e.clientY - rect.top;
-      e.stopPropagation();
+// LongTask → pārkrāso kompasu nākamajā kadra brīdī
+(function longTaskHeal(){
+  if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes?.includes('longtask')) {
+    const po = new PerformanceObserver(() => {
+      requestAnimationFrame(() => {
+        try { updateCompassTransform(); } catch(e){}
+      });
     });
-
-
-
-document.addEventListener('mousemove', (e) => {
-  if (compassIsDragging) {
-    compassStartLeft = e.clientX - compassDragStartX;
-    compassStartTop  = e.clientY - compassDragStartY;
-    updateCompassTransform();
+    po.observe({ entryTypes: ['longtask'] });
   }
-});
-document.addEventListener('mouseup', () => { compassIsDragging = false; });
-	  
-
-    // Skārieni: start
-    on(cc, 'touchstart', (e) => {
-      e.preventDefault();
-      if (e.touches.length === 1) {
-        isTouchingCompass = true;
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-        compassDragStartX = e.touches[0].clientX - compassStartLeft;
-        compassDragStartY = e.touches[0].clientY - compassStartTop;
-      } else if (e.touches.length === 2) {
-        lastTouchDistance = getDistance(e.touches[0], e.touches[1]);
-        lastRotation = getAngle(e.touches[0], e.touches[1]);
-      }
-    }, { passive:false });
-
-    // Skārieni: move (drag / pinch / rotate)
-    on(cc, 'touchmove', (e) => {
-      e.preventDefault();
-      if (e.touches.length === 1 && isTouchingCompass) {
-        compassStartLeft = e.touches[0].clientX - compassDragStartX;
-        compassStartTop  = e.touches[0].clientY - compassDragStartY;
-        updateCompassTransform();
-      } else if (e.touches.length === 2) {
-        const newDistance = getDistance(e.touches[0], e.touches[1]);
-        globalScale *= newDistance / lastTouchDistance;
-        lastTouchDistance = newDistance;
-
-        if (!isRotationLocked) {
-          const newRotation = getAngle(e.touches[0], e.touches[1]);
-          if (activeRotationTarget === 'compassInner') {
-            baseRotation  += newRotation - lastRotation;
-          } else if (activeRotationTarget === 'compassScaleInner') {
-            scaleRotation += newRotation - lastRotation;
-          }
-          lastRotation = newRotation;
-        }
-        updateCompassTransform();
-      }
-    }, { passive:false });
-
-    // Skārieni: end
-    on(cc, 'touchend', () => { isTouchingCompass = false; });
-
-    // Ritenītis (zoom/rotācija)
-    on(cc, 'wheel', (e) => {
-      e.preventDefault();
-      if (e.shiftKey) {
-        baseRotation += e.deltaY * 0.005;
-      } else if (e.altKey) {
-        globalScale += e.deltaY * -0.0005;
-        globalScale  = Math.min(Math.max(0.5, globalScale), 5);
-      } else if (e.ctrlKey) {
-        scaleRotation += e.deltaY * 0.005;
-      }
-      updateCompassTransform();
-    }, { passive:false });
-  }
-
-  // Piesaista, kad DOM gatavs (un vēlreiz kā rezerve pēc window.load)
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bindCompassListeners, { once:true });
-  } else {
-    bindCompassListeners();
-  }
-  window.addEventListener('load', bindCompassListeners, { once:true });
-
- 
-
-  // Sākumstāvoklis pēc ielādes
-  window.addEventListener('load', resetCompassToInitial, { once:true });
 })();
+
+// “Watchdog” – līdz kompasa inline stāvoklis tiešām ir uzlikts
+(function compassWatchdog(){
+  const MAX_MS = 2000, STEP = 80;
+  let t = 0, id = null;
+
+  function tick(){
+    try { resetCompassToInitial(); updateCompassTransform(); } catch(e){}
+    const c = document.getElementById('compassContainer');
+    if (!c) { id = setTimeout(tick, STEP); t+=STEP; return; }
+
+    const cs   = getComputedStyle(c);
+    const left = parseFloat(cs.left)  || 0;
+    const top  = parseFloat(cs.top)   || 0;
+const init = window.COMPASS_INIT || { left: 0, top: 0 };
+const ok = Math.abs(left - init.left) < 1 &&
+          Math.abs(top  - init.top ) < 1;
+
+    if (!ok && t < MAX_MS) { id = setTimeout(tick, STEP); t+=STEP; }
+  }
+
+  // startē drīz, bet ne uzreiz (dod vietu citiem starta darbiem)
+  setTimeout(tick, 0);
+  window.addEventListener('load', tick, {once:true});
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 							
 
