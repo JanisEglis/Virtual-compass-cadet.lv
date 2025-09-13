@@ -129,6 +129,28 @@
 @media (max-width:760px){
   #dtPanel{ right:10px; width:92vw; max-height:62vh; }
   #dtToggle{ right:10px; }
+}
+
+
+/* === Touch uzvedība === */
+#dtPanel .bar{ 
+  touch-action: none;          /* ļauj vilkt paneli bez lapas scroll */
+}
+
+#dtPanel .bar button,
+#dtPanel .foot button,
+#dtPanel .foot label,
+#dtToggle{
+  touch-action: manipulation;  /* ātrs tap, bez 300ms aiztures/double-tap zoom */
+}
+
+/* Lielāks “tap targets” uz mobilajām */
+#dtPanel .bar button,
+#dtPanel .foot button,
+#dtPanel .foot label{
+  min-width: 36px;
+  min-height: 32px;
+  line-height: 1;
 }`;
     const st = document.createElement('style');
     st.textContent = css;
@@ -334,19 +356,53 @@
     });
     panel.querySelector('[data-act="clear"]').addEventListener('click', ()=>{ els.body.textContent=''; });
 
-    // drag by bar
-    (function drag(){
-      const bar=panel.querySelector('#dtBar');
-      let dragging=false, sx=0, sy=0, startR=0, startB=0;
-      const down=e=>{ dragging=true; const p=e.touches?e.touches[0]:e; sx=p.clientX; sy=p.clientY;
-        const cs=getComputedStyle(panel); startR=parseFloat(cs.right); startB=parseFloat(cs.bottom); e.preventDefault(); };
-      const move=e=>{ if(!dragging) return; const p=e.touches?e.touches[0]:e;
-        panel.style.right=(startR-(p.clientX-sx))+'px'; panel.style.bottom=(startB-(p.clientY-sy))+'px'; };
-      const up =()=>{ if(dragging){ dragging=false; saveState(); } };
-      bar.addEventListener('mousedown',down); bar.addEventListener('touchstart',down,{passive:false});
-      addEventListener('mousemove',move,{passive:false}); addEventListener('touchmove',move,{passive:false});
-      addEventListener('mouseup',up); addEventListener('touchend',up);
-    })();
+  // drag by bar — Pointer Events + ignorē interaktīvos elementus
+(function drag(){
+  const bar = panel.querySelector('#dtBar');
+  let dragging = false, startX = 0, startY = 0, startR = 0, startB = 0, pid = null;
+
+  function onPointerDown(e){
+    // tikai primārais klikšķis / pieskāriens
+    if (e.button !== undefined && e.button !== 0) return;
+    // NEvilkt, ja tap uz pogas/label/link/input utt.
+    if (e.target.closest('button, input, select, textarea, a, label')) return;
+
+    dragging = true;
+    pid = e.pointerId || null;
+    try { if (pid != null) bar.setPointerCapture(pid); } catch(_){}
+
+    startX = e.clientX; startY = e.clientY;
+    const cs = getComputedStyle(panel);
+    startR = parseFloat(cs.right); 
+    startB = parseFloat(cs.bottom);
+
+    e.preventDefault(); // bloķē lapas scroll teknes laikā
+  }
+
+  function onPointerMove(e){
+    if (!dragging) return;
+    if (pid != null && e.pointerId !== pid) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    panel.style.right  = (startR - dx) + 'px';
+    panel.style.bottom = (startB - dy) + 'px';
+  }
+
+  function onPointerUp(e){
+    if (!dragging) return;
+    if (pid != null && e.pointerId !== pid) return;
+    dragging = false;
+    try { if (pid != null) bar.releasePointerCapture(pid); } catch(_){}
+    pid = null;
+    saveState();
+  }
+
+  bar.addEventListener('pointerdown', onPointerDown);
+  bar.addEventListener('pointermove', onPointerMove, { passive: false });
+  bar.addEventListener('pointerup', onPointerUp);
+  bar.addEventListener('pointercancel', onPointerUp);
+})();
+
 
     // persist size
     if (window.ResizeObserver){
