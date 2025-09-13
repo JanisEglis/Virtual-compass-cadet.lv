@@ -1654,58 +1654,75 @@ function llToUTMInZone(lat, lon, zone){
 function makeLayersClickOnly(layersCtl){
   if (!layersCtl) return;
 
-  // mēģinām paņemt konteineru; ja vēl nav – pārliekam uz nākamo kadru
   const c = layersCtl._container;
   if (!c) { requestAnimationFrame(() => makeLayersClickOnly(layersCtl)); return; }
-
-  // mēģinām paņemt “toggle” linku no API vai pēc klases
   const link = layersCtl._layersLink || c.querySelector('.leaflet-control-layers-toggle');
 
-  // — droši noņemam hover/focus uzvedību —
- L.DomEvent.off(c, 'mouseover');
-L.DomEvent.off(c, 'mouseout');
-if (link) {
-  L.DomEvent.off(link, 'focus');
-  L.DomEvent.off(link, 'blur');
-}
-
-  // — pārslēgšana tikai ar klikšķi / Enter / Space —
-function toggle(e){
-  L.DomEvent.stop(e);
-  const open = L.DomUtil.hasClass(c, 'leaflet-control-layers-expanded');
-  if (open) {
-    if (typeof layersCtl.collapse === 'function') layersCtl.collapse();
-    else if (typeof layersCtl._collapse === 'function') layersCtl._collapse(); // fallback uz vecāku Leaflet
-  } else {
-    if (typeof layersCtl.expand === 'function') layersCtl.expand();
-    else if (typeof layersCtl._expand === 'function') layersCtl._expand();     // fallback uz vecāku Leaflet
+  // noņemam hover/focus uzvedību
+  L.DomEvent.off(c, 'mouseover');
+  L.DomEvent.off(c, 'mouseout');
+  if (link) {
+    L.DomEvent.off(link, 'focus');
+    L.DomEvent.off(link, 'blur');
+    // un – vissvarīgākais – noņemam iepriekš piesieto klik/pointerup
+    L.DomEvent.off(link, 'click');
+    L.DomEvent.off(link, 'pointerup');
   }
-}
+
+  const isOpen = () => L.DomUtil.hasClass(c, 'leaflet-control-layers-expanded');
+  const open   = () => {
+    (layersCtl.expand || layersCtl._expand).call(layersCtl);
+    justOpened = true; setTimeout(()=> justOpened = false, 300);
+  };
+  const close  = () => (layersCtl.collapse || layersCtl._collapse).call(layersCtl);
+
+  let lastToggleTs = 0;
+  let justOpened   = false;
+
+  function onToggle(e){
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    const now = Date.now();
+    if (now - lastToggleTs < 250) return; // debounce pret dubult-notikumiem
+    lastToggleTs = now;
+    isOpen() ? close() : open();
+  }
 
   if (link) {
-    L.DomEvent.on(link, 'click',     toggle);
-    L.DomEvent.on(link, 'pointerup', toggle);
-    L.DomEvent.on(link, 'keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') toggle(e);
+    // TIKAI pointerdown (strādā pele/touch/pen) + norijam click
+    link.addEventListener('pointerdown', onToggle, { passive:false });
+    link.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); }, true);
+    // vecākiem dzinējiem – touchstart kā rezerves variants
+    link.addEventListener('touchstart', onToggle, { passive:false });
+    link.addEventListener('touchend', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); }, { passive:false });
+
+    // klaviatūra
+    link.addEventListener('keydown', (e)=>{
+      if (e.key === 'Enter' || e.key === ' ') onToggle(e);
     });
   }
 
-  // Aizver TIKAI pēc izvēles (radio/checkbox). Turi SHIFT, lai neaizvērtu.
+  // Aizver pēc izvēles (ja netur Shift)
   const form = c.querySelector('.leaflet-control-layers-list') || c;
-  form.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(inp => {
-    inp.addEventListener('click', (ev) => {
-      if (ev.shiftKey) return;
-      setTimeout(() => {
-  if (layersCtl && typeof layersCtl.collapse === 'function') {
-    layersCtl.collapse();
-  }
-}, 80);
-    });
-  });
 
-  // Nenopludina klikšķus uz karti
-  L.DomEvent.on(c, 'click mousedown dblclick', L.DomEvent.stopPropagation);
+  // Vairogs 300ms pēc atvēršanas – neļauj nejauši “paķeksēt” pirmo input
+  form.addEventListener('click', (ev)=>{
+    if (justOpened) { ev.preventDefault(); ev.stopPropagation(); }
+  }, true);
+
+  Array.prototype.forEach.call(
+    form.querySelectorAll('input[type=radio], input[type=checkbox]'),
+    (inp)=>{
+      inp.addEventListener('click', (ev)=>{
+        if (ev.shiftKey) return;
+        setTimeout(()=> { if (isOpen()) close(); }, 80);
+      });
+    }
+  );
+
+  // Nenopludinām uz karti + norijam arī pointer/touch
+  L.DomEvent.on(c, 'click mousedown dblclick pointerdown pointerup touchstart touchend', L.DomEvent.stop);
 }
+
 
 
 
