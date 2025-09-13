@@ -3621,21 +3621,24 @@ on(byId("toggleInstruction"), "click", function() {
 
 
 							document.addEventListener("click", function(event) {
-								let instructionMenu = document.getElementById("dropdownInstruction");
-								let materialsMenu = document.getElementById("dropdownMaterials");
-								let instructionButton = document.getElementById("toggleInstruction");
-								let materialsButton = document.getElementById("toggleMaterials");
+  const instructionMenu   = document.getElementById("dropdownInstruction");
+  const materialsMenu     = document.getElementById("dropdownMaterials");
+  const instructionButton = document.getElementById("toggleInstruction");
+  const materialsButton   = document.getElementById("toggleMaterials");
 
-								if (!instructionMenu.contains(event.target) && !instructionButton.contains(event.target)) {
-									instructionMenu.classList.remove("visible");
-									instructionButton.classList.remove("active");
-								}
+  if (instructionMenu && instructionButton &&
+      !instructionMenu.contains(event.target) && !instructionButton.contains(event.target)) {
+    instructionMenu.classList.remove("visible");
+    instructionButton.classList.remove("active");
+  }
 
-								if (!materialsMenu.contains(event.target) && !materialsButton.contains(event.target)) {
-									materialsMenu.classList.remove("visible");
-									materialsButton.classList.remove("active");
-								}
-							});
+  if (materialsMenu && materialsButton &&
+      !materialsMenu.contains(event.target) && !materialsButton.contains(event.target)) {
+    materialsMenu.classList.remove("visible");
+    materialsButton.classList.remove("active");
+  }
+});
+
 
 
 							//ATVER IFRAME MACIBU MATERIALI
