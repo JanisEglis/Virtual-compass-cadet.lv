@@ -174,17 +174,16 @@ const on = (el, ev, fn, opts) => el && el.addEventListener(ev, fn, opts);
 						}
 						
 						// Arī loga izmēra pārbaude laiž caur vizuālo viewport
-						function checkWindowSize() {
-						  const fullscreenMessage = document.getElementById('fullscreenMessage');
-						  const w = window.innerWidth;
-						  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-						
-						  if (w >= 1024 && h >= 700) {
-						    fullscreenMessage.classList.add('hidden');
-						  } else {
-						    fullscreenMessage.classList.remove('hidden');
-						  }
-						}
+function checkWindowSize() {
+  const fullscreenMessage = document.getElementById('fullscreenMessage');
+  if (!fullscreenMessage) return; // sargs
+
+  const w = window.innerWidth;
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+
+  fullscreenMessage.classList.toggle('hidden', (w >= 1024 && h >= 700));
+}
+
 						
 						function handleResize() {
 						  updateViewportHeight();
@@ -729,8 +728,8 @@ window.armSelectorIdleCloseLegacy = armSelectorIdleCloseLegacy;
 
 
 
-						const canvas = document.getElementById('mapCanvas');
-						const ctx = canvas.getContext('2d');
+const canvas = document.getElementById('mapCanvas');
+const ctx = canvas ? canvas.getContext('2d') : null;
 						const img = new Image();
 img.src = '';
 
@@ -2979,6 +2978,7 @@ function openChooserModal(){
 
 
 function drawImage() {
+    if (!ctx) return; // nav kanvas – nav ko zīmēt droši
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (!hasImage()) {
