@@ -575,12 +575,12 @@
     try { test = /\blegacytest=1\b/.test(location.search); } catch (_e) {}
 
     // nerādām 2x vienā sesijā (ja vien nav tests)
-    try { if (!test && sessionStorage.getItem('legacyWarnShown') === '1') return; } catch (_e) {}
+   // try { if (!test && sessionStorage.getItem('legacyWarnShown') === '1') return; } catch (_e) {}
 
     var res = shouldWarn();
     if (res.show || test) {
       showLegacyBrowserWarning(res);
-      try { sessionStorage.setItem('legacyWarnShown', '1'); } catch (_e) {}
+     // try { sessionStorage.setItem('legacyWarnShown', '1'); } catch (_e) {}
     }
   });
 })();
