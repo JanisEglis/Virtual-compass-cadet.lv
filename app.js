@@ -731,7 +731,7 @@ window.armSelectorIdleCloseLegacy = armSelectorIdleCloseLegacy;
 const canvas = document.getElementById('mapCanvas');
 const ctx = canvas ? canvas.getContext('2d') : null;
 						const img = new Image();
-img.src = '';
+// img.src = '';
 
 
 
