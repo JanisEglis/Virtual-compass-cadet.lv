@@ -1664,36 +1664,11 @@ function llToUTMInZone(lat, lon, zone){
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// === Layers → devtool sūtītājs ===============================================
-(function attachLayersToDevtool(){
-  const ctl = window.__layersCtl;
-  if (!ctl) return; // nav vēl gatavs
+// === Layers → devtool sūtītājs (IZSAUC PĒC layersCtl izveides) ===============
+window.__probeLayers = function attachLayersToDevtool(layersCtl){
+  const ctl = layersCtl || window.__layersCtl;
+  if (!ctl || ctl.__devtoolBound) return;
+  ctl.__devtoolBound = true;
 
   const send = (type, data) => window.__devtoolSend && __devtoolSend('layers', type, data);
   const c    = ctl._container;
@@ -1717,7 +1692,7 @@ function llToUTMInZone(lat, lon, zone){
     }
   }
 
-  // — Slāņa izvēles (radio/checkbox), strādā arī ar <label> klikšķiem —
+  // — Slāņu izvēles (radio/checkbox), strādā arī ar <label> klikšķiem —
   const onChoice = (e)=>{
     const inp = e.target && e.target.closest('input[type=radio],input[type=checkbox]');
     if (!inp) return;
@@ -1730,13 +1705,13 @@ function llToUTMInZone(lat, lon, zone){
   list.addEventListener('change', onChoice, true);
   list.addEventListener('click',  onChoice, true);
 
-  // (neobligāti) izejošie zemā līmeņa notikumi, ja gribi redzēt tap’iem
+  // (neobligāti) zemas pakāpes notikumi
   c.addEventListener('pointerdown', () => send('raw', { type:'pointerdown' , open: c.classList.contains('leaflet-control-layers-expanded') }), true);
   c.addEventListener('touchstart',  () => send('raw', { type:'touchstart'  , open: c.classList.contains('leaflet-control-layers-expanded') }), true);
 
-  // sākuma “heartbeat”, lai devtools zin, ka esam piesieti
+  // Heartbeat
   send('ready', { hasLink: !!link });
-})();
+};
 
 
 
@@ -1754,7 +1729,38 @@ function llToUTMInZone(lat, lon, zone){
 
 
 
-	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	
   // saņemam ABUS slāņus no funkcijas
   const { grid, labels } = createUTMGridLayers();
