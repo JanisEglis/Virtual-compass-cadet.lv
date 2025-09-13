@@ -2420,7 +2420,11 @@ if (uploadBtn){
   .dropzone{ min-height: 180px; }  /* lai saturs vizuāli sabalansēts */
 }
 
-
+@media (min-width: 992px){
+  .uploader-card.picker{
+    min-height: 170px; /* pārspēj .uploader-card */
+  }
+}
 
 /* === DROP ikona === */
 :root{ --drop-ico: 48px; }       /* pamata izmērs; droši maini */
@@ -2775,13 +2779,14 @@ if (uploadBtn){
 
 
 
-    .uploader-card picker {
-        width: clamp(560px, 48vw, 840px);
-        min-height: 170px;
-        max-height: 80vh;
-        display: flex;
-        flex-direction: column;
-    }
+/* PDF lapu izvēlnes kartīte (pareizais selektors ar 2 klasēm) */
+.uploader-card.picker{
+  width: clamp(560px, 48vw, 840px);
+  min-height: 170px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
 
 
 
