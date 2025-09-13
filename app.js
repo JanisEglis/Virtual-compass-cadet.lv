@@ -4421,5 +4421,131 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 
 
 
+/* Leaflet Layers Control — event probe */
+(function(){
+  if (window.__layersProbe) return;
+  const cfg = {
+    rootSel: '.leaflet-control-layers',
+    toggleSel: '.leaflet-control-layers-toggle',
+    mapSel:   '#onlineMap'
+  };
+  const types = [
+    'pointerdown','pointerup','pointercancel',
+    'touchstart','touchend','touchcancel',
+    'mousedown','mouseup','click','contextmenu',
+    'keydown','keyup'
+  ];
+  const listeners = [];
+  const N = (v)=>v==null?'':String(v);
+  const short = el => {
+    if (!el) return '∅';
+    let s = (el.tagName||'').toLowerCase();
+    if (el.id) s += '#'+el.id;
+    if (el.className) s += '.'+String(el.className).trim().replace(/\s+/g,'.');
+    return s || '[node]';
+  };
+  const pathStr = ev => {
+    const p = ev.composedPath ? ev.composedPath() : [];
+    return p.slice(0,6).map(short).join(' › ');
+  };
+  function dump(ev, phase, where){
+    const base = {
+      type: ev.type,
+      phase, eventPhase: ev.eventPhase,
+      where,
+      pointerType: N(ev.pointerType),
+      button: ev.button, buttons: ev.buttons, detail: ev.detail,
+      defaultPrevented: ev.defaultPrevented, isTrusted: ev.isTrusted
+    };
+    console.info('[layers]', base,
+      'target=', short(ev.target),
+      'currentTarget=', short(ev.currentTarget)
+    );
+    if (/^(pointer|touch|click)/.test(ev.type)) {
+      try { console.debug('[layers] path:', pathStr(ev)); } catch(_){}
+    }
+  }
+  function bindAll(el, name){
+    types.forEach(t=>{
+      // down notikumi — arī capture, lai redzētu, kas notiek "pirms"
+      const cap = /^(pointerdown|touchstart|mousedown)$/.test(t);
+      const fn = e => dump(e, cap?'CAP':'BUB', name);
+      el.addEventListener(t, fn, {capture:cap, passive:false});
+      listeners.push(()=> el.removeEventListener(t, fn, {capture:cap}));
+    });
+  }
+  function install(root){
+    const toggle = root.querySelector(cfg.toggleSel);
+    bindAll(document, 'document');
+    bindAll(root, 'layers-root');
+    if (toggle) bindAll(toggle, 'toggle');
+    const mapEl = document.querySelector(cfg.mapSel);
+    if (mapEl) bindAll(mapEl, 'map');
 
+    // class → OPEN/CLOSED
+    const mo = new MutationObserver(ms=>{
+      ms.forEach(m=>{
+        if (m.type==='attributes' && m.attributeName==='class'){
+          const open = root.classList.contains('leaflet-control-layers-expanded');
+          console.info('[layers] state =', open ? 'OPEN' : 'CLOSED', root.className);
+        }
+      });
+    });
+    mo.observe(root, {attributes:true});
+    listeners.push(()=>mo.disconnect());
+
+    // Atbalsta pārskats
+    const passiveSupported = (function(){
+      let ok=false; try{
+        const opts = Object.defineProperty({}, 'passive', { get(){ ok=true; } });
+        window.addEventListener('test', null, opts);
+        window.removeEventListener('test', null, opts);
+      }catch(_){}
+      return ok;
+    })();
+    console.info('[layers] probe installed', {
+      PointerEvent: !!window.PointerEvent,
+      touchCap: 'ontouchstart' in window,
+      passiveSupported
+    });
+  }
+  function tryInstall(){
+    const root = document.querySelector(cfg.rootSel);
+    if (!root) { setTimeout(tryInstall, 200); return; }
+    install(root);
+  }
+
+  // Ķeram, ja kāds handleris “apēd” eventus
+  const _sp  = Event.prototype.stopPropagation;
+  const _sip = Event.prototype.stopImmediatePropagation;
+  const _pd  = Event.prototype.preventDefault;
+  function isLayersEv(e){
+    const root = document.querySelector(cfg.rootSel);
+    return !!(root && e && e.target && root.contains(e.target));
+  }
+  Event.prototype.stopPropagation = function(){
+    if (isLayersEv(this)) console.warn('[layers] stopPropagation:', this.type, short(this.target));
+    return _sp.apply(this, arguments);
+  };
+  Event.prototype.stopImmediatePropagation = function(){
+    if (isLayersEv(this)) console.warn('[layers] stopImmediatePropagation:', this.type, short(this.target));
+    return _sip.apply(this, arguments);
+  };
+  Event.prototype.preventDefault = function(){
+    if (isLayersEv(this)) console.warn('[layers] preventDefault:', this.type, short(this.target));
+    return _pd.apply(this, arguments);
+  };
+
+  window.__layersProbe = {
+    stop(){
+      while (listeners.length) try{ listeners.pop()(); }catch(_){}
+      Event.prototype.stopPropagation = _sp;
+      Event.prototype.stopImmediatePropagation = _sip;
+      Event.prototype.preventDefault = _pd;
+      console.info('[layers] probe removed');
+    }
+  };
+
+  tryInstall();
+})();
 
