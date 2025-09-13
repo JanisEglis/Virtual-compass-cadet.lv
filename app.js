@@ -2775,7 +2775,13 @@ if (uploadBtn){
 
 
 
-
+    .uploader-card picker {
+        width: clamp(560px, 48vw, 840px);
+        min-height: 170px;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+    }
 
 
 
