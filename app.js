@@ -3116,6 +3116,7 @@ let lastRotation = 0;     // pinch/rotate aprēķinam
 
 // Sākumstāvoklis vienuviet
 const COMPASS_INIT = { left: 550, top: 60, scale: 1, base: 0, scaleRot: 70 };
+window.COMPASS_INIT = COMPASS_INIT;
 
 function resetCompassToInitial(){
   compassStartLeft = COMPASS_INIT.left;
@@ -3301,8 +3302,9 @@ setTimeout(updateCompassTransform, 0);
     const cs   = getComputedStyle(c);
     const left = parseFloat(cs.left)  || 0;
     const top  = parseFloat(cs.top)   || 0;
-    const ok   = Math.abs(left - (COMPASS_INIT.left || 0)) < 1 &&
-                 Math.abs(top  - (COMPASS_INIT.top  || 0)) < 1;
+const init = window.COMPASS_INIT || { left: 0, top: 0 };
+const ok = Math.abs(left - init.left) < 1 &&
+          Math.abs(top  - init.top ) < 1;
 
     if (!ok && t < MAX_MS) { id = setTimeout(tick, STEP); t+=STEP; }
   }
@@ -3462,6 +3464,18 @@ on(byId('rotateCompass90'), 'click', function (ev) {
       e.stopPropagation();
     });
 
+
+
+document.addEventListener('mousemove', (e) => {
+  if (compassIsDragging) {
+    compassStartLeft = e.clientX - compassDragStartX;
+    compassStartTop  = e.clientY - compassDragStartY;
+    updateCompassTransform();
+  }
+});
+document.addEventListener('mouseup', () => { compassIsDragging = false; });
+	  
+
     // Skārieni: start
     on(cc, 'touchstart', (e) => {
       e.preventDefault();
@@ -3528,15 +3542,7 @@ on(byId('rotateCompass90'), 'click', function (ev) {
   }
   window.addEventListener('load', bindCompassListeners, { once:true });
 
-  // Dokumenta līmeņa klausītāji (var palikt ārpus gaidīšanas)
-  document.addEventListener('mousemove', (e) => {
-    if (compassIsDragging) {
-      compassStartLeft = e.clientX - compassDragStartX;
-      compassStartTop  = e.clientY - compassDragStartY;
-      updateCompassTransform();
-    }
-  });
-  document.addEventListener('mouseup', () => { compassIsDragging = false; });
+ 
 
   // Sākumstāvoklis pēc ielādes
   window.addEventListener('load', resetCompassToInitial, { once:true });
