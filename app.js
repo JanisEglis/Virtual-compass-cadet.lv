@@ -2199,10 +2199,418 @@ const h = resizeHandle.offsetHeight || parseInt(cs.height) || 12;
 
 
 
+(function injectUploadCSS(){
+  if (document.getElementById('upload-ui-css')) return;
+  const css = `
+/* Backdrop ar blur (ja pieejams) un drošu fallbacku vecākiem pārlūkiem */
+.uploader-backdrop{
+  position:fixed; left:0; top:0; right:0; bottom:0;
+  z-index:14; display:grid; place-items:center;
+  background:rgba(0,0,0,.55);
+}
+@supports ((backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px))){
+  .uploader-backdrop{
+    backdrop-filter:saturate(1.2) blur(8px);
+    -webkit-backdrop-filter:saturate(1.2) blur(8px);
+  }
+}
+
+/* Karte — devtool tumšā karte ar mīkstām malām */
+.uploader-card{
+  min-width:300px; max-width:92vw;
+  background:linear-gradient(180deg,#1b1f25 0%, #2a0f0faa 100%);
+  color:#eef2f7;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  box-shadow:0 16px 40px rgba(0,0,0,.55);
+  padding:14px 14px 10px;
+}
+.
+.uploader-card p{
+  margin:6px 0 12px; opacity:.9;
+  font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+}
+.small{opacity:.85;font-size:12px}
+
+/* Rinda ar pogām */
+.uploader-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+
+/* Pogu stils — devtool skin, skārienam draudzīgi */
+.uploader-card button{
+  appearance:none;
+  border:1px solid rgba(255,255,255,.15);
+  background:linear-gradient(180deg,#2e3e5a,#243145aa);
+  color:#fff;
+  border-radius:10px;
+  padding:10px 14px;
+  font:600 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  cursor:pointer;
+  box-shadow:0 6px 18px rgba(0,0,0,.35);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  transition:filter .12s ease, transform .06s ease, background-color .12s ease;
+}
+.uploader-card button:hover{ filter:brightness(1.07); }
+.uploader-card button:active{ transform:translateY(1px); }
+.uploader-card button:focus{ outline:none; }
+.uploader-card button:focus-visible{
+  outline:2px solid #6ea2ff; outline-offset:1px;
+}
+
+/* Teksta lauki — tumšā palete, apaļi stūri */
+.uploader-card input[type="url"],
+.uploader-card input[type="number"]{
+  width:100%; box-sizing:border-box;
+  background:#0f1318; color:#fff;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:10px;
+  padding:9px 10px;
+  font:13px system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+.uploader-card input[type="url"]:focus,
+.uploader-card input[type="number"]:focus{
+  outline:none; border-color:#6ea2ff66; box-shadow:0 0 0 2px #6ea2ff33 inset;
+}
+
+/* Apakšējā josla ar darbībām */
+.uploader-actions{
+  display:flex; gap:8px; justify-content:flex-end; margin-top:10px;
+}
+
+/* Mobilais */
+@media (max-width:760px){
+  .uploader-card{ max-width:92vw; }
+  .uploader-card button{ padding:12px 16px; }
+}
 
 
 
-							
+
+
+
+
+
+/* ===== PDF picker – kompaktāka karte ===== */
+.uploader-card.picker{
+  padding: 16px 18px 14px;
+  max-width: 600px;
+  min-width: 360px;
+  border-radius: 14px;
+}
+@media (min-width: 992px){
+  .uploader-card.picker{
+    width: clamp(420px, 36vw, 560px);
+    min-height: auto;      /* nav lieka “tukšuma” */
+    max-height: none;
+  }
+}
+
+/* virsraksts/teksts centrā šim skatam arī */
+.uploader-card.picker > h3,
+.uploader-card.picker > p{ text-align:center; }
+
+/* rinda ar ievadi + Importēt vienā līnijā (mobilē pārlaižam uz 2 rindām) */
+.picker-row{
+  display:flex; gap:10px; align-items:stretch; margin:12px 0 4px;
+}
+.picker-row input[type="number"]{
+  flex:1 1 auto; width:1%;
+  background:#0f1318; color:#fff;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:10px; padding:10px;
+  font:13px system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+.picker-row input[type="number"]:focus{
+  outline:none; border-color:#6ea2ff66; box-shadow:0 0 0 2px #6ea2ff33 inset;
+}
+@media (max-width:640px){ .picker-row{ flex-direction:column; } }
+
+/* importēt (zaļā) — atbilst tavām krāsām */
+#pOk{
+  border:2px solid #11cb1e !important;
+  background:#0d631d !important;
+  border-radius:10px !important;
+}
+#pOk:hover{
+  filter:brightness(1.12);
+  background:#117a26 !important;
+  box-shadow:inset 0 0 0 1px #ffffff12, 0 12px 28px rgba(0,0,0,.45);
+}
+
+/* Aizvērt (sarkanā) apakšā, centrēta un šaurāka */
+.footer-row{ display:flex; justify-content:center; margin-top:12px; }
+#pCancel{
+  border:2px solid #ff0000 !important;
+  background:#A61D00 !important;
+  border-radius:10px !important;
+  min-width: 180px;
+}
+#pCancel:hover{
+  filter:brightness(1.10);
+  background:#c02400 !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  `;
+  const st = document.createElement('style');
+  st.id='upload-ui-css';
+  st.textContent = css;
+  (document.head||document.documentElement).appendChild(st);
+})();
+
+/* ==== Viss zemāk — TAVS oriģinālais, neskarts JS (funkcionalitāte) ==== */
+
+function openChooserModal(){
+  return new Promise((resolve)=>{
+    const wrap = document.createElement('div');
+    wrap.className='uploader-backdrop';
+    wrap.innerHTML = `
+      <div class="uploader-card">
+        <h3>Ielādēt karti</h3>
+        <p>Augšupielādēt no <b>faila</b> vai ielikt <b>URL</b> (attēls vai PDF).</p>
+        <div class="uploader-row">
+
+          <button id="chCancel">Atcelt</button>
+        </div>
+      </div>`;
+    document.body.appendChild(wrap);
+
+    const done = (v)=>{ try{document.body.removeChild(wrap);}catch(_){ } resolve(v); };
+
+    wrap.querySelector('#chCancel').onclick = ()=> done(null);
+    wrap.addEventListener('click', (e)=>{ if (e.target===wrap) done(null); });
+
+    wrap.querySelector('#chFile').onclick = ()=>{
+      const inp = document.createElement('input');
+      inp.type='file';
+      inp.accept='image/*,application/pdf';
+      inp.onchange = ()=> {
+        const file = inp.files && inp.files[0];
+        done(file ? {kind:'file', file} : null);
+      };
+      inp.click();
+    };
+
+    wrap.querySelector('#chUrl').onclick = ()=>{
+      const card = wrap.querySelector('.uploader-card');
+      card.innerHTML = `
+        <h3>Ielādēt no URL</h3>
+        <p>Ievadi attēla vai PDF saiti. (Ja serveris bloķē CORS, ielāde var neizdoties.)</p>
+        <input id="urlInput" type="url" placeholder="https://…">
+        <div class="uploader-actions">
+          <button id="urlCancel">Atcelt</button>
+          <button id="urlGo">Ielādēt</button>
+        </div>
+        <p class="small">PDF ar vairākām lapām tiks importēta <b>viena</b> izvēlēta lapa.</p>`;
+      card.querySelector('#urlCancel').onclick = ()=>{ done(null); };
+      card.querySelector('#urlGo').onclick = ()=>{
+        const url = card.querySelector('#urlInput').value.trim();
+        if (!url) return;
+        done({kind:'url', url});
+      };
+    };
+  });
+}
+
+function openPdfPagePicker(total){
+  return new Promise((resolve)=>{
+    const wrap = document.createElement('div');
+    wrap.className='uploader-backdrop';
+    wrap.innerHTML = `
+      <div class="uploader-card picker">
+        <h3>PDF ar ${total} lapām</h3>
+        <p>Šī lietotne importē <b>vienu</b> lapu kā attēlu. Izvēlies lapu vai atcel.</p>
+
+        <div class="picker-row">
+          <input id="pg" type="number" min="1" max="${total}" value="1" aria-label="PDF lapa">
+          <button id="pOk">Importēt</button>
+        </div>
+
+        <div class="footer-row">
+          <button id="pCancel">Aizvērt</button>
+        </div>
+      </div>`;
+    document.body.appendChild(wrap);
+
+    const done=(v)=>{ try{document.body.removeChild(wrap);}catch(_){ } resolve(v); };
+
+    // drošs piesaistes veids (ja kāds elements nav, nekrītam)
+    const pCancel = wrap.querySelector('#pCancel');
+    const pOk     = wrap.querySelector('#pOk');
+    const inp     = wrap.querySelector('#pg');
+
+    if (pCancel) pCancel.addEventListener('click', ()=> done(null));
+    wrap.addEventListener('click', (e)=>{ if (e.target===wrap) done(null); });
+
+    if (pOk && inp){
+      const submit = ()=>{
+        const n  = parseInt(inp.value, 10) || 1;
+        const pg = Math.min(total, Math.max(1, n));
+        done(pg);
+      };
+      pOk.addEventListener('click', submit);
+      inp.addEventListener('keydown', (e)=>{ if (e.key==='Enter'){ e.preventDefault(); submit(); } });
+    }
+  });
+}
+
+// — palīgs: droša Uint8Array kopija (novērš “detached ArrayBuffer”) —
+function toPdfBytes(input){
+  if (input instanceof Uint8Array) {
+    const {buffer, byteOffset, byteLength} = input;
+    return new Uint8Array(buffer.slice(byteOffset, byteOffset + byteLength));
+  }
+  if (input instanceof ArrayBuffer) {
+    return new Uint8Array(input.slice(0));
+  }
+  if (ArrayBuffer.isView(input)) {
+    const {buffer, byteOffset, byteLength} = input;
+    return new Uint8Array(buffer.slice(byteOffset, byteOffset + byteLength));
+  }
+  throw new Error('Unsupported PDF bytes');
+}
+
+// PDF → PNG dataURL (viena izvēlēta lapa)
+function renderPdfToDataURL(pdfBytes, pageNum, targetW=2000){
+  const bytes = toPdfBytes(pdfBytes);
+  return pdfjsLib.getDocument({ data: bytes }).promise.then(pdf=>{
+    pageNum = Math.min(pdf.numPages, Math.max(1, pageNum||1));
+    return pdf.getPage(pageNum).then(page=>{
+      const v1 = page.getViewport({scale:1});
+      const scale = Math.max(1, targetW / v1.width);
+      const vp = page.getViewport({scale});
+      const c  = document.createElement('canvas');
+      const cx = c.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      c.width  = Math.round(vp.width  * dpr);
+      c.height = Math.round(vp.height * dpr);
+      c.style.width  = Math.round(vp.width)  + 'px';
+      c.style.height = Math.round(vp.height) + 'px';
+      const rc = { canvasContext: cx, viewport: vp, transform: dpr!==1 ? [dpr,0,0,dpr,0,0] : null };
+      return page.render(rc).promise.then(()=> c.toDataURL('image/png'));
+    });
+  });
+}
+
+// Ielāde no URL (attēls vai PDF)
+function loadFromURL(url){
+  const looksPdf = /\.pdf(\?|#|$)/i.test(url);
+  fetch(url, { mode: 'cors' })
+    .then(async r=>{
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const ct = (r.headers.get('content-type')||'').toLowerCase();
+      if (looksPdf || ct.includes('application/pdf')) {
+        if (!window.pdfjsLib) throw new Error('PDF.js nav ielādēts');
+        const ab = await r.arrayBuffer();
+        return pdfjsLib.getDocument({ data: toPdfBytes(ab) }).promise.then(async(pdf)=>{
+          let page = 1;
+          if (pdf.numPages>1){
+            const pick = await openPdfPagePicker(pdf.numPages);
+            if (!pick) return null;
+            page = pick;
+          }
+          return renderPdfToDataURL(ab, page);
+        });
+      } else if (ct.startsWith('image/')) {
+        const blob = await r.blob();
+        const urlObj = URL.createObjectURL(blob);
+        img.onload = () => { try{ URL.revokeObjectURL(urlObj); }catch(_){ } };
+        img.src = urlObj;
+        return null;
+      } else {
+        img.src = url;
+        return null;
+      }
+    })
+    .then(dataURL=>{
+      if (dataURL) img.src = dataURL;
+    })
+    .catch(err=>{
+      console.warn('[URL load]', err);
+      if (looksPdf) {
+        alert('Neizdevās ielādēt PDF no URL (CORS vai kļūda).');
+      } else {
+        try { img.crossOrigin = 'anonymous'; } catch(_){}
+        img.src = url;
+      }
+    });
+}
+
+// Ielāde no faila (attēls vai PDF)
+async function loadFromFile(file){
+  const isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
+  if (isPdf){
+    if (!window.pdfjsLib) { alert('PDF.js nav ielādēts.'); return; }
+    try{
+      const ab = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: toPdfBytes(ab) }).promise;
+      let page = 1;
+      if (pdf.numPages>1){
+        const pick = await openPdfPagePicker(pdf.numPages);
+        if (!pick) return;
+        page = pick;
+      }
+      const dataURL = await renderPdfToDataURL(ab, page);
+      img.src = dataURL;
+    }catch(err){
+      console.error('[PDF faila ielāde]', err);
+      alert('Neizdevās apstrādāt PDF.');
+    }
+  } else if (/^image\//i.test(file.type)){
+    const r = new FileReader();
+    r.onload = e => { img.src = e.target.result; };
+    r.onerror = ()=> alert('Neizdevās nolasīt attēlu.');
+    r.readAsDataURL(file);
+  } else {
+    alert('Atbalstīti ir attēli vai PDF.');
+  }
+}
+
+// Poga “Ielādēt karti”
+const uploadBtn = document.getElementById('uploadMap');
+if (uploadBtn){
+  uploadBtn.addEventListener('click', ()=>{
+    openChooserModal().then(choice=>{
+      if (!choice) return;
+      if (choice.kind === 'file') loadFromFile(choice.file);
+      else if (choice.kind === 'url') loadFromURL(choice.url);
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // === Modal dizains (upsert: ja #upload-ui-css jau ir, pārrakstām) ===
 // — DEVTOOL dizains + moderns drop-laukums (UPsert) —
