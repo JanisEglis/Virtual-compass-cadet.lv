@@ -425,6 +425,119 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+	// tests layerctl 
+(function(){
+  window.__probeLayers = function(layersCtl){
+    try{
+      const root = layersCtl && (layersCtl._container || layersCtl._containerEl || null);
+      if (!root) { console.warn('[layers-probe] nav container'); return; }
+      const link = layersCtl._layersLink || root.querySelector('.leaflet-control-layers-toggle');
+
+      const short = el => {
+        if (!el) return '∅';
+        let s = (el.tagName||'').toLowerCase();
+        if (el.id) s += '#'+el.id;
+        if (el.className) s += '.'+String(el.className).trim().replace(/\s+/g,'.');
+        return s;
+      };
+      const types = ['pointerdown','pointerup','pointercancel','touchstart','touchend','mousedown','mouseup','click','contextmenu','keydown','keyup'];
+      const log = (e, phase) => {
+        console.info('[layers]', {type:e.type, phase, defaultPrevented:e.defaultPrevented, pointerType:e.pointerType, button:e.button, buttons:e.buttons},
+          'target=', short(e.target), 'open=', root.classList.contains('leaflet-control-layers-expanded'));
+      };
+
+      // capture (pirms citiem) + bubble
+      types.forEach(t=>{
+        const cap = /^(pointerdown|touchstart|mousedown)$/.test(t);
+        root.addEventListener(t, e=>log(e, cap?'CAP':'BUB'), {capture:cap, passive:false});
+        if (link) link.addEventListener(t, e=>console.debug('[layers] toggle', t, '→', short(e.target)), {passive:false});
+      });
+
+      // izseko expand/collapse izsaukumus
+      const exp = layersCtl.expand   || layersCtl._expand;
+      const col = layersCtl.collapse || layersCtl._collapse;
+      if (exp) layersCtl.expand = function(){ console.info('[layers] expand()'); return exp.apply(this, arguments); };
+      if (col) layersCtl.collapse = function(){ console.info('[layers] collapse()'); return col.apply(this, arguments); };
+
+      // klases maiņa
+      const mo = new MutationObserver(ms=>{
+        ms.forEach(m=>{
+          if (m.type==='attributes' && m.attributeName==='class'){
+            const open = root.classList.contains('leaflet-control-layers-expanded');
+            console.info('[layers] state =', open ? 'OPEN' : 'CLOSED');
+          }
+        });
+      });
+      mo.observe(root, {attributes:true});
+      console.info('[layers] probe attached');
+    }catch(err){ console.error('[layers-probe fatal]', err); }
+  };
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
 <script>
 /* ========== Legacy browser brīdinājums – vienkāršs teksts, vienādas pogas ========== */
 (function () {
