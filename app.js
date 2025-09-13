@@ -2351,18 +2351,6 @@ const h = resizeHandle.offsetHeight || parseInt(cs.height) || 12;
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
   `;
   const st = document.createElement('style');
   st.id='upload-ui-css';
@@ -2372,57 +2360,7 @@ const h = resizeHandle.offsetHeight || parseInt(cs.height) || 12;
 
 /* ==== Viss zemāk — TAVS oriģinālais, neskarts JS (funkcionalitāte) ==== */
 
-function openChooserModal(){
-  return new Promise((resolve)=>{
-    const wrap = document.createElement('div');
-    wrap.className='uploader-backdrop';
-    wrap.innerHTML = `
-      <div class="uploader-card">
-        <h3>Ielādēt karti</h3>
-        <p>Augšupielādēt no <b>faila</b> vai ielikt <b>URL</b> (attēls vai PDF).</p>
-        <div class="uploader-row">
-
-          <button id="chCancel">Atcelt</button>
-        </div>
-      </div>`;
-    document.body.appendChild(wrap);
-
-    const done = (v)=>{ try{document.body.removeChild(wrap);}catch(_){ } resolve(v); };
-
-    wrap.querySelector('#chCancel').onclick = ()=> done(null);
-    wrap.addEventListener('click', (e)=>{ if (e.target===wrap) done(null); });
-
-    wrap.querySelector('#chFile').onclick = ()=>{
-      const inp = document.createElement('input');
-      inp.type='file';
-      inp.accept='image/*,application/pdf';
-      inp.onchange = ()=> {
-        const file = inp.files && inp.files[0];
-        done(file ? {kind:'file', file} : null);
-      };
-      inp.click();
-    };
-
-    wrap.querySelector('#chUrl').onclick = ()=>{
-      const card = wrap.querySelector('.uploader-card');
-      card.innerHTML = `
-        <h3>Ielādēt no URL</h3>
-        <p>Ievadi attēla vai PDF saiti. (Ja serveris bloķē CORS, ielāde var neizdoties.)</p>
-        <input id="urlInput" type="url" placeholder="https://…">
-        <div class="uploader-actions">
-          <button id="urlCancel">Atcelt</button>
-          <button id="urlGo">Ielādēt</button>
-        </div>
-        <p class="small">PDF ar vairākām lapām tiks importēta <b>viena</b> izvēlēta lapa.</p>`;
-      card.querySelector('#urlCancel').onclick = ()=>{ done(null); };
-      card.querySelector('#urlGo').onclick = ()=>{
-        const url = card.querySelector('#urlInput').value.trim();
-        if (!url) return;
-        done({kind:'url', url});
-      };
-    };
-  });
-}
+/* te bija vecais openchoosermodal */
 
 function openPdfPagePicker(total){
   return new Promise((resolve)=>{
