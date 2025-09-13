@@ -2,6 +2,22 @@ console.info('[modern] app.js start');
 
 
 
+
+// Palaist, kad DOM gatavs (strādā visur)
+const onDomReady = (fn) => {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fn, { once: true });
+  } else {
+    fn();
+  }
+};
+
+// Droša piekļuve elementiem
+const $id = (id) => document.getElementById(id);
+
+
+
+
 // RAF/CAF
 window.requestAnimationFrame = window.requestAnimationFrame
   || window.webkitRequestAnimationFrame
@@ -3056,7 +3072,8 @@ positionResizeHandle(getComputedStyle(canvas).display !== 'none');
 						checkWindowSize();
 						window.addEventListener('resize', checkWindowSize);
 						
-		
+// ===== START onDomReady wrapper for COMPASS =====
+onDomReady(() => {		
 						// Pievienojam compassContainer funkcijas pēc tam, kad ir definēts canvas, mapImage utt.
 
 						// Atlasām compassContainer elementu
@@ -3254,7 +3271,7 @@ function updateCompassTransform() {
     start();
   }
 })();
-
+}); // ===== END onDomReady wrapper for COMPASS =====
 setTimeout(updateCompassTransform, 0);
 
 
