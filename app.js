@@ -2281,6 +2281,87 @@ const h = resizeHandle.offsetHeight || parseInt(cs.height) || 12;
   .uploader-card{ max-width:92vw; }
   .uploader-card button{ padding:12px 16px; }
 }
+
+
+
+
+
+
+
+
+/* ===== PDF picker – kompaktāka karte ===== */
+.uploader-card.picker{
+  padding: 16px 18px 14px;
+  max-width: 600px;
+  min-width: 360px;
+  border-radius: 14px;
+}
+@media (min-width: 992px){
+  .uploader-card.picker{
+    width: clamp(420px, 36vw, 560px);
+    min-height: auto;      /* nav lieka “tukšuma” */
+    max-height: none;
+  }
+}
+
+/* virsraksts/teksts centrā šim skatam arī */
+.uploader-card.picker > h3,
+.uploader-card.picker > p{ text-align:center; }
+
+/* rinda ar ievadi + Importēt vienā līnijā (mobilē pārlaižam uz 2 rindām) */
+.picker-row{
+  display:flex; gap:10px; align-items:stretch; margin:12px 0 4px;
+}
+.picker-row input[type="number"]{
+  flex:1 1 auto; width:1%;
+  background:#0f1318; color:#fff;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:10px; padding:10px;
+  font:13px system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+.picker-row input[type="number"]:focus{
+  outline:none; border-color:#6ea2ff66; box-shadow:0 0 0 2px #6ea2ff33 inset;
+}
+@media (max-width:640px){ .picker-row{ flex-direction:column; } }
+
+/* importēt (zaļā) — atbilst tavām krāsām */
+#pOk{
+  border:2px solid #11cb1e !important;
+  background:#0d631d !important;
+  border-radius:10px !important;
+}
+#pOk:hover{
+  filter:brightness(1.12);
+  background:#117a26 !important;
+  box-shadow:inset 0 0 0 1px #ffffff12, 0 12px 28px rgba(0,0,0,.45);
+}
+
+/* Aizvērt (sarkanā) apakšā, centrēta un šaurāka */
+.footer-row{ display:flex; justify-content:center; margin-top:12px; }
+#pCancel{
+  border:2px solid #ff0000 !important;
+  background:#A61D00 !important;
+  border-radius:10px !important;
+  min-width: 180px;
+}
+#pCancel:hover{
+  filter:brightness(1.10);
+  background:#c02400 !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   `;
   const st = document.createElement('style');
   st.id='upload-ui-css';
@@ -2347,24 +2428,40 @@ function openPdfPagePicker(total){
     const wrap = document.createElement('div');
     wrap.className='uploader-backdrop';
     wrap.innerHTML = `
-      <div class="uploader-card">
+      <div class="uploader-card picker">
         <h3>PDF ar ${total} lapām</h3>
         <p>Šī lietotne importē <b>vienu</b> lapu kā attēlu. Izvēlies lapu vai atcel.</p>
-        <input id="pg" type="number" min="1" max="${total}" value="1">
-        <div class="uploader-actions">
-          <button id="pCancel">Aizvērt</button>
+
+        <div class="picker-row">
+          <input id="pg" type="number" min="1" max="${total}" value="1" aria-label="PDF lapa">
           <button id="pOk">Importēt</button>
+        </div>
+
+        <div class="footer-row">
+          <button id="pCancel">Aizvērt</button>
         </div>
       </div>`;
     document.body.appendChild(wrap);
+
     const done=(v)=>{ try{document.body.removeChild(wrap);}catch(_){ } resolve(v); };
-    wrap.querySelector('#pCancel').onclick = ()=> done(null);
+
+    // drošs piesaistes veids (ja kāds elements nav, nekrītam)
+    const pCancel = wrap.querySelector('#pCancel');
+    const pOk     = wrap.querySelector('#pOk');
+    const inp     = wrap.querySelector('#pg');
+
+    if (pCancel) pCancel.addEventListener('click', ()=> done(null));
     wrap.addEventListener('click', (e)=>{ if (e.target===wrap) done(null); });
-    wrap.querySelector('#pOk').onclick = ()=>{
-      const n = +wrap.querySelector('#pg').value || 1;
-      const pg = Math.min(total, Math.max(1, n));
-      done(pg);
-    };
+
+    if (pOk && inp){
+      const submit = ()=>{
+        const n  = parseInt(inp.value, 10) || 1;
+        const pg = Math.min(total, Math.max(1, n));
+        done(pg);
+      };
+      pOk.addEventListener('click', submit);
+      inp.addEventListener('keydown', (e)=>{ if (e.key==='Enter'){ e.preventDefault(); submit(); } });
+    }
   });
 }
 
@@ -2933,8 +3030,6 @@ function openChooserModal(){
     }
   }, false);
 })();
-
-
   });
 }
 
