@@ -2211,7 +2211,7 @@ function openPdfPagePicker(total){
     wrap.className='uploader-backdrop';
     wrap.innerHTML = `
       <div class="uploader-card picker">
-        <h3>PDF ar ${total} lapām</h3>
+        <h3>PDF ar ${total} lapām!</h3>
         <p>Šī lietotne importē <b>vienu</b> lapu kā attēlu. Izvēlies lapu vai atcel.</p>
 
         <div class="picker-row">
