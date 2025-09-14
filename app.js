@@ -1737,7 +1737,7 @@ lgiaTopo10.on('load', () => console.info('[LGIA Topo 10k] OK'));
 
 	
 // Paziņojums par LGIA kartes nepieejamību
-[lgiaOrtoV3, lgiaTopo50, lgiaTopo10].forEach(layer=>{
+[lgiaOrtoV3, lgiaTopo10].forEach(layer=>{
   let told = false;
   layer.on('tileerror', ()=>{
     if (told) return; told = true;
