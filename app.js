@@ -1436,17 +1436,15 @@ scalePickCtl.onAdd = function(){
     select.appendChild(opt);
   });
 
-select.addEventListener('change', ()=>{
-  const targetScale = +select.value;
-  map.options.zoomSnap  = 0;     // frakcionēts zoom precizitātei
-  map.options.zoomDelta = 0.25;
-
-  const z = clampZoom( zoomForScale(targetScale) );
-  map.setZoom(z, { animate:true });
-
-  updateRatio();
-  syncScalePicker();
-});
+  select.addEventListener('change', ()=>{
+    const targetScale = +select.value;
+    // atļaujam frakcionētu zoom, lai mērogs sanāk precīzāks
+    map.options.zoomSnap = 0;
+    map.options.zoomDelta = 0.25;
+    map.setZoom( zoomForScale(targetScale), {animate:true} );
+    updateRatio();     // atjauno “Mērogs: 1:xxxx” rādītāju
+    syncScalePicker(); // pielāgo izvēlnes value, ja vajag
+  });
 
 
   wrap.appendChild(label);
