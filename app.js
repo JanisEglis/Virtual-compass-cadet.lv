@@ -1360,6 +1360,7 @@ function utmToLL(E, N, zone, hemi){
 
 
 
+
 // --- LGIA + OSM slāņi (definē pirms L.map)
 // --- LGIA + OSM slāņi (definē pirms L.map)
 // --- LGIA + OSM slāņi (pirms L.map)
@@ -1385,8 +1386,7 @@ const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 
 	  
-lgiaOrtoV3.setZIndex(2);
-lgiaOrtoV3.bringToFront();
+
 
 
 
@@ -1404,24 +1404,22 @@ const lgiaTopo10 = L.esri.dynamicMapLayer({
 
 
 
-
-
 // --- Karti startē tikai ar LGIA (bez OSM virsū)
 const map = L.map('onlineMap', {
   zoomControl: true,
   attributionControl: true,
-  layers: [lgiaOrtoV3]   // ← šeit tikai LGIA orto kā bāze
+  layers: [osm]                 // ← SĀK ar OSM, nevis LGIA
 }).setView([56.95, 24.10], 8);
 L.control.layers(
-  { 'LGIA Ortofoto v3': lgiaOrtoV3, 'OpenStreetMap': osm }, // bāzes
-  { 'LGIA Topo 10k': lgiaTopo10 },                          // pārklājumi
+  { 'OpenStreetMap': osm, 'LGIA Ortofoto v3': lgiaOrtoV3 },  // bāzes
+  { 'LGIA Topo 10k': lgiaTopo10 },                           // pārklājumi
   { collapsed: false }
 ).addTo(map);
 
 
 
 	  
-map.setView([56.95, 24.10], 8);
+
 
 
 // --- Tiklīdz pietuvinies, ieslēdz LGIA orto; attālinoties – izslēdz
