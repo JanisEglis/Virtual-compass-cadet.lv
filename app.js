@@ -1561,12 +1561,99 @@ map.on('moveend zoomend', ()=>{ updateRatio(); syncScalePicker(); });
 
 
 
+
+
+
+
+
+
+// ====== Koordināšu režīms (MGRS vai LKS) ======
+let coordMode = localStorage.getItem('coordMode') || 'MGRS'; // 'MGRS' vai 'LKS'
+
+const CoordModeCtl = L.Control.extend({
+  options:{position:'topright'},
+  onAdd: function(){
+    const div = L.DomUtil.create('div','leaflet-bar');
+    div.style.padding = '6px 8px';
+    div.style.background = '#fff';
+    div.style.lineHeight = '1.2';
+    div.innerHTML = `
+      <label style="display:block; margin-bottom:4px;"><strong>Koordinātes</strong></label>
+      <label style="display:block; margin-bottom:2px;"><input type="radio" name="cm" value="MGRS" ${coordMode==='MGRS'?'checked':''}> MGRS/UTM</label>
+      <label style="display:block;"><input type="radio" name="cm" value="LKS"  ${coordMode==='LKS'?'checked':''}> LKS-92</label>`;
+    L.DomEvent.disableClickPropagation(div);
+    div.addEventListener('change', (e)=>{
+      if (e.target.name==='cm'){
+        coordMode = e.target.value;
+        localStorage.setItem('coordMode', coordMode);
+        map.closePopup(); // lai nākamais klikšķis rāda pareizo formātu
+      }
+    });
+    return div;
+  }
+});
+map.addControl(new CoordModeCtl());
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  
+
+
+
 	  
 
 // === MGRS/UTM režģis sadalīts 2 slāņos: LĪNIJAS un ETIĶETES ===
 function createUTMGridLayers(){
   const gLines  = L.layerGroup();   // līnijas
   const gLabels = L.layerGroup();   // etiķetes
+
+
+
+
+
+
+// UTM režģis
+const { grid: utmGrid, labels: utmLabels } = createUTMGridLayers();
+
+// LKS-92 režģis
+const { grid: lksGrid, labels: lksLabels } = createLKSGridLayers();
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+	
 
   // Pane līnijām
   if (!map.getPane('gridPane')){
@@ -1653,6 +1740,8 @@ function redraw(){
   const midN = (minN + maxN) / 2;
   const midE = (minE + maxE) / 2;
 
+
+
   // Easting līnijas
   for (let E = minE; E <= maxE; E += step){
     const pts = [];
@@ -1687,6 +1776,115 @@ function redraw(){
    // jaunais – pievienojam MGRS/UTM režģi kā pārklājumu
 // vispirms iedod centru/zoom:
 map.setView([56.9496, 24.1052], 13);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ====== LKS-92 režģa ģenerators ======
+function createLKSGridLayers(){
+  const lineStyle = {color:'#d9534f', weight:1, opacity:0.6};   // sarkanas līnijas
+  const labelStyle = {className:'lks-grid-label'};               // CSS vari piekrāsot, ja vajag
+
+  const grid = L.layerGroup();
+  const labels = L.layerGroup();
+
+  // ņem redzamo kartes rāmi un taisa 1 km režģi
+  function redraw(){
+    grid.clearLayers(); labels.clearLayers();
+
+    const b = map.getBounds();
+    const step = 1000; // 1 km
+
+    // pārveido robežas uz LKS, lai iterētu E/N
+    const bl = wgsToLKS(b.getSouth(), b.getWest());
+    const tr = wgsToLKS(b.getNorth(), b.getEast());
+
+    const E_min = Math.floor(bl.E/step)*step;
+    const N_min = Math.floor(bl.N/step)*step;
+    const E_max = Math.ceil(tr.E/step)*step;
+    const N_max = Math.ceil(tr.N/step)*step;
+
+    // Palīgfunkcija: LKS punktu rindu pārveido uz LatLng polilīniju
+    const toLatLngs = (pointsEN) => pointsEN.map(p=>{
+      // “atpakaļ” uz WGS84 — ja Tev ir lksToWgs, izmanto to.
+      // Šeit izmantojam proj4 jau definēto transformāciju (ja Tev tāda ir):
+      const xy = proj4('EPSG:3059','EPSG:4326',[p.E,p.N]);  // [lng,lat]
+      return L.latLng(xy[1], xy[0]);
+    });
+
+    // Vertikālās (E konst) līnijas
+    for (let E=E_min; E<=E_max; E+=step){
+      const pts = [
+        {E, N:N_min},
+        {E, N:N_max}
+      ];
+      L.polyline(toLatLngs(pts), lineStyle).addTo(grid);
+      // etiķete augšā
+      const top = toLatLngs([{E, N:N_max}])[0];
+      L.marker(top, {icon:L.divIcon({...labelStyle, html:`E ${E}` }), interactive:false}).addTo(labels);
+    }
+
+    // Horizontālās (N konst) līnijas
+    for (let N=N_min; N<=N_max; N+=step){
+      const pts = [
+        {E:E_min, N},
+        {E:E_max, N}
+      ];
+      L.polyline(toLatLngs(pts), lineStyle).addTo(grid);
+      // etiķete pa kreisi
+      const left = toLatLngs([{E:E_min, N}])[0];
+      L.marker(left, {icon:L.divIcon({...labelStyle, html:`N ${N}` }), interactive:false}).addTo(labels);
+    }
+  }
+
+  map.on('moveend zoomend', redraw);
+  redraw();
+
+  return {grid, labels};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  
 
 // režģi un slāņu kontroli veido tikai tad, kad karte tiešām “gatava”
 map.whenReady(() => {
@@ -1867,7 +2065,7 @@ const overlays = {
   }).addTo(map);
 
 
-
+const layersCtl = L.control.layers(baseMaps, overlays, {collapsed:false}).addTo(map);
 	
 // ja vēlies — MGRS ieslēgts pēc noklusējuma:
   grid.addTo(map); labels.addTo(map);
