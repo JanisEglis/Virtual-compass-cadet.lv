@@ -1374,12 +1374,52 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
       maxZoom: 20, attribution: '&copy; OSM, CyclOSM'
     });
 
+
+
+// --- LGIA (OPEN DATA) WMS slāņi ---
+// Ortofoto v3 kā bāzes slānis (EPSG:3857 atbalsts)
+const lgiaOrtoV3 = L.tileLayer.wms(
+  'https://servisi.lgia.gov.lv/lksopen/services/ORTO/Ortofoto_v3/MapServer/WMSServer',
+  {
+    layers: '0',
+    format: 'image/png',
+    transparent: false,
+    attribution: '© LĢIA — Ortofoto v3 (CC BY 4.0)'
+  }
+);
+
+// Topo 1:250k kā pārklājums (caurspīdīgs)
+const lgiaTopo250k = L.tileLayer.wms(
+  'https://servisi.lgia.gov.lv/lksopen/services/Topo/Topo_250k/MapServer/WMSServer',
+  {
+    layers: '0',
+    format: 'image/png',
+    transparent: true,
+    attribution: '© LĢIA — Topo 1:250k (CC BY 4.0)'
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  
     const baseLayers = {
       'OSM': osm,
       'OpenTopoMap': topo,
       'Esri satelīts': esri,
       'OSM HOT': hot,
-      'CyclOSM': cyclo
+      'CyclOSM': cyclo,
+	  'LĢIA Ortofoto v3 (WMS)': lgiaOrtoV3   // ← pievienots
     };
 
 
@@ -1662,7 +1702,13 @@ function llToUTMInZone(lat, lon, zone){
   const overlays = {
     'MGRS režģa līnijas (1–20 km)': grid,
     'MGRS etiķetes': labels,
+	  'LĢIA Topo 1:250k (WMS)': lgiaTopo250k    // ← pievienots
   };
+
+
+
+
+	
 
   const layersCtl = L.control.layers(baseLayers, overlays, {
     collapsed: true,
