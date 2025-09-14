@@ -1357,7 +1357,10 @@ function utmToLL(E, N, zone, hemi){
   function initMap(){
     if (inited) return true;
     if (!window.L){ console.warn('Leaflet nav ielādēts'); return false; }
-
+if (!window.L || !L.esri) {
+  console.error('Esri-Leaflet vēl nav gatavs');
+  return false;
+}
 
 
 
@@ -1365,10 +1368,7 @@ function utmToLL(E, N, zone, hemi){
 // --- LGIA + OSM slāņi (definē pirms L.map)
 // --- LGIA + OSM slāņi (pirms L.map)
 
-const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 20,
-  attribution: '© OpenStreetMap'
-});	  
+
 	  
 	  
 	  const lgiaOrtoV3 = L.esri.dynamicMapLayer({
@@ -1400,19 +1400,24 @@ const lgiaTopo10 = L.esri.dynamicMapLayer({
 });
 
 
-
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 20,
+  attribution: '© OpenStreetMap'
+});	  
 
 
 
 // --- Karti startē tikai ar LGIA (bez OSM virsū)
 const map = L.map('onlineMap', {
-  zoomControl: true,
-  attributionControl: true,
-  layers: [osm]                 // ← SĀK ar OSM, nevis LGIA
-}).setView([56.95, 24.10], 8);
+  center: [56.95, 24.10],
+  zoom: 8,
+  layers: [lgiaOrtoV3]   // ← startē ar ortofoto
+});
+
+// Slāņu kontrole: bāzes + pārklājumi
 L.control.layers(
-  { 'OpenStreetMap': osm, 'LGIA Ortofoto v3': lgiaOrtoV3 },  // bāzes
-  { 'LGIA Topo 10k': lgiaTopo10 },                           // pārklājumi
+  { 'LGIA Ortofoto v3': lgiaOrtoV3, 'OpenStreetMap': osm },
+  { 'LGIA Topo 10k': lgiaTopo10 },
   { collapsed: false }
 ).addTo(map);
 
