@@ -1390,11 +1390,7 @@ const lgiaOrtoV3 = L.esri.dynamicMapLayer({
   format: 'jpg' // var arī 'png32', ja vēlies caurspīdīgus pikseļus
 }).addTo(map); // ← SVARĪGI: pievieno kā DEFAULT bāzi
 
-// (ja vēlies paturēt OSM kā alternatīvu bāzi)
-const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 22,
-  attribution: '© OpenStreetMap'
-});
+
 
 // 2) LGIA Topogrāfiskā 1:10k — publisks, caurspīdīgs pārklājums
 const lgiaTopo10 = L.esri.dynamicMapLayer({
@@ -1417,7 +1413,7 @@ function tapEsriErrors(layer, name){
   layer.on('load', ()=> console.info(`[LGIA ${name}] OK`));
 }
 tapEsriErrors(lgiaOrtoV3, 'Ortofoto v3');
-tapEsriErrors(lgiaTopo50, 'Topo 50k');
+// tapEsriErrors(lgiaTopo50, 'Topo 50k');
 tapEsriErrors(lgiaTopo10, 'Topo 10k');
 
 
@@ -1726,14 +1722,14 @@ function llToUTMInZone(lat, lon, zone){
 
   // ieliekam katru atsevišķi kā pārklājumu
   const overlays = {
-	  'LGIA Topo 10k': lgiaTopo10
+	  'LGIA Topo 10k': lgiaTopo10,
     'MGRS režģa līnijas (1–20 km)': grid,
     'MGRS etiķetes': labels,
 
   };
 
 
-const layersCtl = L.control.layers(baseLayers, overlays, { collapsed: true }).addTo(map);
+
 
 // Lai pārliecinātos, ka orto ir augšā, kad pārslēdz bāzes slāņus:
 lgiaOrtoV3.on('load', () => console.info('[LGIA Ortofoto v3] OK'));
