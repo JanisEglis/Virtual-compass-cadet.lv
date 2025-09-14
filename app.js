@@ -1381,33 +1381,26 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
 
 // Ortofoto 3 (RGB) – bāzes slānis
 // Ortofoto 3 (RGB) — BĀZES SLĀNIS
-const lgiaOrtoV3 = L.tileLayer.wms(
-  'https://wms.lgia.gov.lv/open/services/OPEN_DATA/Ortofoto3_rgb/MapServer/WMSServer',
-  {
-    version: '1.1.1',        // ← bija 1.3.0
-    layers:  '1',            // ← mēģini 1 (nevis 0)
-    format:  'image/jpeg',
-    transparent: false,
-    maxZoom: 22,
-    attribution: '© LĢIA — Ortofoto3 RGB (CC BY 4.0)'
-  }
-);
+const lgiaOrtoV3 = L.esri.dynamicMapLayer({
+  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
+  opacity: 1
+});
 
-const lgiaTopo50 = L.tileLayer.wms(
-  'https://wms.lgia.gov.lv/open/services/OPEN_DATA/Topo50_v2/MapServer/WMSServer',
-  {
-    version: '1.1.1',
-    layers:  '1',            // ← arī te 1
-    format:  'image/png',
-    transparent: true,
-    opacity: 0.9,
-    maxZoom: 22,
-    attribution: '© LĢIA — Topo 1:50k (CC BY 4.0)'
-  }
-);
+// Topogrāfiskā karte 1:50k — PĀRKLĀJUMS (Esri dynamic)
+const lgiaTopo50 = L.esri.dynamicMapLayer({
+  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo50_v2/MapServer',
+  opacity: 0.9
+});
+
+// Topogrāfiskā karte 1:10k — PĀRKLĀJUMS (Esri dynamic)
+const lgiaTopo10 = L.esri.dynamicMapLayer({
+  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
+  opacity: 0.9
+});
+
+
+
 	  
-
-
 
 
 function tapWmsErrors(layer, name){
