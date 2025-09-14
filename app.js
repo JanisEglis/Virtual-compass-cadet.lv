@@ -1437,14 +1437,7 @@ function syncBase() {
 map.on('zoomend', syncBase);
 syncBase(); // izsauc uzreiz vienu reizi
 
-// (ja vēlies arī topo kā caurspīdīgu pārklājumu)
-const lgiaTopo10 = L.esri.dynamicMapLayer({
-  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
-  format: 'png32',
-  transparent: true,
-  opacity: 0.8,
-  minZoom: 10
-});
+
 
 
 
