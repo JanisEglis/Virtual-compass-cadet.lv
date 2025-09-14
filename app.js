@@ -1378,29 +1378,6 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
 
 
 
-
-
-
-// --- EOX Sentinel-2 Cloudless (bāzes slānis, bez mākoņiem) ---
-const s2cloudless = L.tileLayer.wms('https://tiles.maps.eox.at/wms', {
-  layers: 's2cloudless-2024_3857',
-  format: 'image/jpeg',
-  transparent: false,
-  attribution: 'Sentinel-2 cloudless © EOX, © Copernicus'
-});
-
-
-// EOX Terrain Light (reljefs/hillshade kā bāze)
-const eoxTerrain = L.tileLayer.wms('https://tiles.maps.eox.at/wms', {
-  layers: 'terrain-light',
-  format: 'image/png',
-  transparent: false,
-  attribution: '© EOX'
-});
-
-
-	  
-
 // OSM German style (tīrāks stils, labs kā pamats)
 const osmDe = L.tileLayer('https://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
   maxZoom: 19,
@@ -1469,10 +1446,10 @@ const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.p
       'CyclOSM': cyclo,
 
 // JAUNI bāzes slāņi:
-  'EOX S2 Cloudless': s2cloudless,
+  
   'OSM DE': osmDe,
 'OSM France': osmFr,
-		'EOX Terrain (reljefs)': eoxTerrain,
+		
 	'CartoDB Positron': cartoLight	
 		
   // 'MapTiler Topo (API key)': mtTopo,
