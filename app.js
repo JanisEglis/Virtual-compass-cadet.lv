@@ -1374,12 +1374,82 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
       maxZoom: 20, attribution: '&copy; OSM, CyclOSM'
     });
 
+
+
+
+
+
+
+
+// --- EOX Sentinel-2 Cloudless (bāzes slānis, bez mākoņiem) ---
+const s2cloudless = L.tileLayer.wms('https://tiles.maps.eox.at/wms', {
+  layers: 's2cloudless-2024_3857',
+  format: 'image/jpeg',
+  transparent: false,
+  attribution: 'Sentinel-2 cloudless © EOX, © Copernicus'
+});
+
+// --- LĢIA WMS (bāzes slāņi; strādā EPSG:3857) ---
+const topo500 = L.tileLayer.wms(
+  'https://servisi.lgia.gov.lv/lksopen/services/TOPO/Topo500/MapServer/WMSServer',
+  {
+    layers: '0', format: 'image/png', transparent: false, crs: L.CRS.EPSG3857,
+    attribution: '© LĢIA, CC BY 4.0'
+  }
+);
+
+const orto_pilsetas = L.tileLayer.wms(
+  'https://servisi.lgia.gov.lv/lksopen/services/OPEN_DATA/Ortofoto_pilsetas/MapServer/WMSServer',
+  {
+    layers: '0', format: 'image/jpeg', transparent: false, crs: L.CRS.EPSG3857,
+    attribution: '© LĢIA, CC BY 4.0'
+  }
+);
+
+// --- Pārklājumi (overlay) ---
+const hiking = L.tileLayer('https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png', {
+  opacity: 0.8, attribution: '© waymarkedtrails.org, © OSM līdzstrādnieki'
+});
+const cycling = L.tileLayer('https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png', {
+  opacity: 0.8, attribution: '© waymarkedtrails.org, © OSM līdzstrādnieki'
+});
+const rail = L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
+  subdomains: 'abc', opacity: 0.9, attribution: '© OpenRailwayMap, © OSM'
+});
+const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+  opacity: 0.9, attribution: '© OpenSeaMap, dati © OSM (ODbL)'
+});
+
+// --- (NEOBLIGĀTI) MapTiler & Thunderforest — vajag API atslēgu ---
+// const mtTopo = L.tileLayer('https://api.maptiler.com/maps/topo-v2/256/{z}/{x}/{y}.png?key=YOUR_KEY',
+//   { attribution: '© MapTiler © OSM līdzstrādnieki' });
+// const tfOutdoors = L.tileLayer('https://tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=YOUR_KEY',
+//   { attribution: '© Thunderforest, © OSM' });
+
+
+
+
+
+
+
+
+
+	  
     const baseLayers = {
       'OSM': osm,
       'OpenTopoMap': topo,
       'Esri satelīts': esri,
       'OSM HOT': hot,
       'CyclOSM': cyclo
+
+// JAUNI bāzes slāņi:
+  'EOX S2 Cloudless': s2cloudless,
+  'LĢIA Topo 1:500k': topo500,
+  'LĢIA Orto (1997–2002)': orto_pilsetas,
+
+  // 'MapTiler Topo (API key)': mtTopo,
+  // 'Thunderforest Outdoors (API key)': tfOutdoors
+		
     };
 
 
@@ -1664,6 +1734,36 @@ function llToUTMInZone(lat, lon, zone){
     'MGRS etiķetes': labels,
   };
 
+
+
+
+
+
+// saņemam ABUS slāņus no funkcijas
+const { grid, labels } = createUTMGridLayers();
+
+// ieliekam katru atsevišķi kā pārklājumu
+const overlays = {
+  'MGRS režģa līnijas (1–20 km)': grid,
+  'MGRS etiķetes': labels,
+
+  // JAUNI pārklājumi:
+  'Pārgājienu takas (Waymarked)': hiking,
+  'Velomaršruti (Waymarked)': cycling,
+  'Dzelzceļš (OpenRailwayMap)': rail,
+  'Jūras zīmes (OpenSeaMap)': seamarks
+};
+
+
+
+
+
+
+
+
+
+
+	
   const layersCtl = L.control.layers(baseLayers, overlays, {
     collapsed: true,
     position: 'topright'
