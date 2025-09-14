@@ -1391,8 +1391,8 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
 
 
 
-// === Mēroga izvēlne (1:10k..1:100k) ===
-const SCALE_OPTIONS = [10000, 25000, 50000, 75000, 100000];
+// === Mēroga izvēlne (1:5k..1:100k) ===
+const SCALE_OPTIONS = [5000, 10000, 25000, 50000, 75000, 100000];
 
 // palīdzfunkcijas: aktuālais mērogs un nepieciešamais zoom izvēlētam mērogam
 function getCurrentScale(){
@@ -1436,15 +1436,18 @@ scalePickCtl.onAdd = function(){
     select.appendChild(opt);
   });
 
-  select.addEventListener('change', ()=>{
-    const targetScale = +select.value;
-    // atļaujam frakcionētu zoom, lai mērogs sanāk precīzāks
-    map.options.zoomSnap = 0;
-    map.options.zoomDelta = 0.25;
-    map.setZoom( zoomForScale(targetScale), {animate:true} );
-    updateRatio();     // atjauno “Mērogs: 1:xxxx” rādītāju
-    syncScalePicker(); // pielāgo izvēlnes value, ja vajag
-  });
+select.addEventListener('change', ()=>{
+  const targetScale = +select.value;
+  map.options.zoomSnap  = 0;     // frakcionēts zoom precizitātei
+  map.options.zoomDelta = 0.25;
+
+  const z = clampZoom( zoomForScale(targetScale) );
+  map.setZoom(z, { animate:true });
+
+  updateRatio();
+  syncScalePicker();
+});
+
 
   wrap.appendChild(label);
   wrap.appendChild(select);
