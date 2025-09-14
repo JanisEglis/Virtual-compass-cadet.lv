@@ -1404,6 +1404,38 @@ const lvmTopo50_wms = L.tileLayer.wms(
 );
 
 
+const lvmTurismaVietas = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
+  layers: 'public:LVM_Turisma_vietas',
+  format: 'image/png',
+  transparent: true,
+  tiled: true,
+  attribution: '© LVM'
+});
+
+const lvmTurismaInfra = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
+  layers: 'public:LVM_Turisma_infrastruktura',
+  format: 'image/png',
+  transparent: true,
+  tiled: true,
+  attribution: '© LVM'
+});
+
+// Bāzes slāņi no LVM (WMS)
+const lvmTopo75 = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
+  layers: 'public:topo75LKS',
+  format: 'image/png',
+  transparent: false,
+  tiled: true,
+  attribution: '© LVM'
+});
+
+const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
+  layers: 'public:OSM',
+  format: 'image/png',
+  transparent: false,
+  tiled: true,
+  attribution: '© LVM'
+});
 
 
 
@@ -1450,7 +1482,10 @@ const lvmTopo50_wms = L.tileLayer.wms(
 	  'OSM DE': osmDe,
 	  'OSM France': osmFr,	
 	  'CartoDB Positron': cartoLight,	
-'LVM Topo50': lvmTopo50_wms		
+	  'LVM Topo50': lvmTopo50_wms,
+'LVM Topo75 (WMS)': lvmTopo75
+'LVM OSM (WMS)': lvmOSM
+  
     };
 
 
@@ -1747,7 +1782,9 @@ const overlays = {
   'Pārgājienu takas (Waymarked)': hiking,
   'Velomaršruti (Waymarked)': cycling,
   'Dzelzceļš (OpenRailwayMap)': rail,
-  'Jūras zīmes (OpenSeaMap)': seamarks
+  'Jūras zīmes (OpenSeaMap)': seamarks,
+'LVM Tūrisma vietas (WMS)': lvmTurismaVietas,
+'LVM Tūrisma infrastruktūra (WMS)': lvmTurismaInfra
 };
 
 
