@@ -1353,20 +1353,28 @@ function utmToLL(E, N, zone, hemi){
 
 
 // --- LGIA + OSM slāņi (definē pirms L.map)
-const lgiaOrtoV3 = L.esri.tiledMapLayer({
+// --- LGIA + OSM slāņi (definē pirms L.map)
+const lgiaOrtoV3 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
-  maxZoom: 22
+  format: 'jpg',
+  transparent: false,
+  opacity: 1,
+  minZoom: 7
 });
 
 const lgiaTopo10 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
-  opacity: 0.8
+  format: 'png32',
+  transparent: true,
+  opacity: 0.8,
+  minZoom: 10
 });
 
 const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 20,
   attribution: '&copy; OpenStreetMap'
 });
+
 
 
 
@@ -1748,14 +1756,14 @@ lgiaTopo10.on('load', () => console.info('[LGIA Topo 10k] OK'));
 
 	
 // Paziņojums par LGIA kartes nepieejamību
-[lgiaOrtoV3, lgiaTopo10].forEach(layer=>{
+[lgiaOrtoV3, lgiaTopo10].forEach(layer => {
   let told = false;
-  layer.on('tileerror', ()=>{
+  layer.on('requesterror', (e) => {
     if (told) return; told = true;
-    console.warn('LGIA WMS nav pieejams vai nepieņemts LAYERS parametrs.');
-    // alert('LGIA slānis nav pieejams (WMS).'); // ja gribi popup
+    console.warn('LGIA slānis pašlaik nav pieejams.', e);
   });
 });
+
 
 	
 
