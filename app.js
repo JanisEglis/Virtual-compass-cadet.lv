@@ -1711,43 +1711,63 @@ const LgiaScale = L.Control.extend({
     maxWidthPx: 140,                        // max joslas garums pikseļos
     niceStepsMeters: [5,10,20,50,100,200,500,1000,2000,5000,10000]
   },
-  onAdd: function(){
-    const container = L.DomUtil.create('div', 'lgia-scale');
-	  const label = L.DomUtil.create('div', 'lgia-scale-label', container);
+onAdd: function(){
+  const container = L.DomUtil.create('div', 'lgia-scale');
+
+  // 1) Teksts augšā
+  const label = L.DomUtil.create('div', 'lgia-scale-label', container);
+
+  // 2) Josla zem teksta (apgriezta otrādi)
   const bar = L.DomUtil.create('div', 'lgia-scale-bar', container);
   const left = document.createElement('div');
   const right = document.createElement('div');
   bar.appendChild(left);
   bar.appendChild(right);
-    
 
-    // tumšais UI – askētiski, tikai līnija un uzraksts
-    Object.assign(container.style, {
-      padding:'2px 6px', background:'rgba(0,0,0,.5)',
-      borderRadius:'4px', border:'1px solid rgba(255,255,255,.06)',
-      color:'#fff', font:'12px/1.2 system-ui, sans-serif',
-      display:'inline-flex', flexDirection:'column', gap:'2px'
-    });
-    Object.assign(bar.style, {
-      height:'0px', borderTop:'3px solid #fff', position:'relative',
-      width:'80px', margin:'0 auto'
-    });
-    const left = document.createElement('div');
-    const right = document.createElement('div');
-    Object.assign(left.style,  {position:'absolute', left:'0', top:'-3px', height:'10px', borderLeft:'3px solid #fff'});
-    Object.assign(right.style, {position:'absolute', right:'0', top:'-3px', height:'10px', borderRight:'3px solid #fff'});
-    bar.appendChild(left); bar.appendChild(right);
-    label.style.textAlign = 'center';
+  // — Stili —
+  Object.assign(container.style, {
+    padding:'2px 6px',
+    background:'rgba(0,0,0,.5)',
+    borderRadius:'4px',
+    border:'1px solid rgba(255,255,255,.06)',
+    color:'#fff',
+    font:'12px/1.2 system-ui, sans-serif',
+    display:'inline-flex',
+    flexDirection:'column',
+    alignItems:'center',   // centrējam label + joslu
+    gap:'2px'
+  });
 
-    this._els = { bar, label };
-    this._update = this._update.bind(this);
-    map.on('move zoom zoomend', this._update);
-    this._update();
+  Object.assign(label.style, { textAlign:'center' });
 
-    L.DomEvent.disableClickPropagation(container);
-    L.DomEvent.disableScrollPropagation(container);
-    return container;
-  },
+  Object.assign(bar.style, {
+    height:'0px',
+    borderTop:'3px solid #fff',   // galvenā līnija
+    position:'relative',
+    width:'80px',
+    margin:'2px auto 0',
+    transform:'rotate(180deg)',   // apgriež joslu otrādi (stabiņi uz leju)
+    transformOrigin:'50% 50%'
+  });
+
+  Object.assign(left.style,  {
+    position:'absolute', left:'0', top:'-3px',
+    height:'10px', borderLeft:'3px solid #fff'
+  });
+  Object.assign(right.style, {
+    position:'absolute', right:'0', top:'-3px',
+    height:'10px', borderRight:'3px solid #fff'
+  });
+
+  this._els = { bar, label };
+  this._update = this._update.bind(this);
+  map.on('move zoom zoomend', this._update);
+  this._update();
+
+  L.DomEvent.disableClickPropagation(container);
+  L.DomEvent.disableScrollPropagation(container);
+  return container;
+},
   onRemove: function(){ map.off('move zoom zoomend', this._update); },
   _update: function(){
     const mpp = metersPerPixelAtCenter();
