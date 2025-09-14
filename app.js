@@ -1460,7 +1460,7 @@ const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
 	  'OSM DE': osmDe,
 	  'OSM France': osmFr,	
 	  'CartoDB Positron': cartoLight,	
-	  'LVM Topo50': lvmTopo50_wms,
+	
 'LVM OSM (WMS)': lvmOSM,
 'LGĢIA Topogrāfiskā 1:50 000': lgiaTopo50
     };
