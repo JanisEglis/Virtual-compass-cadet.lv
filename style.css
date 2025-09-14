@@ -591,11 +591,15 @@ body.preloading{ overflow: hidden; }
 								position: fixed;
 								bottom: calc(var(--vh) * 0); /* Koriģēts, lai vienmēr būtu 5% no faktiskā viewport */
 								display: flex;
-								gap: 2vw;
+								/* atstarpes starp elementiem (elastīgi) */
+								gap: clamp(8px, 1.6vw, 16px);
 								justify-content: center;
 								width: 100%;
 								z-index: 2;
-								
+								 /* nelauzt rindu, lai paliek vienā rindā kā preload logā */
+ 								 white-space: nowrap;
+								  /* vieta abām sānu pogām (saudzē centrālos span) */
+  								padding-inline: clamp(100px, 12vw, 200px);
 								padding:0.3vw;
 								background-color: rgb(0, 0, 0);
 								color: rgba(255, 255, 255, 0.8);
@@ -610,7 +614,12 @@ body.preloading{ overflow: hidden; }
 								margin-top: 1px;
 								margin-bottom: 1px;
 							}
-
+/* Vertikālā svītra starp vienumiem — tāpat kā preloaderā */
+#about .abouttext + .abouttext::before{
+  content: "|";
+  margin: 0 clamp(8px, 1.2vw, 12px);
+  opacity: .6;
+}
 
 							/* Kreisās puses konteineris */
 							.position-selector-container-left {
