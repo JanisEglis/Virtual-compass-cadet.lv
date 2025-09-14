@@ -840,6 +840,7 @@ function setDarkness(percent){
   mapDarken = p / 100;
 
   // onlineMap pārklājums
+	setDarkness(0);                     // sākam bez aptumšošanas
   const dim = document.getElementById('onlineMapDim');
   if (dim) dim.style.background = 'rgba(0,0,0,' + Math.min(0.8, mapDarken) + ')';
 
@@ -1362,6 +1363,14 @@ const lgiaOrtoV3 = L.esri.dynamicMapLayer({
   minZoom: 7
 });
 
+
+osm.setZIndex(1);
+lgiaOrtoV3.setZIndex(2);
+lgiaOrtoV3.bringToFront();
+
+
+
+	  
 const lgiaTopo10 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
   format: 'png32',
