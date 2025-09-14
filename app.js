@@ -2065,7 +2065,7 @@ const overlays = {
   }).addTo(map);
 
 
-const layersCtl = L.control.layers(baseMaps, overlays, {collapsed:false}).addTo(map);
+
 	
 // ja vēlies — MGRS ieslēgts pēc noklusējuma:
   grid.addTo(map); labels.addTo(map);
