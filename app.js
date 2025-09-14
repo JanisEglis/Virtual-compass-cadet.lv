@@ -1369,87 +1369,54 @@ if (!window.L || !L.esri) {
 // --- LGIA + OSM slāņi (pirms L.map)
 
 
-	  
-	  
-	  const lgiaOrtoV3 = L.esri.dynamicMapLayer({
-  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
-  format: 'png32',       // caurspīdīgs orto
-  transparent: true,
-  opacity: 1,
-  minZoom: 11            // <— zem šī zoom orto neslēdzam iekšā
+// --- LGIA + OSM slāņi (DEFINĒ VIENU REIZI) ---
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 20, attribution: '© OpenStreetMap'
 });
 
+// Ortofoto (OPEN_DATA/Ortofoto3_rgb) caur Esri-Leaflet
+const lgiaOrtoV3 = L.esri.dynamicMapLayer({
+  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
+  format: 'png32', transparent: true, opacity: 1
+});
 
-
-
-
-
-
-	  
-
-
-
-
-	  
+// Topo 10k (NEVIS 50k – 50k tev met 403/“no permission”)
 const lgiaTopo10 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
-  format: 'png32',
-  transparent: true,
-  opacity: 0.8,
-  minZoom: 10
+  format: 'png32', transparent: true, opacity: 0.8
 });
 
+// --- Karte: startē ar OSM, lai fons nekad nav pelēks; LGIA pieliekam klāt, kad gatavs
+const map = L.map('onlineMap', { zoomControl: true, attributionControl: true, layers: [osm] })
+  .setView([56.95, 24.10], 13);
 
-const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 20,
-  attribution: '© OpenStreetMap'
-});	  
-
-
-
-// --- Karti startē tikai ar LGIA (bez OSM virsū)
-const map = L.map('onlineMap', {
-  center: [56.95, 24.10],
-  zoom: 8,
-  layers: [lgiaOrtoV3]   // ← startē ar ortofoto
+// LGIA statuss (konsolei) un drošs pievienojums
+let ortoShown = false;
+lgiaOrtoV3.on('load', () => {
+  if (!ortoShown) { lgiaOrtoV3.addTo(map).bringToFront(); ortoShown = true; }
+  console.info('[LGIA Ortofoto v3] OK');
 });
+lgiaOrtoV3.on('requesterror', (e) => console.warn('[LGIA Ortofoto v3] requesterror', e));
 
-// Slāņu kontrole: bāzes + pārklājumi
+// automātiski slēdz ortofoto iekšā no ~11. līmeņa
+function syncOrto() {
+  const z = map.getZoom();
+  if (z >= 11) { if (!map.hasLayer(lgiaOrtoV3)) lgiaOrtoV3.addTo(map).bringToFront(); }
+  else { if (map.hasLayer(lgiaOrtoV3)) map.removeLayer(lgiaOrtoV3); }
+}
+map.on('zoomend', syncOrto);
+syncOrto();
+
+// Slāņu kontrole (bāzes + pārklājumi)
 L.control.layers(
-  { 'LGIA Ortofoto v3': lgiaOrtoV3, 'OpenStreetMap': osm },
+  { 'OpenStreetMap': osm, 'LGIA Ortofoto v3': lgiaOrtoV3 },
   { 'LGIA Topo 10k': lgiaTopo10 },
   { collapsed: false }
 ).addTo(map);
 
-
-
+// (Pēc tam vari pievienot savus režģus u.c. pārklājumus)
 	  
-
-
-
-// --- Tiklīdz pietuvinies, ieslēdz LGIA orto; attālinoties – izslēdz
-function syncBase() {
-  const z = map.getZoom();
-  const hasOrto = map.hasLayer(lgiaOrtoV3);
-  if (z >= 11 && !hasOrto) {
-    lgiaOrtoV3.addTo(map).bringToFront();
-  } else if (z < 11 && hasOrto) {
-    map.removeLayer(lgiaOrtoV3);
-  }
-}
-map.on('zoomend', syncBase);
-syncBase(); // izsauc uzreiz vienu reizi
-
-
-
-
-
-
-
-
-
-
-
+	  
 
 
 
