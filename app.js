@@ -1401,7 +1401,7 @@ const lvmTopo50_wms = L.tileLayer.wms(
     layers: 'public:Topo50',
     format: 'image/png',
     transparent: true,
-    crs: L.CRS.EPSG3857  // (pēc noklusējuma Leaflet tāpat ir 3857)
+    // crs: L.CRS.EPSG3857  // (pēc noklusējuma Leaflet tāpat ir 3857)
   }
 );
 
