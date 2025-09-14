@@ -1385,42 +1385,56 @@ const lgiaOrtoV3 = L.tileLayer.wms(
   'https://wms.lgia.gov.lv/open/services/OPEN_DATA/Ortofoto3_rgb/MapServer/WMSServer',
   {
     layers: '0',
-    format: 'image/png',
-    transparent: false,     // bāzes slānim fons nav caurspīdīgs
+    format: 'image/jpeg',      // ← bija image/png
+    transparent: false,
+    version: '1.3.0',          // ← pievienots
+    uppercase: true,           // ← pievienots (daži ArcGIS WMS to prasa)
     maxZoom: 22,
     attribution: '© LĢIA — Ortofoto3 RGB (CC BY 4.0)'
   }
 );
 
-// Topogrāfiskā karte 1:50k — PĀRKLĀJUMS
+// Topogrāfiskā karte 1:50k — PĀRKLĀJUMS (PNG, uppercase, 1.3.0)
 const lgiaTopo50 = L.tileLayer.wms(
   'https://wms.lgia.gov.lv/open/services/OPEN_DATA/Topo50_v2/MapServer/WMSServer',
   {
     layers: '0',
     format: 'image/png',
-    transparent: true,      // pārklājumam vajag caurspīdīgu fonu
+    transparent: true,
     opacity: 0.9,
+    version: '1.3.0',          // ← pievienots
+    uppercase: true,           // ← pievienots
     maxZoom: 22,
     attribution: '© LĢIA — Topo 1:50k (CC BY 4.0)'
   }
 );
 
-// (ja vajag arī 1:10k)
-const lgiaTopo10 = L.tileLayer.wms(
-  'https://wms.lgia.gov.lv/open/services/OPEN_DATA/Topo10_v4/MapServer/WMSServer',
-  {
-    layers: '0',
-    format: 'image/png',
-    transparent: true,
-    opacity: 0.9,
-    maxZoom: 22,
-    attribution: '© LĢIA — Topo 1:10k (CC BY 4.0)'
-  }
-);
 
 
 
 
+
+function tapWmsErrors(layer, name){
+  if(!layer) return;
+  layer.on('tileerror', (e)=>{
+    const url = e.tile && e.tile.src ? e.tile.src : '(nav URL)';
+    console.warn(`[LGIA ${name}] tileerror ->`, url);
+  });
+}
+tapWmsErrors(lgiaOrtoV3, 'Ortofoto v3');
+tapWmsErrors(lgiaTopo50, 'Topo 50k');
+
+
+
+
+
+
+
+
+
+
+
+	  
 
 
 
