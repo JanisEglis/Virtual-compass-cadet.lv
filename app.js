@@ -1400,7 +1400,7 @@ const baseEsriWorldImagery = L.tileLayer(
       'OpenTopoMap': topo,
       'Esri satelīts': esri,
       'OSM HOT': hot,
-      'CyclOSM': cyclo
+      'CyclOSM': cyclo,
 	  'OpenStreetMap': baseOSM,
       'OpenTopoMap': baseOpenTopo,
       'Esri World Imagery': baseEsriWorldImagery
