@@ -1405,9 +1405,6 @@ const lvmTopo50_wms = L.tileLayer.wms(
   }
 );
 
-// padari to par noklusēto bāzi
-lgiaTopo50.addTo(map);
-
 
 const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
   layers: 'public:OSM',
