@@ -1384,20 +1384,25 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
 // LGIA (OPEN DATA) — Esri REST (ne WMS)
 const lgiaOrtoV3 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
-  layers: [0],        // ← svarīgi
-  opacity: 1
+  format: 'png32',
+  transparent: true,
+  opacity: 1,
+  minZoom: 8      // orto nerādām ļoti tālu izzoomējot (tur tāpat ir “pelēkais” fons)
 });
 
 const lgiaTopo50 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo50_v2/MapServer',
-  layers: [0],        // ← svarīgi
+  format: 'png32',
+  transparent: true,
   opacity: 0.9
 });
 
 const lgiaTopo10 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
-  layers: [0],        // ← svarīgi
-  opacity: 0.9
+  format: 'png32',
+  transparent: true,
+  opacity: 0.9,
+  minZoom: 10
 });
 
 
