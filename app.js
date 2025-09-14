@@ -1403,22 +1403,21 @@ const lvmTopo50_wms = L.tileLayer.wms(
   }
 );
 
-const WMS = 'https://lvmgeoserver.lvm.lv/geoserver/wms?';
+const WMS = 'https://lvmgeoserver.lvm.lv/geoserver/gwc/service/wms';
 
 	  
 
 
 // Bāzes slāņi no LVM (WMS)
 // Piemērs: Topo75
+// 2) bāzes karte 1:75 000 (ja 3857 variants ir “Topo75”, pamēģini abus nosaukumus)
 const lvmTopo75 = L.tileLayer.wms(WMS, {
-  layers: 'public:topo75LKS',
+  layers: 'public:topo75LKS', // ja neiet, pamēģini: 'public:Topo75'
   format: 'image/png',
   transparent: false,
   version: '1.1.1',
-  uppercase: true,
-  tiled: true,            // var atstāt true bāzes slānim
-  crossOrigin: true
-});
+  tiled: true
+}).on('tileerror', e => console.warn('Topo75 tile fail:', e.url));
 
 const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
   layers: 'public:OSM',
@@ -1435,18 +1434,16 @@ const lvmTurismaVietas = L.tileLayer.wms(WMS, {
   format: 'image/png',
   transparent: true,
   version: '1.1.1',
-  uppercase: true,
-  crossOrigin: true
-});
+  tiled: true
+}).on('tileerror', e => console.warn('Vietas tile fail:', e.url));
 
 const lvmTurismaInfra = L.tileLayer.wms(WMS, {
   layers: 'public:LVM_Turisma_infrastruktura',
   format: 'image/png',
   transparent: true,
   version: '1.1.1',
-  uppercase: true,
-  crossOrigin: true
-});
+  tiled: true
+}).on('tileerror', e => console.warn('Infra tile fail:', e.url));
 
 
 
@@ -1491,7 +1488,7 @@ const lvmTurismaInfra = L.tileLayer.wms(WMS, {
 	  'OSM France': osmFr,	
 	  'CartoDB Positron': cartoLight,	
 	  'LVM Topo50': lvmTopo50_wms,
-'LVM Topo75 (WMS)': lvmTopo75,
+'LVM Topo 1:75 000': lvmTopo75,
 'LVM OSM (WMS)': lvmOSM
 
     };
@@ -1791,8 +1788,8 @@ const overlays = {
   'Velomaršruti (Waymarked)': cycling,
   'Dzelzceļš (OpenRailwayMap)': rail,
   'Jūras zīmes (OpenSeaMap)': seamarks,
-'LVM Tūrisma vietas (WMS)': lvmTurismaVietas,
-'LVM Tūrisma infrastruktūra (WMS)': lvmTurismaInfra
+ 'LVM Tūrisma vietas': lvmTurismaVietas,
+  'LVM Tūrisma infrastruktūra': lvmTurismaInfra
 };
 
 
