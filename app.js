@@ -53,27 +53,20 @@ if (!('cancelIdleCallback' in window)) {
 
 
 
+// -- LKS-92 (EPSG:3059) definīcija proj4
+proj4.defs('EPSG:3059',
+  '+proj=tmerc +lat_0=0 +lon_0=24 +k=0.9996 +x_0=500000 +y_0=-6000000 +ellps=GRS80 +units=m +no_defs +type=crs'
+);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Konvertācijas palīgi
+function wgsToLKS(lat, lng){               // ievade: WGS84 lat,lng
+  const [x,y] = proj4('EPSG:4326','EPSG:3059',[lng,lat]);
+  return {E:x, N:y};
+}
+function lksToWGS(E, N){                   // atpakaļ uz WGS84
+  const [lng,lat] = proj4('EPSG:3059','EPSG:4326',[E,N]);
+  return {lat, lng};
+}
 
 
 
@@ -1733,25 +1726,20 @@ function llToUTMInZone(lat, lon, zone){
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 // saņemam ABUS slāņus no funkcijas
 const { grid, labels } = createUTMGridLayers();
+
+
+// jauns: LKS TĪKLS
+const { grid: lksGrid, labels: lksLabels } = createLKSGridLayers();
+	
 
 // ieliekam katru atsevišķi kā pārklājumu
 const overlays = {
   'MGRS režģa līnijas (1–20 km)': grid,
   'MGRS etiķetes': labels,
+'LKS-92 režģa līnijas (1–20 km)': lksGrid,
+'LKS-92 etiķetes': lksLabels,
 
   // JAUNI pārklājumi:
   'Pārgājienu takas (Waymarked)': hiking,
@@ -1776,9 +1764,14 @@ const overlays = {
     position: 'topright'
   }).addTo(map);
 
-  // abi defaultā ieslēgti
-  grid.addTo(map);
-  labels.addTo(map);
+
+
+	
+// ja vēlies — MGRS ieslēgts pēc noklusējuma:
+  grid.addTo(map); labels.addTo(map);
+// LKS atstāj izslēgtu (vai ieslēdz arī to, ja gribi):
+// lksGrid.addTo(map); lksLabels.addTo(map);
+
 
   // ▶ Slāņu panelis: atveras ar klikšķi, aizveras pēc izvēles
   makeLayersClickOnly(layersCtl);
