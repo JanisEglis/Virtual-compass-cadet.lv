@@ -1389,17 +1389,38 @@ const lgiaOrtoV3 = L.tileLayer.wms(
 );
 
 // Topo 1:250k kā pārklājums (caurspīdīgs)
-const lgiaTopo250k = L.tileLayer.wms(
-  'https://servisi.lgia.gov.lv/lksopen/services/Topo/Topo_250k/MapServer/WMSServer',
+// Topogrāfiskā karte 1:50 000 (2. izdevums)
+const lgiaTopo50 = L.tileLayer.wms(
+  'https://servisi.lgia.gov.lv/lks/services/TOPO/Topo50_v2/MapServer/WMSServer',
   {
     layers: '0',
     format: 'image/png',
     transparent: true,
-    attribution: '© LĢIA — Topo 1:250k (CC BY 4.0)'
+    attribution: '© LĢIA — Topo 1:50k (CC BY 4.0)'
   }
 );
 
+// Topogrāfiskā karte 1:10 000 (4. izdevums) — ja pieejama
+const lgiaTopo10 = L.tileLayer.wms(
+  'https://servisi.lgia.gov.lv/lks/services/TOPO/Topo10v4/MapServer/WMSServer',
+  {
+    layers: '0',
+    format: 'image/png',
+    transparent: true,
+    attribution: '© LĢIA — Topo 1:10k (CC BY 4.0)'
+  }
+);
 
+// Ortofoto (V3) — alternatīvais ceļš
+const lgiaOrtoV3 = L.tileLayer.wms(
+  'https://servisi.lgia.gov.lv/lks/services/ORTO/Ortofoto_v3/MapServer/WMSServer',
+  {
+    layers: '0',
+    format: 'image/png',
+    transparent: false,
+    attribution: '© LĢIA — Ortofoto v3 (CC BY 4.0)'
+  }
+);
 
 
 
@@ -1702,11 +1723,19 @@ function llToUTMInZone(lat, lon, zone){
   const overlays = {
     'MGRS režģa līnijas (1–20 km)': grid,
     'MGRS etiķetes': labels,
-	  'LĢIA Topo 1:250k (WMS)': lgiaTopo250k    // ← pievienots
+	   'LĢIA Topo 1:50k (WMS)': lgiaTopo50,
+  'LĢIA Topo 1:10k (WMS)': lgiaTopo10
   };
 
-
-
+// Paziņojums par LGIA kartes nepieejamību
+[lgiaOrtoV3, lgiaTopo50, lgiaTopo10].forEach(layer=>{
+  let told = false;
+  layer.on('tileerror', ()=>{
+    if (told) return; told = true;
+    console.warn('LGIA WMS nav pieejams vai nepieņemts LAYERS parametrs.');
+    // alert('LGIA slānis nav pieejams (WMS).'); // ja gribi popup
+  });
+});
 
 	
 
