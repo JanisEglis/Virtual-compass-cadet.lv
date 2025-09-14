@@ -1372,11 +1372,16 @@ const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 
 
-    map = L.map(mapDiv, { zoomControl:true, attributionControl:true });
+    map = L.map(mapDiv, {
+  zoomControl: true,
+  attributionControl: true,
+  layers: [lgiaOrtoV3]   // ← startē tikai ar LGIA ortofoto
+});
+map.setView([56.95, 24.10], 8);
+
+	  
 window.__getMap = () => map;   // 👈 Ieliec tieši šeit
-    const osm  = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
+
 
     const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
       maxZoom: 17,
