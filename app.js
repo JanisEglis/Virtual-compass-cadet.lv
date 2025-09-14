@@ -1424,11 +1424,11 @@ const lvmTurismaInfra = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/o
 
 // Bāzes slāņi no LVM (WMS)
 const lvmTopo75 = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
-  layers: 'public:topo75LKS',   // vai pareizo 3857-compat nosaukumu
+  layers: 'public:topo75LKS',
   format: 'image/png',
   transparent: false,
-  version: '1.3.0',
-  attribution: '© LVM'
+  version: '1.1.1',
+  crs: L.CRS.EPSG3857
 });
 
 const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
