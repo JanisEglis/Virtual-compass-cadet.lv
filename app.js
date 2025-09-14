@@ -1633,11 +1633,7 @@ function createUTMGridLayers(){
 
 
 
-// UTM režģis
-const { grid: utmGrid, labels: utmLabels } = createUTMGridLayers();
 
-// LKS-92 režģis
-const { grid: lksGrid, labels: lksLabels } = createLKSGridLayers();
 
 
 
@@ -1936,72 +1932,6 @@ function llToUTMInZone(lat, lon, zone){
 
 
 
-// Globālais stāvoklis
-let coordMode = localStorage.getItem('coordMode') || 'MGRS'; // 'MGRS' vai 'LKS'
-
-// Neliels pārslēgs kartē
-const CoordModeCtl = L.Control.extend({
-  options:{position:'topright'},
-  onAdd: function(){
-    const div = L.DomUtil.create('div','leaflet-bar');
-    div.style.padding = '6px 8px';
-    div.style.background = '#fff';
-    div.innerHTML = `
-      <label style="display:block; margin-bottom:4px;"><strong>Koordinātes</strong></label>
-      <label style="display:block;"><input type="radio" name="cm" value="MGRS" ${coordMode==='MGRS'?'checked':''}> MGRS/UTM</label>
-      <label style="display:block;"><input type="radio" name="cm" value="LKS"  ${coordMode==='LKS'?'checked':''}> LKS-92</label>`;
-    L.DomEvent.disableClickPropagation(div);
-    div.addEventListener('change', (e)=>{
-      if (e.target.name==='cm'){
-        coordMode = e.target.value;
-        localStorage.setItem('coordMode', coordMode);
-        map.closePopup(); // lai jaunā klikā parādītu pareizo formātu
-      }
-    });
-    return div;
-  }
-});
-map.addControl(new CoordModeCtl());
-
-// Palīgs formātiem
-function formatLKS(E,N){
-  return `E ${Math.round(E)} , N ${Math.round(N)}`;
-}
-function coordsForPopup(lat, lng){
-  const ll = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-  if (coordMode === 'LKS'){
-    const {E,N} = wgsToLKS(lat, lng);
-    return {ll, label:'LKS-92', value: formatLKS(E,N)};
-  } else {
-    // izmanto Tavas jau esošās MGRS/UTM funkcijas
-    const mgrs = toMGRS8(lat, lng); // vai kā to nosauci savā kodā
-    return {ll, label:'MGRS', value: mgrs};
-  }
-}
-
-// Uztaisi popup ar izvēlēto režīmu
-map.on('click', (e)=>{
-  const {ll, label, value} = coordsForPopup(e.latlng.lat, e.latlng.lng);
-  const html = `
-    <div class="coord-popup">
-      <div class="coord-row">
-        <span class="label">Lat,Lng</span>
-        <span class="value" id="llVal">${ll}</span>
-        <button class="copy-btn" id="copyLL" title="Kopēt Lat,Lng" aria-label="Kopēt Lat,Lng">${copySVG}</button>
-        <span class="copied-msg" id="copiedLL">Nokopēts!</span>
-      </div>
-      <div class="coord-row">
-        <span class="label">${label}</span>
-        <span class="value" id="sysVal">${value}</span>
-        <button class="copy-btn" id="copySYS" title="Kopēt ${label}" aria-label="Kopēt ${label}">${copySVG}</button>
-        <span class="copied-msg" id="copiedSYS">Nokopēts!</span>
-      </div>
-    </div>`;
-  L.popup({maxWidth: 480}).setLatLng(e.latlng).setContent(html).openOn(map);
-});
-
-// jau esošajai kopēšanas loģikai tikai nomaini selektorus uz #sysVal/#copySYS
-
 
 
 
@@ -2026,11 +1956,8 @@ map.on('click', (e)=>{
 
 
 	
-// saņemam ABUS slāņus no funkcijas
-const { grid, labels } = createUTMGridLayers();
-
-
-// jauns: LKS TĪKLS
+// --- Režģu slāņi (izsaucam vienreiz) ---
+const { grid: utmGrid, labels: utmLabels } = createUTMGridLayers();
 const { grid: lksGrid, labels: lksLabels } = createLKSGridLayers();
 	
 
