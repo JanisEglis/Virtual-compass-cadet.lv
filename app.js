@@ -1374,29 +1374,34 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
       maxZoom: 20, attribution: '&copy; OSM, CyclOSM'
     });
 
+	// OSM German style (tīrāks stils, labs kā pamats)
+	const osmDe = L.tileLayer('https://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
+	  maxZoom: 19,
+	  attribution: '© OpenStreetMap contributors, tiles by openstreetmap.de'
+	});
+	
+	// OSM France (osmfr)
+	const osmFr = L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+	  maxZoom: 20,
+	  attribution: '© OpenStreetMap contributors, tiles by openstreetmap.fr'
+	});
+	
+	// CartoDB Positron (gaišs, “bez trokšņa” — labs kā pamats datu pārklājumiem)
+	const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+	  maxZoom: 20, subdomains: 'abcd',
+	  attribution: '© OpenStreetMap contributors, © CARTO'
+	});
 
-
-
-
-// OSM German style (tīrāks stils, labs kā pamats)
-const osmDe = L.tileLayer('https://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '© OpenStreetMap contributors, tiles by openstreetmap.de'
-});
-
-// OSM France (osmfr)
-const osmFr = L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
-  maxZoom: 20,
-  attribution: '© OpenStreetMap contributors, tiles by openstreetmap.fr'
-});
-
-// CartoDB Positron (gaišs, “bez trokšņa” — labs kā pamats datu pārklājumiem)
-const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  maxZoom: 20, subdomains: 'abcd',
-  attribution: '© OpenStreetMap contributors, © CARTO'
-});
-
-
+// LVM Topo50 — GWC TMS (ātrāks kešots slānis)
+const lvmTopo50_tms = L.tileLayer(
+  'https://lvmgeoserver.lvm.lv/geoserver/gwc/service/tms/1.0.0/public:Topo50@EPSG:3857@png/{z}/{x}/{y}.png',
+  {
+    tms: true,                 // TMS = apgriezts Y, Leaflet to salabo
+    maxZoom: 20,
+    attribution: 'Kartes © Latvijas Valsts meži',
+    crossOrigin: true
+  }
+);
 
 
 
@@ -1409,25 +1414,20 @@ const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/
 
 	  
 
-// --- Pārklājumi (overlay) ---
-const hiking = L.tileLayer('https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png', {
-  opacity: 0.8, attribution: '© waymarkedtrails.org, © OSM līdzstrādnieki'
-});
-const cycling = L.tileLayer('https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png', {
-  opacity: 0.8, attribution: '© waymarkedtrails.org, © OSM līdzstrādnieki'
-});
-const rail = L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
-  subdomains: 'abc', opacity: 0.9, attribution: '© OpenRailwayMap, © OSM'
-});
-const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
-  opacity: 0.9, attribution: '© OpenSeaMap, dati © OSM (ODbL)'
-});
+	// --- Pārklājumi (overlay) ---
+	const hiking = L.tileLayer('https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png', {
+	  opacity: 0.8, attribution: '© waymarkedtrails.org, © OSM līdzstrādnieki'
+	});
+	const cycling = L.tileLayer('https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png', {
+	  opacity: 0.8, attribution: '© waymarkedtrails.org, © OSM līdzstrādnieki'
+	});
+	const rail = L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
+	  subdomains: 'abc', opacity: 0.9, attribution: '© OpenRailwayMap, © OSM'
+	});
+	const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+	  opacity: 0.9, attribution: '© OpenSeaMap, dati © OSM (ODbL)'
+	});
 
-// --- (NEOBLIGĀTI) MapTiler & Thunderforest — vajag API atslēgu ---
-// const mtTopo = L.tileLayer('https://api.maptiler.com/maps/topo-v2/256/{z}/{x}/{y}.png?key=YOUR_KEY',
-//   { attribution: '© MapTiler © OSM līdzstrādnieki' });
-// const tfOutdoors = L.tileLayer('https://tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=YOUR_KEY',
-//   { attribution: '© Thunderforest, © OSM' });
 
 
 
@@ -1444,17 +1444,10 @@ const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.p
       'Esri satelīts': esri,
       'OSM HOT': hot,
       'CyclOSM': cyclo,
-
-// JAUNI bāzes slāņi:
-  
-  'OSM DE': osmDe,
-'OSM France': osmFr,
-		
-	'CartoDB Positron': cartoLight	
-		
-  // 'MapTiler Topo (API key)': mtTopo,
-  // 'Thunderforest Outdoors (API key)': tfOutdoors
-		
+	  'OSM DE': osmDe,
+	  'OSM France': osmFr,	
+	  'CartoDB Positron': cartoLight,	
+'LVM Topo50 (TMS)': lvmTopo50_tms		
     };
 
 
