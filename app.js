@@ -1382,32 +1382,32 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
 // Ortofoto 3 (RGB) – bāzes slānis
 // Ortofoto 3 (RGB) — BĀZES SLĀNIS
 // LGIA (OPEN DATA) — Esri REST (ne WMS)
+// 1) LGIA Ortofoto v3 — REST (dinamiskais). Liekam kā noklusēto bāzi.
 const lgiaOrtoV3 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
-  format: 'jpg',          // ortofoto -> JPEG ir vieglāks
-  transparent: false,     // kā bāzes slānim nevajag caurspīdīgumu
-  opacity: 1
+  opacity: 1,
+  f: 'image',
+  format: 'jpg' // var arī 'png32', ja vēlies caurspīdīgus pikseļus
+}).addTo(map); // ← SVARĪGI: pievieno kā DEFAULT bāzi
+
+// (ja vēlies paturēt OSM kā alternatīvu bāzi)
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 22,
+  attribution: '© OpenStreetMap'
 });
 
-const lgiaTopo50 = L.esri.dynamicMapLayer({
-  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo50_v2/MapServer',
-  format: 'png32',
-  transparent: true,
-  opacity: 0.9
-});
-
+// 2) LGIA Topogrāfiskā 1:10k — publisks, caurspīdīgs pārklājums
 const lgiaTopo10 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
-  format: 'png32',
+  opacity: 0.85,
   transparent: true,
-  opacity: 0.9,
-  minZoom: 10
+  format: 'png32' // lai fons ir caurspīdīgs
 });
-
-
 
 	  
 
+
+	  
 
 function tapEsriErrors(layer, name){
   if(!layer) return;
@@ -1445,7 +1445,7 @@ tapEsriErrors(lgiaTopo10, 'Topo 10k');
       'Esri satelīts': esri,
       'OSM HOT': hot,
       'CyclOSM': cyclo,
-	  'LĢIA Ortofoto v3': lgiaOrtoV3   // ← pievienots
+	  'LGIA Ortofoto v3': lgiaOrtoV3,
     };
 
 
@@ -1726,12 +1726,20 @@ function llToUTMInZone(lat, lon, zone){
 
   // ieliekam katru atsevišķi kā pārklājumu
   const overlays = {
+	  'LGIA Topo 10k': lgiaTopo10
     'MGRS režģa līnijas (1–20 km)': grid,
     'MGRS etiķetes': labels,
-  'LĢIA Topo 1:50k': lgiaTopo50,      // ← JAUNA RINDA
-  'LĢIA Topo 1:10k': lgiaTopo10
+
   };
 
+
+const layersCtl = L.control.layers(baseLayers, overlays, { collapsed: true }).addTo(map);
+
+// Lai pārliecinātos, ka orto ir augšā, kad pārslēdz bāzes slāņus:
+lgiaOrtoV3.on('load', () => console.info('[LGIA Ortofoto v3] OK'));
+lgiaTopo10.on('load', () => console.info('[LGIA Topo 10k] OK'));
+
+	
 // Paziņojums par LGIA kartes nepieejamību
 [lgiaOrtoV3, lgiaTopo50, lgiaTopo10].forEach(layer=>{
   let told = false;
@@ -1744,6 +1752,25 @@ function llToUTMInZone(lat, lon, zone){
 
 	
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
   const layersCtl = L.control.layers(baseLayers, overlays, {
     collapsed: true,
     position: 'topright'
