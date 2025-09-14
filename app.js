@@ -1381,20 +1381,22 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
 
 // Ortofoto 3 (RGB) – bāzes slānis
 // Ortofoto 3 (RGB) — BĀZES SLĀNIS
+// LGIA (OPEN DATA) — Esri REST (ne WMS)
 const lgiaOrtoV3 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
+  layers: [0],        // ← svarīgi
   opacity: 1
 });
 
-// Topogrāfiskā karte 1:50k — PĀRKLĀJUMS (Esri dynamic)
 const lgiaTopo50 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo50_v2/MapServer',
+  layers: [0],        // ← svarīgi
   opacity: 0.9
 });
 
-// Topogrāfiskā karte 1:10k — PĀRKLĀJUMS (Esri dynamic)
 const lgiaTopo10 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
+  layers: [0],        // ← svarīgi
   opacity: 0.9
 });
 
@@ -1403,15 +1405,16 @@ const lgiaTopo10 = L.esri.dynamicMapLayer({
 	  
 
 
-function tapWmsErrors(layer, name){
+function tapEsriErrors(layer, name){
   if(!layer) return;
-  layer.on('tileerror', (e)=>{
-    const url = e.tile && e.tile.src ? e.tile.src : '(nav URL)';
-    console.warn(`[LGIA ${name}] tileerror ->`, url);
+  layer.on('requesterror', (e)=>{
+    console.warn(`[LGIA ${name}] requesterror`, e);
   });
+  layer.on('load', ()=> console.info(`[LGIA ${name}] OK`));
 }
-tapWmsErrors(lgiaOrtoV3, 'Ortofoto v3');
-tapWmsErrors(lgiaTopo50, 'Topo 50k');
+tapEsriErrors(lgiaOrtoV3, 'Ortofoto v3');
+tapEsriErrors(lgiaTopo50, 'Topo 50k');
+tapEsriErrors(lgiaTopo10, 'Topo 10k');
 
 
 
