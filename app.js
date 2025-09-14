@@ -1375,21 +1375,31 @@ const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 });
 
 // Ortofoto (OPEN_DATA/Ortofoto3_rgb) caur Esri-Leaflet
+// LGIA ortofoto (šis ir publisks)
 const lgiaOrtoV3 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
   format: 'png32', transparent: true, opacity: 1
 });
 
+
+
+	  
+
 // Topo 10k (NEVIS 50k – 50k tev met 403/“no permission”)
-const lgiaTopo10 = L.esri.dynamicMapLayer({
-  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
-  format: 'png32', transparent: true, opacity: 0.8
-});
+
 
 // --- Karte: startē ar OSM, lai fons nekad nav pelēks; LGIA pieliekam klāt, kad gatavs
 const map = L.map('onlineMap', { zoomControl: true, attributionControl: true, layers: [osm] })
   .setView([56.95, 24.10], 13);
 
+
+const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+  maxZoom: 17, attribution: '© OpenTopoMap, © OSM'
+});
+
+
+
+	  
 // LGIA statuss (konsolei) un drošs pievienojums
 let ortoShown = false;
 lgiaOrtoV3.on('load', () => {
@@ -1398,25 +1408,26 @@ lgiaOrtoV3.on('load', () => {
 });
 lgiaOrtoV3.on('requesterror', (e) => console.warn('[LGIA Ortofoto v3] requesterror', e));
 
-// automātiski slēdz ortofoto iekšā no ~11. līmeņa
-function syncOrto() {
-  const z = map.getZoom();
-  if (z >= 11) { if (!map.hasLayer(lgiaOrtoV3)) lgiaOrtoV3.addTo(map).bringToFront(); }
-  else { if (map.hasLayer(lgiaOrtoV3)) map.removeLayer(lgiaOrtoV3); }
-}
-map.on('zoomend', syncOrto);
-syncOrto();
+/ Kad gatavs, pievieno LGIA ortofoto (un turi to priekšplānā)
+lgiaOrtoV3.on('load', () => lgiaOrtoV3.addTo(map).bringToFront());
+lgiaOrtoV3.on('requesterror', e => console.warn('[LGIA Ortofoto v3] requesterror', e));
 
 // Slāņu kontrole (bāzes + pārklājumi)
+// Slāņu izvēlne (bez LGIA topo)
 L.control.layers(
   { 'OpenStreetMap': osm, 'LGIA Ortofoto v3': lgiaOrtoV3 },
-  { 'LGIA Topo 10k': lgiaTopo10 },
+  { /* te vari pielikt savus režģus u.c. pārklājumus */ },
   { collapsed: false }
 ).addTo(map);
 
 // (Pēc tam vari pievienot savus režģus u.c. pārklājumus)
 	  
-	  
+	// un ieliec to base-layer sarakstā:
+L.control.layers(
+  { 'OpenStreetMap': osm, 'OpenTopoMap': openTopo, 'LGIA Ortofoto v3': lgiaOrtoV3 },
+  {},
+  { collapsed: false }
+).addTo(map);  
 
 
 
