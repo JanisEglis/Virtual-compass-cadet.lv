@@ -1393,10 +1393,13 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
 	});
 
 // LVM Topo50 — GWC TMS (ātrāks kešots slānis)
-const lvmTopo50_tms = L.tileLayer(
-  'https://lvmgeoserver.lvm.lv/geoserver/gwc/service/tms/1.0.0/public:Topo50@EPSG:3857@png8/{z}/{x}/{y}.png',
-  { tms: true, maxZoom: 20, crossOrigin: true, attribution: 'Kartes © Latvijas Valsts meži' }
+const lvmTopo50_wmts = L.tileLayer(
+  'https://lvmgeoserver.lvm.lv/geoserver/gwc/service/wmts?' +
+  'service=WMTS&version=1.0.0&request=GetTile&layer=public:Topo50&style=' +
+  '&tilematrixset=EPSG:3857&format=image/png&tilematrix=EPSG:3857:{z}&tilerow={y}&tilecol={x}',
+  { maxZoom: 20, attribution: 'Kartes © Latvijas Valsts meži' }
 );
+
 
 
 
