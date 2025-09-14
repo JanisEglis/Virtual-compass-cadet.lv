@@ -1450,7 +1450,7 @@ const lvmTopo50_wms = L.tileLayer.wms(
 	  'OSM DE': osmDe,
 	  'OSM France': osmFr,	
 	  'CartoDB Positron': cartoLight,	
-'LVM Topo50 (TMS)': lvmTopo50_tms		
+'LVM Topo50': lvmTopo50_wms		
     };
 
 
