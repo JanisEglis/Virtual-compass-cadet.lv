@@ -1363,7 +1363,14 @@ function utmToLL(E, N, zone, hemi){
 // --- LGIA + OSM slāņi (definē pirms L.map)
 // --- LGIA + OSM slāņi (definē pirms L.map)
 // --- LGIA + OSM slāņi (pirms L.map)
-const lgiaOrtoV3 = L.esri.dynamicMapLayer({
+
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 20,
+  attribution: '© OpenStreetMap'
+});	  
+	  
+	  
+	  const lgiaOrtoV3 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
   format: 'png32',       // caurspīdīgs orto
   transparent: true,
@@ -1371,10 +1378,7 @@ const lgiaOrtoV3 = L.esri.dynamicMapLayer({
   minZoom: 11            // <— zem šī zoom orto neslēdzam iekšā
 });
 
-const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 20,
-  attribution: '© OpenStreetMap'
-});
+
 
 
 
@@ -1395,21 +1399,28 @@ const lgiaTopo10 = L.esri.dynamicMapLayer({
   minZoom: 10
 });
 
-const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 20,
-  attribution: '&copy; OpenStreetMap'
-});
 
 
 
 
 
 
-    map = L.map(mapDiv, {
+
+// --- Karti startē tikai ar LGIA (bez OSM virsū)
+const map = L.map('onlineMap', {
   zoomControl: true,
   attributionControl: true,
-  layers: [lgiaOrtoV3]   // ← startē tikai ar LGIA ortofoto
-});
+  layers: [lgiaOrtoV3]   // ← šeit tikai LGIA orto kā bāze
+}).setView([56.95, 24.10], 8);
+L.control.layers(
+  { 'LGIA Ortofoto v3': lgiaOrtoV3, 'OpenStreetMap': osm }, // bāzes
+  { 'LGIA Topo 10k': lgiaTopo10 },                          // pārklājumi
+  { collapsed: false }
+).addTo(map);
+
+
+
+	  
 map.setView([56.95, 24.10], 8);
 
 
