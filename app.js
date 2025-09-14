@@ -1350,6 +1350,28 @@ function utmToLL(E, N, zone, hemi){
     if (inited) return true;
     if (!window.L){ console.warn('Leaflet nav ielādēts'); return false; }
 
+
+
+// --- LGIA + OSM slāņi (definē pirms L.map)
+const lgiaOrtoV3 = L.esri.tiledMapLayer({
+  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
+  maxZoom: 22
+});
+
+const lgiaTopo10 = L.esri.dynamicMapLayer({
+  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
+  opacity: 0.8
+});
+
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 20,
+  attribution: '&copy; OpenStreetMap'
+});
+
+
+
+
+
     map = L.map(mapDiv, { zoomControl:true, attributionControl:true });
 window.__getMap = () => map;   // 👈 Ieliec tieši šeit
     const osm  = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -1383,22 +1405,6 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
 // Ortofoto 3 (RGB) — BĀZES SLĀNIS
 // LGIA (OPEN DATA) — Esri REST (ne WMS)
 // 1) LGIA Ortofoto v3 — REST (dinamiskais). Liekam kā noklusēto bāzi.
-const lgiaOrtoV3 = L.esri.dynamicMapLayer({
-  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
-  opacity: 1,
-  f: 'image',
-  format: 'jpg' // var arī 'png32', ja vēlies caurspīdīgus pikseļus
-}).addTo(map); // ← SVARĪGI: pievieno kā DEFAULT bāzi
-
-
-
-// 2) LGIA Topogrāfiskā 1:10k — publisks, caurspīdīgs pārklājums
-const lgiaTopo10 = L.esri.dynamicMapLayer({
-  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
-  opacity: 0.85,
-  transparent: true,
-  format: 'png32' // lai fons ir caurspīdīgs
-});
 
 	  
 
