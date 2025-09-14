@@ -1403,34 +1403,21 @@ const lvmTopo50_wms = L.tileLayer.wms(
   }
 );
 
+const WMS = 'https://lvmgeoserver.lvm.lv/geoserver/wms?';
 
-const lvmTurismaVietas = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
-  layers: 'public:LVM_Turisma_vietas',
-  format: 'image/png',
-  transparent: true,
- tiled:false,
-	uppercase: true,
-  attribution: '© LVM'
-});
+	  
 
-const lvmTurismaInfra = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
-  layers: 'public:LVM_Turisma_infrastruktura',
-  format: 'image/png',
-  transparent: true,
-  tiled:false,
-	uppercase: true,
-  attribution: '© LVM'
-});
 
 // Bāzes slāņi no LVM (WMS)
 // Piemērs: Topo75
-const lvmTopo75 = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
-  layers: 'public:topo75LKS',   // <-- pārbaudi precīzu nosaukumu
+const lvmTopo75 = L.tileLayer.wms(WMS, {
+  layers: 'public:topo75LKS',
   format: 'image/png',
   transparent: false,
   version: '1.1.1',
-  tiled: true,
-  uppercase: true
+  uppercase: true,
+  tiled: true,            // var atstāt true bāzes slānim
+  crossOrigin: true
 });
 
 const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
@@ -1442,7 +1429,24 @@ const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
 });
 
 
+// Pārklājumi
+const lvmTurismaVietas = L.tileLayer.wms(WMS, {
+  layers: 'public:LVM_Turisma_vietas',
+  format: 'image/png',
+  transparent: true,
+  version: '1.1.1',
+  uppercase: true,
+  crossOrigin: true
+});
 
+const lvmTurismaInfra = L.tileLayer.wms(WMS, {
+  layers: 'public:LVM_Turisma_infrastruktura',
+  format: 'image/png',
+  transparent: true,
+  version: '1.1.1',
+  uppercase: true,
+  crossOrigin: true
+});
 
 
 
