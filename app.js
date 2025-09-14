@@ -1963,8 +1963,8 @@ const { grid: lksGrid, labels: lksLabels } = createLKSGridLayers();
 
 // ieliekam katru atsevišķi kā pārklājumu
 const overlays = {
-  'MGRS režģa līnijas (1–20 km)': grid,
-  'MGRS etiķetes': labels,
+  'MGRS režģa līnijas (1–20 km)': utmGrid,
+  'MGRS etiķetes': utmLabels,
 'LKS-92 režģa līnijas (1–20 km)': lksGrid,
 'LKS-92 etiķetes': lksLabels,
 
