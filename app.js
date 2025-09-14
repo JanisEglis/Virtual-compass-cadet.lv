@@ -1395,15 +1395,24 @@ const baseEsriWorldImagery = L.tileLayer(
 
 // ——— SLĀŅU IZVĒLNE ———
 // (bāzes slāņi pa kreisi, pārklājumi pa labi — pagaidām pārklājumu nav)
+L.control.layers(
+  {
+    'OpenStreetMap': baseOSM,
+    'OpenTopoMap': baseOpenTopo,
+    'Esri World Imagery': baseEsriWorldImagery
+  },
+  {},
+  { collapsed: false }
+).addTo(map);
+
+
+
     const baseLayers = {
       'OSM': osm,
       'OpenTopoMap': topo,
       'Esri satelīts': esri,
       'OSM HOT': hot,
-      'CyclOSM': cyclo,
-	  'OpenStreetMap': baseOSM,
-      'OpenTopoMap': baseOpenTopo,
-      'Esri World Imagery': baseEsriWorldImagery
+      'CyclOSM': cyclo
     };
 
 
