@@ -1410,6 +1410,22 @@ const lgiaTopo50 = L.tileLayer.wms(
 );
 
 
+// Topogrāfiskā karte 1:10k — PĀRKLĀJUMS
+const lgiaTopo10 = L.tileLayer.wms(
+  'https://wms.lgia.gov.lv/open/services/OPEN_DATA/Topo10_v4/MapServer/WMSServer',
+  {
+    layers: '0',
+    format: 'image/png',
+    transparent: true,
+    opacity: 0.9,
+    version: '1.3.0',
+    uppercase: true,
+    maxZoom: 22,
+    attribution: '© LĢIA — Topo 1:10k (CC BY 4.0)'
+  }
+);
+
+	  
 
 
 
