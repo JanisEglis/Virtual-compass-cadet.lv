@@ -1380,22 +1380,43 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
 // Ortofoto v3 kā bāzes slānis (EPSG:3857 atbalsts)
 
 // Ortofoto 3 (RGB) – bāzes slānis
-const lgiaOrtoV3 = L.esri.dynamicMapLayer({
-  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
-  opacity: 1
-});
+// Ortofoto 3 (RGB) — BĀZES SLĀNIS
+const lgiaOrtoV3 = L.tileLayer.wms(
+  'https://wms.lgia.gov.lv/open/services/OPEN_DATA/Ortofoto3_rgb/MapServer/WMSServer',
+  {
+    layers: '0',
+    format: 'image/png',
+    transparent: false,     // bāzes slānim fons nav caurspīdīgs
+    maxZoom: 22,
+    attribution: '© LĢIA — Ortofoto3 RGB (CC BY 4.0)'
+  }
+);
 
-// Topo 1:50k – pārklājums
-const lgiaTopo50 = L.esri.dynamicMapLayer({
-  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo50_v2/MapServer',
-  opacity: 0.9
-});
+// Topogrāfiskā karte 1:50k — PĀRKLĀJUMS
+const lgiaTopo50 = L.tileLayer.wms(
+  'https://wms.lgia.gov.lv/open/services/OPEN_DATA/Topo50_v2/MapServer/WMSServer',
+  {
+    layers: '0',
+    format: 'image/png',
+    transparent: true,      // pārklājumam vajag caurspīdīgu fonu
+    opacity: 0.9,
+    maxZoom: 22,
+    attribution: '© LĢIA — Topo 1:50k (CC BY 4.0)'
+  }
+);
 
-// (vēl viens piemērs – ja vajag 1:10k)
-const lgiaTopo10 = L.esri.dynamicMapLayer({
- url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
- opacity: 0.9
- });
+// (ja vajag arī 1:10k)
+const lgiaTopo10 = L.tileLayer.wms(
+  'https://wms.lgia.gov.lv/open/services/OPEN_DATA/Topo10_v4/MapServer/WMSServer',
+  {
+    layers: '0',
+    format: 'image/png',
+    transparent: true,
+    opacity: 0.9,
+    maxZoom: 22,
+    attribution: '© LĢIA — Topo 1:10k (CC BY 4.0)'
+  }
+);
 
 
 
