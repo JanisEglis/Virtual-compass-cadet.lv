@@ -1440,7 +1440,7 @@ const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.p
       'OpenTopoMap': topo,
       'Esri satelīts': esri,
       'OSM HOT': hot,
-      'CyclOSM': cyclo
+      'CyclOSM': cyclo,
 
 // JAUNI bāzes slāņi:
   'EOX S2 Cloudless': s2cloudless,
@@ -1725,14 +1725,7 @@ function llToUTMInZone(lat, lon, zone){
 
 
 
-  // saņemam ABUS slāņus no funkcijas
-  const { grid, labels } = createUTMGridLayers();
 
-  // ieliekam katru atsevišķi kā pārklājumu
-  const overlays = {
-    'MGRS režģa līnijas (1–20 km)': grid,
-    'MGRS etiķetes': labels,
-  };
 
 
 
