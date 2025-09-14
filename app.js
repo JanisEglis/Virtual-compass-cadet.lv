@@ -1362,16 +1362,25 @@ function utmToLL(E, N, zone, hemi){
 
 // --- LGIA + OSM slāņi (definē pirms L.map)
 // --- LGIA + OSM slāņi (definē pirms L.map)
+// --- LGIA + OSM slāņi (pirms L.map)
 const lgiaOrtoV3 = L.esri.dynamicMapLayer({
   url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
-  format: 'jpg',
-  transparent: false,
+  format: 'png32',       // caurspīdīgs orto
+  transparent: true,
   opacity: 1,
-  
+  minZoom: 11            // <— zem šī zoom orto neslēdzam iekšā
+});
+
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 20,
+  attribution: '© OpenStreetMap'
 });
 
 
 
+
+
+	  
 lgiaOrtoV3.setZIndex(2);
 lgiaOrtoV3.bringToFront();
 
@@ -1403,6 +1412,43 @@ const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 });
 map.setView([56.95, 24.10], 8);
 
+
+// --- Tiklīdz pietuvinies, ieslēdz LGIA orto; attālinoties – izslēdz
+function syncBase() {
+  const z = map.getZoom();
+  const hasOrto = map.hasLayer(lgiaOrtoV3);
+  if (z >= 11 && !hasOrto) {
+    lgiaOrtoV3.addTo(map).bringToFront();
+  } else if (z < 11 && hasOrto) {
+    map.removeLayer(lgiaOrtoV3);
+  }
+}
+map.on('zoomend', syncBase);
+syncBase(); // izsauc uzreiz vienu reizi
+
+// (ja vēlies arī topo kā caurspīdīgu pārklājumu)
+const lgiaTopo10 = L.esri.dynamicMapLayer({
+  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
+  format: 'png32',
+  transparent: true,
+  opacity: 0.8,
+  minZoom: 10
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  
 	  
 window.__getMap = () => map;   // 👈 Ieliec tieši šeit
 
