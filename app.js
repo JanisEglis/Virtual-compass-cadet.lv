@@ -1713,8 +1713,9 @@ const LgiaScale = L.Control.extend({
   },
   onAdd: function(){
     const container = L.DomUtil.create('div', 'lgia-scale');
+	  const label = L.DomUtil.create('div', 'lgia-scale-label', container);
     const bar = L.DomUtil.create('div', 'lgia-scale-bar', container);
-    const label = L.DomUtil.create('div', 'lgia-scale-label', container);
+    
 
     // tumšais UI – askētiski, tikai līnija un uzraksts
     Object.assign(container.style, {
