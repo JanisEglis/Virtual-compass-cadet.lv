@@ -1408,17 +1408,13 @@ lgiaOrtoV3.on('load', () => {
 });
 lgiaOrtoV3.on('requesterror', (e) => console.warn('[LGIA Ortofoto v3] requesterror', e));
 
-/ Kad gatavs, pievieno LGIA ortofoto (un turi to priekšplānā)
+// Kad gatavs, pievieno LGIA ortofoto (un turi to priekšplānā)
 lgiaOrtoV3.on('load', () => lgiaOrtoV3.addTo(map).bringToFront());
 lgiaOrtoV3.on('requesterror', e => console.warn('[LGIA Ortofoto v3] requesterror', e));
 
 // Slāņu kontrole (bāzes + pārklājumi)
 // Slāņu izvēlne (bez LGIA topo)
-L.control.layers(
-  { 'OpenStreetMap': osm, 'LGIA Ortofoto v3': lgiaOrtoV3 },
-  { /* te vari pielikt savus režģus u.c. pārklājumus */ },
-  { collapsed: false }
-).addTo(map);
+
 
 // (Pēc tam vari pievienot savus režģus u.c. pārklājumus)
 	  
