@@ -1423,12 +1423,14 @@ const lvmTurismaInfra = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/o
 });
 
 // Bāzes slāņi no LVM (WMS)
+// Piemērs: Topo75
 const lvmTopo75 = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
-  layers: 'public:topo75LKS',
+  layers: 'public:topo75LKS',   // <-- pārbaudi precīzu nosaukumu
   format: 'image/png',
   transparent: false,
   version: '1.1.1',
-  crs: L.CRS.EPSG3857
+  tiled: true,
+  uppercase: true
 });
 
 const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
