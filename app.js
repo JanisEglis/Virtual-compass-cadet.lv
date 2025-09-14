@@ -1389,22 +1389,48 @@ const s2cloudless = L.tileLayer.wms('https://tiles.maps.eox.at/wms', {
   attribution: 'Sentinel-2 cloudless © EOX, © Copernicus'
 });
 
-// --- LĢIA WMS (bāzes slāņi; strādā EPSG:3857) ---
-const topo500 = L.tileLayer.wms(
-  'https://servisi.lgia.gov.lv/lksopen/services/TOPO/Topo500/MapServer/WMSServer',
-  {
-    layers: '0', format: 'image/png', transparent: false, crs: L.CRS.EPSG3857,
-    attribution: '© LĢIA, CC BY 4.0'
-  }
-);
 
-const orto_pilsetas = L.tileLayer.wms(
-  'https://servisi.lgia.gov.lv/lksopen/services/OPEN_DATA/Ortofoto_pilsetas/MapServer/WMSServer',
-  {
-    layers: '0', format: 'image/jpeg', transparent: false, crs: L.CRS.EPSG3857,
-    attribution: '© LĢIA, CC BY 4.0'
-  }
-);
+// EOX Terrain Light (reljefs/hillshade kā bāze)
+const eoxTerrain = L.tileLayer.wms('https://tiles.maps.eox.at/wms', {
+  layers: 'terrain-light',
+  format: 'image/png',
+  transparent: false,
+  attribution: '© EOX'
+});
+
+
+	  
+
+// OSM German style (tīrāks stils, labs kā pamats)
+const osmDe = L.tileLayer('https://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '© OpenStreetMap contributors, tiles by openstreetmap.de'
+});
+
+// OSM France (osmfr)
+const osmFr = L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+  maxZoom: 20,
+  attribution: '© OpenStreetMap contributors, tiles by openstreetmap.fr'
+});
+
+// CartoDB Positron (gaišs, “bez trokšņa” — labs kā pamats datu pārklājumiem)
+const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  maxZoom: 20, subdomains: 'abcd',
+  attribution: '© OpenStreetMap contributors, © CARTO'
+});
+
+
+
+
+
+
+
+
+
+
+
+
+	  
 
 // --- Pārklājumi (overlay) ---
 const hiking = L.tileLayer('https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png', {
@@ -1444,9 +1470,11 @@ const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.p
 
 // JAUNI bāzes slāņi:
   'EOX S2 Cloudless': s2cloudless,
-  'LĢIA Topo 1:500k': topo500,
-  'LĢIA Orto (1997–2002)': orto_pilsetas,
-
+  'OSM DE': osmDe,
+'OSM France': osmFr,
+		'EOX Terrain (reljefs)': eoxTerrain,
+	'CartoDB Positron': cartoLight	
+		
   // 'MapTiler Topo (API key)': mtTopo,
   // 'Thunderforest Outdoors (API key)': tfOutdoors
 		
@@ -1454,7 +1482,9 @@ const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.p
 
 
 
-
+[osmDe, osmFr, cartoLight, eoxTerrain /*, u.c. */].forEach(l =>
+  l.on('tileerror', (e) => console.warn('[tileerror]', e?.coords, e?.error))
+);
 
 
 
