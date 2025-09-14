@@ -1408,7 +1408,8 @@ const lvmTurismaVietas = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/
   layers: 'public:LVM_Turisma_vietas',
   format: 'image/png',
   transparent: true,
-  tiled: true,
+ tiled:false,
+	uppercase: true,
   attribution: '© LVM'
 });
 
@@ -1416,7 +1417,8 @@ const lvmTurismaInfra = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/o
   layers: 'public:LVM_Turisma_infrastruktura',
   format: 'image/png',
   transparent: true,
-  tiled: true,
+  tiled:false,
+	uppercase: true,
   attribution: '© LVM'
 });
 
@@ -1425,7 +1427,8 @@ const lvmTopo75 = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', 
   layers: 'public:topo75LKS',
   format: 'image/png',
   transparent: false,
-  tiled: true,
+  tiled:false,
+	uppercase: true ,
   attribution: '© LVM'
 });
 
@@ -1433,7 +1436,7 @@ const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
   layers: 'public:OSM',
   format: 'image/png',
   transparent: false,
-  tiled: true,
+  tiled:false,
   attribution: '© LVM'
 });
 
@@ -1490,7 +1493,7 @@ const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
 
 
 
-[osmDe, osmFr, cartoLight /*, u.c. */].forEach(l =>
+[osmDe, osmFr, cartoLight, lvmTopo75, lvmTurVietas, lvmTurInfra].forEach(l =>
   l.on('tileerror', (e) => console.warn('[tileerror]', e?.coords, e?.error))
 );
 
