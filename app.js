@@ -1459,7 +1459,7 @@ const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.p
 
 
 
-[osmDe, osmFr, cartoLight, eoxTerrain /*, u.c. */].forEach(l =>
+[osmDe, osmFr, cartoLight /*, u.c. */].forEach(l =>
   l.on('tileerror', (e) => console.warn('[tileerror]', e?.coords, e?.error))
 );
 
