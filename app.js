@@ -3,6 +3,7 @@ console.info('[modern] app.js start');
 
 
 
+
 // Palaist, kad DOM gatavs (strādā visur)
 const onDomReady = (fn) => {
   if (document.readyState === 'loading') {
