@@ -1687,7 +1687,113 @@ window.__probeLayers && window.__probeLayers(layersCtl);    // ← te notiek pie
 
 
     // klasiskā skala + 1:xxxx
-    L.control.scale({imperial:false, metric:true, maxWidth:200}).addTo(map);
+
+
+
+
+
+
+
+// ===== Palīgi LGIA scale baram =====
+function metersPerPixelAtCenter(){
+  const c = map.getCenter();
+  const z = map.getZoom();
+  return 156543.03392 * Math.cos(c.lat * Math.PI/180) / Math.pow(2, z);
+}
+function currentPrintScale(){ // “1:xxxx” pie 0.28 mm/pix
+  return Math.round(metersPerPixelAtCenter() / 0.00028);
+}
+
+// ===== LGIA-style lineārā mēroga josla =====
+const LgiaScale = L.Control.extend({
+  options: {
+    position: 'bottomleft',
+    maxWidthPx: 140,                        // max joslas garums pikseļos
+    niceStepsMeters: [5,10,20,50,100,200,500,1000,2000,5000,10000]
+  },
+  onAdd: function(){
+    const container = L.DomUtil.create('div', 'lgia-scale');
+    const bar = L.DomUtil.create('div', 'lgia-scale-bar', container);
+    const label = L.DomUtil.create('div', 'lgia-scale-label', container);
+
+    // tumšais UI – askētiski, tikai līnija un uzraksts
+    Object.assign(container.style, {
+      padding:'2px 6px', background:'rgba(0,0,0,.5)',
+      borderRadius:'4px', border:'1px solid rgba(255,255,255,.06)',
+      color:'#fff', font:'12px/1.2 system-ui, sans-serif',
+      display:'inline-flex', flexDirection:'column', gap:'2px'
+    });
+    Object.assign(bar.style, {
+      height:'0px', borderTop:'3px solid #fff', position:'relative',
+      width:'80px', margin:'0 auto'
+    });
+    const left = document.createElement('div');
+    const right = document.createElement('div');
+    Object.assign(left.style,  {position:'absolute', left:'0', top:'-3px', height:'10px', borderLeft:'3px solid #fff'});
+    Object.assign(right.style, {position:'absolute', right:'0', top:'-3px', height:'10px', borderRight:'3px solid #fff'});
+    bar.appendChild(left); bar.appendChild(right);
+    label.style.textAlign = 'center';
+
+    this._els = { bar, label };
+    this._update = this._update.bind(this);
+    map.on('move zoom zoomend', this._update);
+    this._update();
+
+    L.DomEvent.disableClickPropagation(container);
+    L.DomEvent.disableScrollPropagation(container);
+    return container;
+  },
+  onRemove: function(){ map.off('move zoom zoomend', this._update); },
+  _update: function(){
+    const mpp = metersPerPixelAtCenter();
+    const scale = currentPrintScale();
+
+    // LGIA uzvedība: pie apm. 1:5000 rādām 100 m
+    let targetMeters;
+    if (scale >= 4500 && scale <= 5500) {
+      targetMeters = 100;
+    } else {
+      const maxMeters = mpp * this.options.maxWidthPx;
+      const steps = this.options.niceStepsMeters;
+      targetMeters = steps[0];
+      for (let s of steps) { if (s <= maxMeters) targetMeters = s; else break; }
+      if (maxMeters < steps[0]) targetMeters = steps[0];
+    }
+
+    const px = targetMeters / mpp;
+    this._els.bar.style.width = px + 'px';
+    this._els.label.textContent = (targetMeters >= 1000)
+      ? (targetMeters % 1000 ? (targetMeters/1000).toFixed(1) : (targetMeters/1000)) + ' km'
+      : targetMeters + ' m';
+  }
+});
+
+// Pievieno LGIA joslu
+new LgiaScale({ position:'bottomleft' }).addTo(map);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  
     const ratioCtl = L.control({position:'bottomleft'});
     ratioCtl.onAdd = function(){
       const div = L.DomUtil.create('div', 'leaflet-control-attribution');
