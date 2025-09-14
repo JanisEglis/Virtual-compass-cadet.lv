@@ -852,11 +852,6 @@ function setDarkness(percent){
   if (typeof drawImage === 'function') drawImage();
 }
 
-// ielādē iepriekšējo vērtību (vai 0)
-setDarkness(localStorage.getItem('mapDarken') || 0);
-				
-
-
 
 const resizeHandle = document.getElementById('resizeHandle');
 
@@ -879,6 +874,15 @@ const icon = resizeHandle ? resizeHandle.querySelector('img') : null;
       width: '100%', height: '100%', display: 'block', pointerEvents: 'none'
     });
   }
+
+
+// ielādē iepriekšējo vērtību (vai 0)
+setDarkness(localStorage.getItem('mapDarken') || 0);
+				
+
+
+
+
 
 
 
@@ -1363,11 +1367,11 @@ const lgiaOrtoV3 = L.esri.dynamicMapLayer({
   format: 'jpg',
   transparent: false,
   opacity: 1,
-  minZoom: 7
+  
 });
 
 
-osm.setZIndex(1);
+
 lgiaOrtoV3.setZIndex(2);
 lgiaOrtoV3.bringToFront();
 
