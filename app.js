@@ -1374,39 +1374,6 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
       maxZoom: 20, attribution: '&copy; OSM, CyclOSM'
     });
 
-
-// ——— BĀZES SLĀŅI ———
-const baseOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 20,
-  attribution: '© OpenStreetMap'
-}).addTo(map); // startējam ar OSM
-
-const baseOpenTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-  maxZoom: 17,
-  attribution: 'Map data: © OpenStreetMap, SRTM | Style: © OpenTopoMap (CC-BY-SA)'
-});
-
-// Ja gribi vēl kādu bāzes stilu (piem., Esri satelīts):
-const baseEsriWorldImagery = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  { maxZoom: 19, attribution: 'Tiles © Esri' }
-);
-
-
-// ——— SLĀŅU IZVĒLNE ———
-// (bāzes slāņi pa kreisi, pārklājumi pa labi — pagaidām pārklājumu nav)
-L.control.layers(
-  {
-    'OpenStreetMap': baseOSM,
-    'OpenTopoMap': baseOpenTopo,
-    'Esri World Imagery': baseEsriWorldImagery
-  },
-  {},
-  { collapsed: false }
-).addTo(map);
-
-
-
     const baseLayers = {
       'OSM': osm,
       'OpenTopoMap': topo,
