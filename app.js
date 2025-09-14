@@ -833,24 +833,27 @@ img.addEventListener('error', () => {
 						// Tumšošanas intensitāte (0..0.8), glabājam % localStorage (0..80)
 						let mapDarken = (+(localStorage.getItem('mapDarken') || 0)) / 100;
 		// Tumšuma vērtība (%) → saglabā, uzliek canvas un onlineMap
+// Tumšuma vērtība (%) → saglabā, uzliek canvas un onlineMap
 function setDarkness(percent){
   // 0..80 (%), canvas izmantos 0..0.8
   const p = Math.max(0, Math.min(80, +percent || 0));
   localStorage.setItem('mapDarken', String(p));
   mapDarken = p / 100;
 
-  // onlineMap pārklājums
-	setDarkness(0);                     // sākam bez aptumšošanas
+  // onlineMap pārklājums — BEZ rekursijas!
   const dim = document.getElementById('onlineMapDim');
   if (dim) dim.style.background = 'rgba(0,0,0,' + Math.min(0.8, mapDarken) + ')';
 
-  // ja ir slīdnis — atjauno CSS progresu (tavs CSS lieto --p)
+  // ja ir slīdnis — atjauno CSS progresu
   const rng = document.getElementById('mapDimmerRange');
   if (rng) rng.style.setProperty('--p', p);
 
   // pārzzīmējam kanvu (tumšums uz attēla)
   if (typeof drawImage === 'function') drawImage();
 }
+
+// ielādē iepriekšējo vērtību (vai 0)
+setDarkness(localStorage.getItem('mapDarken') || 0);
 				
 
 
