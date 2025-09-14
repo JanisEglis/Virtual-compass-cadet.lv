@@ -1394,14 +1394,14 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
 	});
 
 // LVM Topo50 — GWC TMS (ātrāks kešots slānis)
-// LGIA
-// LGĢIA Topogrāfiskā karte 1:50 000 (2. izdevums) — ArcGIS tiled (XYZ)
-const lgiaTopo50 = L.tileLayer(
-  'https://kartes.lgia.gov.lv/arcgis/rest/services/mobilais/topo_mobilais/MapServer/tile/{z}/{y}/{x}',
+
+const lvmTopo50_wms = L.tileLayer.wms(
+  'https://lvmgeoserver.lvm.lv/geoserver/ows?',
   {
-    maxZoom: 19,
-    maxNativeZoom: 17, // flīžu oriģinālais max
-    attribution: 'Kartes dati © Latvijas Ģeotelpiskās informācijas aģentūra (LGĢIA)'
+    layers: 'public:Topo50',
+    format: 'image/png',
+    transparent: true,
+    // crs: L.CRS.EPSG3857  // (pēc noklusējuma Leaflet tāpat ir 3857)
   }
 );
 
@@ -1461,9 +1461,9 @@ const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
 	  'OSM DE': osmDe,
 	  'OSM France': osmFr,	
 	  'CartoDB Positron': cartoLight,	
-	
-'LVM OSM (WMS)': lvmOSM,
-'LGĢIA Topogrāfiskā 1:50 000': lgiaTopo50
+'LVM Topo50': lvmTopo50_wms,	
+'LVM OSM (WMS)': lvmOSM
+
     };
 
 
