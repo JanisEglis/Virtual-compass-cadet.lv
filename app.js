@@ -1378,15 +1378,7 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
 
 // --- LGIA (OPEN DATA) WMS slāņi ---
 // Ortofoto v3 kā bāzes slānis (EPSG:3857 atbalsts)
-const lgiaOrtoV3 = L.tileLayer.wms(
-  'https://servisi.lgia.gov.lv/lksopen/services/ORTO/Ortofoto_v3/MapServer/WMSServer',
-  {
-    layers: '0',
-    format: 'image/png',
-    transparent: false,
-    attribution: '© LĢIA — Ortofoto v3 (CC BY 4.0)'
-  }
-);
+
 
 // Topo 1:250k kā pārklājums (caurspīdīgs)
 // Topogrāfiskā karte 1:50 000 (2. izdevums)
