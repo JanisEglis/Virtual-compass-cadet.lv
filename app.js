@@ -1379,41 +1379,23 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
 // --- LGIA (OPEN DATA) WMS slāņi ---
 // Ortofoto v3 kā bāzes slānis (EPSG:3857 atbalsts)
 
+// Ortofoto 3 (RGB) – bāzes slānis
+const lgiaOrtoV3 = L.esri.dynamicMapLayer({
+  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
+  opacity: 1
+});
 
-// Topo 1:250k kā pārklājums (caurspīdīgs)
-// Topogrāfiskā karte 1:50 000 (2. izdevums)
-const lgiaTopo50 = L.tileLayer.wms(
-  'https://servisi.lgia.gov.lv/lks/services/TOPO/Topo50_v2/MapServer/WMSServer',
-  {
-    layers: '0',
-    format: 'image/png',
-    transparent: true,
-    attribution: '© LĢIA — Topo 1:50k (CC BY 4.0)'
-  }
-);
+// Topo 1:50k – pārklājums
+const lgiaTopo50 = L.esri.dynamicMapLayer({
+  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo50_v2/MapServer',
+  opacity: 0.9
+});
 
-// Topogrāfiskā karte 1:10 000 (4. izdevums) — ja pieejama
-const lgiaTopo10 = L.tileLayer.wms(
-  'https://servisi.lgia.gov.lv/lks/services/TOPO/Topo10v4/MapServer/WMSServer',
-  {
-    layers: '0',
-    format: 'image/png',
-    transparent: true,
-    attribution: '© LĢIA — Topo 1:10k (CC BY 4.0)'
-  }
-);
-
-// Ortofoto (V3) — alternatīvais ceļš
-const lgiaOrtoV3 = L.tileLayer.wms(
-  'https://servisi.lgia.gov.lv/lks/services/ORTO/Ortofoto_v3/MapServer/WMSServer',
-  {
-    layers: '0',
-    format: 'image/png',
-    transparent: false,
-    attribution: '© LĢIA — Ortofoto v3 (CC BY 4.0)'
-  }
-);
-
+// (vēl viens piemērs – ja vajag 1:10k)
+const lgiaTopo10 = L.esri.dynamicMapLayer({
+ url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Topo10_v4/MapServer',
+ opacity: 0.9
+ });
 
 
 
@@ -1432,7 +1414,7 @@ const lgiaOrtoV3 = L.tileLayer.wms(
       'Esri satelīts': esri,
       'OSM HOT': hot,
       'CyclOSM': cyclo,
-	  'LĢIA Ortofoto v3 (WMS)': lgiaOrtoV3   // ← pievienots
+	  'LĢIA Ortofoto v3': lgiaOrtoV3   // ← pievienots
     };
 
 
@@ -1715,8 +1697,8 @@ function llToUTMInZone(lat, lon, zone){
   const overlays = {
     'MGRS režģa līnijas (1–20 km)': grid,
     'MGRS etiķetes': labels,
-	   'LĢIA Topo 1:50k (WMS)': lgiaTopo50,
-  'LĢIA Topo 1:10k (WMS)': lgiaTopo10
+  'LĢIA Topo 1:50k': lgiaTopo50,      // ← JAUNA RINDA
+  'LĢIA Topo 1:10k': lgiaTopo10
   };
 
 // Paziņojums par LGIA kartes nepieejamību
@@ -1754,12 +1736,6 @@ window.__probeLayers && window.__probeLayers(layersCtl);    // ← te notiek pie
 
 
     // klasiskā skala + 1:xxxx
-
-
-
-
-
-
 
 // ===== Palīgi LGIA scale baram =====
 function metersPerPixelAtCenter(){
