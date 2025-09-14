@@ -833,24 +833,25 @@ img.addEventListener('error', () => {
 						// Tumšošanas intensitāte (0..0.8), glabājam % localStorage (0..80)
 						let mapDarken = (+(localStorage.getItem('mapDarken') || 0)) / 100;
 		// Tumšuma vērtība (%) → saglabā, uzliek canvas un onlineMap
-// Tumšuma vērtība (%) → saglabā, uzliek canvas un onlineMap
 function setDarkness(percent){
   // 0..80 (%), canvas izmantos 0..0.8
   const p = Math.max(0, Math.min(80, +percent || 0));
   localStorage.setItem('mapDarken', String(p));
   mapDarken = p / 100;
 
-  // onlineMap pārklājums — BEZ rekursijas!
+  // onlineMap pārklājums
   const dim = document.getElementById('onlineMapDim');
   if (dim) dim.style.background = 'rgba(0,0,0,' + Math.min(0.8, mapDarken) + ')';
 
-  // ja ir slīdnis — atjauno CSS progresu
+  // ja ir slīdnis — atjauno CSS progresu (tavs CSS lieto --p)
   const rng = document.getElementById('mapDimmerRange');
   if (rng) rng.style.setProperty('--p', p);
 
   // pārzzīmējam kanvu (tumšums uz attēla)
   if (typeof drawImage === 'function') drawImage();
 }
+				
+
 
 
 const resizeHandle = document.getElementById('resizeHandle');
@@ -874,15 +875,6 @@ const icon = resizeHandle ? resizeHandle.querySelector('img') : null;
       width: '100%', height: '100%', display: 'block', pointerEvents: 'none'
     });
   }
-
-
-// ielādē iepriekšējo vērtību (vai 0)
-setDarkness(localStorage.getItem('mapDarken') || 0);
-				
-
-
-
-
 
 
 
@@ -1357,82 +1349,12 @@ function utmToLL(E, N, zone, hemi){
   function initMap(){
     if (inited) return true;
     if (!window.L){ console.warn('Leaflet nav ielādēts'); return false; }
-if (!window.L || !L.esri) {
-  console.error('Esri-Leaflet vēl nav gatavs');
-  return false;
-}
 
-
-
-// --- LGIA + OSM slāņi (definē pirms L.map)
-// --- LGIA + OSM slāņi (definē pirms L.map)
-// --- LGIA + OSM slāņi (pirms L.map)
-
-
-// --- LGIA + OSM slāņi (DEFINĒ VIENU REIZI) ---
-const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 20, attribution: '© OpenStreetMap'
-});
-
-// Ortofoto (OPEN_DATA/Ortofoto3_rgb) caur Esri-Leaflet
-// LGIA ortofoto (šis ir publisks)
-const lgiaOrtoV3 = L.esri.dynamicMapLayer({
-  url: 'https://wms.lgia.gov.lv/open/rest/services/OPEN_DATA/Ortofoto3_rgb/MapServer',
-  format: 'png32', transparent: true, opacity: 1
-});
-
-
-
-	  
-
-// Topo 10k (NEVIS 50k – 50k tev met 403/“no permission”)
-
-
-// --- Karte: startē ar OSM, lai fons nekad nav pelēks; LGIA pieliekam klāt, kad gatavs
-const map = L.map('onlineMap', { zoomControl: true, attributionControl: true, layers: [osm] })
-  .setView([56.95, 24.10], 13);
-
-
-const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-  maxZoom: 17, attribution: '© OpenTopoMap, © OSM'
-});
-
-
-
-	  
-// LGIA statuss (konsolei) un drošs pievienojums
-let ortoShown = false;
-lgiaOrtoV3.on('load', () => {
-  if (!ortoShown) { lgiaOrtoV3.addTo(map).bringToFront(); ortoShown = true; }
-  console.info('[LGIA Ortofoto v3] OK');
-});
-lgiaOrtoV3.on('requesterror', (e) => console.warn('[LGIA Ortofoto v3] requesterror', e));
-
-// Kad gatavs, pievieno LGIA ortofoto (un turi to priekšplānā)
-lgiaOrtoV3.on('load', () => lgiaOrtoV3.addTo(map).bringToFront());
-lgiaOrtoV3.on('requesterror', e => console.warn('[LGIA Ortofoto v3] requesterror', e));
-
-// Slāņu kontrole (bāzes + pārklājumi)
-// Slāņu izvēlne (bez LGIA topo)
-
-
-// (Pēc tam vari pievienot savus režģus u.c. pārklājumus)
-	  
-	// un ieliec to base-layer sarakstā:
-L.control.layers(
-  { 'OpenStreetMap': osm, 'OpenTopoMap': openTopo, 'LGIA Ortofoto v3': lgiaOrtoV3 },
-  {},
-  { collapsed: false }
-).addTo(map);  
-
-
-
-
-
-	  
-	  
+    map = L.map(mapDiv, { zoomControl:true, attributionControl:true });
 window.__getMap = () => map;   // 👈 Ieliec tieši šeit
-
+    const osm  = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
 
     const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
       maxZoom: 17,
@@ -1452,58 +1374,12 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
       maxZoom: 20, attribution: '&copy; OSM, CyclOSM'
     });
 
-
-
-// --- LGIA (OPEN DATA) WMS slāņi ---
-// Ortofoto v3 kā bāzes slānis (EPSG:3857 atbalsts)
-
-// Ortofoto 3 (RGB) – bāzes slānis
-// Ortofoto 3 (RGB) — BĀZES SLĀNIS
-// LGIA (OPEN DATA) — Esri REST (ne WMS)
-// 1) LGIA Ortofoto v3 — REST (dinamiskais). Liekam kā noklusēto bāzi.
-
-	  
-
-
-	  
-
-function tapEsriErrors(layer, name){
-  if(!layer) return;
-  layer.on('requesterror', (e)=>{
-    console.warn(`[LGIA ${name}] requesterror`, e);
-  });
-  layer.on('load', ()=> console.info(`[LGIA ${name}] OK`));
-}
-tapEsriErrors(lgiaOrtoV3, 'Ortofoto v3');
-// tapEsriErrors(lgiaTopo50, 'Topo 50k');
-tapEsriErrors(lgiaTopo10, 'Topo 10k');
-
-
-
-
-
-
-
-
-
-
-
-	  
-
-
-
-
-
-
-
-	  
     const baseLayers = {
       'OSM': osm,
       'OpenTopoMap': topo,
       'Esri satelīts': esri,
       'OSM HOT': hot,
-      'CyclOSM': cyclo,
-	  'LGIA Ortofoto v3': lgiaOrtoV3,
+      'CyclOSM': cyclo
     };
 
 
@@ -1784,51 +1660,10 @@ function llToUTMInZone(lat, lon, zone){
 
   // ieliekam katru atsevišķi kā pārklājumu
   const overlays = {
-	  'LGIA Topo 10k': lgiaTopo10,
     'MGRS režģa līnijas (1–20 km)': grid,
     'MGRS etiķetes': labels,
-
   };
 
-
-
-
-// Lai pārliecinātos, ka orto ir augšā, kad pārslēdz bāzes slāņus:
-lgiaOrtoV3.on('load', () => console.info('[LGIA Ortofoto v3] OK'));
-lgiaTopo10.on('load', () => console.info('[LGIA Topo 10k] OK'));
-
-	
-// Paziņojums par LGIA kartes nepieejamību
-[lgiaOrtoV3, lgiaTopo10].forEach(layer => {
-  let told = false;
-  layer.on('requesterror', (e) => {
-    if (told) return; told = true;
-    console.warn('LGIA slānis pašlaik nav pieejams.', e);
-  });
-});
-
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
   const layersCtl = L.control.layers(baseLayers, overlays, {
     collapsed: true,
     position: 'topright'
@@ -1852,6 +1687,12 @@ window.__probeLayers && window.__probeLayers(layersCtl);    // ← te notiek pie
 
 
     // klasiskā skala + 1:xxxx
+
+
+
+
+
+
 
 // ===== Palīgi LGIA scale baram =====
 function metersPerPixelAtCenter(){
@@ -4851,14 +4692,3 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 							    window.visualViewport.addEventListener('scroll', onViewportChange);
 							  }
 							})();
-
-
-
-
-
-
-
-
-
-
-
