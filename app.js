@@ -1424,11 +1424,10 @@ const lvmTurismaInfra = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/o
 
 // Bāzes slāņi no LVM (WMS)
 const lvmTopo75 = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
-  layers: 'public:topo75LKS',
+  layers: 'public:topo75LKS',   // vai pareizo 3857-compat nosaukumu
   format: 'image/png',
   transparent: false,
-  tiled:false,
-	uppercase: true ,
+  version: '1.3.0',
   attribution: '© LVM'
 });
 
@@ -1488,12 +1487,12 @@ const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
 	  'LVM Topo50': lvmTopo50_wms,
 'LVM Topo75 (WMS)': lvmTopo75,
 'LVM OSM (WMS)': lvmOSM
-  
+
     };
 
 
 
-[osmDe, osmFr, cartoLight, lvmTopo75, lvmTurVietas, lvmTurInfra].forEach(l =>
+[osmDe, osmFr, cartoLight, lvmTopo75, lvmTurismaVietas, lvmTurismaInfra].forEach(l =>
   l.on('tileerror', (e) => console.warn('[tileerror]', e?.coords, e?.error))
 );
 
