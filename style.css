@@ -2221,6 +2221,26 @@ body.preloading{ overflow: hidden; }
 
 
 
+/* === Drukas režīms — paslēpt lieko, atstāt tikai karti un apakšējos indikatorus === */
+body.print-mode #buttonContainer,
+body.print-mode .position-selector,
+body.print-mode .position-selector-left,
+body.print-mode .info-handle,
+body.print-mode .leaflet-top .leaflet-control {
+  display: none !important;
+}
+
+body.print-mode #onlineMap {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+}
+body.print-mode #onlineMapDim { display: none !important; }
+
+@media print {
+  html, body { margin: 0 !important; padding: 0 !important; }
+  #onlineMap { position: fixed !important; inset: 0 !important; }
+}
 
 
 
