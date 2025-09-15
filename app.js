@@ -1935,7 +1935,7 @@ function llToUTMInZone(lat, lon, zone){
 // --- Režģu slāņi (izsaucam vienreiz) ---
 const { grid: utmGrid, labels: utmLabels } = createUTMGridLayers();
 const { grid: lksGrid, labels: lksLabels } = createLKSGridLayers();
-	
+Object.assign(window, { utmGrid, utmLabels, lksGrid, lksLabels });	
 
 // ieliekam katru atsevišķi kā pārklājumu
 const overlays = {
@@ -2395,39 +2395,37 @@ map.whenReady(() => {
 	  
  // Viena palīgfunkcija popupam – atdod, ko rādīt 2. rindā
 // === Ko rādīt popupā (Lat/Lng + UTM/MGRS + LKS-92 atkarībā no redzamajiem slāņiem) ===
-function rowsForPopup(lat, lng) {
-  const rows = [
-    { id: 'll', label: 'Lat,Lng', value: `${lat.toFixed(6)}, ${lng.toFixed(6)}` }
-  ];
+function rowsForPopup(lat, lng){
+  // droši paņemam karti
+  const m = (typeof window.__getMap === 'function') ? window.__getMap() : (typeof map !== 'undefined' ? map : null);
 
-  // 1) Pārbaudām, kuri režģi ir ieslēgti (ņemam vērā abus iespējamos mainīgo nosaukumus)
-  const utmOn =
-    (typeof utmgrid   !== 'undefined' && map.hasLayer(utmgrid))   ||
-    (typeof utmlabels !== 'undefined' && map.hasLayer(utmlabels)) ||
-    (typeof utmGrid   !== 'undefined' && map.hasLayer(utmGrid))   ||
-    (typeof utmLabels !== 'undefined' && map.hasLayer(utmLabels));
+  // helperis: pārbauda, vai slānis ir kartē
+  const has = L => !!(m && L && typeof m.hasLayer === 'function' && m.hasLayer(L));
 
-  const lksOn =
-    (typeof lksgrid   !== 'undefined' && map.hasLayer(lksgrid))   ||
-    (typeof lkslabels !== 'undefined' && map.hasLayer(lkslabels)) ||
-    (typeof lksGrid   !== 'undefined' && map.hasLayer(lksGrid))   ||
-    (typeof lksLabels !== 'undefined' && map.hasLayer(lksLabels));
+  // UTM/MGRS un LKS-92 ieslēgts, ja kartē ir LĪNIJAS vai ETIĶETES
+  const utmOn = has(window.utmGrid) || has(window.utmLabels) || has(window.utmgrid) || has(window.utmlabels);
+  const lksOn = has(window.lksGrid) || has(window.lksLabels) || has(window.lksgrid) || has(window.lkslabels);
 
-  // 2) Ja ieslēgts UTM/MGRS — pievienojam MGRS rindu
+  const rows = [];
+
+  // vienmēr – Lat,Lng
+  rows.push({
+    id: 'wgs',
+    label: 'Lat,Lng',
+    value: `${lat.toFixed(6)}, ${lng.toFixed(6)}`
+  });
+
+  // UTM/MGRS tikai, ja ieslēgts UTM režģis
   if (utmOn) {
-    const mgrs = (typeof toMGRS8 === 'function' ? toMGRS8(lat, lng)
-                 : typeof toMGRS  === 'function' ? toMGRS(lat, lng)
-                 : '—');
-    rows.push({ id: 'mgrs', label: 'MGRS/UTM', value: mgrs });
+    rows.push({ id: 'mgrs', label: 'MGRS', value: toMGRS8(lat, lng) });
   }
 
-  // 3) Ja ieslēgts LKS-92 — pievienojam LKS rindu
+  // LKS-92 tikai, ja ieslēgts LKS režģis
   if (lksOn) {
-    const p = wgsToLKS(lat, lng);
-    rows.push({ id: 'lks', label: 'LKS-92', value: `E ${Math.round(p.E)} , N ${Math.round(p.N)}` });
+    const L = wgsToLKS(lat, lng);
+    rows.push({ id: 'lks', label: 'LKS-92', value: `E ${Math.round(L.E)}, N ${Math.round(L.N)}` });
   }
 
-  // 4) Ja abi izslēgti — paliek tikai Lat,Lng (nekādu “radio” vairs)
   return rows;
 }
 
