@@ -1985,7 +1985,7 @@ const overlays = {
 
 	
 // ja vēlies — MGRS ieslēgts pēc noklusējuma:
-  utmGrid.addTo(map); utmLabels.addTo(map);
+//  utmGrid.addTo(map); utmLabels.addTo(map);
 // LKS atstāj izslēgtu (vai ieslēdz arī to, ja gribi):
 // lksGrid.addTo(map); lksLabels.addTo(map);
 
