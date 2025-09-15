@@ -1662,32 +1662,88 @@ map.on('moveend zoomend', ()=>{ updateRatio(); syncScalePicker(); });
 
 
 function prepareMapForPrint(){
-  try{
-    // 1) Uzliek tieši izvēlēto tīkla mērogu
-    const el = document.getElementById('scalePicker');
-    const targetScale = el ? +el.value : getCurrentScale();
-    map.options.zoomSnap = 0;
-    map.options.zoomDelta = 0.25;
-    map.setZoom( zoomForScale(targetScale), { animate: false } );
-    updateRatio();
-    syncScalePicker();
+  // 1) Noskaidro mērķa mērogu no izvēlnes (vai no pašreizējā)
+  const sel = document.getElementById('scalePicker');
+  const targetScale = sel ? +sel.value : getCurrentScale();
 
-    // 2) Ieslēdzam drukas režīmu (paslēpj lieko un izstiepj karti pilnā lapā)
-    document.body.classList.add('print-mode');
+  // 2) Uzliek precīzu zoom šim mērogam (frakcionēts zoom)
+  const prev = {
+    zoomSnap: map.options.zoomSnap,
+    zoomDelta: map.options.zoomDelta,
+    zoomAnim: map.options.zoomAnimation,
+    fadeAnim: map.options.fadeAnimation,
+    markerZoomAnim: map.options.markerZoomAnimation
+  };
+  map.options.zoomSnap = 0;
+  map.options.zoomDelta = 0.25;
+  map.options.zoomAnimation = false;
+  map.options.fadeAnimation = false;
+  map.options.markerZoomAnimation = false;
 
-    // pārrēķina izmēru, lai joslas/režģi ir asāki pirms drukas
-    requestAnimationFrame(()=> map && map.invalidateSize(true));
+  map.setZoom( zoomForScale(targetScale), { animate: false } );
+  // atjauno mēroga rādītāju zemāk kreisajā (ja izmanto)
+  if (typeof updateRatio === 'function') updateRatio();
 
-    // 3) Atver drukas dialogu, pēc tam izslēdz “print-mode”
-    setTimeout(()=> {
-      window.print();
-      document.body.classList.remove('print-mode');
-    }, 400);
-  }catch(err){
-    console.error('[print]', err);
-    alert('Neizdevās sagatavot karti drukai.');
-  }
+  // 3) Ieslēdz “print mode” (A4 portrets) un uzbūvē drukas pēdu
+  document.body.classList.add('print-mode');
+  const footer = buildPrintFooter(targetScale);
+
+  // Drošībai pārrēķini kartes izmēru pēc stila maiņas
+  requestAnimationFrame(()=> map && map.invalidateSize(true));
+
+  // 4) Print → cleanup
+  const cleanup = () => {
+    document.body.classList.remove('print-mode');
+    footer && footer.remove();
+    // atjauno animācijas un map opcijas
+    map.options.zoomSnap = prev.zoomSnap;
+    map.options.zoomDelta = prev.zoomDelta;
+    map.options.zoomAnimation = prev.zoomAnim;
+    map.options.fadeAnimation = prev.fadeAnim;
+    map.options.markerZoomAnimation = prev.markerZoomAnim;
+    window.removeEventListener('afterprint', cleanup);
+  };
+  window.addEventListener('afterprint', cleanup);
+
+  // Atver drukas dialogu (lietotājam: izvēlies “Actual size / 100%”)
+  setTimeout(()=> window.print(), 300);
 }
+
+/* Uzģenerē drukas pēdu: [Mērogs]  [Kartes avoti]  [CADET.LV] */
+function buildPrintFooter(scaleVal){
+  const el = document.createElement('div');
+  el.id = 'printFooter';
+  const lv = (n) => (''+n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+  const scaleStr = 'Mērogs: 1:' + lv(scaleVal || getCurrentScale());
+  const mapAttrib = collectAttributionText() || 'Dati: kartes pakalpojums';
+  const toolAttrib = 'CADET.LV Interaktīvais kompass — janiseglis.github.io/Virtual-compass-cadet.lv';
+
+  el.innerHTML = `
+    <div class="left">${scaleStr}</div>
+    <div class="center">${mapAttrib}</div>
+    <div class="right">${toolAttrib}</div>
+  `;
+  const host = document.getElementById('onlineMap') || document.body;
+  host.appendChild(el);
+  return el;
+}
+
+/* Nolasām aktuālās kartes attributions (no apakš-labās kontrolēs vai slāņiem) */
+function collectAttributionText(){
+  // 1) mēģini no Leaflet attribution kontrolēm apakš-labajā
+  const n = document.querySelector('#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-right .leaflet-control-attribution');
+  if (n && n.textContent) return n.textContent.trim();
+
+  // 2) citādi savāc no redzamajiem slāņiem
+  let atts = new Set();
+  map.eachLayer(l=>{
+    const a = (typeof l.getAttribution === 'function') ? l.getAttribution() : (l.options && l.options.attribution);
+    if (a) atts.add(a.replace(/\s+/g,' ').trim());
+  });
+  return Array.from(atts).join(' · ');
+}
+
 
 
 
