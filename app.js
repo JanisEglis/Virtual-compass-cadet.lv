@@ -1725,6 +1725,37 @@ const MAJOR_OUT = { pane:'gridPane', color: OUTLINE_COLOR, opacity: .94,
                     weight: MAJOR.weight + 2.6, lineJoin:'round', lineCap:'round' };
 
 
+
+
+
+
+function addLine(points, isMajor, putLabel, labelLatLng, labelText){
+  // līnijas → gLines (ar baltu “halo” apakšā)
+  L.polyline(points, isMajor ? MAJOR_OUT : MINOR_OUT).addTo(gLines);
+  L.polyline(points, isMajor ? MAJOR     : MINOR    ).addTo(gLines);
+
+  // etiķete → gLabels
+  if (putLabel && labelLatLng){
+    const icon = L.divIcon({
+      className: 'utm-label' + (isMajor ? ' major' : ''),
+      html: `<span>${labelText}</span>`,
+      iconSize:[0,0], iconAnchor:[0,0]
+    });
+    L.marker(labelLatLng, { icon, pane:'gridLabelPane', interactive:false }).addTo(gLabels);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+	
+
 function redraw(){
   if (!map || !map._loaded) return;
 
