@@ -1592,7 +1592,7 @@ const CoordModeCtl = L.Control.extend({
     return div;
   }
 });
-map.addControl(new CoordModeCtl());
+
 
 
 
@@ -2013,7 +2013,7 @@ window.__probeLayers && window.__probeLayers(layersCtl);    // ← te notiek pie
 
 
 
-    // klasiskā skala + 1:xxxx
+
 
 
 
