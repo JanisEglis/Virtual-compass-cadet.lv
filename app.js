@@ -1577,6 +1577,49 @@ scalePickCtl.onAdd = function(){
   wrap.appendChild(label);
   wrap.appendChild(select);
 
+
+  // — Poga: Sagatavot karti (PDF)
+  const printBtn = document.createElement('button');
+  printBtn.id = 'preparePrintBtn';
+  printBtn.type = 'button';
+  printBtn.textContent = 'Sagatavot karti (PDF)';
+  Object.assign(printBtn.style, {
+    display: 'block',
+    marginTop: '8px',
+    width: '100%',
+    background: 'rgba(0,0,0,.35)',
+    color: '#fff',
+    border: '1px solid rgba(255,255,255,.25)',
+    borderRadius: '6px',
+    padding: '4px 8px',
+    cursor: 'pointer',
+    font: '12px/1.2 system-ui, sans-serif'
+  });
+  printBtn.addEventListener('click', prepareMapForPrint);
+  wrap.appendChild(printBtn);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
   // neļaujam šai kontrolei “sastrīdēties” ar kartes drag/zoom
   L.DomEvent.disableClickPropagation(wrap);
   L.DomEvent.disableScrollPropagation(wrap);
@@ -1618,6 +1661,33 @@ map.on('moveend zoomend', ()=>{ updateRatio(); syncScalePicker(); });
 
 
 
+function prepareMapForPrint(){
+  try{
+    // 1) Uzliek tieši izvēlēto tīkla mērogu
+    const el = document.getElementById('scalePicker');
+    const targetScale = el ? +el.value : getCurrentScale();
+    map.options.zoomSnap = 0;
+    map.options.zoomDelta = 0.25;
+    map.setZoom( zoomForScale(targetScale), { animate: false } );
+    updateRatio();
+    syncScalePicker();
+
+    // 2) Ieslēdzam drukas režīmu (paslēpj lieko un izstiepj karti pilnā lapā)
+    document.body.classList.add('print-mode');
+
+    // pārrēķina izmēru, lai joslas/režģi ir asāki pirms drukas
+    requestAnimationFrame(()=> map && map.invalidateSize(true));
+
+    // 3) Atver drukas dialogu, pēc tam izslēdz “print-mode”
+    setTimeout(()=> {
+      window.print();
+      document.body.classList.remove('print-mode');
+    }, 400);
+  }catch(err){
+    console.error('[print]', err);
+    alert('Neizdevās sagatavot karti drukai.');
+  }
+}
 
 
 
