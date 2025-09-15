@@ -2425,10 +2425,11 @@ function rowsForPopup(lat, lng) {
   ];
 
   // Pārbaudām, kuri režģi šobrīd ir redzami
-  const utmOn = (typeof utmgrid   !== 'undefined' && map.hasLayer(utmgrid))   ||
-                (typeof utmlabels !== 'undefined' && map.hasLayer(utmlabels));
-  const lksOn = (typeof lksgrid   !== 'undefined' && map.hasLayer(lksgrid))   ||
-                (typeof lkslabels !== 'undefined' && map.hasLayer(lkslabels));
+const utmOn = (typeof utmGrid   !== 'undefined' && map.hasLayer(utmGrid))   ||
+              (typeof utmLabels !== 'undefined' && map.hasLayer(utmLabels));
+const lksOn = (typeof lksGrid   !== 'undefined' && map.hasLayer(lksGrid))   ||
+              (typeof lksLabels !== 'undefined' && map.hasLayer(lksLabels));
+
 
   // Ja abi izslēgti – izmanto radio izvēli (coordMode)
   const showUTM = utmOn || (!lksOn && coordMode === 'MGRS');
