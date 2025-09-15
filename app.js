@@ -1991,6 +1991,20 @@ const overlays = {
     position: 'topright'
   }).addTo(map);
 
+// Ja ieslēdz/izslēdz režģus – nosakām, ko rādīt popupā.
+// Noteikums: "pēdējais ieslēgtais režģis" nosaka režīmu.
+map.on('overlayadd',  (e)=>{
+  if (e.layer === lksGrid || e.layer === lksLabels)  coordMode = 'LKS';
+  if (e.layer === utmGrid || e.layer === utmLabels)  coordMode = 'MGRS';
+  localStorage.setItem('coordMode', coordMode);
+});
+map.on('overlayremove', (e)=>{
+  // Ja izslēdz LKS un paliek UTM – pārslēdzam uz MGRS (un otrādi)
+  // (izvēlies sev vēlamo loģiku; zemāk: ja LKS izslēdz, krītam uz MGRS)
+  if (e.layer === lksGrid || e.layer === lksLabels)  { coordMode = 'MGRS'; }
+  if (e.layer === utmGrid || e.layer === utmLabels)  { coordMode = 'LKS';  }
+  localStorage.setItem('coordMode', coordMode);
+});
 
 
 	
@@ -2403,17 +2417,21 @@ map.whenReady(() => {
 
 
 	  
-    // labais klikšķis — popup ar 2 rindām + kopēšanas pogām
-  map.on('contextmenu', e=>{
-  const lat = e.latlng.lat, lon = e.latlng.lng;
-  const ll  = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-  const mgrs = toMGRS8(lat, lon);                          // 8 ciparu MGRS (4+4)
+ // Viena palīgfunkcija popupam – atdod, ko rādīt 2. rindā
+function coordsForPopup(lat, lng) {
+  const ll = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  if (coordMode === 'LKS') {
+    const { E, N } = wgsToLKS(lat, lng); // jau ir Tavā failā
+    return { ll, label: 'LKS-92', value: `E ${Math.round(E)} , N ${Math.round(N)}` };
+  } else {
+    const mgrs = toMGRS8(lat, lng);      // Tava jau esošā MGRS funkcija
+    return { ll, label: 'MGRS', value: mgrs };
+  }
+}
 
-  const copySVG = `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <rect x="9" y="9" width="10" height="12" rx="2"></rect>
-      <rect x="5" y="3" width="10" height="12" rx="2"></rect>
-    </svg>`;
+// POPUP (labais klikšķis; gribi – nomaini 'contextmenu' uz 'click')
+map.on('contextmenu', (e)=>{
+  const { ll, label, value } = coordsForPopup(e.latlng.lat, e.latlng.lng);
 
   const html = `
     <div class="coord-popup">
@@ -2424,14 +2442,17 @@ map.whenReady(() => {
         <span class="copied-msg" id="copiedLL">Nokopēts!</span>
       </div>
       <div class="coord-row">
-        <span class="label">MGRS</span>
-        <span class="value" id="mgrsVal">${mgrs}</span>
-        <button class="copy-btn" id="copyMGRS" title="Kopēt MGRS" aria-label="Kopēt MGRS">${copySVG}</button>
-        <span class="copied-msg" id="copiedMGRS">Nokopēts!</span>
+        <span class="label">${label}</span>
+        <span class="value" id="sysVal">${value}</span>
+        <button class="copy-btn" id="copySYS" title="Kopēt ${label}" aria-label="Kopēt ${label}">${copySVG}</button>
+        <span class="copied-msg" id="copiedSYS">Nokopēts!</span>
       </div>
     </div>`;
 
-  L.popup({maxWidth: 480}).setLatLng(e.latlng).setContent(html).openOn(map);
+  L.popup({ maxWidth: 480 })
+    .setLatLng(e.latlng)
+    .setContent(html)
+    .openOn(map);
 });
 
 // piesienam kopēšanas loģiku drošā brīdī – kad popup ir atvērts
@@ -2476,8 +2497,9 @@ map.on('popupopen', ev=>{
     });
   };
 
-  doCopy('#copyLL',   '#llVal',   '#copiedLL');
-  doCopy('#copyMGRS', '#mgrsVal', '#copiedMGRS');
+doCopy('#copyLL',  '#llVal',  '#copiedLL');
+doCopy('#copySYS', '#sysVal', '#copiedSYS');
+
 });
 // kad sāk kustēties – aizver popup un iedokē pogas
 map.on('movestart zoomstart dragstart', () => {
