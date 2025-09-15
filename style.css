@@ -2221,26 +2221,47 @@ body.preloading{ overflow: hidden; }
 
 
 
-/* === Drukas režīms — paslēpt lieko, atstāt tikai karti un apakšējos indikatorus === */
+/* ============ PRINT MODE (A4, portrets) ============ */
+body.print-mode {
+  -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+  background: #fff !important;
+}
+
+/* Slēpt VISU UI, atstāt tikai pašu karti (#onlineMap) un mūsu drukas pēdu */
 body.print-mode #buttonContainer,
 body.print-mode .position-selector,
 body.print-mode .position-selector-left,
 body.print-mode .info-handle,
-body.print-mode .leaflet-top .leaflet-control {
+body.print-mode .leaflet-control {            /* slēpjam visas Leaflet kontroles */
   display: none !important;
 }
 
-body.print-mode #onlineMap {
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 9999 !important;
-}
-body.print-mode #onlineMapDim { display: none !important; }
-
+/* A4 portrets: 210x297 mm, malas 10 mm => satura laukums ~190x277 mm */
 @media print {
+  @page { size: A4 portrait; margin: 10mm; }
+
   html, body { margin: 0 !important; padding: 0 !important; }
-  #onlineMap { position: fixed !important; inset: 0 !important; }
+  /* pašas kartes izmērs kļūst fiksēts mm, lai buferis neaiziet “fit to page” */
+  #onlineMap {
+    position: static !important;
+    width: 190mm !important;
+    height: 277mm !important;
+    display: block !important;
+  }
+
+  /* drukas pēda (mērogs + atsauces) */
+  #printFooter {
+    position: fixed;
+    left: 10mm; right: 10mm; bottom: 10mm;
+    display: flex; justify-content: space-between; gap: 8mm;
+    font: 10pt/1.2 system-ui, sans-serif; color: #000;
+  }
+  #printFooter .left, #printFooter .center, #printFooter .right {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
 }
+
 
 
 
