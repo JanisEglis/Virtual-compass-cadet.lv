@@ -1993,18 +1993,18 @@ const overlays = {
 
 // Ja ieslēdz/izslēdz režģus – nosakām, ko rādīt popupā.
 // Noteikums: "pēdējais ieslēgtais režģis" nosaka režīmu.
-map.on('overlayadd',  (e)=>{
-  if (e.layer === lksGrid || e.layer === lksLabels)  coordMode = 'LKS';
-  if (e.layer === utmGrid || e.layer === utmLabels)  coordMode = 'MGRS';
-  localStorage.setItem('coordMode', coordMode);
-});
-map.on('overlayremove', (e)=>{
+//map.on('overlayadd',  (e)=>{
+//  if (e.layer === lksGrid || e.layer === lksLabels)  coordMode = 'LKS';
+//  if (e.layer === utmGrid || e.layer === utmLabels)  coordMode = 'MGRS';
+//  localStorage.setItem('coordMode', coordMode);
+//});
+//map.on('overlayremove', (e)=>{
   // Ja izslēdz LKS un paliek UTM – pārslēdzam uz MGRS (un otrādi)
   // (izvēlies sev vēlamo loģiku; zemāk: ja LKS izslēdz, krītam uz MGRS)
-  if (e.layer === lksGrid || e.layer === lksLabels)  { coordMode = 'MGRS'; }
-  if (e.layer === utmGrid || e.layer === utmLabels)  { coordMode = 'LKS';  }
-  localStorage.setItem('coordMode', coordMode);
-});
+//  if (e.layer === lksGrid || e.layer === lksLabels)  { coordMode = 'MGRS'; }
+//  if (e.layer === utmGrid || e.layer === utmLabels)  { coordMode = 'LKS';  }
+//  localStorage.setItem('coordMode', coordMode);
+//});
 
 
 	
@@ -2424,14 +2424,13 @@ function rowsForPopup(lat, lng) {
     { id: 'll', label: 'Lat,Lng', value: `${lat.toFixed(6)}, ${lng.toFixed(6)}` }
   ];
 
-  // Pārbaudām, kuri režģi šobrīd ir redzami
-const utmOn = (typeof utmGrid   !== 'undefined' && map.hasLayer(utmGrid))   ||
-              (typeof utmLabels !== 'undefined' && map.hasLayer(utmLabels));
-const lksOn = (typeof lksGrid   !== 'undefined' && map.hasLayer(lksGrid))   ||
-              (typeof lksLabels !== 'undefined' && map.hasLayer(lksLabels));
+  // Vai redzams UTM/MGRS un/vai LKS-92?
+  const utmOn = (typeof utmGrid   !== 'undefined' && map.hasLayer(utmGrid))   ||
+                (typeof utmLabels !== 'undefined' && map.hasLayer(utmLabels));
+  const lksOn = (typeof lksGrid   !== 'undefined' && map.hasLayer(lksGrid))   ||
+                (typeof lksLabels !== 'undefined' && map.hasLayer(lksLabels));
 
-
-  // Ja abi izslēgti – izmanto radio izvēli (coordMode)
+  // Ja abi izslēgti — kritiens uz radio (coordMode)
   const showUTM = utmOn || (!lksOn && coordMode === 'MGRS');
   const showLKS = lksOn || (!utmOn && coordMode === 'LKS');
 
@@ -2443,9 +2442,9 @@ const lksOn = (typeof lksGrid   !== 'undefined' && map.hasLayer(lksGrid))   ||
     const p = wgsToLKS(lat, lng);
     rows.push({ id: 'lks', label: 'LKS-92', value: `E ${Math.round(p.E)} , N ${Math.round(p.N)}` });
   }
-
   return rows;
 }
+
 
 
 
