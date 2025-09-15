@@ -1957,14 +1957,14 @@ function llToUTMInZone(lat, lon, zone){
 
 	
 // --- Režģu slāņi (izsaucam vienreiz) ---
-const { grid: Grid, labels: Labels } = createUTMGridLayers();
+const { grid: utmGrid, labels: utmLabels } = createUTMGridLayers();
 const { grid: lksGrid, labels: lksLabels } = createLKSGridLayers();
 	
 
 // ieliekam katru atsevišķi kā pārklājumu
 const overlays = {
-  'MGRS režģa līnijas (1–20 km)': Grid,
-  'MGRS etiķetes': Labels,
+  'MGRS režģa līnijas (1–20 km)': utmGrid,
+  'MGRS etiķetes': utmLabels,
 'LKS-92 režģa līnijas (1–20 km)': lksGrid,
 'LKS-92 etiķetes': lksLabels,
 
@@ -1995,7 +1995,7 @@ const overlays = {
 
 	
 // ja vēlies — MGRS ieslēgts pēc noklusējuma:
-  grid.addTo(map); labels.addTo(map);
+  utmgrid.addTo(map); utmlabels.addTo(map);
 // LKS atstāj izslēgtu (vai ieslēdz arī to, ja gribi):
 // lksGrid.addTo(map); lksLabels.addTo(map);
 
