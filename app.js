@@ -2429,6 +2429,17 @@ function coordsForPopup(lat, lng) {
   }
 }
 
+
+// Ikona, ko liekam uz kopēšanas pogām popupā (vienreiz visā failā)
+const copySVG = `
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+       aria-hidden="true" width="18" height="18">
+    <rect x="9" y="9" width="10" height="12" rx="2"></rect>
+    <rect x="5" y="3" width="10" height="12" rx="2"></rect>
+  </svg>`;
+
+	  
 // POPUP (labais klikšķis; gribi – nomaini 'contextmenu' uz 'click')
 map.on('contextmenu', (e)=>{
   const { ll, label, value } = coordsForPopup(e.latlng.lat, e.latlng.lng);
