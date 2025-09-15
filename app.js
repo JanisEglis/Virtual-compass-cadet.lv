@@ -1567,31 +1567,7 @@ map.on('moveend zoomend', ()=>{ updateRatio(); syncScalePicker(); });
 
 
 
-// ====== Koordināšu režīms (MGRS vai LKS) ======
-let coordMode = localStorage.getItem('coordMode') || 'MGRS'; // 'MGRS' vai 'LKS'
 
-const CoordModeCtl = L.Control.extend({
-  options:{position:'topright'},
-  onAdd: function(){
-    const div = L.DomUtil.create('div','leaflet-bar');
-    div.style.padding = '6px 8px';
-    div.style.background = '#fff';
-    div.style.lineHeight = '1.2';
-    div.innerHTML = `
-      <label style="display:block; margin-bottom:4px;"><strong>Koordinātes</strong></label>
-      <label style="display:block; margin-bottom:2px;"><input type="radio" name="cm" value="MGRS" ${coordMode==='MGRS'?'checked':''}> MGRS/UTM</label>
-      <label style="display:block;"><input type="radio" name="cm" value="LKS"  ${coordMode==='LKS'?'checked':''}> LKS-92</label>`;
-    L.DomEvent.disableClickPropagation(div);
-    div.addEventListener('change', (e)=>{
-      if (e.target.name==='cm'){
-        coordMode = e.target.value;
-        localStorage.setItem('coordMode', coordMode);
-        map.closePopup(); // lai nākamais klikšķis rāda pareizo formātu
-      }
-    });
-    return div;
-  }
-});
 
 
 
@@ -2424,24 +2400,34 @@ function rowsForPopup(lat, lng) {
     { id: 'll', label: 'Lat,Lng', value: `${lat.toFixed(6)}, ${lng.toFixed(6)}` }
   ];
 
-  // Vai redzams UTM/MGRS un/vai LKS-92?
-  const utmOn = (typeof utmGrid   !== 'undefined' && map.hasLayer(utmGrid))   ||
-                (typeof utmLabels !== 'undefined' && map.hasLayer(utmLabels));
-  const lksOn = (typeof lksGrid   !== 'undefined' && map.hasLayer(lksGrid))   ||
-                (typeof lksLabels !== 'undefined' && map.hasLayer(lksLabels));
+  // 1) Pārbaudām, kuri režģi ir ieslēgti (ņemam vērā abus iespējamos mainīgo nosaukumus)
+  const utmOn =
+    (typeof utmgrid   !== 'undefined' && map.hasLayer(utmgrid))   ||
+    (typeof utmlabels !== 'undefined' && map.hasLayer(utmlabels)) ||
+    (typeof utmGrid   !== 'undefined' && map.hasLayer(utmGrid))   ||
+    (typeof utmLabels !== 'undefined' && map.hasLayer(utmLabels));
 
-  // Ja abi izslēgti — kritiens uz radio (coordMode)
-  const showUTM = utmOn || (!lksOn && coordMode === 'MGRS');
-  const showLKS = lksOn || (!utmOn && coordMode === 'LKS');
+  const lksOn =
+    (typeof lksgrid   !== 'undefined' && map.hasLayer(lksgrid))   ||
+    (typeof lkslabels !== 'undefined' && map.hasLayer(lkslabels)) ||
+    (typeof lksGrid   !== 'undefined' && map.hasLayer(lksGrid))   ||
+    (typeof lksLabels !== 'undefined' && map.hasLayer(lksLabels));
 
-  if (showUTM) {
-    const mgrs = (typeof toMGRS8 === 'function' ? toMGRS8(lat, lng) : toMGRS(lat, lng));
+  // 2) Ja ieslēgts UTM/MGRS — pievienojam MGRS rindu
+  if (utmOn) {
+    const mgrs = (typeof toMGRS8 === 'function' ? toMGRS8(lat, lng)
+                 : typeof toMGRS  === 'function' ? toMGRS(lat, lng)
+                 : '—');
     rows.push({ id: 'mgrs', label: 'MGRS/UTM', value: mgrs });
   }
-  if (showLKS) {
+
+  // 3) Ja ieslēgts LKS-92 — pievienojam LKS rindu
+  if (lksOn) {
     const p = wgsToLKS(lat, lng);
     rows.push({ id: 'lks', label: 'LKS-92', value: `E ${Math.round(p.E)} , N ${Math.round(p.N)}` });
   }
+
+  // 4) Ja abi izslēgti — paliek tikai Lat,Lng (nekādu “radio” vairs)
   return rows;
 }
 
