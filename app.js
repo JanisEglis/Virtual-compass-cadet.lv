@@ -1478,6 +1478,55 @@ function getCurrentScale(){
   const mpp = 156543.03392 * Math.cos(c.lat*Math.PI/180) / Math.pow(2, z);
   return Math.round(mpp / 0.00028); // “1:xxxx”
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ——— Solis pēc kartes mēroga (1:xxxx) ———
+// Saskaņots ar drukas realitāti, lai kvadrāti ir ērti nolasāmi.
+function gridStepForScale(scale){      // atgriež metrus
+  if (scale <=  7500)   return  200;   // 1:5k–1:7.5k → 200 m
+  if (scale <= 15000)   return  500;   // 1:10k–1:15k → 500 m
+  if (scale <= 30000)   return 1000;   // 1:25k–1:30k → 1 km
+  if (scale <= 60000)   return 2000;   // 1:50k–1:60k → 2 km
+  if (scale <= 120000)  return 5000;   // 1:75k–1:120k → 5 km
+  return 10000;                        // tālāk → 10 km
+}
+
+// Mazāko grīdlīniju skaits vienā “lielajā” kvadrātā (UTM smalkajām līnijām)
+function gridMinorDivisionsForScale(scale){
+  if (scale <=  7500)   return 2;      // 200 m → 100 m starpas
+  if (scale <= 15000)   return 2;      // 500 m → 250 m starpas
+  if (scale <= 30000)   return 4;      // 1 km → 250 m starpas
+  if (scale <= 60000)   return 4;      // 2 km → 500 m starpas
+  if (scale <= 120000)  return 5;      // 5 km → 1 km starpas
+  return 5;                            // 10 km → 2 km starpas
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  
 function zoomForScale(scale){
   const lat = map.getCenter().lat * Math.PI/180;
   const mppTarget = scale * 0.00028; // m/pixel pie 0.28mm pikseļa
@@ -1690,7 +1739,10 @@ function redraw(){
   gLabels.clearLayers();
 
   const z  = map.getZoom();
-  const step = (z>=14)?1000 : (z>=12)?2000 : (z>=10)?5000 : (z>=8)?10000 : 20000;
+  const scale = getCurrentScale();
+const step  = gridStepForScale(scale);
+const divs  = gridMinorDivisionsForScale(scale);
+
 
   const b  = map.getBounds();
   const nw = b.getNorthWest(), se = b.getSouthEast();
@@ -1719,7 +1771,7 @@ function redraw(){
   // Easting līnijas
   for (let E = minE; E <= maxE; E += step){
     const pts = [];
-    for (let N = minN; N <= maxN; N += step/4){
+for (let N = minN; N <= maxN; N += step/divs){
       const ll = utmToLL(E, N, z0, hemi);
       pts.push([ll.lat, ll.lon]);
     }
@@ -1731,7 +1783,7 @@ function redraw(){
   // Northing līnijas
   for (let N = minN; N <= maxN; N += step){
     const pts = [];
-    for (let E = minE; E <= maxE; E += step/4){
+for (let E = minE; E <= maxE; E += step/divs){
       const ll = utmToLL(E, N, z0, hemi);
       pts.push([ll.lat, ll.lon]);
     }
@@ -1780,7 +1832,8 @@ function createLKSGridLayers(){
     grid.clearLayers(); labels.clearLayers();
 
     const b = map.getBounds();
-    const step = 1000; // 1 km
+  const scale = getCurrentScale();
+const step  = gridStepForScale(scale);
 
     // pārveido robežas uz LKS, lai iterētu E/N
     const bl = wgsToLKS(b.getSouth(), b.getWest());
