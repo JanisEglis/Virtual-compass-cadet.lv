@@ -1995,7 +1995,7 @@ const overlays = {
 
 	
 // ja vēlies — MGRS ieslēgts pēc noklusējuma:
-  utmgrid.addTo(map); utmlabels.addTo(map);
+  utmGrid.addTo(map); utmLabels.addTo(map);
 // LKS atstāj izslēgtu (vai ieslēdz arī to, ja gribi):
 // lksGrid.addTo(map); lksLabels.addTo(map);
 
@@ -2536,7 +2536,7 @@ function showOnlineMap(){
     canvas.style.display = 'block';
     if (resizeH && hasImage()) positionResizeHandle(true);
     localStorage.setItem('onlineMapActive','0');
-    alert('Leaflet nav ielādējies — tiešsaistes karte izslēgta.');
+    alert('Tiešsaistes karte nav ielādēta! Mēģiniet vēlreiz.'); // Leaflet nav ielādējies — tiešsaistes karte izslēgta.
     return;
   }
 
