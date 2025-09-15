@@ -1624,7 +1624,8 @@ scalePickCtl.onAdd = function(){
     cursor: 'pointer',
     font: '12px/1.2 system-ui, sans-serif'
   });
-  printBtn.addEventListener('click', prepareMapForPrint);
+  printBtn.addEventListener('click', openLgIaPrintDialog);
+
   wrap.appendChild(printBtn);
 
 
