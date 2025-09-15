@@ -2418,16 +2418,34 @@ map.whenReady(() => {
 
 	  
  // Viena palīgfunkcija popupam – atdod, ko rādīt 2. rindā
-function coordsForPopup(lat, lng) {
-  const ll = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-  if (coordMode === 'LKS') {
-    const { E, N } = wgsToLKS(lat, lng); // jau ir Tavā failā
-    return { ll, label: 'LKS-92', value: `E ${Math.round(E)} , N ${Math.round(N)}` };
-  } else {
-    const mgrs = toMGRS8(lat, lng);      // Tava jau esošā MGRS funkcija
-    return { ll, label: 'MGRS', value: mgrs };
+// === Ko rādīt popupā (Lat/Lng + UTM/MGRS + LKS-92 atkarībā no redzamajiem slāņiem) ===
+function rowsForPopup(lat, lng) {
+  const rows = [
+    { id: 'll', label: 'Lat,Lng', value: `${lat.toFixed(6)}, ${lng.toFixed(6)}` }
+  ];
+
+  // Pārbaudām, kuri režģi šobrīd ir redzami
+  const utmOn = (typeof utmgrid   !== 'undefined' && map.hasLayer(utmgrid))   ||
+                (typeof utmlabels !== 'undefined' && map.hasLayer(utmlabels));
+  const lksOn = (typeof lksgrid   !== 'undefined' && map.hasLayer(lksgrid))   ||
+                (typeof lkslabels !== 'undefined' && map.hasLayer(lkslabels));
+
+  // Ja abi izslēgti – izmanto radio izvēli (coordMode)
+  const showUTM = utmOn || (!lksOn && coordMode === 'MGRS');
+  const showLKS = lksOn || (!utmOn && coordMode === 'LKS');
+
+  if (showUTM) {
+    const mgrs = (typeof toMGRS8 === 'function' ? toMGRS8(lat, lng) : toMGRS(lat, lng));
+    rows.push({ id: 'mgrs', label: 'MGRS/UTM', value: mgrs });
   }
+  if (showLKS) {
+    const p = wgsToLKS(lat, lng);
+    rows.push({ id: 'lks', label: 'LKS-92', value: `E ${Math.round(p.E)} , N ${Math.round(p.N)}` });
+  }
+
+  return rows;
 }
+
 
 
 // Ikona, ko liekam uz kopēšanas pogām popupā (vienreiz visā failā)
@@ -2441,23 +2459,23 @@ const copySVG = `
 
 	  
 // POPUP (labais klikšķis; gribi – nomaini 'contextmenu' uz 'click')
-map.on('contextmenu', (e)=>{
-  const { ll, label, value } = coordsForPopup(e.latlng.lat, e.latlng.lng);
+// POPUP (labais klikšķis; gribi – nomaini 'contextmenu' uz 'click')
+map.on('contextmenu', (e) => {
+  const rows = rowsForPopup(e.latlng.lat, e.latlng.lng);
 
   const html = `
     <div class="coord-popup">
-      <div class="coord-row">
-        <span class="label">Lat,Lng</span>
-        <span class="value" id="llVal">${ll}</span>
-        <button class="copy-btn" id="copyLL" title="Kopēt Lat,Lng" aria-label="Kopēt Lat,Lng">${copySVG}</button>
-        <span class="copied-msg" id="copiedLL">Nokopēts!</span>
-      </div>
-      <div class="coord-row">
-        <span class="label">${label}</span>
-        <span class="value" id="sysVal">${value}</span>
-        <button class="copy-btn" id="copySYS" title="Kopēt ${label}" aria-label="Kopēt ${label}">${copySVG}</button>
-        <span class="copied-msg" id="copiedSYS">Nokopēts!</span>
-      </div>
+      ${rows.map(r => `
+        <div class="coord-row">
+          <span class="label">${r.label}</span>
+          <span class="value" id="${r.id}Val">${r.value}</span>
+          <button class="copy-btn" id="copy-${r.id}"
+                  title="Kopēt ${r.label}" aria-label="Kopēt ${r.label}">
+            ${copySVG}
+          </button>
+          <span class="copied-msg" id="copied-${r.id}">Nokopēts!</span>
+        </div>
+      `).join('')}
     </div>`;
 
   L.popup({ maxWidth: 480 })
@@ -2466,52 +2484,47 @@ map.on('contextmenu', (e)=>{
     .openOn(map);
 });
 
-// piesienam kopēšanas loģiku drošā brīdī – kad popup ir atvērts
-map.on('popupopen', ev=>{
+// “Kopēt” – generiski visām rindām popupā
+map.on('popupopen', ev => {
   const root = ev.popup.getElement();
   if (!root) return;
 
-  const doCopy = async (btnSel, valSel, msgSel) => {
-    const btn = root.querySelector(btnSel);
-    const val = root.querySelector(valSel)?.textContent || '';
-    const msg = root.querySelector(msgSel);
-    if (!btn || !val) return;
+  root.querySelectorAll('button.copy-btn[id^="copy-"]').forEach(btn => {
+    const id  = btn.id.replace('copy-', '');
+    const val = root.querySelector(`#${id}Val`)?.textContent || '';
+    const msg = root.querySelector(`#copied-${id}`);
 
     btn.addEventListener('click', async () => {
-      let ok = false;
       try {
         if (navigator.clipboard && window.isSecureContext) {
           await navigator.clipboard.writeText(val);
-          ok = true;
         } else {
-          // rezerves variants
           const ta = document.createElement('textarea');
           ta.value = val;
           ta.style.position = 'fixed';
           ta.style.opacity  = '0';
           document.body.appendChild(ta);
           ta.focus(); ta.select();
-          ok = document.execCommand('copy');
+          document.execCommand('copy');
           document.body.removeChild(ta);
         }
-      } catch(e){ ok = false; }
-
-      if (ok) {
         btn.classList.add('copied');
         msg && msg.classList.add('show');
-        setTimeout(()=>{ btn.classList.remove('copied'); msg && msg.classList.remove('show'); }, 5000);
-      } else {
-        btn.classList.remove('copied');
-        msg && msg.classList.remove('show');
-        alert('Neizdevās nokopēt. Lūdzu, izmēģini vēlreiz.');
-      }
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          msg && msg.classList.remove('show');
+        }, 900);
+      } catch (_) {}
     });
-  };
-
-doCopy('#copyLL',  '#llVal',  '#copiedLL');
-doCopy('#copySYS', '#sysVal', '#copiedSYS');
-
+  });
 });
+
+
+
+
+
+
+	  
 // kad sāk kustēties – aizver popup un iedokē pogas
 map.on('movestart zoomstart dragstart', () => {
   map.closePopup();
