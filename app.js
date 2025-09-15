@@ -1708,29 +1708,22 @@ function createUTMGridLayers(){
     document.head.appendChild(el);
   }
 
-  // stili (kā tev bija)
-  const GRID_COLOR = '#ff3131';
-  const OUTLINE_COLOR = '#ffffff';
-  const MINOR     = { pane:'gridPane', color: GRID_COLOR,  opacity: .95, weight: 2.4, lineJoin:'round', lineCap:'round', dashArray:'6,6' };
-  const MINOR_OUT = { pane:'gridPane', color: OUTLINE_COLOR, opacity: .95, weight: MINOR.weight + 2.4, lineJoin:'round', lineCap:'round' };
-  const MAJOR     = { pane:'gridPane', color: GRID_COLOR,  opacity: 1.0, weight: 3.6, lineJoin:'round', lineCap:'round' };
-  const MAJOR_OUT = { pane:'gridPane', color: OUTLINE_COLOR, opacity: .98, weight: MAJOR.weight + 3.0, lineJoin:'round', lineCap:'round' };
+// stili — melns, izteikts
+const GRID_COLOR    = '#000000';   // ← melns
+const OUTLINE_COLOR = '#ffffff';   // balts “halo”, lai līnijas labi redzamas uz satelīta
 
-  function addLine(points, isMajor, putLabel, labelLatLng, labelText){
-    // līnijas → gLines
-    L.polyline(points, isMajor ? MAJOR_OUT : MINOR_OUT).addTo(gLines);
-    L.polyline(points, isMajor ? MAJOR     : MINOR    ).addTo(gLines);
+// Mazās (starplīnijas) — nedaudz biezākas, ar pārtraukumiem
+const MINOR     = { pane:'gridPane', color: GRID_COLOR,  opacity: 1.0, weight: 2.6,
+                    lineJoin:'round', lineCap:'round' };
+const MINOR_OUT = { pane:'gridPane', color: OUTLINE_COLOR, opacity: .92,
+                    weight: MINOR.weight + 2.2, lineJoin:'round', lineCap:'round' };
 
-    // etiķete → gLabels
-    if (putLabel && labelLatLng){
-      const icon = L.divIcon({
-        className: 'utm-label' + (isMajor ? ' major' : ''),
-        html: `<span>${labelText}</span>`,
-        iconSize:[0,0], iconAnchor:[0,0]
-      });
-      L.marker(labelLatLng, { icon, pane:'gridLabelPane', interactive:false }).addTo(gLabels);
-    }
-  }
+// Lielās (galvenās) — biezas, nepārtrauktas
+const MAJOR     = { pane:'gridPane', color: GRID_COLOR,  opacity: 1.0, weight: 3.8,
+                    lineJoin:'round', lineCap:'round' };
+const MAJOR_OUT = { pane:'gridPane', color: OUTLINE_COLOR, opacity: .94,
+                    weight: MAJOR.weight + 2.6, lineJoin:'round', lineCap:'round' };
+
 
 function redraw(){
   if (!map || !map._loaded) return;
@@ -1821,7 +1814,8 @@ map.setView([56.9496, 24.1052], 13);
 
 // ====== LKS-92 režģa ģenerators ======
 function createLKSGridLayers(){
-  const lineStyle = {color:'#d9534f', weight:1, opacity:0.6};   // sarkanas līnijas
+ const lineStyle = { color:'#000000', weight:2.6, opacity:0.95 }; // melnas, izteiktas līnijas
+
   const labelStyle = {className:'lks-grid-label'};               // CSS vari piekrāsot, ja vajag
 
   const grid = L.layerGroup();
