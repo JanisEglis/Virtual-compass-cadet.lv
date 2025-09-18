@@ -2220,92 +2220,94 @@ body.preloading{ overflow: hidden; }
 
 
 
-
-
-
-
-
-
-
-
-/* ——— Drukas modālis (pielāgots Tavam tumšajam stilam) ——— */
-.print-modal {
-  position: fixed; inset:0; z-index: 5000;
-  background: rgba(0,0,0,.55); display:grid; place-items:center;
-}
-.print-modal-card {
-  min-width: 280px; max-width: 92vw; background: #0b0f14;
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 8px; padding: 14px; color: #fff; font: 14px/1.35 system-ui, sans-serif;
-}
-.print-modal-card h3 { margin:0 0 8px; font-size: 16px; }
-.print-modal-card label { display:block; margin:8px 0 4px; }
-.print-modal-card input,
-.print-modal-card select {
-  width: 100%; padding: 6px 8px; border-radius: 6px;
-  background: rgba(255,255,255,.06); color:#fff; border:1px solid rgba(255,255,255,.18);
-}
-.print-modal-card .row { display:flex; gap:8px; }
-.print-modal-card .row > label { flex:1; }
-.print-modal-card .buttons { margin-top: 10px; justify-content:flex-end; }
-.print-modal-card button {
-  padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,.25);
-  background: rgba(0,0,0,.35); color:#fff; cursor:pointer;
-}
-.print-modal-card button.primary { border-color:#43a047; background:#2e7d32; }
-
-
 /* ===== DRUKAS REŽĪMS ===== */
 
-/* Šie stili tiek piemēroti uzreiz, nospiežot drukas pogu (TIKAI SLĒPŠANAI) */
-body.print-mode {
-  /* Šeit NEDRĪKST būt nekādi izmēru vai pozīciju maiņas stili! */
-  background: #fff !important; /* Fons paliek balts */
-}
-
-/* Paslēpjam VISU UI, bet atstājam karti un pēdu savās vietās */
-body.print-mode > *:not(#onlineMap):not(#printFooter) {
+/* Paslēpj visu, izņemot drukas konteineri */
+body.print-mode > *:not(#print-container) {
   display: none !important;
 }
 
-body.print-mode .leaflet-control {
-  display: none !important; /* Paslēpjam visas Leaflet kontroles */
+/* Konteineris, kas saturēs visu drukas lapu */
+#print-container {
+  display: none; /* Redzams tikai drukas režīmā */
 }
 
-
-/* TIKAI DRUKĀŠANAS LAIKĀ: Šie stili ietekmēs TIKAI papīra izdruku */
+/* Šie stili ietekmēs TIKAI papīra izdruku */
 @media print {
-  body.print-mode {
+  @page {
+    size: A4 landscape;
+    margin: 0; /* Noņemam pārlūka iebūvētās malas */
+  }
+
+  body {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  /* Paslēpjam VISU, izņemot mūsu jauno drukas konteineri un pēdu */
-  body.print-mode > *:not(#print-map-container):not(#printFooter) {
-    display: none !important;
-    visibility: hidden !important;
-  }
-
-  /* Drukas konteinerim un pēdai jābūt redzamiem */
-  body.print-mode #print-map-container,
-  body.print-mode #printFooter {
+  #print-container {
     display: block !important;
-    position: fixed !important;
-    visibility: visible !important;
-    z-index: 9999 !important;
+    position: absolute;
+    top: 10mm;
+    left: 10mm;
+    right: 10mm;
+    bottom: 10mm;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
   }
 
-  /* Drukas karte tiek pozicionēta un izmērīta lapas ietvaros */
-  body.print-mode #print-map-container {
-    /* Izmērus un pozīciju iedos JavaScript ar <style> tagu */
+  /* Kartes attēls ar melnu rāmi */
+  .print-map-image {
+    display: block;
+    width: 100%;
+    height: calc(100% - 20mm); /* Atstājam vietu galvenei un kājenei */
+    border: 1.5px solid black;
+    box-sizing: border-box;
+    object-fit: contain; /* Nodrošina, ka karte ietilpst rāmī, saglabājot proporcijas */
+  }
+  
+  /* Kartes nosaukums */
+  #print-title {
+      position: absolute;
+      top: 2mm;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14pt;
+      font-weight: bold;
+      font-family: 'Times New Roman', serif;
+  }
+  
+  /* Galvene ar mērogu */
+  #print-header {
+    width: 100%;
+    text-align: center;
+    font-size: 12pt;
+    font-family: 'Times New Roman', serif;
+    height: 8mm;
+    margin-bottom: 2mm;
   }
 
-  /* Pēdas (footer) teksta stils */
-  body.print-mode #printFooter {
-    color: #000 !important;
-    font: 10pt 'Times New Roman', serif !important;
+  /* Kājenes stils */
+  #print-footer {
+    width: 100%;
+    text-align: center;
+    font-size: 8pt;
+    font-family: 'Times New Roman', serif;
+    height: 8mm;
+    margin-top: 2mm;
   }
 }
+
+
+
+
+
+
+
 
 
 
