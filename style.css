@@ -2219,8 +2219,18 @@ body.preloading{ overflow: hidden; }
 
 
 
+/* =============================================================== */
+/* JAUNIE DRUKAS STILI (pievienot faila beigās)                    */
+/* =============================================================== */
 
-/* ===== DRUKAS REŽĪMS ===== */
+/* Jaunās drukas pogas stils */
+.leaflet-control-print {
+  width: 30px !important;
+  height: 30px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
 
 /* Paslēpj visu, izņemot drukas konteineri */
 body.print-mode > *:not(#print-container) {
@@ -2250,7 +2260,7 @@ body.print-mode > *:not(#print-container) {
     width: 100%;
     height: 100%;
     box-sizing: border-box;
-    padding: 10mm; /* Atstarpes no lapas malām */
+    padding: 10mm;
     font-family: 'Times New Roman', serif;
   }
 
@@ -2271,10 +2281,10 @@ body.print-mode > *:not(#print-container) {
   #print-map-image-wrapper {
     flex-grow: 1;
     border: 1.5px solid black;
-    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden; /* Apgriež, ja attēls ir lielāks par rāmi */
   }
 
   #print-map-image-wrapper img {
@@ -2290,14 +2300,6 @@ body.print-mode > *:not(#print-container) {
     font-size: 8pt;
   }
 }
-
-
-
-
-
-
-
-
 
 
 
