@@ -2324,16 +2324,13 @@ body.print-mode .leaflet-control { display:none !important; }
 /* Noklusējuma A4 portreta izmērs (ja JS nav ielādējies) */
 /* ——— LGIA: drukājam TIKAI karti un pēdu vienā lapā ——— */
 @media print {
-  /* JS vēlāk pārdefinēs uz A3/A4 un orientāciju; te – drošs noklusējums */
-  @page { size: A4 portrait; margin: 0; }
-
-  /* Noņemam VISUS body bērnus no plūsmas, izņemot mūsu konteinerus */
-  body.print-mode > *:not(#canvasContainer):not(#printFooter) {
-    display: none !important;
+  @page { 
+    size: A4 portrait; 
+    margin: 0;
   }
-  /* No canvasContainer atstājam tikai pašu karti */
-  body.print-mode #canvasContainer > *:not(#onlineMap) {
-    display: none !important;
+  body { 
+    overflow: hidden !important;
+    page-break-after: avoid !important;
   }
 }
 
