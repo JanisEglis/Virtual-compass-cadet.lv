@@ -2325,25 +2325,53 @@ body.print-mode .leaflet-control { display:none !important; }
 /* ——— LGIA: drukājam TIKAI karti un pēdu vienā lapā ——— */
 @media print {
 /* Pielāgojam drukas orientāciju un izmērus uz ainavu */
+
+
+/* Pārdefinējam drukas lapas izmēru uz A4 ainavas (landscape) režīmu. */
 @page {
   size: A4 landscape;
   margin: 0;
 }
+
+/* Nodrošinām, ka kartes konteiners precīzi aizņem visu lapu. */
 body.print-mode #onlineMap {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
-  width: 277mm !important;
-  height: 190mm !important;
+  width: 297mm !important; /* Standarta A4 lapas platums ainavas režīmā. */
+  height: 210mm !important; /* Standarta A4 lapas augstums ainavas režīmā. */
   display: block !important;
-}
-}
-
-
-/* Rāmis ap karti drukas režīmā */
-body.print-mode #onlineMap {
-  border: 1px solid black !important;
   box-sizing: border-box !important;
+  border: 1px solid black !important;
+}
+
+/* Pielāgojam papildu elementus, piemēram, mērogu. */
+body.print-mode .leaflet-control-container .leaflet-control-scale {
+  position: absolute;
+  bottom: 10mm !important;
+  left: 10mm !important;
+  display: block !important;
+  visibility: visible !important;
+}
+
+/* Paslēp VISU UI, izņemot karti un pēdu. */
+body.print-mode * { visibility: hidden !important; }
+body.print-mode #onlineMap,
+body.print-mode #onlineMap * ,
+body.print-mode #printFooter,
+body.print-mode #printFooter * { visibility: visible !important; }
+
+/* Nodrošinām, ka visi kartes slāņi ir redzami. */
+body.print-mode .leaflet-tile-container {
+  visibility: visible !important;
+}
+
+
+
+
+
+
+	
 }
 
 
