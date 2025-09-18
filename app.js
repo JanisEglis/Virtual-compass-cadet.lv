@@ -1729,23 +1729,16 @@ function openLgIaPrintDialog(){
             <option value="A3">A3</option>
           </select>
         </label>
-
-        <label>Orientācija
-          <select id="lgiaPrintOrient">
-            <option value="portrait">Portrets</option>
-            <option value="landscape">Ainava</option>
-          </select>
-        </label>
       </div>
 
-      <label>Mērogs
-        <select id="lgiaPrintScale">
-          ${[5000,10000,25000,50000,75000,100000].map(s=>{
-            const sel = (Math.abs(s-currentScale) < 0.5*s/6) ? 'selected' : '';
-            return `<option ${sel} value="${s}">1: ${s.toLocaleString('lv-LV')}</option>`;
-          }).join('')}
-        </select>
-      </label>
+    <label>Mērogs
+      <select id="lgiaPrintScale">
+        ${[5000,10000,25000,50000,75000,100000].map(s=>{
+          const sel = (Math.abs(s-currentScale) < 0.5*s/6) ? 'selected' : '';
+          return `<option ${sel} value="${s}">1: ${s.toLocaleString('lv-LV')}</option>`;
+        }).join('')}
+      </select>
+    </label>
 
       <div class="row buttons">
         <button id="lgiaCancel">Atcelt</button>
@@ -1881,7 +1874,23 @@ body.print-mode #onlineMap::before{
 
 
 
+/* Nodzēšam jebkādu plūsmas augstumu, lai būtu TIKAI viena lapa */
+body.print-mode #canvasContainer{
+  position: static !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
 
+/* Drošai vienlapes drukai – slēpjam visu, izņemot karti un uzlīmes */
+body.print-mode > *:not(#canvasContainer):not(#printScaleTop):not(#printFooter){
+  display: none !important;
+}
+body.print-mode #canvasContainer > *:not(#onlineMap){
+  display: none !important;
+}
 
 
 
@@ -1919,25 +1928,24 @@ body.print-mode #printScaleTop *{
   visibility: visible !important;
 }
 
-/* mērogs augšā ārpus rāmja, centrēts */
+/* TOP mēroga uzlīme – augstāk no rāmja */
 body.print-mode #printScaleTop{
-  position: fixed;
-  top: 6mm;                  /* virs rāmja (karte sākas 10mm) */
-  left: 50%; transform: translateX(-50%);
+  position: fixed !important;
+  top: 4mm !important;                 /* bija 6mm */
+  left: 50% !important; transform: translateX(-50%) !important;
   font: 11pt/1.1 system-ui, sans-serif;
-  color:#000;
-  text-align: center;
+  color:#000; text-align:center;
   visibility: visible !important;
 }
 
-/* atsauces apakšā ārpus rāmja, centrētas – platumā tieši kā karte */
+/* Apakšas atsauce – zemāk un perfekti centrēta */
 body.print-mode #printFooter{
-  position: fixed;
-  bottom: 6mm; 
-  left: 50%; transform: translateX(-50%);
-  width: ${mm.w}mm;          /* tas pats kartes iekšplatums */
-  text-align: center;
-  font:10pt/1.2 system-ui, sans-serif; color:#000;
+  position: fixed !important;
+  bottom: 4mm !important;              /* bija 6mm */
+  left: 50% !important; transform: translateX(-50%) !important;
+  width: ${mm.w}mm !important;         /* tieši kartes iekšplatums */
+  text-align: center !important;
+  font: 10pt/1.2 system-ui, sans-serif; color:#000;
   visibility: visible !important;
 }
 
