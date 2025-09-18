@@ -1624,8 +1624,7 @@ scalePickCtl.onAdd = function(){
     cursor: 'pointer',
     font: '12px/1.2 system-ui, sans-serif'
   });
-  printBtn.addEventListener('click', openLgIaPrintDialog);
-
+  printBtn.addEventListener('click', prepareMapForPrint);
   wrap.appendChild(printBtn);
 
 
@@ -1798,20 +1797,6 @@ function prepareMapForPrintLgIa(opts){
     // ļaujam ielādēt flīzes/līnijas
     setTimeout(()=>{
       window.addEventListener('afterprint', cleanup, {once:true});
-
-
-// aizver sānu paneļus un nullē “safe areas”, lai nekas neietekmē izkārtojumu
-try { window.closeBothSelectorsLegacy && window.closeBothSelectorsLegacy(); } catch(e){}
-try { closeBothMenus && closeBothMenus(); } catch(e){}
-document.documentElement.style.setProperty('--map-top-safe','0px');
-document.documentElement.style.setProperty('--map-bottom-safe','0px');
-
-
-window.addEventListener('beforeprint', ()=> map && map.invalidateSize(true), { once:true });
-
-
-
-		
       window.print();
     }, 600);
 
@@ -1830,32 +1815,17 @@ window.addEventListener('beforeprint', ()=> map && map.invalidateSize(true), { o
 }
 
 // Dinamiski iedod @page size + #onlineMap mm izmēru pēc formāta/orientācijas
-// Dinamiski @page + fiksēta kartes pozīcija lapā (bez nobīdēm)
-// Dinamiski @page + fiksēta kartes pozīcija lapā (bez nobīdēm)
 function injectDynamicPrintStyle(fmt, orient){
-  // Satura laukuma mm (lapas izmērs mīnus 2×10mm malas)
   const mm = (fmt==='A3')
-    ? (orient==='portrait' ? {w:277, h:400} : {w:400, h:277})
-    : (orient==='portrait' ? {w:190, h:277} : {w:277, h:190});
+    ? (orient==='portrait' ? {w:277, h:400} : {w:400, h:277}) // A3 297×420 − 2×10mm malas
+    : (orient==='portrait' ? {w:190, h:277} : {w:277, h:190}); // A4 210×297 − 2×10mm malas
 
   const pageSize = (fmt==='A3' ? 'A3' : 'A4') + ' ' + (orient==='portrait' ? 'portrait' : 'landscape');
 
   const css = `
-    @page { size: ${pageSize}; margin: 0; } /* malas dodam ar top/left 10mm */
+    @page { size: ${pageSize}; margin: 10mm; }
     @media print {
-      html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
-      #onlineMap{
-        position: fixed !important;
-        top:10mm; left:10mm;
-        width:${mm.w}mm !important; height:${mm.h}mm !important;
-        display:block !important;
-      }
-      #printFooter{
-        position: fixed; left:10mm; right:10mm; bottom:10mm;
-        display:flex; justify-content:space-between; gap:8mm;
-        font:10pt/1.2 system-ui, sans-serif; color:#000;
-        visibility: visible !important;
-      }
+      #onlineMap { width: ${mm.w}mm !important; height: ${mm.h}mm !important; }
     }
   `;
   let el = document.getElementById('dynamicPrintStyle');
@@ -1863,8 +1833,6 @@ function injectDynamicPrintStyle(fmt, orient){
   el.textContent = css;
   return el;
 }
-
-
 
 // Drukas pēda: [Nosaukums] [Mērogs] [Atsauces kartēm] [CADET.LV]
 function buildPrintFooterLgIa(scaleVal, title){
