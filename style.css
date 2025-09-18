@@ -2280,14 +2280,23 @@ body.print-mode .leaflet-left .leaflet-control{
 
 /* atstājam tikai pašu karti + mūsu drukas pēdu */
 body.print-mode #onlineMap{
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 190mm !important;
-  height: 277mm !important;
+  position: static !important;
+  width: 190mm !important;  /* reālie mm tiek ielikti dinamiski ar JS */
+  height: 277mm !important; /* šīs ir noklusējuma vērtības A4 portretam */
   display: block !important;
 }
-
+@media print{
+  html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
+  #onlineMap{ position: static !important; }
+  #printFooter{
+    position: fixed; left: 10mm; right: 10mm; bottom: 10mm;
+    display:flex; justify-content: space-between; gap:8mm;
+    font: 10pt/1.2 system-ui, sans-serif; color:#000;
+  }
+  #printFooter .left, #printFooter .center, #printFooter .right{
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+}
 
 
 
@@ -2322,17 +2331,19 @@ body.print-mode #resizeHandle,
 body.print-mode .leaflet-control { display:none !important; }
 
 /* Noklusējuma A4 portreta izmērs (ja JS nav ielādējies) */
-/* ——— LGIA: drukājam TIKAI karti un pēdu vienā lapā ——— */
 @media print {
-  /* JS vēlāk pārdefinēs uz A3/A4 un orientāciju; te – drošs noklusējums */
-  @page { size: A4 portrait; margin: 0; }
-
-  /* Noņemam VISUS body bērnus no plūsmas, izņemot mūsu konteinerus */
-  body.print-mode > *:not(#canvasContainer):not(#printFooter) {
-    display: none !important;
+  html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
+  #onlineMap{
+    position: fixed !important;
+    top: 10mm; left: 10mm;         /* vizuālās malas */
+    width: 190mm; height: 277mm;   /* A4 portrets - 2×10mm malas */
+    display:block !important;
   }
-  /* No canvasContainer atstājam tikai pašu karti */
-  body.print-mode #canvasContainer > *:not(#onlineMap) {
-    display: none !important;
+  #printFooter{
+    position: fixed;
+    left:10mm; right:10mm; bottom:10mm;
+    display:flex; justify-content:space-between; gap:8mm;
+    font:10pt/1.2 system-ui, sans-serif; color:#000;
+    visibility: visible !important;
   }
 }
