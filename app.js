@@ -1875,15 +1875,6 @@ function injectDynamicPrintStyle(fmt, orient){
         font:10pt/1.2 system-ui, sans-serif; color:#000;
         visibility: visible !important;
       }
-
-
-
-@media print {
-  body.print-mode > *:not(#onlineMap) { 
-    display: none !important;
-  }
-}
-
    
     }
   `;
