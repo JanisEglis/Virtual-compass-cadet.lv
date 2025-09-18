@@ -2228,142 +2228,84 @@ body.preloading{ overflow: hidden; }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* ——— Drukas modālis (pielāgots Tavam tumšajam stilam) ——— */
-.print-modal{
+.print-modal {
   position: fixed; inset:0; z-index: 5000;
   background: rgba(0,0,0,.55); display:grid; place-items:center;
 }
-.print-modal-card{
+.print-modal-card {
   min-width: 280px; max-width: 92vw; background: #0b0f14;
   border: 1px solid rgba(255,255,255,.08);
   border-radius: 8px; padding: 14px; color: #fff; font: 14px/1.35 system-ui, sans-serif;
 }
-.print-modal-card h3{ margin:0 0 8px; font-size: 16px; }
-.print-modal-card label{ display:block; margin:8px 0 4px; }
+.print-modal-card h3 { margin:0 0 8px; font-size: 16px; }
+.print-modal-card label { display:block; margin:8px 0 4px; }
 .print-modal-card input,
-.print-modal-card select{
+.print-modal-card select {
   width: 100%; padding: 6px 8px; border-radius: 6px;
   background: rgba(255,255,255,.06); color:#fff; border:1px solid rgba(255,255,255,.18);
 }
-.print-modal-card .row{ display:flex; gap:8px; }
-.print-modal-card .row > label{ flex:1; }
-.print-modal-card .buttons{ margin-top: 10px; justify-content:flex-end; }
-.print-modal-card button{
+.print-modal-card .row { display:flex; gap:8px; }
+.print-modal-card .row > label { flex:1; }
+.print-modal-card .buttons { margin-top: 10px; justify-content:flex-end; }
+.print-modal-card button {
   padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,.25);
   background: rgba(0,0,0,.35); color:#fff; cursor:pointer;
 }
-.print-modal-card button.primary{ border-color:#43a047; background:#2e7d32; }
+.print-modal-card button.primary { border-color:#43a047; background:#2e7d32; }
 
-/* ——— Drukas režīms: paslēpt VISUS rīkus/pogas/kompasus ——— */
-body.print-mode #buttonContainer,
-body.print-mode .position-selector,
-body.print-mode .position-selector-left,
-body.print-mode .info-handle,
-body.print-mode .leaflet-top .leaflet-control,
-body.print-mode .leaflet-right .leaflet-control,
-body.print-mode .leaflet-left .leaflet-control{
+
+/* ===== DRUKAS REŽĪMS ===== */
+
+/* Šie stili tiek piemēroti uzreiz, nospiežot drukas pogu (TIKAI SLĒPŠANAI) */
+body.print-mode {
+  /* Šeit NEDRĪKST būt nekādi izmēru vai pozīciju maiņas stili! */
+  background: #fff !important; /* Fons paliek balts */
+}
+
+/* Paslēpjam VISU UI, bet atstājam karti un pēdu savās vietās */
+body.print-mode > *:not(#onlineMap):not(#printFooter) {
   display: none !important;
 }
 
-/* atstājam tikai pašu karti + mūsu drukas pēdu */
-body.print-mode #onlineMap{
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 190mm !important;
-  height: 277mm !important;
-  display: block !important;
+body.print-mode .leaflet-control {
+  display: none !important; /* Paslēpjam visas Leaflet kontroles */
 }
 
 
-
-
-
-
-/* ===== STRIKTS DRUKAS REŽĪMS ===== */
-body.print-mode {
-  -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-  background:#fff !important;
-}
-
-/* Paslēp VISU UI (whitelist tikai kartei un pēdai) */
-body.print-mode * { visibility: hidden !important; }
-body.print-mode #onlineMap,
-body.print-mode #onlineMap * ,
-body.print-mode #printFooter,
-body.print-mode #printFooter * { visibility: visible !important; }
-
-/* Drošībai arī display:none svarīgajiem UI gabaliem */
-body.print-mode #compassContainer,
-body.print-mode #about,
-body.print-mode #iframeContainerAbout,
-body.print-mode #iframeContainerQR,
-body.print-mode #contentFrame,
-body.print-mode #instructionFrame,
-body.print-mode #fullscreenMessage,
-body.print-mode #orientation-overlay,
-body.print-mode #mobile-warning,
-body.print-mode #buttonContainer,
-body.print-mode #resizeHandle,
-body.print-mode .leaflet-control { display:none !important; }
-
-/* Noklusējuma A4 portreta izmērs (ja JS nav ielādējies) */
-/* ——— LGIA: drukājam TIKAI karti un pēdu vienā lapā ——— */
+/* TIKAI DRUKĀŠANAS LAIKĀ: Šie stili ietekmēs TIKAI papīra izdruku */
 @media print {
-  /* Pamata iestatījumi drukas lapai */
   body.print-mode {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-  }
-
-  /* Paslēpjam VISUS elementus, kas NAV nepieciešami drukai */
-  body.print-mode > *:not(#onlineMap):not(#printFooter) {
-    display: none !important;
   }
   
-  /* Specifiski paslēpjam visus rīkus, kas varētu palikt redzami */
-  body.print-mode #compassContainer,
-  body.print-mode #buttonContainer,
-  body.print-mode .leaflet-control:not(.leaflet-control-attribution) {
-    display: none !important;
-  }
-
-  /* Kartei un pēdai jābūt redzamai un pareizi pozicionētai */
-  body.print-mode #onlineMap,
-  body.print-mode #printFooter {
+  /* Karte tiek pozicionēta un izmērīta lapas ietvaros */
+  body.print-mode #onlineMap {
     display: block !important;
-    position: fixed !important; /* Nodrošina pozīciju lapas ietvaros */
+    position: fixed !important;
     visibility: visible !important;
+    /* Izmērus un pozīciju iedos JavaScript ar <style> tagu */
   }
 
-  /* Nodrošinām, ka kartes saturs (flīzes, slāņi) ir redzams */
+  /* Pēda (footer) */
+  body.print-mode #printFooter {
+    display: flex !important;
+    position: fixed !important;
+    visibility: visible !important;
+    color: #000 !important;
+    font: 10pt 'Times New Roman', serif !important;
+  }
+  
+  /* Nodrošinām, ka kartes saturs (flīzes) ir redzams */
   body.print-mode #onlineMap * {
     visibility: visible !important;
   }
-  
-  /* Pēdas (footer) teksta stils */
-  body.print-mode #printFooter {
-    font: 10pt/1.2 'Times New Roman', Times, serif;
-    color: #000;
-  }
 }
+
+
+
+
 
 
 
