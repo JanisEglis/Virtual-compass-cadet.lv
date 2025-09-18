@@ -1739,6 +1739,13 @@ function closeLgIaPrintDialog(){
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 // JAUNĀ DRUKAS FUNKCIJA (aizstājiet veco prepareMapForPrintLgIa)
 function prepareMapForPrintLgIa(opts) {
+    // PĀRBAUDE: Pārliecināmies, vai drukas bibliotēka ir ielādēta
+    if (typeof leafletImage === 'undefined') {
+        alert('Kļūda: Drukas komponents (leaflet-image) nav ielādēts. Lūdzu, pārbaudiet HTML failu.');
+        console.error("leaflet-image.js nav atrasts. Pievienojiet <script> tagu HTML failā.");
+        return;
+    }
+
     const { title } = opts;
     const currentScale = getCurrentScale();
 
@@ -1784,7 +1791,8 @@ function prepareMapForPrintLgIa(opts) {
         document.body.classList.add('print-mode');
         
         window.addEventListener('afterprint', cleanup, { once: true });
-        window.print();
+        // Neliela pauze, lai pārlūks paspēj uzzīmēt attēlu pirms drukas
+        setTimeout(() => window.print(), 50);
     });
 
     function cleanup() {
