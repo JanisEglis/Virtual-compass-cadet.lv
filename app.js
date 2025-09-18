@@ -1836,7 +1836,8 @@ if (map) { map.invalidateSize(true); map.fire('resize'); }
   // JAUNAIS: drošībai pārskaiti drošās zonas un pārzīmē Leaflet
   try { window.__updateMapSafeAreas && window.__updateMapSafeAreas(); } catch(e){}
   try { map && map.invalidateSize(true); } catch(e){}
-
+ // noņemam top mēroga uzlīmi:
+  try{ if (window.__printScaleTopEl){ window.__printScaleTopEl.remove(); window.__printScaleTopEl = null; } }catch(e){}
 
 		
       // atjauno animācijas
@@ -1859,6 +1860,32 @@ function injectDynamicPrintStyle(fmt, orient){
   const pageSize = (fmt==='A3' ? 'A3' : 'A4') + ' ' + (orient==='portrait' ? 'portrait' : 'landscape');
 
   const css = `
+
+
+body.print-mode #onlineMap{
+  position: fixed !important;
+  top:10mm; left:10mm;
+  width:${mm.w}mm !important;
+  height:${mm.h}mm !important;
+  display:block !important;
+  page-break-inside: avoid; break-inside: avoid; overflow: hidden;
+  box-sizing: border-box;
+}
+body.print-mode #onlineMap::before{
+  content:"";
+  position:absolute; inset:0;
+  border: 1.2mm solid #000;   /* rāmja biezums/krāsa */
+  pointer-events: none;
+  z-index: 999;
+}
+
+
+
+
+
+
+
+  
     @page { size: ${pageSize}; margin: 0; }
     @media print {
       html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
@@ -1877,6 +1904,45 @@ function injectDynamicPrintStyle(fmt, orient){
         font:10pt/1.2 system-ui, sans-serif; color:#000;
         visibility: visible !important;
       }
+
+
+body.print-mode > *:not(#canvasContainer):not(#printScaleTop):not(#printFooter){
+  display: none !important;
+}
+body.print-mode #canvasContainer > *:not(#onlineMap){
+  display: none !important;
+}
+
+/* whitelists “visibility” pret style (18).css globālo hidden */
+body.print-mode #printScaleTop,
+body.print-mode #printScaleTop *{
+  visibility: visible !important;
+}
+
+/* mērogs augšā ārpus rāmja, centrēts */
+body.print-mode #printScaleTop{
+  position: fixed;
+  top: 6mm;                  /* virs rāmja (karte sākas 10mm) */
+  left: 50%; transform: translateX(-50%);
+  font: 11pt/1.1 system-ui, sans-serif;
+  color:#000;
+  text-align: center;
+  visibility: visible !important;
+}
+
+/* atsauces apakšā ārpus rāmja, centrētas – platumā tieši kā karte */
+body.print-mode #printFooter{
+  position: fixed;
+  bottom: 6mm; 
+  left: 50%; transform: translateX(-50%);
+  width: ${mm.w}mm;          /* tas pats kartes iekšplatums */
+  text-align: center;
+  font:10pt/1.2 system-ui, sans-serif; color:#000;
+  visibility: visible !important;
+}
+
+
+   
     }
   `;
   let el = document.getElementById('dynamicPrintStyle');
@@ -1889,23 +1955,28 @@ function injectDynamicPrintStyle(fmt, orient){
 
 // Drukas pēda: [Nosaukums] [Mērogs] [Atsauces kartēm] [CADET.LV]
 function buildPrintFooterLgIa(scaleVal, title){
-  const el = document.createElement('div');
-  el.id = 'printFooter';
-  const lv = (n)=> (''+n).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+  const elv = (n)=> (''+n).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
 
-  const scaleStr = 'Mērogs: 1:' + lv(scaleVal);
-  const mapAttrib = collectAttributionText() || 'Dati: kartes pakalpojums';
+  // 1) UZLĪME AUGŠĀ – mērogs
+  const top = document.createElement('div');
+  top.id = 'printScaleTop';
+  top.textContent = 'Mērogs: 1:' + elv(scaleVal);
+  document.body.appendChild(top);
+  // nodrošinam, ka cleanup to var noņemt
+  window.__printScaleTopEl = top;
+
+  // 2) UZLĪME APAKŠĀ – atsauces (skat. 5. punktu)
+  const mapAttrib  = collectAttributionText() || 'Dati: kartes pakalpojums';
   const toolAttrib = 'CADET.LV Interaktīvais kompass — janiseglis.github.io/Virtual-compass-cadet.lv';
 
-  el.innerHTML = `
-    <div class="left">${title ? title : ''}</div>
-    <div class="center">${scaleStr} · ${mapAttrib}</div>
-    <div class="right">${toolAttrib}</div>
-  `;
-  const host = document.getElementById('onlineMap') || document.body;
-  host.appendChild(el);
-  return el;
+  const footer = document.createElement('div');
+  footer.id = 'printFooter';
+  footer.textContent = `${mapAttrib} · ${toolAttrib}`;
+  document.body.appendChild(footer);
+
+  return footer; // (apakšējais elements – jau izmanto cleanup)
 }
+
 
 // Palīgs – savācam redzamo avotu atsauces
 function collectAttributionText(){
