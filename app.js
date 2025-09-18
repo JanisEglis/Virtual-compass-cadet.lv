@@ -1771,7 +1771,7 @@ function closeLgIaPrintDialog(){
 function prepareMapForPrintLgIa(opts) {
   const { format, orient, scale, title } = opts;
 
-  // 1) Uzliek precīzu zoom izvēlētajam mērogam (frakcionēts zoom)
+  // 1) Uzliek precīzu zoom izvēlētajam mērogam
   const prev = {
     zoomSnap: map.options.zoomSnap,
     zoomDelta: map.options.zoomDelta,
@@ -1787,77 +1787,44 @@ function prepareMapForPrintLgIa(opts) {
   map.setZoom(zoomForScale(scale), { animate: false });
   if (typeof updateRatio === 'function') updateRatio();
 
-  // Aizver sānu paneļus un nullē “safe areas”, lai nekas neietekmē izkārtojumu
+  // Aizver sānu paneļus un nullē "drošās zonas", lai neietekmētu izkārtojumu
   try { window.closeBothSelectorsLegacy && window.closeBothSelectorsLegacy(); } catch (e) {}
   try { closeBothMenus && closeBothMenus(); } catch (e) {}
   document.documentElement.style.setProperty('--map-top-safe', '0px');
   document.documentElement.style.setProperty('--map-bottom-safe', '0px');
 
-  // 2) Ieslēdz “print-mode” un ielādē dinamisku @page + mm izmērorientāciju
+  // 2) Ieslēdz “print-mode” un ielādē dinamiskus drukas stilus
   document.body.classList.add('print-mode');
   const styleEl = injectDynamicPrintStyle(format, orient);
 
-  // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
+  // 3) Pārrēķina izmērus, izveido pēdu un sagatavojas drukai
   requestAnimationFrame(() => {
     if (map) map.invalidateSize(true);
     const footer = buildPrintFooterLgIa(scale, title);
 
     // Dodam kartei laiku ielādēt jaunos "tiles" un pielāgoties izmēram
     setTimeout(() => {
-      // Pirms drukas atjaunojam kartes izmēru vēlreiz
+      // Pirms drukas atjaunojam kartes izmēru vēlreiz, lai nodrošinātu precizitāti
       window.addEventListener('beforeprint', () => {
         if (map) map.invalidateSize(true);
       }, { once: true });
 
       window.addEventListener('afterprint', cleanup, { once: true });
       window.print();
-    }, 1500); // Palielināts laiks, lai nodrošinātu datu ielādi
+    }, 1500); // Laiks (ms), lai nodrošinātu datu ielādi
 
     function cleanup() {
       document.body.classList.remove('print-mode');
-      footer && footer.remove();
-      styleEl && styleEl.remove();
-      // Atjauno animācijas
-      map.options.zoomSnap = prev.zoomSnap;
-      map.options.zoomDelta = prev.zoomDelta;
-      map.options.zoomAnimation = prev.zoomAnim;
-      map.options.fadeAnimation = prev.fadeAnim;
-      map.options.markerZoomAnimation = prev.markerZoomAnim;
+      if (footer) footer.remove();
+      if (styleEl) styleEl.remove();
+      
+      // Atjauno iepriekšējos kartes iestatījumus
+      Object.assign(map.options, prev);
 
       // Atjaunojam drošās zonas pēc drukas
       if (window.__updateMapSafeAreas) {
         window.__updateMapSafeAreas();
       }
-    }
-  });
-}
-
-
-// aizver sānu paneļus un nullē “safe areas”, lai nekas neietekmē izkārtojumu
-try { window.closeBothSelectorsLegacy && window.closeBothSelectorsLegacy(); } catch(e){}
-try { closeBothMenus && closeBothMenus(); } catch(e){}
-document.documentElement.style.setProperty('--map-top-safe','0px');
-document.documentElement.style.setProperty('--map-bottom-safe','0px');
-
-
-window.addEventListener('beforeprint', ()=> map && map.invalidateSize(true), { once:true });
-
-
-
-		
-      window.print();
-    }, 600);
-
-    function cleanup(){
-      document.body.classList.remove('print-mode');
-      footer && footer.remove();
-      styleEl && styleEl.remove();
-      // atjauno animācijas
-      map.options.zoomSnap = prev.zoomSnap;
-      map.options.zoomDelta = prev.zoomDelta;
-      map.options.zoomAnimation = prev.zoomAnim;
-      map.options.fadeAnimation = prev.fadeAnim;
-      map.options.markerZoomAnimation = prev.markerZoomAnim;
     }
   });
 }
