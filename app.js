@@ -1771,62 +1771,50 @@ function closeLgIaPrintDialog(){
 function prepareMapForPrintLgIa(opts) {
   const { format, orient, scale, title } = opts;
 
-  // 1) Uzliek precīzu zoom izvēlētajam mērogam
+  // Saglabājam iepriekšējos iestatījumus
   const prev = {
-    zoomSnap: map.options.zoomSnap,
-    zoomDelta: map.options.zoomDelta,
     zoomAnim: map.options.zoomAnimation,
     fadeAnim: map.options.fadeAnimation,
-    markerZoomAnim: map.options.markerZoomAnimation
   };
-  map.options.zoomSnap = 0;
-  map.options.zoomDelta = 0.25;
   map.options.zoomAnimation = false;
   map.options.fadeAnimation = false;
-  map.options.markerZoomAnimation = false;
-  map.setZoom(zoomForScale(scale), { animate: false });
-  if (typeof updateRatio === 'function') updateRatio();
 
-  // Aizver sānu paneļus un nullē "drošās zonas", lai neietekmētu izkārtojumu
+  // Iestatām precīzu mērogu
+  map.setZoom(zoomForScale(scale), { animate: false });
+
+  // Aizveram visus liekos paneļus
   try { window.closeBothSelectorsLegacy && window.closeBothSelectorsLegacy(); } catch (e) {}
   try { closeBothMenus && closeBothMenus(); } catch (e) {}
-  document.documentElement.style.setProperty('--map-top-safe', '0px');
-  document.documentElement.style.setProperty('--map-bottom-safe', '0px');
-
-  // 2) Ieslēdz “print-mode” un ielādē dinamiskus drukas stilus
+  
   document.body.classList.add('print-mode');
   const styleEl = injectDynamicPrintStyle(format, orient);
+  const footer = buildPrintFooterLgIa(scale, title);
 
-  // 3) Pārrēķina izmērus, izveido pēdu un sagatavojas drukai
-  requestAnimationFrame(() => {
-    if (map) map.invalidateSize(true);
-    const footer = buildPrintFooterLgIa(scale, title);
+  // Kritiski svarīgs solis:
+  // Dodam pārlūkam laiku piemērot jaunos CSS stilus
+  setTimeout(() => {
+    // 1. Atjaunojam kartes izmēru, lai tā pielāgotos jaunajam konteinerim
+    map.invalidateSize(false);
 
-    // Dodam kartei laiku ielādēt jaunos "tiles" un pielāgoties izmēram
+    // 2. Dodam laiku ielādēt jaunās flīzes un pabeigt pārzīmēšanu
     setTimeout(() => {
-      // Pirms drukas atjaunojam kartes izmēru vēlreiz, lai nodrošinātu precizitāti
-      window.addEventListener('beforeprint', () => {
-        if (map) map.invalidateSize(true);
-      }, { once: true });
-
       window.addEventListener('afterprint', cleanup, { once: true });
       window.print();
-    }, 1500); // Laiks (ms), lai nodrošinātu datu ielādi
+    }, 1500); // Šis laiks var būt jāpalielina, ja ir lēns internets
 
-    function cleanup() {
-      document.body.classList.remove('print-mode');
-      if (footer) footer.remove();
-      if (styleEl) styleEl.remove();
-      
-      // Atjauno iepriekšējos kartes iestatījumus
-      Object.assign(map.options, prev);
+  }, 100); // Īsa pauze pirms pirmās `invalidateSize`
 
-      // Atjaunojam drošās zonas pēc drukas
-      if (window.__updateMapSafeAreas) {
-        window.__updateMapSafeAreas();
-      }
-    }
-  });
+  function cleanup() {
+    document.body.classList.remove('print-mode');
+    if (footer) footer.remove();
+    if (styleEl) styleEl.remove();
+
+    // Atjaunojam sākotnējos iestatījumus
+    Object.assign(map.options, prev);
+    
+    // Atjaunojam kartes izmēru atpakaļ uz pilnekrāna režīmu
+    map.invalidateSize(false);
+  }
 }
 
 // Dinamiski iedod @page size + #onlineMap mm izmēru pēc formāta/orientācijas
@@ -1835,46 +1823,40 @@ function prepareMapForPrintLgIa(opts) {
 function injectDynamicPrintStyle(fmt, orient) {
   // Standarta lapu izmēri (mm) un malas
   const PAGE_SIZES = {
-    A4: { w: 297, h: 210 }, // Ainava
-    A3: { w: 420, h: 297 }  // Ainava
+    A4: { w: 297, h: 210 }, // Ainava pēc noklusējuma
+    A3: { w: 420, h: 297 }  // Ainava pēc noklusējuma
   };
-  const MARGIN = 10; // 10mm malas no visām pusēm
+  const MARGIN = 10; // 10mm malas
 
   const isPortrait = orient === 'portrait';
-  const pageSize = PAGE_SIZES[fmt] || PAGE_SIZES['A4'];
+  const pageSize = PAGE_SIZES[fmt] || PAGE_SIZES.A4;
 
   // Samainām platumu ar augstumu, ja ir portreta orientācija
   const pageW = isPortrait ? pageSize.h : pageSize.w;
   const pageH = isPortrait ? pageSize.w : pageSize.h;
 
-  // Aprēķinām kartes laukuma izmērus (lapas izmērs mīnus malas)
-  const mapW = pageW - 2 * MARGIN;
-  const mapH = pageH - 2 * MARGIN;
-
-  const pageOrientation = isPortrait ? 'portrait' : 'landscape';
+  // Kartes laukuma izmēri (lapas izmērs mīnus dubultā mala)
+  const mapW = pageW - (2 * MARGIN);
+  const mapH = pageH - (2 * MARGIN);
 
   const css = `
     @page {
-      size: ${fmt} ${pageOrientation};
-      margin: ${MARGIN}mm;
+      size: ${fmt} ${orient};
+      margin: 0; /* Noņemam pārlūka iebūvētās malas */
     }
     @media print {
-      html, body {
-        margin: 0 !important;
-        padding: 0 !important;
-        background: #fff !important;
-      }
       body.print-mode #onlineMap {
         top: ${MARGIN}mm !important;
         left: ${MARGIN}mm !important;
         width: ${mapW}mm !important;
         height: ${mapH}mm !important;
+        box-sizing: border-box !important;
       }
       body.print-mode #printFooter {
         left: ${MARGIN}mm;
         right: ${MARGIN}mm;
-        bottom: ${MARGIN - 5}mm; /* Nedaudz augstāk par lapas malu */
-        height: 5mm;
+        bottom: 5mm; /* Fiksēta pozīcija no apakšas */
+        height: auto;
         display: flex;
         justify-content: space-between;
         align-items: flex-end;
