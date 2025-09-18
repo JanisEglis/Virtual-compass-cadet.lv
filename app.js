@@ -1807,16 +1807,7 @@ document.documentElement.style.setProperty('--map-top-safe','0px');
 document.documentElement.style.setProperty('--map-bottom-safe','0px');
 
 
-
-
-
-
-
-
-
-
-
-
+window.addEventListener('beforeprint', ()=> map && map.invalidateSize(true), { once:true });
 
 
 
@@ -1840,6 +1831,7 @@ document.documentElement.style.setProperty('--map-bottom-safe','0px');
 
 // Dinamiski iedod @page size + #onlineMap mm izmēru pēc formāta/orientācijas
 // Dinamiski @page + fiksēta kartes pozīcija lapā (bez nobīdēm)
+// Dinamiski @page + fiksēta kartes pozīcija lapā (bez nobīdēm)
 function injectDynamicPrintStyle(fmt, orient){
   // Satura laukuma mm (lapas izmērs mīnus 2×10mm malas)
   const mm = (fmt==='A3')
@@ -1849,7 +1841,7 @@ function injectDynamicPrintStyle(fmt, orient){
   const pageSize = (fmt==='A3' ? 'A3' : 'A4') + ' ' + (orient==='portrait' ? 'portrait' : 'landscape');
 
   const css = `
-    @page { size: ${pageSize}; margin: 0; } /* malas ieliekam ar top/left 10mm */
+    @page { size: ${pageSize}; margin: 0; } /* malas dodam ar top/left 10mm */
     @media print {
       html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
       #onlineMap{
@@ -1871,6 +1863,7 @@ function injectDynamicPrintStyle(fmt, orient){
   el.textContent = css;
   return el;
 }
+
 
 
 // Drukas pēda: [Nosaukums] [Mērogs] [Atsauces kartēm] [CADET.LV]
