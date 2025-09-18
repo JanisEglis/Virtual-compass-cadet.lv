@@ -1844,18 +1844,21 @@ function injectDynamicPrintStyle(fmt, orient){
     @page { size: ${pageSize}; margin: 0; } /* malas dodam ar top/left 10mm */
     @media print {
       html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
-      #onlineMap{
-        position: fixed !important;
-        top:10mm; left:10mm;
-        width:${mm.w}mm !important; height:${mm.h}mm !important;
-        display:block !important;
-      }
-      #printFooter{
-        position: fixed; left:10mm; right:10mm; bottom:10mm;
-        display:flex; justify-content:space-between; gap:8mm;
-        font:10pt/1.2 system-ui, sans-serif; color:#000;
-        visibility: visible !important;
-      }
+     #onlineMap{
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width:${mm.w + 20}mm !important;  /* Pievienojam malas atpakaļ platumam */
+  height:${mm.h + 20}mm !important; /* Pievienojam malas atpakaļ augstumam */
+  display:block !important;
+}
+     #printFooter{
+  position: fixed; 
+  left:10mm; right:10mm; bottom:10mm;  /* Saglabājam 10mm malas pēdai */
+  display:flex; justify-content:space-between; gap:8mm;
+  font:10pt/1.2 system-ui, sans-serif; color:#000;
+  visibility: visible !important;
+}
     }
   `;
   let el = document.getElementById('dynamicPrintStyle');
