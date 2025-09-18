@@ -1771,49 +1771,60 @@ function closeLgIaPrintDialog(){
 function prepareMapForPrintLgIa(opts) {
   const { format, orient, scale, title } = opts;
 
-  // Saglabājam iepriekšējos iestatījumus
-  const prev = {
-    zoomAnim: map.options.zoomAnimation,
-    fadeAnim: map.options.fadeAnimation,
+  // Saglabājam sākotnējo kartes centra punktu
+  const originalCenter = map.getCenter();
+  const originalZoom = map.getZoom();
+
+  const prevOptions = {
+    zoomAnimation: map.options.zoomAnimation,
+    fadeAnimation: map.options.fadeAnimation,
   };
+
+  // Izslēdzam animācijas drukas laikā
   map.options.zoomAnimation = false;
   map.options.fadeAnimation = false;
 
-  // Iestatām precīzu mērogu
+  // Iestatām nepieciešamo mērogu (zoom līmeni)
   map.setZoom(zoomForScale(scale), { animate: false });
 
-  // Aizveram visus liekos paneļus
-  try { window.closeBothSelectorsLegacy && window.closeBothSelectorsLegacy(); } catch (e) {}
-  try { closeBothMenus && closeBothMenus(); } catch (e) {}
-  
+  // Pievienojam klasi, kas paslēpj nevajadzīgos UI elementus
   document.body.classList.add('print-mode');
+  
+  // Ievietojam dinamiskos stilus, kas definē lapas izmērus un malas
   const styleEl = injectDynamicPrintStyle(format, orient);
+  
+  // Pievienojam drukas pēdu (footer)
   const footer = buildPrintFooterLgIa(scale, title);
 
-  // Kritiski svarīgs solis:
-  // Dodam pārlūkam laiku piemērot jaunos CSS stilus
-  setTimeout(() => {
-    // 1. Atjaunojam kartes izmēru, lai tā pielāgotos jaunajam konteinerim
+  // === MAGIJA NOTIEK ŠEIT ===
+  // Nogaidām vienu kadru, lai pārlūks paspēj apstrādāt CSS izmaiņas
+  requestAnimationFrame(() => {
+    // Liekam kartei pārrēķināt savu izmēru atbilstoši jaunajiem stiliem
     map.invalidateSize(false);
 
-    // 2. Dodam laiku ielādēt jaunās flīzes un pabeigt pārzīmēšanu
+    // Dodam laiku, lai Leaflet ielādētu jaunās kartes flīzes (tiles)
     setTimeout(() => {
       window.addEventListener('afterprint', cleanup, { once: true });
       window.print();
-    }, 1500); // Šis laiks var būt jāpalielina, ja ir lēns internets
-
-  }, 100); // Īsa pauze pirms pirmās `invalidateSize`
+    }, 1500); // 1.5 sekundes ir drošs laiks flīžu ielādei
+  });
 
   function cleanup() {
+    // Noņemam drukas režīma klasi un elementus
     document.body.classList.remove('print-mode');
     if (footer) footer.remove();
     if (styleEl) styleEl.remove();
 
-    // Atjaunojam sākotnējos iestatījumus
-    Object.assign(map.options, prev);
+    // Atjaunojam sākotnējos kartes iestatījumus
+    Object.assign(map.options, prevOptions);
+
+    // Atjaunojam sākotnējo kartes skatu
+    map.setView(originalCenter, originalZoom, { animate: false });
     
-    // Atjaunojam kartes izmēru atpakaļ uz pilnekrāna režīmu
-    map.invalidateSize(false);
+    // Pārrēķinām kartes izmēru atpakaļ uz ekrāna izmēru
+    setTimeout(() => {
+        map.invalidateSize(false);
+    }, 100);
   }
 }
 
