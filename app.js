@@ -1771,60 +1771,66 @@ function closeLgIaPrintDialog(){
 function prepareMapForPrintLgIa(opts) {
   const { format, orient, scale, title } = opts;
 
-  // Saglabājam sākotnējo kartes centra punktu
-  const originalCenter = map.getCenter();
-  const originalZoom = map.getZoom();
-
+  // === 1. Sagatavošanās posms (nemainot esošo karti) ===
   const prevOptions = {
     zoomAnimation: map.options.zoomAnimation,
     fadeAnimation: map.options.fadeAnimation,
   };
-
-  // Izslēdzam animācijas drukas laikā
   map.options.zoomAnimation = false;
   map.options.fadeAnimation = false;
 
-  // Iestatām nepieciešamo mērogu (zoom līmeni)
-  map.setZoom(zoomForScale(scale), { animate: false });
+  // Izveidojam drukas konteineri, kas sākumā ir neredzams
+  const printContainer = document.createElement('div');
+  printContainer.id = 'print-map-container';
+  printContainer.style.position = 'fixed';
+  printContainer.style.top = '0';
+  printContainer.style.left = '0';
+  printContainer.style.zIndex = '-1000'; // Paslēpjam zem visa
+  printContainer.style.opacity = '0';
+  document.body.appendChild(printContainer);
 
-  // Pievienojam klasi, kas paslēpj nevajadzīgos UI elementus
-  document.body.classList.add('print-mode');
-  
-  // Ievietojam dinamiskos stilus, kas definē lapas izmērus un malas
+  // === 2. Drukas kartes izveide un konfigurēšana ===
+  const printMap = L.map(printContainer, {
+    zoomControl: false,
+    attributionControl: false,
+    center: map.getCenter(),
+    zoom: zoomForScale(scale)
+  });
+
+  // Pievienojam tos pašus redzamos slāņus jaunajai kartei
+  map.eachLayer(layer => {
+    if (layer instanceof L.TileLayer) {
+      L.tileLayer(layer._url, layer.options).addTo(printMap);
+    }
+  });
+
+  // Ieliekam dinamiskos stilus, kas ietekmēs tikai drukas skatu
   const styleEl = injectDynamicPrintStyle(format, orient);
-  
-  // Pievienojam drukas pēdu (footer)
   const footer = buildPrintFooterLgIa(scale, title);
+  document.body.classList.add('print-mode'); // Pievienojam klasi tikai tagad
 
-  // === MAGIJA NOTIEK ŠEIT ===
-  // Nogaidām vienu kadru, lai pārlūks paspēj apstrādāt CSS izmaiņas
-  requestAnimationFrame(() => {
-    // Liekam kartei pārrēķināt savu izmēru atbilstoši jaunajiem stiliem
-    map.invalidateSize(false);
-
-    // Dodam laiku, lai Leaflet ielādētu jaunās kartes flīzes (tiles)
+  // === 3. Drukāšana un tīrīšana ===
+  // Dodam nelielu laiku, lai jaunā karte inicializētos un ielādētu flīzes
+  setTimeout(() => {
+    printMap.invalidateSize(false);
+    
     setTimeout(() => {
       window.addEventListener('afterprint', cleanup, { once: true });
       window.print();
-    }, 1500); // 1.5 sekundes ir drošs laiks flīžu ielādei
-  });
+    }, 2000); // 2 sekundes ir drošs laiks flīžu ielādei
+
+  }, 100);
 
   function cleanup() {
-    // Noņemam drukas režīma klasi un elementus
+    // Noņemam visu, ko izveidojām
     document.body.classList.remove('print-mode');
     if (footer) footer.remove();
     if (styleEl) styleEl.remove();
-
+    if (printContainer) printContainer.remove();
+    
     // Atjaunojam sākotnējos kartes iestatījumus
     Object.assign(map.options, prevOptions);
-
-    // Atjaunojam sākotnējo kartes skatu
-    map.setView(originalCenter, originalZoom, { animate: false });
-    
-    // Pārrēķinām kartes izmēru atpakaļ uz ekrāna izmēru
-    setTimeout(() => {
-        map.invalidateSize(false);
-    }, 100);
+    map.invalidateSize(false); // Pārrēķinām oriģinālās kartes izmēru
   }
 }
 
