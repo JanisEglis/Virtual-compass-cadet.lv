@@ -1796,8 +1796,38 @@ function prepareMapForPrintLgIa(opts){
     if (map) map.invalidateSize(true);
     const footer = buildPrintFooterLgIa(scale, title);
     // ļaujam ielādēt flīzes/līnijas
-    setTimeout(()=>{
-      window.addEventListener('afterprint', cleanup, {once:true});
+    requestAnimationFrame(() => {
+        if (map) map.invalidateSize(true);
+        const footer = buildPrintFooterLgIa(scale, title);
+
+        // Dodam kartei laiku ielādēt jaunos "tiles" un pielāgoties izmēram
+        setTimeout(() => {
+            // Pirms drukas atjaunojam kartes izmēru vēlreiz
+            window.addEventListener('beforeprint', () => {
+                if (map) map.invalidateSize(true);
+            }, { once: true });
+
+            window.addEventListener('afterprint', cleanup, { once: true });
+            window.print();
+        }, 1500); // Palielināts laiks, lai nodrošinātu datu ielādi
+
+        function cleanup() {
+            document.body.classList.remove('print-mode');
+            footer && footer.remove();
+            styleEl && styleEl.remove();
+            // Atjauno animācijas
+            map.options.zoomSnap = prev.zoomSnap;
+            map.options.zoomDelta = prev.zoomDelta;
+            map.options.zoomAnimation = prev.zoomAnim;
+            map.options.fadeAnimation = prev.fadeAnim;
+            map.options.markerZoomAnimation = prev.markerZoomAnim;
+            
+            // Atjaunojam drošās zonas pēc drukas
+            if(window.__updateMapSafeAreas) {
+                window.__updateMapSafeAreas();
+            }
+        }
+    });
 
 
 // aizver sānu paneļus un nullē “safe areas”, lai nekas neietekmē izkārtojumu
@@ -1832,37 +1862,62 @@ window.addEventListener('beforeprint', ()=> map && map.invalidateSize(true), { o
 // Dinamiski iedod @page size + #onlineMap mm izmēru pēc formāta/orientācijas
 // Dinamiski @page + fiksēta kartes pozīcija lapā (bez nobīdēm)
 // Dinamiski @page + fiksēta kartes pozīcija lapā (bez nobīdēm)
-function injectDynamicPrintStyle(fmt, orient){
-  // Satura laukuma mm (lapas izmērs mīnus 2×10mm malas)
-  const mm = (fmt==='A3')
-    ? (orient==='portrait' ? {w:277, h:400} : {w:400, h:277})
-    : (orient==='portrait' ? {w:190, h:277} : {w:277, h:190});
+function injectDynamicPrintStyle(fmt, orient) {
+  // Standarta lapu izmēri (mm) un malas
+  const PAGE_SIZES = {
+    A4: { w: 297, h: 210 }, // Ainava
+    A3: { w: 420, h: 297 }  // Ainava
+  };
+  const MARGIN = 10; // 10mm malas no visām pusēm
 
-  const pageSize = (fmt==='A3' ? 'A3' : 'A4') + ' ' + (orient==='portrait' ? 'portrait' : 'landscape');
+  const isPortrait = orient === 'portrait';
+  const pageSize = PAGE_SIZES[fmt] || PAGE_SIZES['A4'];
+
+  // Samainām platumu ar augstumu, ja ir portreta orientācija
+  const pageW = isPortrait ? pageSize.h : pageSize.w;
+  const pageH = isPortrait ? pageSize.w : pageSize.h;
+
+  // Aprēķinām kartes laukuma izmērus (lapas izmērs mīnus malas)
+  const mapW = pageW - 2 * MARGIN;
+  const mapH = pageH - 2 * MARGIN;
+
+  const pageOrientation = isPortrait ? 'portrait' : 'landscape';
 
   const css = `
-    @page { size: ${pageSize}; margin: 0; } /* malas dodam ar top/left 10mm */
+    @page {
+      size: ${fmt} ${pageOrientation};
+      margin: ${MARGIN}mm;
+    }
     @media print {
-      html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
-     #onlineMap{
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width:${mm.w + 20}mm !important;  /* Pievienojam malas atpakaļ platumam */
-  height:${mm.h + 20}mm !important; /* Pievienojam malas atpakaļ augstumam */
-  display:block !important;
-}
-     #printFooter{
-  position: fixed; 
-  left:10mm; right:10mm; bottom:10mm;  /* Saglabājam 10mm malas pēdai */
-  display:flex; justify-content:space-between; gap:8mm;
-  font:10pt/1.2 system-ui, sans-serif; color:#000;
-  visibility: visible !important;
-}
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+      }
+      body.print-mode #onlineMap {
+        top: ${MARGIN}mm !important;
+        left: ${MARGIN}mm !important;
+        width: ${mapW}mm !important;
+        height: ${mapH}mm !important;
+      }
+      body.print-mode #printFooter {
+        left: ${MARGIN}mm;
+        right: ${MARGIN}mm;
+        bottom: ${MARGIN - 5}mm; /* Nedaudz augstāk par lapas malu */
+        height: 5mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+      }
     }
   `;
+
   let el = document.getElementById('dynamicPrintStyle');
-  if (!el){ el = document.createElement('style'); el.id = 'dynamicPrintStyle'; document.head.appendChild(el); }
+  if (!el) {
+    el = document.createElement('style');
+    el.id = 'dynamicPrintStyle';
+    document.head.appendChild(el);
+  }
   el.textContent = css;
   return el;
 }
@@ -1870,22 +1925,25 @@ function injectDynamicPrintStyle(fmt, orient){
 
 
 // Drukas pēda: [Nosaukums] [Mērogs] [Atsauces kartēm] [CADET.LV]
-function buildPrintFooterLgIa(scaleVal, title){
+function buildPrintFooterLgIa(scaleVal, title) {
   const el = document.createElement('div');
   el.id = 'printFooter';
-  const lv = (n)=> (''+n).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
 
-  const scaleStr = 'Mērogs: 1:' + lv(scaleVal);
-  const mapAttrib = collectAttributionText() || 'Dati: kartes pakalpojums';
-  const toolAttrib = 'CADET.LV Interaktīvais kompass — janiseglis.github.io/Virtual-compass-cadet.lv';
+  // Funkcija skaitļu formatēšanai ar atstarpēm
+  const lv = (n) => ('' + n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+  const scaleStr = 'Mērogs 1:' + lv(scaleVal);
+  const mapAttrib = collectAttributionText() || 'Datu avots: OpenStreetMap, LVM GEO';
+  const toolAttrib = 'Sagatavots ar rīku cadet.lv';
 
   el.innerHTML = `
-    <div class="left">${title ? title : ''}</div>
-    <div class="center">${scaleStr} · ${mapAttrib}</div>
-    <div class="right">${toolAttrib}</div>
+    <div class="left" style="font-weight: bold;">${title || 'Karte'}</div>
+    <div class="center" style="text-align: center;">${scaleStr}<br>${mapAttrib}</div>
+    <div class="right" style="text-align: right;">${toolAttrib}</div>
   `;
-  const host = document.getElementById('onlineMap') || document.body;
-  host.appendChild(el);
+
+  // Pievienojam pēdu tieši `<body>`, nevis kartes konteinerim
+  document.body.appendChild(el);
   return el;
 }
 
