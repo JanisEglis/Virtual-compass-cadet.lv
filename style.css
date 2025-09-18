@@ -2219,95 +2219,64 @@ body.preloading{ overflow: hidden; }
 
 
 
-/* =============================================================== */
-/* JAUNIE DRUKAS STILI (pievienot faila beigās)                    */
-/* =============================================================== */
 
-/* Jaunās drukas pogas stils */
-.leaflet-control-print {
-  width: 30px !important;
-  height: 30px !important;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
+
+
+
+
+/* ——— Drukas modālis (pielāgots Tavam tumšajam stilam) ——— */
+.print-modal{
+  position: fixed; inset:0; z-index: 5000;
+  background: rgba(0,0,0,.55); display:grid; place-items:center;
 }
+.print-modal-card{
+  min-width: 280px; max-width: 92vw; background: #0b0f14;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px; padding: 14px; color: #fff; font: 14px/1.35 system-ui, sans-serif;
+}
+.print-modal-card h3{ margin:0 0 8px; font-size: 16px; }
+.print-modal-card label{ display:block; margin:8px 0 4px; }
+.print-modal-card input,
+.print-modal-card select{
+  width: 100%; padding: 6px 8px; border-radius: 6px;
+  background: rgba(255,255,255,.06); color:#fff; border:1px solid rgba(255,255,255,.18);
+}
+.print-modal-card .row{ display:flex; gap:8px; }
+.print-modal-card .row > label{ flex:1; }
+.print-modal-card .buttons{ margin-top: 10px; justify-content:flex-end; }
+.print-modal-card button{
+  padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,.25);
+  background: rgba(0,0,0,.35); color:#fff; cursor:pointer;
+}
+.print-modal-card button.primary{ border-color:#43a047; background:#2e7d32; }
 
-/* Paslēpj visu, izņemot drukas konteineri */
-body.print-mode > *:not(#print-container) {
+/* ——— Drukas režīms: paslēpt VISUS rīkus/pogas/kompasus ——— */
+body.print-mode #buttonContainer,
+body.print-mode .position-selector,
+body.print-mode .position-selector-left,
+body.print-mode .info-handle,
+body.print-mode .leaflet-top .leaflet-control,
+body.print-mode .leaflet-right .leaflet-control,
+body.print-mode .leaflet-left .leaflet-control{
   display: none !important;
 }
 
-/* Pagaidu drukas konteineris ir neredzams uz ekrāna */
-#print-container {
-  display: none;
+/* atstājam tikai pašu karti + mūsu drukas pēdu */
+body.print-mode #onlineMap{
+  position: static !important;
+  width: 190mm !important;  /* reālie mm tiek ielikti dinamiski ar JS */
+  height: 277mm !important; /* šīs ir noklusējuma vērtības A4 portretam */
+  display: block !important;
 }
-
-/* Šie stili tiek piemēroti TIKAI papīra izdrukai */
-@media print {
-  @page {
-    size: A4 landscape;
-    margin: 0;
+@media print{
+  html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
+  #onlineMap{ position: static !important; }
+  #printFooter{
+    position: fixed; left: 10mm; right: 10mm; bottom: 10mm;
+    display:flex; justify-content: space-between; gap:8mm;
+    font: 10pt/1.2 system-ui, sans-serif; color:#000;
   }
-
-  body.print-mode {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  #print-container {
-    display: flex !important;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    padding: 10mm;
-    font-family: 'Times New Roman', serif;
-  }
-
-  #print-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 3mm;
-    font-size: 14pt;
-    font-weight: bold;
-  }
-  
-  #print-scale {
-      margin-left: auto;
-  }
-
-  #print-map-image-wrapper {
-    flex-grow: 1;
-    border: 1.5px solid black;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden; /* Apgriež, ja attēls ir lielāks par rāmi */
-  }
-
-  #print-map-image-wrapper img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-
-  #print-footer {
-    width: 100%;
-    text-align: center;
-    margin-top: 3mm;
-    font-size: 8pt;
+  #printFooter .left, #printFooter .center, #printFooter .right{
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
