@@ -2280,10 +2280,10 @@ body.print-mode .leaflet-left .leaflet-control{
 
 /* atstājam tikai pašu karti + mūsu drukas pēdu */
 body.print-mode #onlineMap{
-  position: static !important;
-  width: 190mm !important;  /* reālie mm tiek ielikti dinamiski ar JS */
-  height: 277mm !important; /* šīs ir noklusējuma vērtības A4 portretam */
-  display: block !important;
+  position: static;
+  width: 190mm ;  /* reālie mm tiek ielikti dinamiski ar JS */
+  height: 277mm ; /* šīs ir noklusējuma vērtības A4 portretam */
+  display: block ;
 }
 @media print{
   html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
