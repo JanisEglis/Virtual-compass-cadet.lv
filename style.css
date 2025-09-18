@@ -2224,6 +2224,23 @@ body.preloading{ overflow: hidden; }
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* ——— Drukas modālis (pielāgots Tavam tumšajam stilam) ——— */
 .print-modal{
   position: fixed; inset:0; z-index: 5000;
@@ -2263,20 +2280,59 @@ body.print-mode .leaflet-left .leaflet-control{
 
 /* atstājam tikai pašu karti + mūsu drukas pēdu */
 body.print-mode #onlineMap{
-  position: static !important;
-  width: 190mm !important;  /* reālie mm tiek ielikti dinamiski ar JS */
-  height: 277mm !important; /* šīs ir noklusējuma vērtības A4 portretam */
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 190mm !important;
+  height: 277mm !important;
   display: block !important;
 }
-@media print{
-  html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
-  #onlineMap{ position: static !important; }
-  #printFooter{
-    position: fixed; left: 10mm; right: 10mm; bottom: 10mm;
-    display:flex; justify-content: space-between; gap:8mm;
-    font: 10pt/1.2 system-ui, sans-serif; color:#000;
+
+
+
+
+
+
+/* ===== STRIKTS DRUKAS REŽĪMS ===== */
+body.print-mode {
+  -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+  background:#fff !important;
+}
+
+/* Paslēp VISU UI (whitelist tikai kartei un pēdai) */
+body.print-mode * { visibility: hidden !important; }
+body.print-mode #onlineMap,
+body.print-mode #onlineMap * ,
+body.print-mode #printFooter,
+body.print-mode #printFooter * { visibility: visible !important; }
+
+/* Drošībai arī display:none svarīgajiem UI gabaliem */
+body.print-mode #compassContainer,
+body.print-mode #about,
+body.print-mode #iframeContainerAbout,
+body.print-mode #iframeContainerQR,
+body.print-mode #contentFrame,
+body.print-mode #instructionFrame,
+body.print-mode #fullscreenMessage,
+body.print-mode #orientation-overlay,
+body.print-mode #mobile-warning,
+body.print-mode #buttonContainer,
+body.print-mode #resizeHandle,
+body.print-mode .leaflet-control { display:none !important; }
+
+/* Noklusējuma A4 portreta izmērs (ja JS nav ielādējies) */
+/* ——— LGIA: drukājam TIKAI karti un pēdu vienā lapā ——— */
+@media print {
+  /* JS vēlāk pārdefinēs uz A3/A4 un orientāciju; te – drošs noklusējums */
+  @page { size: A4 portrait; margin: 0; }
+
+  /* Noņemam VISUS body bērnus no plūsmas, izņemot mūsu konteinerus */
+  body.print-mode > *:not(#canvasContainer):not(#printFooter) {
+    display: none !important;
   }
-  #printFooter .left, #printFooter .center, #printFooter .right{
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  /* No canvasContainer atstājam tikai pašu karti */
+  body.print-mode #canvasContainer > *:not(#onlineMap) {
+    display: none !important;
   }
 }
