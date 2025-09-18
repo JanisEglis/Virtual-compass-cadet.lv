@@ -2227,78 +2227,67 @@ body.print-mode > *:not(#print-container) {
   display: none !important;
 }
 
-/* Konteineris, kas saturēs visu drukas lapu */
+/* Pagaidu drukas konteineris ir neredzams uz ekrāna */
 #print-container {
-  display: none; /* Redzams tikai drukas režīmā */
+  display: none;
 }
 
-/* Šie stili ietekmēs TIKAI papīra izdruku */
+/* Šie stili tiek piemēroti TIKAI papīra izdrukai */
 @media print {
   @page {
     size: A4 landscape;
-    margin: 0; /* Noņemam pārlūka iebūvētās malas */
+    margin: 0;
   }
 
-  body {
+  body.print-mode {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    margin: 0 !important;
-    padding: 0 !important;
   }
 
   #print-container {
-    display: block !important;
-    position: absolute;
-    top: 10mm;
-    left: 10mm;
-    right: 10mm;
-    bottom: 10mm;
-    box-sizing: border-box;
-    display: flex;
+    display: flex !important;
     flex-direction: column;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 10mm; /* Atstarpes no lapas malām */
+    font-family: 'Times New Roman', serif;
+  }
+
+  #print-header {
+    display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 100%;
+    margin-bottom: 3mm;
+    font-size: 14pt;
+    font-weight: bold;
+  }
+  
+  #print-scale {
+      margin-left: auto;
   }
 
-  /* Kartes attēls ar melnu rāmi */
-  .print-map-image {
-    display: block;
-    width: 100%;
-    height: calc(100% - 20mm); /* Atstājam vietu galvenei un kājenei */
+  #print-map-image-wrapper {
+    flex-grow: 1;
     border: 1.5px solid black;
-    box-sizing: border-box;
-    object-fit: contain; /* Nodrošina, ka karte ietilpst rāmī, saglabājot proporcijas */
-  }
-  
-  /* Kartes nosaukums */
-  #print-title {
-      position: absolute;
-      top: 2mm;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 14pt;
-      font-weight: bold;
-      font-family: 'Times New Roman', serif;
-  }
-  
-  /* Galvene ar mērogu */
-  #print-header {
-    width: 100%;
-    text-align: center;
-    font-size: 12pt;
-    font-family: 'Times New Roman', serif;
-    height: 8mm;
-    margin-bottom: 2mm;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  /* Kājenes stils */
+  #print-map-image-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
   #print-footer {
     width: 100%;
     text-align: center;
+    margin-top: 3mm;
     font-size: 8pt;
-    font-family: 'Times New Roman', serif;
-    height: 8mm;
-    margin-top: 2mm;
   }
 }
 
