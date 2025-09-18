@@ -2324,18 +2324,27 @@ body.print-mode .leaflet-control { display:none !important; }
 /* Noklusējuma A4 portreta izmērs (ja JS nav ielādējies) */
 /* ——— LGIA: drukājam TIKAI karti un pēdu vienā lapā ——— */
 @media print {
-  @page { 
-    size: A4 portrait; 
-    margin: 0;
-  }
-  body { 
-    overflow: hidden !important;
-    page-break-after: avoid !important;
-  }
+/* Pielāgojam drukas orientāciju un izmērus uz ainavu */
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
+body.print-mode #onlineMap {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 277mm !important;
+  height: 190mm !important;
+  display: block !important;
+}
 }
 
 
-
+/* Rāmis ap karti drukas režīmā */
+body.print-mode #onlineMap {
+  border: 1px solid black !important;
+  box-sizing: border-box !important;
+}
 
 
 
