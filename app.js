@@ -1862,20 +1862,21 @@ function injectDynamicPrintStyle(fmt, orient){
     @page { size: ${pageSize}; margin: 0; }
     @media print {
       html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
+      body.print-mode { display: block !important; }
       body.print-mode #onlineMap{
         position: fixed !important;
         top:10mm; left:10mm;
-        width:${mm.w}mm !important; height:${mm.h}mm !important;
+        width:${mm.w}mm !important;
+        height:${mm.h}mm !important;
         display:block !important;
-        page-break-inside: avoid; break-inside: avoid;
+        page-break-inside: avoid; break-inside: avoid; overflow: hidden;
       }
-      #printFooter{
+      body.print-mode #printFooter{
         position: fixed; left:10mm; right:10mm; bottom:10mm;
         display:flex; justify-content:space-between; gap:8mm;
         font:10pt/1.2 system-ui, sans-serif; color:#000;
         visibility: visible !important;
       }
-   
     }
   `;
   let el = document.getElementById('dynamicPrintStyle');
@@ -1883,6 +1884,7 @@ function injectDynamicPrintStyle(fmt, orient){
   el.textContent = css;
   return el;
 }
+
 
 
 // Drukas pēda: [Nosaukums] [Mērogs] [Atsauces kartēm] [CADET.LV]
