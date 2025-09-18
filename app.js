@@ -1851,7 +1851,6 @@ document.documentElement.style.setProperty('--map-bottom-safe','0px');
 // Dinamiski iedod @page size + #onlineMap mm izmēru pēc formāta/orientācijas
 // Dinamiski @page + fiksēta kartes pozīcija lapā (bez nobīdēm)
 function injectDynamicPrintStyle(fmt, orient){
-  // Satura laukuma mm (lapas izmērs mīnus 2×10mm malas)
   const mm = (fmt==='A3')
     ? (orient==='portrait' ? {w:277, h:400} : {w:400, h:277})
     : (orient==='portrait' ? {w:190, h:277} : {w:277, h:190});
@@ -1859,14 +1858,15 @@ function injectDynamicPrintStyle(fmt, orient){
   const pageSize = (fmt==='A3' ? 'A3' : 'A4') + ' ' + (orient==='portrait' ? 'portrait' : 'landscape');
 
   const css = `
-    @page { size: ${pageSize}; margin: 0; } /* malas ieliekam ar top/left 10mm */
+    @page { size: ${pageSize}; margin: 0; }
     @media print {
       html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
-      #onlineMap{
+      body.print-mode #onlineMap{
         position: fixed !important;
         top:10mm; left:10mm;
         width:${mm.w}mm !important; height:${mm.h}mm !important;
         display:block !important;
+        page-break-inside: avoid; break-inside: avoid;
       }
       #printFooter{
         position: fixed; left:10mm; right:10mm; bottom:10mm;
