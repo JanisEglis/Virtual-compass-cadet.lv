@@ -1703,63 +1703,32 @@ map.on('moveend zoomend', ()=>{ updateRatio(); syncScalePicker(); });
 // ===== LGIA stila drukas dialogs + druka =====
 
 // Izveido modālo dialogu ar opcijām (A4/A3, portrets/ainava, mērogs, nosaukums)
-function openLgIaPrintDialog(){
+function openLgIaPrintDialog() {
   if (document.getElementById('lgiaPrintModal')) return;
 
-  const currentScale = getCurrentScale(); // tava esošā funkcija
   const modal = document.createElement('div');
   modal.id = 'lgiaPrintModal';
   modal.className = 'print-modal';
   modal.innerHTML = `
     <div class="print-modal-card">
-      <h3>Drukas iestatījumi (LGIA)</h3>
-
-      <label>Nosaukums (neobligāti)
-        <input id="lgiaPrintTitle" type="text" placeholder="Kartes virsraksts">
+      <h3>Sagatavot karti drukai</h3>
+      <label>Kartes nosaukums (neobligāti)
+        <input id="lgiaPrintTitle" type="text" placeholder="Piemēram, 'Mācību rajons'">
       </label>
-
-      <div class="row">
-        <label>Formāts
-          <select id="lgiaPrintFormat">
-            <option value="A4">A4</option>
-            <option value="A3">A3</option>
-          </select>
-        </label>
-
-        <label>Orientācija
-          <select id="lgiaPrintOrient">
-            <option value="portrait">Portrets</option>
-            <option value="landscape">Ainava</option>
-          </select>
-        </label>
-      </div>
-
-      <label>Mērogs
-        <select id="lgiaPrintScale">
-          ${[5000,10000,25000,50000,75000,100000].map(s=>{
-            const sel = (Math.abs(s-currentScale) < 0.5*s/6) ? 'selected' : '';
-            return `<option ${sel} value="${s}">1: ${s.toLocaleString('lv-LV')}</option>`;
-          }).join('')}
-        </select>
-      </label>
-
       <div class="row buttons">
         <button id="lgiaCancel">Atcelt</button>
-        <button id="lgiaDoPrint" class="primary">Sagatavot</button>
+        <button id="lgiaDoPrint" class="primary">Drukāt</button>
       </div>
     </div>
   `;
   document.body.appendChild(modal);
 
-  modal.querySelector('#lgiaCancel').addEventListener('click', closeLgIaPrintDialog);
-  modal.querySelector('#lgiaDoPrint').addEventListener('click', ()=>{
+  modal.querySelector('#lgiaCancel').onclick = () => modal.remove();
+  modal.querySelector('#lgiaDoPrint').onclick = () => {
     const title = modal.querySelector('#lgiaPrintTitle').value.trim();
-    const fmt   = modal.querySelector('#lgiaPrintFormat').value;     // 'A4' | 'A3'
-    const orient= modal.querySelector('#lgiaPrintOrient').value;     // 'portrait' | 'landscape'
-    const scale = +modal.querySelector('#lgiaPrintScale').value;     // 1:xxxxx
-    closeLgIaPrintDialog();
-    prepareMapForPrintLgIa({title: title || '', format: fmt, orient, scale});
-  });
+    modal.remove();
+    prepareMapForPrintLgIa({ title: title || 'Karte' });
+  };
 }
 
 function closeLgIaPrintDialog(){
@@ -1768,153 +1737,79 @@ function closeLgIaPrintDialog(){
 }
 
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
+// JAUNĀ DRUKAS FUNKCIJA (aizstājiet veco prepareMapForPrintLgIa)
 function prepareMapForPrintLgIa(opts) {
-  const { format, orient, scale, title } = opts;
+    const { title } = opts;
+    const currentScale = getCurrentScale();
 
-  // === 1. Sagatavošanās posms (nemainot esošo karti) ===
-  const prevOptions = {
-    zoomAnimation: map.options.zoomAnimation,
-    fadeAnimation: map.options.fadeAnimation,
-  };
-  map.options.zoomAnimation = false;
-  map.options.fadeAnimation = false;
+    // 1. Izveidojam neredzamu konteineri drukas kartei
+    const printContainer = document.createElement('div');
+    printContainer.id = 'print-container';
+    document.body.appendChild(printContainer);
 
-  // Izveidojam drukas konteineri, kas sākumā ir neredzams
-  const printContainer = document.createElement('div');
-  printContainer.id = 'print-map-container';
-  printContainer.style.position = 'fixed';
-  printContainer.style.top = '0';
-  printContainer.style.left = '0';
-  printContainer.style.zIndex = '-1000'; // Paslēpjam zem visa
-  printContainer.style.opacity = '0';
-  document.body.appendChild(printContainer);
+    // 2. Izveidojam galvenes un kājenes elementus
+    const header = document.createElement('div');
+    header.id = 'print-header';
+    header.innerHTML = `<span>Mērogs 1:${currentScale.toLocaleString('lv-LV')}</span>`;
 
-  // === 2. Drukas kartes izveide un konfigurēšana ===
-  const printMap = L.map(printContainer, {
-    zoomControl: false,
-    attributionControl: false,
-    center: map.getCenter(),
-    zoom: zoomForScale(scale)
-  });
+    const footer = document.createElement('div');
+    footer.id = 'print-footer';
+    footer.innerHTML = `<span>${collectAttributionText()}</span><br><span>Sagatavots ar rīku cadet.lv</span>`;
 
-  // Pievienojam tos pašus redzamos slāņus jaunajai kartei
-  map.eachLayer(layer => {
-    if (layer instanceof L.TileLayer) {
-      L.tileLayer(layer._url, layer.options).addTo(printMap);
-    }
-  });
+    printContainer.appendChild(header);
+    printContainer.appendChild(footer);
 
-  // Ieliekam dinamiskos stilus, kas ietekmēs tikai drukas skatu
-  const styleEl = injectDynamicPrintStyle(format, orient);
-  const footer = buildPrintFooterLgIa(scale, title);
-  document.body.classList.add('print-mode'); // Pievienojam klasi tikai tagad
-
-  // === 3. Drukāšana un tīrīšana ===
-  // Dodam nelielu laiku, lai jaunā karte inicializētos un ielādētu flīzes
-  setTimeout(() => {
-    printMap.invalidateSize(false);
+    // 3. Pievienojam kartes nosaukumu, ja tas ir ievadīts
+    const titleEl = document.createElement('div');
+    titleEl.id = 'print-title';
+    titleEl.textContent = title;
+    printContainer.appendChild(titleEl);
     
-    setTimeout(() => {
-      window.addEventListener('afterprint', cleanup, { once: true });
-      window.print();
-    }, 2000); // 2 sekundes ir drošs laiks flīžu ielādei
+    // 4. Izmantojam leaflet-image, lai uzņemtu ekrānšāviņu
+    leafletImage(map, function(err, canvas) {
+        if (err) {
+            alert('Neizdevās sagatavot karti drukai. Mēģiniet vēlreiz.');
+            console.error(err);
+            cleanup();
+            return;
+        }
 
-  }, 100);
+        // Pievienojam kartes attēlu drukas konteinerim
+        const img = document.createElement('img');
+        img.className = 'print-map-image';
+        img.src = canvas.toDataURL('image/png');
+        printContainer.appendChild(img);
 
-  function cleanup() {
-    // Noņemam visu, ko izveidojām
-    document.body.classList.remove('print-mode');
-    if (footer) footer.remove();
-    if (styleEl) styleEl.remove();
-    if (printContainer) printContainer.remove();
-    
-    // Atjaunojam sākotnējos kartes iestatījumus
-    Object.assign(map.options, prevOptions);
-    map.invalidateSize(false); // Pārrēķinām oriģinālās kartes izmēru
-  }
-}
+        // 5. Izsaucam druku un pēc tam visu satīrām
+        document.body.classList.add('print-mode');
+        
+        window.addEventListener('afterprint', cleanup, { once: true });
+        window.print();
+    });
 
-// Dinamiski iedod @page size + #onlineMap mm izmēru pēc formāta/orientācijas
-// Dinamiski @page + fiksēta kartes pozīcija lapā (bez nobīdēm)
-// Dinamiski @page + fiksēta kartes pozīcija lapā (bez nobīdēm)
-function injectDynamicPrintStyle(fmt, orient) {
-  // Standarta lapu izmēri (mm) un malas
-  const PAGE_SIZES = {
-    A4: { w: 297, h: 210 }, // Ainava pēc noklusējuma
-    A3: { w: 420, h: 297 }  // Ainava pēc noklusējuma
-  };
-  const MARGIN = 10; // 10mm malas
-
-  const isPortrait = orient === 'portrait';
-  const pageSize = PAGE_SIZES[fmt] || PAGE_SIZES.A4;
-
-  // Samainām platumu ar augstumu, ja ir portreta orientācija
-  const pageW = isPortrait ? pageSize.h : pageSize.w;
-  const pageH = isPortrait ? pageSize.w : pageSize.h;
-
-  // Kartes laukuma izmēri (lapas izmērs mīnus dubultā mala)
-  const mapW = pageW - (2 * MARGIN);
-  const mapH = pageH - (2 * MARGIN);
-
-  const css = `
-    @page {
-      size: ${fmt} ${orient};
-      margin: 0; /* Noņemam pārlūka iebūvētās malas */
+    function cleanup() {
+        document.body.classList.remove('print-mode');
+        if (printContainer) {
+            printContainer.remove();
+        }
     }
-    @media print {
-      body.print-mode #onlineMap {
-        top: ${MARGIN}mm !important;
-        left: ${MARGIN}mm !important;
-        width: ${mapW}mm !important;
-        height: ${mapH}mm !important;
-        box-sizing: border-box !important;
-      }
-      body.print-mode #printFooter {
-        left: ${MARGIN}mm;
-        right: ${MARGIN}mm;
-        bottom: 5mm; /* Fiksēta pozīcija no apakšas */
-        height: auto;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-      }
-    }
-  `;
+}
 
-  let el = document.getElementById('dynamicPrintStyle');
-  if (!el) {
-    el = document.createElement('style');
-    el.id = 'dynamicPrintStyle';
-    document.head.appendChild(el);
-  }
-  el.textContent = css;
-  return el;
+// Palīgfunkcija datu avotu savākšanai (paliek nemainīga)
+function collectAttributionText() {
+  const n = document.querySelector('#onlineMap .leaflet-control-container .leaflet-bottom.leaflet-right .leaflet-control-attribution');
+  if (n && n.textContent) return n.textContent.trim();
+  let atts = new Set();
+  map.eachLayer(l => {
+    const a = (typeof l.getAttribution === 'function') ? l.getAttribution() : (l.options && l.options.attribution);
+    if (a) atts.add(a.replace(/\s+/g, ' ').trim());
+  });
+  return Array.from(atts).join(' · ');
 }
 
 
 
-// Drukas pēda: [Nosaukums] [Mērogs] [Atsauces kartēm] [CADET.LV]
-function buildPrintFooterLgIa(scaleVal, title) {
-  const el = document.createElement('div');
-  el.id = 'printFooter';
 
-  // Funkcija skaitļu formatēšanai ar atstarpēm
-  const lv = (n) => ('' + n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-
-  const scaleStr = 'Mērogs 1:' + lv(scaleVal);
-  const mapAttrib = collectAttributionText() || 'Datu avots: OpenStreetMap, LVM GEO';
-  const toolAttrib = 'Sagatavots ar rīku cadet.lv';
-
-  el.innerHTML = `
-    <div class="left" style="font-weight: bold;">${title || 'Karte'}</div>
-    <div class="center" style="text-align: center;">${scaleStr}<br>${mapAttrib}</div>
-    <div class="right" style="text-align: right;">${toolAttrib}</div>
-  `;
-
-  // Pievienojam pēdu tieši `<body>`, nevis kartes konteinerim
-  document.body.appendChild(el);
-  return el;
-}
 
 // Palīgs – savācam redzamo avotu atsauces
 function collectAttributionText(){
