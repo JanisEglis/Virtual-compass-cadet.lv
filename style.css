@@ -2324,45 +2324,42 @@ body.print-mode .leaflet-control { display:none !important; }
 /* Noklusējuma A4 portreta izmērs (ja JS nav ielādējies) */
 /* ——— LGIA: drukājam TIKAI karti un pēdu vienā lapā ——— */
 @media print {
-  /*
-    Lapas izmēru un malu definēšana notiks dinamiski caur JavaScript.
-    Šeit nodrošinām tikai pamatprincipus.
-  */
+  /* Pamata iestatījumi drukas lapai */
   body.print-mode {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    background: #fff !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: hidden !important;
+    background: #fff !important;
   }
 
-  /* Paslēpjam VISU, izņemot karti un tās pēdu */
+  /* Paslēpjam VISUS elementus, kas NAV nepieciešami drukai */
   body.print-mode > *:not(#onlineMap):not(#printFooter) {
     display: none !important;
-    visibility: hidden !important;
+  }
+  
+  /* Specifiski paslēpjam visus rīkus, kas varētu palikt redzami */
+  body.print-mode #compassContainer,
+  body.print-mode #buttonContainer,
+  body.print-mode .leaflet-control:not(.leaflet-control-attribution) {
+    display: none !important;
   }
 
-  /* Nodrošinām, ka karte un pēda ir redzamas */
+  /* Kartei un pēdai jābūt redzamai un pareizi pozicionētai */
   body.print-mode #onlineMap,
   body.print-mode #printFooter {
-    visibility: visible !important;
     display: block !important;
+    position: fixed !important; /* Nodrošina pozīciju lapas ietvaros */
+    visibility: visible !important;
   }
 
-  /* Kartes konteinerim jābūt absolūti pozicionētam lapas ietvaros */
-  body.print-mode #onlineMap {
-    position: fixed !important; /* FIKSĒTS, lai aizpildītu lapu */
-    box-sizing: border-box !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important; /* Noņemam liekas robežas */
+  /* Nodrošinām, ka kartes saturs (flīzes, slāņi) ir redzams */
+  body.print-mode #onlineMap * {
+    visibility: visible !important;
   }
-
-  /* Pēda (footer) ar informāciju */
+  
+  /* Pēdas (footer) teksta stils */
   body.print-mode #printFooter {
-    position: fixed;
-    box-sizing: border-box;
     font: 10pt/1.2 'Times New Roman', Times, serif;
     color: #000;
   }
