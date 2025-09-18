@@ -245,6 +245,8 @@ function checkWindowSize() {
 
 						
 						function handleResize() {
+							if (document.body.classList.contains('print-mode')) return;
+
 						  updateViewportHeight();
 						  checkWindowSize();
 						  // pārrēķini doku uzreiz (lai nepārklājas ar #about)
@@ -1059,6 +1061,8 @@ const icon = resizeHandle ? resizeHandle.querySelector('img') : null;
   }
 
   function updateMapSafeAreas(){
+	  if (document.body && document.body.classList.contains('print-mode')) return;
+
     const topPx    = getTopSafePx();
     const bottomPx = getBottomSafePx();
     document.documentElement.style.setProperty('--map-top-safe',    topPx + 'px');
@@ -1828,6 +1832,12 @@ document.documentElement.style.setProperty('--map-bottom-safe','0px');
       document.body.classList.remove('print-mode');
       footer && footer.remove();
       styleEl && styleEl.remove();
+  // JAUNAIS: drošībai pārskaiti drošās zonas un pārzīmē Leaflet
+  try { window.__updateMapSafeAreas && window.__updateMapSafeAreas(); } catch(e){}
+  try { map && map.invalidateSize(true); } catch(e){}
+
+
+		
       // atjauno animācijas
       map.options.zoomSnap = prev.zoomSnap;
       map.options.zoomDelta = prev.zoomDelta;
