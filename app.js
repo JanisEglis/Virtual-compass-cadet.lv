@@ -1578,78 +1578,6 @@ scalePickCtl.onAdd = function(){
   wrap.appendChild(select);
 
 
-
-
-  // — Poga: Drukāt (LGIA)
-  const lgiaBtn = document.createElement('button');
-  lgiaBtn.id = 'lgiaPrintBtn';
-  lgiaBtn.type = 'button';
-  lgiaBtn.textContent = 'Drukāt (LGIA)';
-  Object.assign(lgiaBtn.style, {
-    display:'block', marginTop:'8px', width:'100%',
-    background:'rgba(0,0,0,.35)', color:'#fff',
-    border:'1px solid rgba(255,255,255,.25)', borderRadius:'6px',
-    padding:'4px 8px', cursor:'pointer', font:'12px/1.2 system-ui, sans-serif'
-  });
-  lgiaBtn.addEventListener('click', openLgIaPrintDialog);
-  wrap.appendChild(lgiaBtn);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // — Poga: Sagatavot karti (PDF)
-  const printBtn = document.createElement('button');
-  printBtn.id = 'preparePrintBtn';
-  printBtn.type = 'button';
-  printBtn.textContent = 'Sagatavot karti (PDF)';
-  Object.assign(printBtn.style, {
-    display: 'block',
-    marginTop: '8px',
-    width: '100%',
-    background: 'rgba(0,0,0,.35)',
-    color: '#fff',
-    border: '1px solid rgba(255,255,255,.25)',
-    borderRadius: '6px',
-    padding: '4px 8px',
-    cursor: 'pointer',
-    font: '12px/1.2 system-ui, sans-serif'
-  });
-  printBtn.addEventListener('click', openLgIaPrintDialog);
-
-  wrap.appendChild(printBtn);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-
   // neļaujam šai kontrolei “sastrīdēties” ar kartes drag/zoom
   L.DomEvent.disableClickPropagation(wrap);
   L.DomEvent.disableScrollPropagation(wrap);
@@ -5326,3 +5254,127 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 							    window.visualViewport.addEventListener('scroll', onViewportChange);
 							  }
 							})();
+
+
+
+
+
+
+// =======================================================================
+// JAUNĀ UN STABILĀ DRUKAS FUNKCIONALITĀTE (ielīmēt faila beigās)
+// =======================================================================
+map.whenReady(() => {
+    // 1. Izveidojam jaunu Leaflet kontroli TIKAI drukas pogai
+    const PrintControl = L.Control.extend({
+        onAdd: function(map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            const button = L.DomUtil.create('a', 'leaflet-control-print', container);
+            button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>';
+            button.href = '#';
+            button.role = 'button';
+            button.title = 'Sagatavot drukai';
+
+            L.DomEvent.on(button, 'click', L.DomEvent.stop)
+                      .on(button, 'click', openPrintDialog);
+
+            return container;
+        }
+    });
+    new PrintControl({ position: 'topright' }).addTo(map);
+
+    // 2. Vienkāršs dialoga logs
+    function openPrintDialog() {
+      if (document.getElementById('printModal')) return;
+
+      const modal = document.createElement('div');
+      modal.id = 'printModal';
+      modal.className = 'print-modal';
+      modal.innerHTML = `
+        <div class="print-modal-card">
+          <h3>Sagatavot karti drukai</h3>
+          <label>Kartes nosaukums (neobligāti):
+            <input id="printTitleInput" type="text" placeholder="Piemēram, 'Mācību rajons'">
+          </label>
+          <div class="row buttons">
+            <button id="printCancel">Atcelt</button>
+            <button id="printConfirm" class="primary">Drukāt</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+
+      modal.querySelector('#printCancel').onclick = () => modal.remove();
+      modal.querySelector('#printConfirm').onclick = () => {
+        const title = modal.querySelector('#printTitleInput').value.trim();
+        modal.remove();
+        prepareAndPrint({ title: title || 'Karte' });
+      };
+    }
+
+    // 3. Galvenā drukas sagatavošanas funkcija
+    function prepareAndPrint(opts) {
+        if (typeof leafletImage === 'undefined') {
+            alert('Kļūda: Drukas komponents (leaflet-image.js) nav ielādēts. Lūdzu, pārbaudiet HTML failu.');
+            return;
+        }
+
+        const { title } = opts;
+        const currentScale = getCurrentScale();
+        const printContainer = document.createElement('div');
+        printContainer.id = 'print-container';
+        document.body.appendChild(printContainer);
+
+        printContainer.innerHTML = `
+            <div id="print-header">
+                <span id="print-title">${title}</span>
+                <span id="print-scale">Mērogs 1:${currentScale.toLocaleString('lv-LV')}</span>
+            </div>
+            <div id="print-map-image-wrapper"></div>
+            <div id="print-footer">
+                <span>${collectAttributionText()} &nbsp;&nbsp;|&nbsp;&nbsp; Sagatavots ar rīku cadet.lv</span>
+            </div>
+        `;
+
+        leafletImage(map, function(err, canvas) {
+            if (err) {
+                alert('Neizdevās sagatavot kartes attēlu. Mēģiniet vēlreiz.');
+                console.error(err);
+                cleanup();
+                return;
+            }
+
+            const img = document.createElement('img');
+            img.src = canvas.toDataURL('image/png');
+            printContainer.querySelector('#print-map-image-wrapper').appendChild(img);
+            
+            document.body.classList.add('print-mode');
+            
+            setTimeout(() => {
+                window.addEventListener('afterprint', cleanup, { once: true });
+                window.print();
+            }, 100);
+        });
+
+        function cleanup() {
+            document.body.classList.remove('print-mode');
+            if (printContainer) printContainer.remove();
+            map.invalidateSize();
+        }
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
