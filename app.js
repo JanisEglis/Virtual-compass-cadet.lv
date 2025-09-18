@@ -1759,7 +1759,7 @@ function openLgIaPrintDialog(){
   modal.querySelector('#lgiaDoPrint').addEventListener('click', ()=>{
     const title = modal.querySelector('#lgiaPrintTitle').value.trim();
     const fmt   = modal.querySelector('#lgiaPrintFormat').value;     // 'A4' | 'A3'
-    const orient= modal.querySelector('#lgiaPrintOrient').value;     // 'portrait' | 'landscape'
+    const orient = 'landscape';  //  'landscape'
     const scale = +modal.querySelector('#lgiaPrintScale').value;     // 1:xxxxx
     closeLgIaPrintDialog();
     prepareMapForPrintLgIa({title: title || '', format: fmt, orient, scale});
@@ -1811,6 +1811,7 @@ document.documentElement.style.setProperty('--map-top-safe','0px');
 document.documentElement.style.setProperty('--map-bottom-safe','0px');
 
 
+if (map) { map.invalidateSize(true); map.fire('resize'); }
 
 
 
@@ -1874,6 +1875,16 @@ function injectDynamicPrintStyle(fmt, orient){
         font:10pt/1.2 system-ui, sans-serif; color:#000;
         visibility: visible !important;
       }
+
+
+
+@media print {
+  body.print-mode > *:not(#onlineMap) { 
+    display: none !important;
+  }
+}
+
+   
     }
   `;
   let el = document.getElementById('dynamicPrintStyle');
@@ -2107,7 +2118,8 @@ for (let E = minE; E <= maxE; E += step/divs){
     addLine(pts, isMajor, labelZoom, [labLL.lat, labLL.lon], 'N ' + Math.round(N/1000) + ' km');
   }
 }
-  map.on('moveend zoomend', redraw);
+  map.on('moveend zoomend resize viewreset', redraw);
+
   setTimeout(redraw, 0);
 
   // atgriežam abus atsevišķus slāņus
@@ -2193,7 +2205,8 @@ const step  = gridStepForScale(scale);
     }
   }
 
-  map.on('moveend zoomend', redraw);
+  map.on('moveend zoomend resize viewreset', redraw);
+
   redraw();
 
   return {grid, labels};
