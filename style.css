@@ -2330,20 +2330,17 @@ body.print-mode #buttonContainer,
 body.print-mode #resizeHandle,
 body.print-mode .leaflet-control { display:none !important; }
 
-/* Noklusējuma A4 portreta izmērs (ja JS nav ielādējies) */
-@media print {
-  html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
-  #onlineMap{
+/* --- PRINT: vienota, fiksēta kartes pozīcija --- */
+@media print{
+  /* drošībai atslēdz flex uz body */
+  body.print-mode{ display:block !important; }
+
+  /* karte vienmēr 10mm no malām ar īstu mm izmēru */
+  body.print-mode #onlineMap{
     position: fixed !important;
-    top: 10mm; left: 10mm;         /* vizuālās malas */
-    width: 190mm; height: 277mm;   /* A4 portrets - 2×10mm malas */
-    display:block !important;
-  }
-  #printFooter{
-    position: fixed;
-    left:10mm; right:10mm; bottom:10mm;
-    display:flex; justify-content:space-between; gap:8mm;
-    font:10pt/1.2 system-ui, sans-serif; color:#000;
-    visibility: visible !important;
+    top: 10mm; left: 10mm;
+    width: var(--print-w,190mm) !important;    /* A4 portrets pēc noklusējuma */
+    height: var(--print-h,277mm) !important;
+    display: block !important;
   }
 }
