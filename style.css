@@ -2324,54 +2324,48 @@ body.print-mode .leaflet-control { display:none !important; }
 /* Noklusējuma A4 portreta izmērs (ja JS nav ielādējies) */
 /* ——— LGIA: drukājam TIKAI karti un pēdu vienā lapā ——— */
 @media print {
-/* Pielāgojam drukas orientāciju un izmērus uz ainavu */
+  /*
+    Lapas izmēru un malu definēšana notiks dinamiski caur JavaScript.
+    Šeit nodrošinām tikai pamatprincipus.
+  */
+  body.print-mode {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
 
+  /* Paslēpjam VISU, izņemot karti un tās pēdu */
+  body.print-mode > *:not(#onlineMap):not(#printFooter) {
+    display: none !important;
+    visibility: hidden !important;
+  }
 
-/* Pārdefinējam drukas lapas izmēru uz A4 ainavas (landscape) režīmu. */
-@page {
-  size: A4 landscape;
-  margin: 0;
-}
+  /* Nodrošinām, ka karte un pēda ir redzamas */
+  body.print-mode #onlineMap,
+  body.print-mode #printFooter {
+    visibility: visible !important;
+    display: block !important;
+  }
 
-/* Nodrošinām, ka kartes konteiners precīzi aizņem visu lapu. */
-body.print-mode #onlineMap {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 297mm !important; /* Standarta A4 lapas platums ainavas režīmā. */
-  height: 210mm !important; /* Standarta A4 lapas augstums ainavas režīmā. */
-  display: block !important;
-  box-sizing: border-box !important;
-  border: 1px solid black !important;
-}
+  /* Kartes konteinerim jābūt absolūti pozicionētam lapas ietvaros */
+  body.print-mode #onlineMap {
+    position: fixed !important; /* FIKSĒTS, lai aizpildītu lapu */
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important; /* Noņemam liekas robežas */
+  }
 
-/* Pielāgojam papildu elementus, piemēram, mērogu. */
-body.print-mode .leaflet-control-container .leaflet-control-scale {
-  position: absolute;
-  bottom: 10mm !important;
-  left: 10mm !important;
-  display: block !important;
-  visibility: visible !important;
-}
-
-/* Paslēp VISU UI, izņemot karti un pēdu. */
-body.print-mode * { visibility: hidden !important; }
-body.print-mode #onlineMap,
-body.print-mode #onlineMap * ,
-body.print-mode #printFooter,
-body.print-mode #printFooter * { visibility: visible !important; }
-
-/* Nodrošinām, ka visi kartes slāņi ir redzami. */
-body.print-mode .leaflet-tile-container {
-  visibility: visible !important;
-}
-
-
-
-
-
-
-	
+  /* Pēda (footer) ar informāciju */
+  body.print-mode #printFooter {
+    position: fixed;
+    box-sizing: border-box;
+    font: 10pt/1.2 'Times New Roman', Times, serif;
+    color: #000;
+  }
 }
 
 
