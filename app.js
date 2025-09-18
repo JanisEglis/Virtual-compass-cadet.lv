@@ -1703,96 +1703,84 @@ map.on('moveend zoomend', ()=>{ updateRatio(); syncScalePicker(); });
 // ===== LGIA stila drukas dialogs + druka =====
 
 // Izveido modālo dialogu ar opcijām (A4/A3, portrets/ainava, mērogs, nosaukums)
+// JAUNAIS DRUKAS DIALOGS (vienkāršots)
 function openLgIaPrintDialog() {
-  if (document.getElementById('lgiaPrintModal')) return;
+  if (document.getElementById('printModal')) return;
 
   const modal = document.createElement('div');
-  modal.id = 'lgiaPrintModal';
+  modal.id = 'printModal';
   modal.className = 'print-modal';
   modal.innerHTML = `
     <div class="print-modal-card">
       <h3>Sagatavot karti drukai</h3>
-      <label>Kartes nosaukums (neobligāti)
-        <input id="lgiaPrintTitle" type="text" placeholder="Piemēram, 'Mācību rajons'">
+      <label>Kartes nosaukums (neobligāti):
+        <input id="printTitleInput" type="text" placeholder="Piemēram, 'Mācību rajons'">
       </label>
       <div class="row buttons">
-        <button id="lgiaCancel">Atcelt</button>
-        <button id="lgiaDoPrint" class="primary">Drukāt</button>
+        <button id="printCancel">Atcelt</button>
+        <button id="printConfirm" class="primary">Drukāt</button>
       </div>
     </div>
   `;
   document.body.appendChild(modal);
 
-  modal.querySelector('#lgiaCancel').onclick = () => modal.remove();
-  modal.querySelector('#lgiaDoPrint').onclick = () => {
-    const title = modal.querySelector('#lgiaPrintTitle').value.trim();
+  modal.querySelector('#printCancel').onclick = () => modal.remove();
+  modal.querySelector('#printConfirm').onclick = () => {
+    const title = modal.querySelector('#printTitleInput').value.trim();
     modal.remove();
-    prepareMapForPrintLgIa({ title: title || 'Karte' });
+    prepareForPrinting({ title: title || 'Karte' });
   };
 }
 
-function closeLgIaPrintDialog(){
-  const m = document.getElementById('lgiaPrintModal');
-  if (m) m.remove();
-}
-
-// Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
-// JAUNĀ DRUKAS FUNKCIJA (aizstājiet veco prepareMapForPrintLgIa)
-function prepareMapForPrintLgIa(opts) {
-    // PĀRBAUDE: Pārliecināmies, vai drukas bibliotēka ir ielādēta
+// JAUNĀ, STABILĀ DRUKAS FUNKCIJA
+function prepareForPrinting(opts) {
+    // Pārbaude, vai nepieciešamā bibliotēka ir ielādēta
     if (typeof leafletImage === 'undefined') {
-        alert('Kļūda: Drukas komponents (leaflet-image) nav ielādēts. Lūdzu, pārbaudiet HTML failu.');
-        console.error("leaflet-image.js nav atrasts. Pievienojiet <script> tagu HTML failā.");
+        alert('Kļūda: Drukas komponents (leaflet-image.js) nav ielādēts. Lūdzu, pārbaudiet HTML failu.');
         return;
     }
 
     const { title } = opts;
     const currentScale = getCurrentScale();
 
-    // 1. Izveidojam neredzamu konteineri drukas kartei
+    // 1. Izveidojam pagaidu konteineri drukas saturam
     const printContainer = document.createElement('div');
     printContainer.id = 'print-container';
     document.body.appendChild(printContainer);
 
-    // 2. Izveidojam galvenes un kājenes elementus
-    const header = document.createElement('div');
-    header.id = 'print-header';
-    header.innerHTML = `<span>Mērogs 1:${currentScale.toLocaleString('lv-LV')}</span>`;
+    // 2. Izveidojam visus nepieciešamos drukas elementus
+    printContainer.innerHTML = `
+        <div id="print-header">
+            <span id="print-title">${title}</span>
+            <span id="print-scale">Mērogs 1:${currentScale.toLocaleString('lv-LV')}</span>
+        </div>
+        <div id="print-map-image-wrapper"></div>
+        <div id="print-footer">
+            <span>${collectAttributionText()} &nbsp;&nbsp;|&nbsp;&nbsp; Sagatavots ar rīku cadet.lv</span>
+        </div>
+    `;
 
-    const footer = document.createElement('div');
-    footer.id = 'print-footer';
-    footer.innerHTML = `<span>${collectAttributionText()}</span><br><span>Sagatavots ar rīku cadet.lv</span>`;
-
-    printContainer.appendChild(header);
-    printContainer.appendChild(footer);
-
-    // 3. Pievienojam kartes nosaukumu, ja tas ir ievadīts
-    const titleEl = document.createElement('div');
-    titleEl.id = 'print-title';
-    titleEl.textContent = title;
-    printContainer.appendChild(titleEl);
-    
-    // 4. Izmantojam leaflet-image, lai uzņemtu ekrānšāviņu
+    // 3. "Nofotografējam" karti un ievietojam attēlu konteinerī
     leafletImage(map, function(err, canvas) {
         if (err) {
-            alert('Neizdevās sagatavot karti drukai. Mēģiniet vēlreiz.');
+            alert('Neizdevās sagatavot kartes attēlu drukai. Mēģiniet vēlreiz.');
             console.error(err);
             cleanup();
             return;
         }
 
-        // Pievienojam kartes attēlu drukas konteinerim
         const img = document.createElement('img');
-        img.className = 'print-map-image';
         img.src = canvas.toDataURL('image/png');
-        printContainer.appendChild(img);
+        printContainer.querySelector('#print-map-image-wrapper').appendChild(img);
 
-        // 5. Izsaucam druku un pēc tam visu satīrām
+        // 4. Viss ir gatavs – aktivizējam drukas režīmu un saucam drukas logu
         document.body.classList.add('print-mode');
         
-        window.addEventListener('afterprint', cleanup, { once: true });
-        // Neliela pauze, lai pārlūks paspēj uzzīmēt attēlu pirms drukas
-        setTimeout(() => window.print(), 50);
+        // Pēc nelielas pauzes, lai attēls ielādētos
+        setTimeout(() => {
+            window.addEventListener('afterprint', cleanup, { once: true });
+            window.print();
+        }, 100); 
     });
 
     function cleanup() {
@@ -1800,6 +1788,8 @@ function prepareMapForPrintLgIa(opts) {
         if (printContainer) {
             printContainer.remove();
         }
+        // Atjaunojam kartes izmēru, ja kas tika ietekmēts
+        map.invalidateSize();
     }
 }
 
