@@ -2279,30 +2279,33 @@ body.print-mode .leaflet-control {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  
-  /* Karte tiek pozicionēta un izmērīta lapas ietvaros */
-  body.print-mode #onlineMap {
+
+  /* Paslēpjam VISU, izņemot mūsu jauno drukas konteineri un pēdu */
+  body.print-mode > *:not(#print-map-container):not(#printFooter) {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Drukas konteinerim un pēdai jābūt redzamiem */
+  body.print-mode #print-map-container,
+  body.print-mode #printFooter {
     display: block !important;
     position: fixed !important;
     visibility: visible !important;
+    z-index: 9999 !important;
+  }
+
+  /* Drukas karte tiek pozicionēta un izmērīta lapas ietvaros */
+  body.print-mode #print-map-container {
     /* Izmērus un pozīciju iedos JavaScript ar <style> tagu */
   }
 
-  /* Pēda (footer) */
+  /* Pēdas (footer) teksta stils */
   body.print-mode #printFooter {
-    display: flex !important;
-    position: fixed !important;
-    visibility: visible !important;
     color: #000 !important;
     font: 10pt 'Times New Roman', serif !important;
   }
-  
-  /* Nodrošinām, ka kartes saturs (flīzes) ir redzams */
-  body.print-mode #onlineMap * {
-    visibility: visible !important;
-  }
 }
-
 
 
 
