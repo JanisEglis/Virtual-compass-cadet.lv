@@ -1480,7 +1480,7 @@ const SCALE_OPTIONS = [5000, 10000, 25000, 50000, 75000, 100000];
 function getCurrentScale(){
   const c   = map.getCenter(), z = map.getZoom();
   const mpp = 156543.03392 * Math.cos(c.lat*Math.PI/180) / Math.pow(2, z);
-  return Math.round(mpp / 0.00028); // “1:xxxx”
+  return Math.round(mpp / 0.0002645833); // “1:xxxx”
 }
 
 
@@ -1533,7 +1533,7 @@ function gridMinorDivisionsForScale(scale){
 	  
 function zoomForScale(scale){
   const lat = map.getCenter().lat * Math.PI/180;
-  const mppTarget = scale * 0.00028; // m/pixel pie 0.28mm pikseļa
+  const mppTarget = scale * 0.0002645833; // m/pixel pie 0.28mm pikseļa
   return Math.log2(156543.03392 * Math.cos(lat) / mppTarget);
 }
 
@@ -1962,17 +1962,20 @@ function injectDynamicPrintStyle(fmt, orient){
 
       /* BOTTOM-LEFT – avots */
       body.print-mode #printSourceBL{
-        position:fixed !important; left:10mm !important; bottom:3mm !important;
+        position:fixed !important; left:10mm !important; bottom:6mm !important;
         font:10pt/1.2 system-ui, sans-serif; color:#000; visibility:visible !important;
         max-width:${mm.w/1.5}mm; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
       }
 
       /* BOTTOM-RIGHT – režģa tips (UTM/LKS) */
       body.print-mode #printGridBR{
-        position:fixed !important; right:10mm !important; bottom:3mm !important;
+        position:fixed !important; right:10mm !important; bottom:6mm !important;
         font:10pt/1.2 system-ui, sans-serif; color:#000; visibility:visible !important;
         white-space:nowrap;
       }
+
+
+   
     }
   `;
   let el = document.getElementById('dynamicPrintStyle');
@@ -2162,20 +2165,24 @@ const MAJOR_OUT = { pane:'gridPane', color: OUTLINE_COLOR, opacity: .94,
 
 
 function addLine(points, isMajor, putLabel, labelLatLng, labelText){
-  // līnijas → gLines (ar baltu “halo” apakšā)
-  L.polyline(points, isMajor ? MAJOR_OUT : MINOR_OUT).addTo(gLines);
-  L.polyline(points, isMajor ? MAJOR     : MINOR    ).addTo(gLines);
+  const thin = document.body.classList.contains('print-mode');
+  const wMinor = thin ? 0.5 : 2.6;
+  const wMajor = thin ? 0.9 : 3.8;
+  const minorOut = thin ? wMinor + 0.6 : wMinor + 2.2;
+  const majorOut = thin ? wMajor + 0.8 : wMajor + 2.6;
 
-  // etiķete → gLabels
+  L.polyline(points, {pane:'gridPane', color:'#ffffff', opacity:thin?.9:.92,
+                      weight: isMajor ? majorOut : minorOut, lineJoin:'round', lineCap:'round'}).addTo(gLines);
+  L.polyline(points, {pane:'gridPane', color:'#000000', opacity:1.0,
+                      weight: isMajor ? wMajor : wMinor, lineJoin:'round', lineCap:'round'}).addTo(gLines);
+
   if (putLabel && labelLatLng){
-    const icon = L.divIcon({
-      className: 'utm-label' + (isMajor ? ' major' : ''),
-      html: `<span>${labelText}</span>`,
-      iconSize:[0,0], iconAnchor:[0,0]
-    });
+    const icon = L.divIcon({ className: 'utm-label' + (isMajor ? ' major' : ''),
+      html: `<span>${labelText}</span>`, iconSize:[0,0], iconAnchor:[0,0] });
     L.marker(labelLatLng, { icon, pane:'gridLabelPane', interactive:false }).addTo(gLabels);
   }
 }
+
 
 
 
@@ -2286,8 +2293,10 @@ function createLKSGridLayers(){
   const labels = L.layerGroup();
 
   // ņem redzamo kartes rāmi un taisa 1 km režģi
-  function redraw(){
-    grid.clearLayers(); labels.clearLayers();
+function redraw(){
+  grid.clearLayers(); labels.clearLayers();
+  const thin = document.body.classList.contains('print-mode');
+  const lineStyle = { color:'#000000', weight: thin ? 0.6 : 2.6, opacity: 0.95 };
 
     const b = map.getBounds();
   const scale = getCurrentScale();
