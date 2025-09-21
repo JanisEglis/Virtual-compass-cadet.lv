@@ -1767,6 +1767,8 @@ function closeLgIaPrintDialog(){
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
+const keepCenter = map.getCenter();
+const keepZoom   = map.getZoom();
 
   // 1) Uzliek precīzu zoom izvēlētajam mērogam (frakcionēts zoom)
   const prev = {
@@ -1803,6 +1805,18 @@ mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
   // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
   requestAnimationFrame(()=>{
     if (map) map.invalidateSize(true);
+
+
+if (map) {
+  map.invalidateSize(true);
+  map.setView(keepCenter, keepZoom, { animate: false }); // ← noturam tieši ekrāna centru
+}
+
+
+
+
+
+	  
     const footer = buildPrintFooterLgIa(scale, title);
     // ļaujam ielādēt flīzes/līnijas
     setTimeout(()=>{
@@ -1908,13 +1922,14 @@ function injectDynamicPrintStyle(fmt, orient){
       }
 
       /* pati karte: fiksēta vieta lapā, ar rāmi iekšpusē */
-      body.print-mode #onlineMap{
-        position: fixed !important;
-        top:15mm; left:10mm;
-        width:${mm.w}mm !important; height:${mm.h}mm !important;
-        display:block !important;
-        page-break-inside: avoid; break-inside: avoid;
-      }
+body.print-mode #onlineMap{
+  position: fixed !important;
+  /* centrē drukas laukumu uz lapas */
+  top:50% !important; left:50% !important; transform: translate(-50%,-50%) !important;
+  width:${mm.w}mm !important; height:${mm.h}mm !important;
+  display:block !important;
+  page-break-inside: avoid; break-inside: avoid;
+}
       body.print-mode #onlineMap::before{
         content:""; position:absolute; inset:0;
         border:1.2mm solid #000; box-sizing:border-box;
