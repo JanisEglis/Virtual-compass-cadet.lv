@@ -1847,43 +1847,7 @@ function prepareMapForPrintLgIa(opts){
   });
 }
 
-    function cleanup(){
-      document.body.classList.remove('print-mode');
-      footer && footer.remove();
-      styleEl && styleEl.remove();
-  // JAUNAIS: drošībai pārskaiti drošās zonas un pārzīmē Leaflet
-  try { window.__updateMapSafeAreas && window.__updateMapSafeAreas(); } catch(e){}
-  try { map && map.invalidateSize(true); } catch(e){}
- // noņemam top mēroga uzlīmi:
-  try{ if (window.__printScaleTopEl){ window.__printScaleTopEl.remove(); window.__printScaleTopEl = null; } }catch(e){}
-
-try{
-  const mapEl = document.getElementById('onlineMap');
-  if (mapEl){
-    mapEl.setAttribute('style', prevInlineStyle); // atjaunojam
-  }
-}catch(e){}
-
-try{
-  if (window.__printOverlayEls){
-    window.__printOverlayEls.forEach(el => { try{ el.remove(); }catch(e){} });
-    window.__printOverlayEls = null;
-  }
-}catch(e){}
-
-
-
-		
-		
-      // atjauno animācijas
-      map.options.zoomSnap = prev.zoomSnap;
-      map.options.zoomDelta = prev.zoomDelta;
-      map.options.zoomAnimation = prev.zoomAnim;
-      map.options.fadeAnimation = prev.fadeAnim;
-      map.options.markerZoomAnimation = prev.markerZoomAnim;
-    }
-  });
-}
+  
 
 // Dinamiski iedod @page size + #onlineMap mm izmēru pēc formāta/orientācijas
 // Dinamiski @page + fiksēta kartes pozīcija lapā (bez nobīdēm)
