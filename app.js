@@ -1766,6 +1766,7 @@ function closeLgIaPrintDialog(){
 
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 function prepareMapForPrintLgIa(opts){
+	const printCenter = map.getCenter();
   const { format, orient, scale, title } = opts;
 
 // 0) Paņem ekrānā redzamo centru (pirms jebkādām izmaiņām)
@@ -1824,7 +1825,12 @@ try { closeBothMenus && closeBothMenus(); } catch(e){}
 document.documentElement.style.setProperty('--map-top-safe','0px');
 document.documentElement.style.setProperty('--map-bottom-safe','0px');
 
+if (map){
+  map.invalidateSize(true);
+  map.setView(printCenter, targetZoom, { animate:false }); // garantē centru
+}
 
+		
 if (map) { map.invalidateSize(true); map.fire('resize'); }
 
  if (map) {
