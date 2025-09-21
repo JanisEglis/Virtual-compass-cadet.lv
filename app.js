@@ -1908,6 +1908,7 @@ function injectDynamicPrintStyle(fmt, orient){
       /* pati karte: fiksēta vieta lapā, ar rāmi iekšpusē */
       body.print-mode #onlineMap{
         position: fixed !important;
+		top:14mm;
         top:10mm; left:10mm;
         width:${mm.w}mm !important; height:${mm.h}mm !important;
         display:block !important;
@@ -1946,31 +1947,29 @@ function injectDynamicPrintStyle(fmt, orient){
         visibility:visible !important;
       }
 
-/* TOP-RIGHT – ziemeļu bulta (uz lapas augšu) */
+/* TOP-RIGHT – ziemeļu bulta (bulta + “N” blakus) */
 body.print-mode #printNorthTR,
 body.print-mode #printNorthTR *{ visibility:visible !important; }
 
 body.print-mode #printNorthTR{
   position:fixed !important;
-  top:6mm !important; right:10mm !important;  /* sader ar mēroga/virsraksta 6mm */
-  width:12mm; height:14mm;                     /* bija 16×18mm — samazinām */
-  text-align:center; 
-  font-size:0;                                  /* ← noņem jebkādas “liecītes” */
-  user-select:none;
+  top:6mm !important; right:10mm !important;
+  display:flex; align-items:center; gap:2mm;
+  font-size:0; user-select:none;           /* font-size:0 likvidē “lieko simbolu” */
 }
 
 body.print-mode #printNorthTR .arrow{
-  width:0; height:0; margin:0 auto 1mm auto;
-  border-left:6mm solid transparent;           /* bija 8mm */
-  border-right:6mm solid transparent;
-  border-bottom:12mm solid #000;               /* bija 16mm */
+  width:0; height:0;
+  border-left:4mm solid transparent;       /* mazāka bulta */
+  border-right:4mm solid transparent;
+  border-bottom:8mm solid #000;
 }
 
 body.print-mode #printNorthTR .n{
-  display:block;
-  font:9pt/1 system-ui, sans-serif;            /* bija 10pt */
+  font:9pt/1 system-ui, sans-serif;
   font-weight:700; letter-spacing:1px; color:#000;
 }
+
 
 
 
