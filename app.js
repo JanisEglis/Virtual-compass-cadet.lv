@@ -1965,7 +1965,7 @@ body.print-mode #printNorthTR svg,
 body.print-mode #printNorthTR canvas{ display: none !important; }
 
 /* pašas bultas ģeometrija un “N” */
-body.print-mode #printNorthTR .arrow{
+body.print-mode #printNorthTR .northArrow{
   width:0; height:0; margin:0;
   border-left:4mm solid transparent;
   border-right:4mm solid transparent;
@@ -1996,7 +1996,9 @@ body.print-mode #printNorthTR .n{
         white-space:nowrap;
       }
 
-
+body.print-mode .arrow{ 
+	display:none !important; 
+ } 
    
     }
   `;
@@ -2036,7 +2038,7 @@ function buildPrintFooterLgIa(scaleVal, title){
   // Ziemeļu bulta (TR)
   const tr = document.createElement('div');
   tr.id = 'printNorthTR';
-  tr.innerHTML = `<div class="arrow"></div><div class="n">N</div>`;
+  tr.innerHTML = `<div class="northArrow"></div><div class="n">N</div>`;
   document.body.appendChild(tr); els.push(tr);
 
   // Avots (BL)
