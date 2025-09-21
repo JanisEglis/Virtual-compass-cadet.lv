@@ -1836,6 +1836,10 @@ if (map) { map.invalidateSize(true); map.fire('resize'); }
     map.invalidateSize(true);
     map.panTo(keepCenter, { animate:false });   // panTo dažkārt notur pikseļ-enkuru labāk
     map.setView(keepCenter, map.getZoom(), { animate:false });
+	    // ⇩ JAUNAIS: pikseļu-precīza centrēšana
+  const pt = map.latLngToContainerPoint(keepCenter);
+  const sz = map.getSize();
+  map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
   }
 
 
