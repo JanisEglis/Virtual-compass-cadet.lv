@@ -1804,9 +1804,6 @@ mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
 
   // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
   requestAnimationFrame(()=>{
-    if (map) map.invalidateSize(true);
-
-
 
 if (map) {
   map.invalidateSize(true);
