@@ -1884,7 +1884,7 @@ function injectDynamicPrintStyle(fmt, orient){
 
   // drošības “slack”, lai nebūtu otrā lapa (header/footer situācijās)
   const slackW = (orient==='landscape' ? 2 : 0);
-  const slackH = (orient==='landscape' ? 10 : 0);
+  const slackH = (orient==='landscape' ? 14 : 0);
 
   const mm = { w: base.w - slackW, h: base.h - slackH };
   const pageSize = (fmt==='A3' ? 'A3' : 'A4') + ' ' + (orient==='portrait' ? 'portrait' : 'landscape');
@@ -1908,8 +1908,7 @@ function injectDynamicPrintStyle(fmt, orient){
       /* pati karte: fiksēta vieta lapā, ar rāmi iekšpusē */
       body.print-mode #onlineMap{
         position: fixed !important;
-		top:14mm;
-        top:10mm; left:10mm;
+        top:14mm; left:10mm;
         width:${mm.w}mm !important; height:${mm.h}mm !important;
         display:block !important;
         page-break-inside: avoid; break-inside: avoid;
