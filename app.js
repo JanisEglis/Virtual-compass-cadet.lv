@@ -5645,3 +5645,113 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 							    window.visualViewport.addEventListener('scroll', onViewportChange);
 							  }
 							})();
+
+
+
+
+
+//PRINTMEDIA TESTERIS
+
+// === PrintMedia overlay tester — drop-in, zero CSS edits ===
+(function(){
+  const OVERLAY_ID = 'printAreaOverlay';
+  const STYLE_ID   = 'printAreaOverlayCSS';
+  const mm2px = mm => Math.round(mm * 96 / 25.4);
+
+  function ensureStyles(){
+    if (document.getElementById(STYLE_ID)) return;
+    const st = document.createElement('style');
+    st.id = STYLE_ID;
+    st.textContent = `
+#printAreaOverlay{position:fixed;inset:0;margin:auto;width:0;height:0;z-index:2147483647;pointer-events:none;border:3px dashed rgba(255,0,0,.75);background:rgba(255,0,0,.12);box-shadow:0 0 0 9999px rgba(0,0,0,.15);display:none}
+#printAreaOverlay .label{position:absolute;right:8px;bottom:8px;font:600 12px/1.2 system-ui,sans-serif;padding:6px 8px;background:rgba(0,0,0,.55);color:#fff;border-radius:6px}`;
+    document.head.appendChild(st);
+  }
+  function ensureOverlay(){
+    let el = document.getElementById(OVERLAY_ID);
+    if (!el){
+      el = document.createElement('div');
+      el.id = OVERLAY_ID;
+      el.innerHTML = '<div class="label"></div>';
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+
+  // Nolasām mm no TAVA dinamiski ieliktā CSS noteikuma `body.print-mode #onlineMap`
+  function findPrintBoxMm(){
+    let mm = { w:277, h:190, src:'default' }; // fallback: A4 ainava (277×190 mm)
+    for (const ss of document.styleSheets){
+      let rules;
+      try { rules = ss.cssRules || ss.rules; } catch(e){ continue; } // CORS
+      if (!rules) continue;
+      for (const r of rules){
+        if (r.type === CSSRule.MEDIA_RULE && r.cssRules){
+          for (const rr of r.cssRules){ mm = parseRule(rr, mm); }
+        } else {
+          mm = parseRule(r, mm);
+        }
+      }
+    }
+    return mm;
+
+    function parseRule(rule, out){
+      const sel = rule.selectorText || '';
+      if (sel && sel.includes('body.print-mode') && sel.includes('#onlineMap')){
+        const txt = rule.cssText || '';
+        const mW = /width\s*:\s*([\d.]+)mm/i.exec(txt);
+        const mH = /height\s*:\s*([\d.]+)mm/i.exec(txt);
+        if (mW && mH){
+          return { w: parseFloat(mW[1]), h: parseFloat(mH[1]), src:'css' };
+        }
+      }
+      return out;
+    }
+  }
+
+  function showOverlay(ms=5000){
+    ensureStyles();
+    const el = ensureOverlay();
+    const { w, h } = findPrintBoxMm();
+
+    // mm -> px uz ekrāna; centrē skatlogā (kā print CSS ar inset:0;margin:auto;)
+    const vpW = window.innerWidth;
+    const vpH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const wpx = mm2px(w), hpx = mm2px(h);
+    const scale = Math.min(vpW / wpx, vpH / hpx, 1);
+
+    el.style.width  = Math.floor(wpx * scale) + 'px';
+    el.style.height = Math.floor(hpx * scale) + 'px';
+    el.style.display = 'block';
+    el.querySelector('.label').textContent =
+      `print-media: ${w}×${h} mm  ≈  ${Math.round(wpx)}×${Math.round(hpx)} px`;
+
+    clearTimeout(showOverlay._t);
+    showOverlay._t = setTimeout(()=> el.style.display='none', ms);
+  }
+
+  // Piesienamies TAVAI esošajai pogai (bez citu handleru mainīšanas)
+  document.addEventListener('click', (e)=>{
+    const btn = e.target.closest && e.target.closest('#preparePrintBtn');
+    if (!btn) return;
+    showOverlay(); // vizualizē print kasti
+  }, true);
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
