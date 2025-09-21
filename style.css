@@ -2332,7 +2332,9 @@ body.print-mode .leaflet-control { display:none !important; }
   /* karte vienmēr 10mm no malām ar īstu mm izmēru */
   body.print-mode #onlineMap{
     position: fixed !important;
-    top: 10mm; left: 10mm;
+     top:50% !important;
+    left:50% !important;
+    transform: translate(-50%, -50%) !important;
     width: var(--print-w,190mm) !important;    /* A4 portrets pēc noklusējuma */
     height: var(--print-h,277mm) !important;
     display: block !important;
