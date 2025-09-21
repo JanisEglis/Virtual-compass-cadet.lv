@@ -1908,7 +1908,7 @@ function injectDynamicPrintStyle(fmt, orient){
       /* pati karte: fiksēta vieta lapā, ar rāmi iekšpusē */
       body.print-mode #onlineMap{
         position: fixed !important;
-        top:14mm; left:10mm;
+        top:15mm; left:10mm;
         width:${mm.w}mm !important; height:${mm.h}mm !important;
         display:block !important;
         page-break-inside: avoid; break-inside: avoid;
