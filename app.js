@@ -1768,6 +1768,10 @@ function closeLgIaPrintDialog(){
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
 
+// 0) Paņem ekrānā redzamo centru (pirms jebkādām izmaiņām)
+const printCenter = map.getCenter();
+	
+
   // 1) Uzliek precīzu zoom izvēlētajam mērogam (frakcionēts zoom)
   const prev = {
     zoomSnap: map.options.zoomSnap,
@@ -1781,7 +1785,8 @@ function prepareMapForPrintLgIa(opts){
   map.options.zoomAnimation = false;
   map.options.fadeAnimation = false;
   map.options.markerZoomAnimation = false;
-  map.setZoom( zoomForScale(scale), { animate:false } );
+ const targetZoom = zoomForScale(scale);
+	map.setView(printCenter, targetZoom, { animate:false });
   if (typeof updateRatio === 'function') updateRatio();
 
 
@@ -1803,6 +1808,10 @@ mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
   // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
   requestAnimationFrame(()=>{
     if (map) map.invalidateSize(true);
+	   if (map){
+     map.invalidateSize(true);
+     map.setView(printCenter, targetZoom, { animate:false }); // ← garantē centru
+   }
     const footer = buildPrintFooterLgIa(scale, title);
     // ļaujam ielādēt flīzes/līnijas
     setTimeout(()=>{
@@ -1818,7 +1827,11 @@ document.documentElement.style.setProperty('--map-bottom-safe','0px');
 
 if (map) { map.invalidateSize(true); map.fire('resize'); }
 
-
+ if (map) {
+       map.invalidateSize(true);
+       map.fire('resize');
+       map.setView(printCenter, targetZoom, { animate:false }); // ← drošības otrais sitiens
+     }
 
 
 
