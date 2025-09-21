@@ -2330,12 +2330,13 @@ body.print-mode .leaflet-control { display:none !important; }
   body.print-mode{ display:block !important; }
 
   /* karte vienmēr 10mm no malām ar īstu mm izmēru */
+@media print{
   body.print-mode #onlineMap{
     position: fixed !important;
-     top:50% !important;
-    left:50% !important;
+    top: 50% !important;
+    left: 50% !important;
     transform: translate(-50%, -50%) !important;
-    width: var(--print-w,190mm) !important;    /* A4 portrets pēc noklusējuma */
+    width: var(--print-w,190mm) !important;
     height: var(--print-h,277mm) !important;
     display: block !important;
   }
