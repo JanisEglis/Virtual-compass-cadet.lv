@@ -1896,6 +1896,8 @@ function injectDynamicPrintStyle(fmt, orient){
     html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
     @media print {
       html, body { height:auto !important; overflow:hidden !important; }
+	    /* slēdzam arī ekrāna UI rokturi, ja tas vēl eksistē */
+  #resizeHandle{ display:none !important; }
 
       /* ļaujam palikt tikai kartei un mūsu overlay */
       body.print-mode > *:not(#canvasContainer):not(#printScaleTop):not(#printTitleTL):not(#printNorthTR):not(#printSourceBL):not(#printGridBR){
@@ -1916,6 +1918,10 @@ function injectDynamicPrintStyle(fmt, orient){
       body.print-mode #onlineMap::before{
         content:""; position:absolute; inset:0;
         border:1.2mm solid #000; box-sizing:border-box;
+		border: 2px solid #000;  
+   		 box-shadow: none !important;
+		  pointer-events: none;
+		  z-index: 999;
       }
 
       /* JAUKTĀS KONTROLES – viss Leaflet UI un jebkas “info/coord/scale” tiek noslēpts */
@@ -1946,43 +1952,44 @@ function injectDynamicPrintStyle(fmt, orient){
         visibility:visible !important;
       }
 
-/* TOP-RIGHT – ziemeļu bulta (bulta + “N” blakus) */
+/* TOP-RIGHT — ziemeļu bulta (tīra, bez svešiem elementiem) */
 body.print-mode #printNorthTR,
-body.print-mode #printNorthTR *{ visibility:visible !important; }
+body.print-mode #printNorthTR *{ visibility: visible !important; }
 
 body.print-mode #printNorthTR{
-  position:fixed !important;
-  top:6mm !important; right:10mm !important;
-  display:flex; align-items:center; gap:2mm;
-  font-size:0; user-select:none;           /* font-size:0 likvidē “lieko simbolu” */
-
-   /* JAUNI: lai nekas “neielīp” iekšā un būtu virs visa */
-  z-index: 2147483647;                  /* vienmēr virspusē */
+  position: fixed !important;
+  top: 6mm !important; right: 10mm !important;
+  display: flex; align-items: center; gap: 2mm;
+  /* pilns “resets”, lai nekas no UI neielien iekšā */
+  z-index: 2147483647;
   background: none !important;
+  background-image: none !important;
   box-shadow: none !important;
   border: 0 !important;
+  outline: 0 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  font-size: 0; user-select: none; pointer-events: none;
 }
-
-
+body.print-mode #printNorthTR::before,
+body.print-mode #printNorthTR::after{ content: none !important; display: none !important; }
 body.print-mode #printNorthTR img,
 body.print-mode #printNorthTR svg,
-body.print-mode #printNorthTR canvas { display:none !important; } /* ja nu kas */
+body.print-mode #printNorthTR canvas{ display: none !important; }
 
-
-
-
-
+/* Mazāka bulta + “N” blakus */
 body.print-mode #printNorthTR .arrow{
-  width:0; height:0;
-  border-left:4mm solid transparent;       /* mazāka bulta */
-  border-right:4mm solid transparent;
-  border-bottom:8mm solid #000;
+  width: 0; height: 0; margin: 0;
+  border-left: 4mm solid transparent;
+  border-right: 4mm solid transparent;
+  border-bottom: 8mm solid #000;
+}
+body.print-mode #printNorthTR .n{
+  font: 9pt/1 system-ui, sans-serif;
+  font-weight: 700; letter-spacing: 1px; color: #000;
+  pointer-events: none;
 }
 
-body.print-mode #printNorthTR .n{
-  font:9pt/1 system-ui, sans-serif;
-  font-weight:700; letter-spacing:1px; color:#000;
-}
 
 
 
