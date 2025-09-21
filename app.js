@@ -1958,7 +1958,7 @@ body.print-mode #printNorthTR *{ visibility: visible !important; }
 
 body.print-mode #printNorthTR{
   position: fixed !important;
-  top: 6mm !important; right: 10mm !important;
+  top: 8mm !important; right: 10mm !important;
   display: flex; align-items: center; gap: 2mm;
   /* pilns “resets”, lai nekas no UI neielien iekšā */
   z-index: 2147483647;
