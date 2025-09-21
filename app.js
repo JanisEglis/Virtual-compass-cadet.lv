@@ -1929,13 +1929,18 @@ function injectDynamicPrintStyle(fmt, orient){
       }
 
       /* pati karte: fiksēta vieta lapā, ar rāmi iekšpusē */
+/* @media print sadaļā, kartes fiksētā vieta lapā */
 body.print-mode #onlineMap{
   position: fixed !important;
-  top:50% !important; left:50% !important; transform: translate(-50%, -50%) !important;
-  width:${mm.w}mm !important; height:${mm.h}mm !important;
-  display:block !important;
+  inset: 0 !important;          /* top/right/bottom/left = 0 */
+  margin: auto !important;      /* centrē bez transformiem */
+  width: ${mm.w}mm !important;
+  height: ${mm.h}mm !important;
+  transform: none !important;   /* ← noņemam */
+  display: block !important;
   page-break-inside: avoid; break-inside: avoid;
 }
+
 
       body.print-mode #onlineMap::before{
         content:""; position:absolute; inset:0;
