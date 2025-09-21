@@ -1769,8 +1769,7 @@ function prepareMapForPrintLgIa(opts){
 	const printCenter = map.getCenter();
   const { format, orient, scale, title } = opts;
 
-// 0) Paņem ekrānā redzamo centru (pirms jebkādām izmaiņām)
-const printCenter = map.getCenter();
+
 	
 
   // 1) Uzliek precīzu zoom izvēlētajam mērogam (frakcionēts zoom)
