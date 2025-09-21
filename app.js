@@ -2014,7 +2014,7 @@ body.print-mode #printNorthTR .northArrow{
   border-left:4mm solid transparent;
   border-right:4mm solid transparent;
   border-bottom:8mm solid #000;
-margin-top: 3mm;
+margin-top: 1mm;
 }
 body.print-mode #printNorthTR .n{
   font:9pt/1 system-ui, sans-serif; font-weight:700; letter-spacing:1px; color:#000;
