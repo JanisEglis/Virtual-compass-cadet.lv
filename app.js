@@ -1846,6 +1846,23 @@ if (map) { map.invalidateSize(true); map.fire('resize'); }
 
 
 
+// — cietā centrēšana tieši attēlu veidotājam (tile-pane) —
+(function hardCenter(){
+  const center = keepCenter;                // ekrānā redzamais centrs
+  map.invalidateSize(true);
+
+  // 1) cietais reset — pārrēķina pixelOrigin bez animācijas
+  if (map._resetView) map._resetView(center, map.getZoom(), true);
+  else map.setView(center, map.getZoom(), { animate:false });
+
+  // 2) pikseļu korekcija (ja nedaudz “peld” pēc izmēra maiņas)
+  const sz = map.getSize();
+  const pt = map.latLngToContainerPoint(center);
+  map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
+})();
+
+// neliels pauzes rāmis, lai izkārtotos flīzes
+setTimeout(() => window.print(), 120);
 
 
 
@@ -1927,6 +1944,23 @@ function injectDynamicPrintStyle(fmt, orient){
       body.print-mode #canvasContainer > *:not(#onlineMap){
         display:none !important;
       }
+
+
+
+
+@media print{
+  #onlineMap .leaflet-map-pane,
+  #onlineMap .leaflet-tile-pane{
+    transform: translate(0,0) !important;
+  }
+}
+
+
+
+
+
+
+ 
 
       /* pati karte: fiksēta vieta lapā, ar rāmi iekšpusē */
 /* @media print sadaļā, kartes fiksētā vieta lapā */
