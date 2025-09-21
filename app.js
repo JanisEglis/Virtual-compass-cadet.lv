@@ -1831,7 +1831,12 @@ document.documentElement.style.setProperty('--map-bottom-safe','0px');
 if (map) { map.invalidateSize(true); map.fire('resize'); }
 
 
-
+  // 👇 DROŠĪBAS RE-CENTRĒŠANA TIEŠI PIRMS DRUKAS
+  if (map) {
+    map.invalidateSize(true);
+    map.panTo(keepCenter, { animate:false });   // panTo dažkārt notur pikseļ-enkuru labāk
+    map.setView(keepCenter, map.getZoom(), { animate:false });
+  }
 
 
 
