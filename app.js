@@ -10,7 +10,6 @@ const onDomReady = (fn) => {
     document.addEventListener('DOMContentLoaded', fn, { once: true });
   } else {
     fn();
-  }
 };
 
 // Droša piekļuve elementiem
@@ -1844,6 +1843,15 @@ if (map) { map.invalidateSize(true); map.fire('resize'); }
 
 
 
+(function hardCenter(){
+  const center = keepCenter;                  // ekrānā redzamais centrs
+  map.invalidateSize(true);
+  if (map._resetView) map._resetView(center, map.getZoom(), true);
+  else map.setView(center, map.getZoom(), { animate:false });
+  const sz = map.getSize();
+  const pt = map.latLngToContainerPoint(center);
+  map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false }); // pikseļu enkurs
+})();
 
 
 
@@ -1938,6 +1946,23 @@ body.print-mode #onlineMap{
   display: block !important;
   page-break-inside: avoid; break-inside: avoid;
 }
+
+
+
+@media print{
+  #onlineMap .leaflet-map-pane,
+  #onlineMap .leaflet-tile-pane,
+  #onlineMap .leaflet-overlay-pane,
+  #onlineMap .leaflet-shadow-pane,
+  #onlineMap .leaflet-marker-pane{
+    transform: translate(0,0) !important;   /* resetē translate3d nobīdi */
+  }
+}
+
+
+
+
+
 
 
       body.print-mode #onlineMap::before{
