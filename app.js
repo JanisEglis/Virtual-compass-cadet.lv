@@ -1528,6 +1528,11 @@ function gridMinorDivisionsForScale(scale){
 
 
 
+function zoomForScaleAtLat(scale, lat){
+  // 0.2645833 mm/px (96 dpi)  → m/pixel mērķis
+  const mppTarget = scale * 0.0002645833;
+  return Math.log2(156543.03392 * Math.cos(lat * Math.PI/180) / mppTarget);
+}
 
 
 	  
@@ -1766,13 +1771,15 @@ function closeLgIaPrintDialog(){
 
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 function prepareMapForPrintLgIa(opts){
-	const printCenter = map.getCenter();
   const { format, orient, scale, title } = opts;
 
+  // 0) Paņem ekrānā redzamo centru (VIENREIZ) un aprēķini zoom no šī paša platuma
+  const printCenter = map.getCenter();
+  const targetZoom  = (typeof zoomForScaleAtLat === 'function')
+    ? zoomForScaleAtLat(scale, printCenter.lat)
+    : zoomForScale(scale);
 
-	
-
-  // 1) Uzliek precīzu zoom izvēlētajam mērogam (frakcionēts zoom)
+  // 1) Uz laiku atslēdz animācijas, uzliec centru+zoom
   const prev = {
     zoomSnap: map.options.zoomSnap,
     zoomDelta: map.options.zoomDelta,
@@ -1785,72 +1792,49 @@ function prepareMapForPrintLgIa(opts){
   map.options.zoomAnimation = false;
   map.options.fadeAnimation = false;
   map.options.markerZoomAnimation = false;
- const targetZoom = zoomForScale(scale);
-	map.setView(printCenter, targetZoom, { animate:false });
+
+  map.setView(printCenter, targetZoom, { animate:false });
   if (typeof updateRatio === 'function') updateRatio();
 
+  // Pirms print-mode: nofiksē pašreizējos px izmērus
+  const mapEl = document.getElementById('onlineMap');
+  const prevInlineStyle = mapEl ? (mapEl.getAttribute('style') || '') : '';
+  if (mapEl){
+    mapEl.style.width  = mapEl.clientWidth  + 'px';
+    mapEl.style.height = mapEl.clientHeight + 'px';
+  }
 
-
-// PIRMS print-mode:
-const mapEl = document.getElementById('onlineMap');
-const prevInlineStyle = mapEl?.getAttribute('style') || '';
-mapEl && (mapEl.style.width = mapEl.clientWidth + 'px');
-mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
-
-
-
-
-	
-  // 2) Ieslēdz “print-mode” un ielādē dinamisku @page + mm izmērorientāciju
+  // 2) Ieslēdz print-mode un injicē CSS
   document.body.classList.add('print-mode');
   const styleEl = injectDynamicPrintStyle(format, orient);
 
-  // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
+  // 3) Pēc izmēru pārrēķina — 2x apstiprini centru+zoom un drukā
   requestAnimationFrame(()=>{
-    if (map) map.invalidateSize(true);
-	   if (map){
-     map.invalidateSize(true);
-     map.setView(printCenter, targetZoom, { animate:false }); // ← garantē centru
-   }
+    if (map){
+      map.invalidateSize(true);
+      map.setView(printCenter, targetZoom, { animate:false }); // 1. sitiens
+    }
+
     const footer = buildPrintFooterLgIa(scale, title);
-    // ļaujam ielādēt flīzes/līnijas
+
     setTimeout(()=>{
-      window.addEventListener('afterprint', cleanup, {once:true});
+      window.addEventListener('afterprint', cleanup, { once:true });
 
+      // aizver izvēlnes, nullē “safe areas”
+      try { window.closeBothSelectorsLegacy && window.closeBothSelectorsLegacy(); } catch(e){}
+      try { closeBothMenus && closeBothMenus(); } catch(e){}
+      document.documentElement.style.setProperty('--map-top-safe','0px');
+      document.documentElement.style.setProperty('--map-bottom-safe','0px');
 
-// aizver sānu paneļus un nullē “safe areas”, lai nekas neietekmē izkārtojumu
-try { window.closeBothSelectorsLegacy && window.closeBothSelectorsLegacy(); } catch(e){}
-try { closeBothMenus && closeBothMenus(); } catch(e){}
-document.documentElement.style.setProperty('--map-top-safe','0px');
-document.documentElement.style.setProperty('--map-bottom-safe','0px');
+      if (map){
+        map.invalidateSize(true);
+        map.fire('resize');
+        map.setView(printCenter, targetZoom, { animate:false }); // 2. sitiens
+      }
 
-if (map){
-  map.invalidateSize(true);
-  map.setView(printCenter, targetZoom, { animate:false }); // garantē centru
-}
-
-		
-if (map) { map.invalidateSize(true); map.fire('resize'); }
-
- if (map) {
-       map.invalidateSize(true);
-       map.fire('resize');
-       map.setView(printCenter, targetZoom, { animate:false }); // ← drošības otrais sitiens
-     }
-
-
-
-
-
-
-
-
-
-
-
-		
       window.print();
     }, 600);
+  });
 
     function cleanup(){
       document.body.classList.remove('print-mode');
