@@ -1955,7 +1955,22 @@ body.print-mode #printNorthTR{
   top:6mm !important; right:10mm !important;
   display:flex; align-items:center; gap:2mm;
   font-size:0; user-select:none;           /* font-size:0 likvidē “lieko simbolu” */
+
+   /* JAUNI: lai nekas “neielīp” iekšā un būtu virs visa */
+  z-index: 2147483647;                  /* vienmēr virspusē */
+  background: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
 }
+
+
+body.print-mode #printNorthTR img,
+body.print-mode #printNorthTR svg,
+body.print-mode #printNorthTR canvas { display:none !important; } /* ja nu kas */
+
+
+
+
 
 body.print-mode #printNorthTR .arrow{
   width:0; height:0;
