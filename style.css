@@ -2330,7 +2330,7 @@ body.print-mode .leaflet-control { display:none !important; }
   body.print-mode{ display:block !important; }
 
   /* karte vienmēr 10mm no malām ar īstu mm izmēru */
-@media print{
+/* @media print{
   body.print-mode #onlineMap{
     position: fixed !important;
     top: 50% !important;
@@ -2340,4 +2340,4 @@ body.print-mode .leaflet-control { display:none !important; }
     height: var(--print-h,277mm) !important;
     display: block !important;
   }
-}
+} */
