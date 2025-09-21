@@ -1851,7 +1851,7 @@ if (map) { map.invalidateSize(true); map.fire('resize'); }
   const sz = map.getSize();
   const pt = map.latLngToContainerPoint(center);
   map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false }); // pikseļu enkurs
-});
+})();
 
 
 
