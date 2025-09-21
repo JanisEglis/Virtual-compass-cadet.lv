@@ -1806,11 +1806,11 @@ mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
   requestAnimationFrame(()=>{
     if (map) map.invalidateSize(true);
 
-map.setView(keepCenter, keepZoom, { animate: false });
+
 
 if (map) {
   map.invalidateSize(true);
-  map.setView(keepCenter, keepZoom, { animate: false }); // ← noturam tieši ekrāna centru
+  map.setView(keepCenter, map.getZoom(), { animate: false }); // ← noturam tieši ekrāna centru
 }
 
 
