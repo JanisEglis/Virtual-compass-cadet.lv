@@ -1784,6 +1784,18 @@ function prepareMapForPrintLgIa(opts){
   map.setZoom( zoomForScale(scale), { animate:false } );
   if (typeof updateRatio === 'function') updateRatio();
 
+
+
+// PIRMS print-mode:
+const mapEl = document.getElementById('onlineMap');
+const prevInlineStyle = mapEl?.getAttribute('style') || '';
+mapEl && (mapEl.style.width = mapEl.clientWidth + 'px');
+mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
+
+
+
+
+	
   // 2) Ieslēdz “print-mode” un ielādē dinamisku @page + mm izmērorientāciju
   document.body.classList.add('print-mode');
   const styleEl = injectDynamicPrintStyle(format, orient);
@@ -1832,6 +1844,23 @@ if (map) { map.invalidateSize(true); map.fire('resize'); }
  // noņemam top mēroga uzlīmi:
   try{ if (window.__printScaleTopEl){ window.__printScaleTopEl.remove(); window.__printScaleTopEl = null; } }catch(e){}
 
+try{
+  const mapEl = document.getElementById('onlineMap');
+  if (mapEl){
+    mapEl.setAttribute('style', prevInlineStyle); // atjaunojam
+  }
+}catch(e){}
+
+try{
+  if (window.__printOverlayEls){
+    window.__printOverlayEls.forEach(el => { try{ el.remove(); }catch(e){} });
+    window.__printOverlayEls = null;
+  }
+}catch(e){}
+
+
+
+		
 		
       // atjauno animācijas
       map.options.zoomSnap = prev.zoomSnap;
@@ -1845,112 +1874,105 @@ if (map) { map.invalidateSize(true); map.fire('resize'); }
 
 // Dinamiski iedod @page size + #onlineMap mm izmēru pēc formāta/orientācijas
 // Dinamiski @page + fiksēta kartes pozīcija lapā (bez nobīdēm)
+// Dinamiski @page + fiksēta kartes pozīcija lapā (bez nobīdēm)
+// + overlay (Title TL, North TR, Scale Top Center, Source BL, Grid BR)
 function injectDynamicPrintStyle(fmt, orient){
-  const mm = (fmt==='A3')
+  // bāzes iekšējie mm (10mm malas katrā pusē)
+  const base = (fmt==='A3')
     ? (orient==='portrait' ? {w:277, h:400} : {w:400, h:277})
     : (orient==='portrait' ? {w:190, h:277} : {w:277, h:190});
 
+  // drošības “slack”, lai nebūtu otrā lapa (header/footer situācijās)
+  const slackW = (orient==='landscape' ? 2 : 0);
+  const slackH = (orient==='landscape' ? 6 : 0);
+
+  const mm = { w: base.w - slackW, h: base.h - slackH };
   const pageSize = (fmt==='A3' ? 'A3' : 'A4') + ' ' + (orient==='portrait' ? 'portrait' : 'landscape');
 
   const css = `
+    @page { size:${pageSize}; margin:0; }
 
-
-body.print-mode #onlineMap{
-  position: fixed !important;
-  top:10mm; left:10mm;
-  width:${mm.w}mm !important;
-  height:${mm.h}mm !important;
-  display:block !important;
-  page-break-inside: avoid; break-inside: avoid; overflow: hidden;
-  box-sizing: border-box;
-}
-body.print-mode #onlineMap::before{
-  content:"";
-  position:absolute; inset:0;
-  border: 1.2mm solid #000;   /* rāmja biezums/krāsa */
-  pointer-events: none;
-  z-index: 999;
-}
-
-
-
-/* Nodzēšam jebkādu plūsmas augstumu, lai būtu TIKAI viena lapa */
-body.print-mode #canvasContainer{
-  position: static !important;
-  height: 0 !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: visible !important;
-}
-
-/* Drošai vienlapes drukai – slēpjam visu, izņemot karti un uzlīmes */
-body.print-mode > *:not(#canvasContainer):not(#printScaleTop):not(#printFooter){
-  display: none !important;
-}
-body.print-mode #canvasContainer > *:not(#onlineMap){
-  display: none !important;
-}
-
-
-
-  
-    @page { size: ${pageSize}; margin: 0; }
+    /* pirms/drukas laikā “izslaukam” lapu līdz vienai vienībai */
+    html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
     @media print {
-      html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
-      body.print-mode { display: block !important; }
+      html, body { height:auto !important; overflow:hidden !important; }
+
+      /* ļaujam palikt tikai kartei un mūsu overlay */
+      body.print-mode > *:not(#canvasContainer):not(#printScaleTop):not(#printTitleTL):not(#printNorthTR):not(#printSourceBL):not(#printGridBR){
+        display:none !important;
+      }
+      body.print-mode #canvasContainer > *:not(#onlineMap){
+        display:none !important;
+      }
+
+      /* pati karte: fiksēta vieta lapā, ar rāmi iekšpusē */
       body.print-mode #onlineMap{
         position: fixed !important;
         top:10mm; left:10mm;
-        width:${mm.w}mm !important;
-        height:${mm.h}mm !important;
+        width:${mm.w}mm !important; height:${mm.h}mm !important;
         display:block !important;
-        page-break-inside: avoid; break-inside: avoid; overflow: hidden;
+        page-break-inside: avoid; break-inside: avoid;
       }
-      body.print-mode #printFooter{
-        position: fixed; left:10mm; right:10mm; bottom:10mm;
-        display:flex; justify-content:space-between; gap:8mm;
-        font:10pt/1.2 system-ui, sans-serif; color:#000;
-        visibility: visible !important;
+      body.print-mode #onlineMap::before{
+        content:""; position:absolute; inset:0;
+        border:1.2mm solid #000; box-sizing:border-box;
       }
 
+      /* JAUKTĀS KONTROLES – viss Leaflet UI un jebkas “info/coord/scale” tiek noslēpts */
+      body.print-mode #onlineMap .leaflet-control,
+      body.print-mode #onlineMap .leaflet-top,
+      body.print-mode #onlineMap .leaflet-bottom,
+      body.print-mode #onlineMap [id*="info"],   body.print-mode #onlineMap [class*="info"],
+      body.print-mode #onlineMap [id*="coord"],  body.print-mode #onlineMap [class*="coord"],
+      body.print-mode #onlineMap [id*="koord"],  body.print-mode #onlineMap [class*="koord"],
+      body.print-mode #onlineMap [id*="scale"],  body.print-mode #onlineMap [class*="scale"]{
+        display:none !important;
+      }
 
-body.print-mode > *:not(#canvasContainer):not(#printScaleTop):not(#printFooter){
-  display: none !important;
-}
-body.print-mode #canvasContainer > *:not(#onlineMap){
-  display: none !important;
-}
+      /* TOP – mērogs centrā, mazliet augstāk no rāmja */
+      body.print-mode #printScaleTop,
+      body.print-mode #printScaleTop *{ visibility:visible !important; }
+      body.print-mode #printScaleTop{
+        position:fixed !important;
+        top:3mm !important; left:50% !important; transform:translateX(-50%) !important;
+        font:11pt/1.1 system-ui, sans-serif; color:#000; text-align:center;
+      }
 
-/* whitelists “visibility” pret style (18).css globālo hidden */
-body.print-mode #printScaleTop,
-body.print-mode #printScaleTop *{
-  visibility: visible !important;
-}
+      /* TOP-LEFT – virsraksts */
+      body.print-mode #printTitleTL{ 
+        position:fixed !important; top:3mm !important; left:10mm !important;
+        font:12pt/1.2 system-ui, sans-serif; font-weight:600; color:#000;
+        max-width:${mm.w/2}mm; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        visibility:visible !important;
+      }
 
-/* TOP mēroga uzlīme – augstāk no rāmja */
-body.print-mode #printScaleTop{
-  position: fixed !important;
-  top: 4mm !important;                 /* bija 6mm */
-  left: 50% !important; transform: translateX(-50%) !important;
-  font: 11pt/1.1 system-ui, sans-serif;
-  color:#000; text-align:center;
-  visibility: visible !important;
-}
+      /* TOP-RIGHT – ziemeļu bulta (uz lapas augšu) */
+      body.print-mode #printNorthTR{
+        position:fixed !important; top:3mm !important; right:10mm !important;
+        width:16mm; height:18mm; text-align:center; visibility:visible !important;
+      }
+      body.print-mode #printNorthTR .arrow{
+        width:0; height:0; margin:0 auto 1.5mm auto;
+        border-left:8mm solid transparent; border-right:8mm solid transparent;
+        border-bottom:16mm solid #000; /* smuka melna bulta uz augšu */
+      }
+      body.print-mode #printNorthTR .n{
+        font:10pt/1 system-ui, sans-serif; font-weight:700; letter-spacing:1px; color:#000;
+      }
 
-/* Apakšas atsauce – zemāk un perfekti centrēta */
-body.print-mode #printFooter{
-  position: fixed !important;
-  bottom: 4mm !important;              /* bija 6mm */
-  left: 50% !important; transform: translateX(-50%) !important;
-  width: ${mm.w}mm !important;         /* tieši kartes iekšplatums */
-  text-align: center !important;
-  font: 10pt/1.2 system-ui, sans-serif; color:#000;
-  visibility: visible !important;
-}
+      /* BOTTOM-LEFT – avots */
+      body.print-mode #printSourceBL{
+        position:fixed !important; left:10mm !important; bottom:3mm !important;
+        font:10pt/1.2 system-ui, sans-serif; color:#000; visibility:visible !important;
+        max-width:${mm.w/1.5}mm; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      }
 
-
-   
+      /* BOTTOM-RIGHT – režģa tips (UTM/LKS) */
+      body.print-mode #printGridBR{
+        position:fixed !important; right:10mm !important; bottom:3mm !important;
+        font:10pt/1.2 system-ui, sans-serif; color:#000; visibility:visible !important;
+        white-space:nowrap;
+      }
     }
   `;
   let el = document.getElementById('dynamicPrintStyle');
@@ -1961,29 +1983,65 @@ body.print-mode #printFooter{
 
 
 
+
 // Drukas pēda: [Nosaukums] [Mērogs] [Atsauces kartēm] [CADET.LV]
+// Uzraksti drukai: Title (TL), North (TR), Scale (Top-Center), Source (BL), Grid (BR)
 function buildPrintFooterLgIa(scaleVal, title){
   const elv = (n)=> (''+n).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
-
-  // 1) UZLĪME AUGŠĀ – mērogs
-  const top = document.createElement('div');
-  top.id = 'printScaleTop';
-  top.textContent = 'Mērogs: 1:' + elv(scaleVal);
-  document.body.appendChild(top);
-  // nodrošinam, ka cleanup to var noņemt
-  window.__printScaleTopEl = top;
-
-  // 2) UZLĪME APAKŠĀ – atsauces (skat. 5. punktu)
   const mapAttrib  = collectAttributionText() || 'Dati: kartes pakalpojums';
   const toolAttrib = 'CADET.LV Interaktīvais kompass — janiseglis.github.io/Virtual-compass-cadet.lv';
+  const gridText   = getActiveGridLabel(); // UTM vai LKS (skat. funkciju zemāk)
 
-  const footer = document.createElement('div');
-  footer.id = 'printFooter';
-  footer.textContent = `${mapAttrib} · ${toolAttrib}`;
-  document.body.appendChild(footer);
+  const els = [];
 
-  return footer; // (apakšējais elements – jau izmanto cleanup)
+  // Mērogs augšā centrā
+  const scaleTop = document.createElement('div');
+  scaleTop.id = 'printScaleTop';
+  scaleTop.textContent = 'Mērogs: 1:' + elv(scaleVal);
+  document.body.appendChild(scaleTop); els.push(scaleTop);
+
+  // Virsraksts (TL) – ja tukšs, neko neliekam
+  if (title){
+    const tl = document.createElement('div');
+    tl.id = 'printTitleTL';
+    tl.textContent = title;
+    document.body.appendChild(tl); els.push(tl);
+  }
+
+  // Ziemeļu bulta (TR)
+  const tr = document.createElement('div');
+  tr.id = 'printNorthTR';
+  tr.innerHTML = `<div class="arrow"></div><div class="n">N</div>`;
+  document.body.appendChild(tr); els.push(tr);
+
+  // Avots (BL)
+  const bl = document.createElement('div');
+  bl.id = 'printSourceBL';
+  bl.textContent = `Avots: ${mapAttrib} · ${toolAttrib}`;
+  document.body.appendChild(bl); els.push(bl);
+
+  // Režģis (BR)
+  const br = document.createElement('div');
+  br.id = 'printGridBR';
+  br.textContent = gridText;
+  document.body.appendChild(br); els.push(br);
+
+  // noderīgi cleanup
+  window.__printOverlayEls = els;
+  return br; // nav būtiski, galvenais – ir atsauce cleanupam
 }
+
+// Atpazīst aktīvo režģi (UTM vai LKS), skat. globālās references uz grid slāņiem.
+function getActiveGridLabel(){
+  try{
+    if (window.lksGrid && map.hasLayer(window.lksGrid)) return 'Režģis: LKS-92';
+    if (window.lksLabels && map.hasLayer(window.lksLabels)) return 'Režģis: LKS-92';
+    if (window.utmGrid && map.hasLayer(window.utmGrid)) return 'Režģis: UTM/MGRS';
+    if (window.utmLabels && map.hasLayer(window.utmLabels)) return 'Režģis: UTM/MGRS';
+  }catch(e){}
+  return 'Režģis: nav';
+}
+
 
 
 // Palīgs – savācam redzamo avotu atsauces
