@@ -1767,15 +1767,16 @@ function closeLgIaPrintDialog(){
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
-const keepCenter = map.getCenter();
-const keepZoom   = map.getZoom();
 
-  // 1) Uzliek precīzu zoom izvēlētajam mērogam (frakcionēts zoom)
+  const keepCenter = map.getCenter();
+  const keepZoom   = map.getZoom();
+
+  // ——— 1) Pielāgo Leaflet zoom animāciju un uzstādi mērogu
   const prev = {
     zoomSnap: map.options.zoomSnap,
     zoomDelta: map.options.zoomDelta,
-    zoomAnim: map.options.zoomAnimation,
-    fadeAnim: map.options.fadeAnimation,
+    zoomAnimation: map.options.zoomAnimation,
+    fadeAnimation: map.options.fadeAnimation,
     markerZoomAnim: map.options.markerZoomAnimation
   };
   map.options.zoomSnap = 0;
@@ -1783,77 +1784,68 @@ const keepZoom   = map.getZoom();
   map.options.zoomAnimation = false;
   map.options.fadeAnimation = false;
   map.options.markerZoomAnimation = false;
-  map.setZoom( zoomForScale(scale), { animate:false } );
+
+  map.setZoom(zoomForScale(scale), { animate:false });
   if (typeof updateRatio === 'function') updateRatio();
 
-
-
-// PIRMS print-mode:
-const mapEl = document.getElementById('onlineMap');
-const prevInlineStyle = mapEl?.getAttribute('style') || '';
-mapEl && (mapEl.style.width = mapEl.clientWidth + 'px');
-mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
-
-
-
-
-	
-  // 2) Ieslēdz “print-mode” un ielādē dinamisku @page + mm izmērorientāciju
-  document.body.classList.add('print-mode');
-  const styleEl = injectDynamicPrintStyle(format, orient);
-
-  // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
-  requestAnimationFrame(()=>{
-
-if (map) {
-  map.invalidateSize(true);
-  map.setView(keepCenter, map.getZoom(), { animate: false }); // ← noturam tieši ekrāna centru
-}
-
-
-
-
-
-	  
-    const footer = buildPrintFooterLgIa(scale, title);
-    // ļaujam ielādēt flīzes/līnijas
-    setTimeout(()=>{
-      window.addEventListener('afterprint', cleanup, {once:true});
-
-
-// aizver sānu paneļus un nullē “safe areas”, lai nekas neietekmē izkārtojumu
-try { window.closeBothSelectorsLegacy && window.closeBothSelectorsLegacy(); } catch(e){}
-try { closeBothMenus && closeBothMenus(); } catch(e){}
-document.documentElement.style.setProperty('--map-top-safe','0px');
-document.documentElement.style.setProperty('--map-bottom-safe','0px');
-
-
-if (map) { map.invalidateSize(true); map.fire('resize'); }
-
-
-  // 👇 DROŠĪBAS RE-CENTRĒŠANA TIEŠI PIRMS DRUKAS
-  if (map) {
-    map.invalidateSize(true);
-    map.panTo(keepCenter, { animate:false });   // panTo dažkārt notur pikseļ-enkuru labāk
-    map.setView(keepCenter, map.getZoom(), { animate:false });
-	    // ⇩ JAUNAIS: pikseļu-precīza centrēšana
-  const pt = map.latLngToContainerPoint(keepCenter);
-  const sz = map.getSize();
-  map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
+  // ——— 2) “PX-lock” pirms print-mode (novērš lēcienu uz stūri)
+  const mapEl = document.getElementById('onlineMap');
+  const prevInlineStyle = mapEl?.getAttribute('style') || '';
+  if (mapEl){
+    mapEl.style.width  = mapEl.clientWidth  + 'px';
+    mapEl.style.height = mapEl.clientHeight + 'px';
   }
 
+  // ——— 3) Ieslēdz print-mode + ieliec @page un mm izmērus
+  document.body.classList.add('print-mode');
+  const styleEl = injectDynamicPrintStyle(format, orient); // iekšā: #onlineMap { position:fixed; inset:0; margin:auto; transform:none; width:..mm; height:..mm }
 
+  // ——— 4) Clean-up pēc drukas
+  const cleanup = ()=>{
+    try{ styleEl && styleEl.remove && styleEl.remove(); }catch(e){}
+    document.body.classList.remove('print-mode');
+    if (mapEl) mapEl.setAttribute('style', prevInlineStyle);
+    Object.assign(map.options, {
+      zoomSnap: prev.zoomSnap,
+      zoomDelta: prev.zoomDelta,
+      zoomAnimation: prev.zoomAnim,
+      fadeAnimation: prev.fadeAnim,
+      markerZoomAnimation: prev.markerZoomAnim
+    });
+    map.setView(keepCenter, keepZoom, { animate:false });
+    map.invalidateSize(true);
+  };
 
+  requestAnimationFrame(()=>{
 
+    // Apakšteksts (mērogs/avots)
+    const footer = buildPrintFooterLgIa(scale, title);
 
+    // Aizver sānu paneļus / safe-areas uz 0
+    try{ window.closeBothSelectorsLegacy && window.closeBothSelectorsLegacy(); }catch(e){}
+    try{ closeBothMenus && closeBothMenus(); }catch(e){}
+    document.documentElement.style.setProperty('--map-top-safe','0px');
+    document.documentElement.style.setProperty('--map-bottom-safe','0px');
 
+    // Pikseļu-precīza recentrēšana
+    const doRecentre = ()=>{
+      if (!map) return;
+      map.invalidateSize(true);
+      map.setView(keepCenter, map.getZoom(), { animate:false });
+      const pt = map.latLngToContainerPoint(keepCenter);
+      const sz = map.getSize();
+      map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
+    };
 
-
-
-
-		
+    // Dodam laikus CSS iedarboties, tad recentrējam un drukājam
+    setTimeout(()=>{
+      window.addEventListener('beforeprint', doRecentre, { once:true });
+      window.addEventListener('afterprint',  cleanup,    { once:true });
+      doRecentre();      // uzreiz pirms drukas
       window.print();
     }, 600);
+  });
+}
 
     function cleanup(){
       document.body.classList.remove('print-mode');
