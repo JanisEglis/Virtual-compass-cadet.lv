@@ -1845,15 +1845,6 @@ if (map) { map.invalidateSize(true); map.fire('resize'); }
 
 
 
-// noturi ekrānā redzamo centru
-map.invalidateSize(true);
-map.setView(keepCenter, map.getZoom(), { animate:false });
-
-// pikseļu precīza korekcija (enkurs = lapas vidus)
-const pt = map.latLngToContainerPoint(keepCenter);
-const sz = map.getSize();
-map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
-
 
 
 
