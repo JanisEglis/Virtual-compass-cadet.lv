@@ -1934,13 +1934,13 @@ function injectDynamicPrintStyle(fmt, orient){
       body.print-mode #printScaleTop *{ visibility:visible !important; }
       body.print-mode #printScaleTop{
         position:fixed !important;
-        top:3mm !important; left:50% !important; transform:translateX(-50%) !important;
+        top:6mm !important; left:50% !important; transform:translateX(-50%) !important;
         font:11pt/1.1 system-ui, sans-serif; color:#000; text-align:center;
       }
 
       /* TOP-LEFT – virsraksts */
       body.print-mode #printTitleTL{ 
-        position:fixed !important; top:3mm !important; left:10mm !important;
+        position:fixed !important; top:6mm !important; left:10mm !important;
         font:12pt/1.2 system-ui, sans-serif; font-weight:600; color:#000;
         max-width:${mm.w/2}mm; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
         visibility:visible !important;
@@ -1948,7 +1948,7 @@ function injectDynamicPrintStyle(fmt, orient){
 
       /* TOP-RIGHT – ziemeļu bulta (uz lapas augšu) */
       body.print-mode #printNorthTR{
-        position:fixed !important; top:3mm !important; right:10mm !important;
+        position:fixed !important; top:6mm !important; right:10mm !important;
         width:16mm; height:18mm; text-align:center; visibility:visible !important;
       }
       body.print-mode #printNorthTR .arrow{
@@ -1959,6 +1959,12 @@ function injectDynamicPrintStyle(fmt, orient){
       body.print-mode #printNorthTR .n{
         font:10pt/1 system-ui, sans-serif; font-weight:700; letter-spacing:1px; color:#000;
       }
+
+/* redzami arī bērni, lai bulta nepazūd */
+body.print-mode #printNorthTR,
+body.print-mode #printNorthTR *{ visibility:visible !important; }
+
+
 
       /* BOTTOM-LEFT – avots */
       body.print-mode #printSourceBL{
