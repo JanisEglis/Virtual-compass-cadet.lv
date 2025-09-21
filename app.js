@@ -1958,7 +1958,7 @@ body.print-mode #printNorthTR *{ visibility: visible !important; }
 
 body.print-mode #printNorthTR{
   position: fixed !important;
-  top: 10mm !important; right: 10mm !important;
+  top: 6mm !important; right: 10mm !important;
   display: flex; align-items: center; gap: 2mm;
   z-index: 2147483647;
   background: none !important; background-image: none !important;
@@ -1987,6 +1987,7 @@ body.print-mode #printNorthTR .arrow{
   border-left:4mm solid transparent;
   border-right:4mm solid transparent;
   border-bottom:8mm solid #000;
+margin-top: 3mm;
 }
 body.print-mode #printNorthTR .n{
   font:9pt/1 system-ui, sans-serif; font-weight:700; letter-spacing:1px; color:#000;
