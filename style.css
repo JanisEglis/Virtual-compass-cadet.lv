@@ -2281,7 +2281,7 @@ body.print-mode .leaflet-left .leaflet-control{
 
 @media print{
   html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
-  #onlineMap{ position: static !important; }
+
   #printFooter{
     position: fixed; left: 10mm; right: 10mm; bottom: 10mm;
     display:flex; justify-content: space-between; gap:8mm;
