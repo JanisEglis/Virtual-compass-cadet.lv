@@ -1884,7 +1884,7 @@ function injectDynamicPrintStyle(fmt, orient){
 
   // drošības “slack”, lai nebūtu otrā lapa (header/footer situācijās)
   const slackW = (orient==='landscape' ? 2 : 0);
-  const slackH = (orient==='landscape' ? 6 : 0);
+  const slackH = (orient==='landscape' ? 10 : 0);
 
   const mm = { w: base.w - slackW, h: base.h - slackH };
   const pageSize = (fmt==='A3' ? 'A3' : 'A4') + ' ' + (orient==='portrait' ? 'portrait' : 'landscape');
@@ -1946,23 +1946,31 @@ function injectDynamicPrintStyle(fmt, orient){
         visibility:visible !important;
       }
 
-      /* TOP-RIGHT – ziemeļu bulta (uz lapas augšu) */
-      body.print-mode #printNorthTR{
-        position:fixed !important; top:6mm !important; right:10mm !important;
-        width:16mm; height:18mm; text-align:center; visibility:visible !important;
-      }
-      body.print-mode #printNorthTR .arrow{
-        width:0; height:0; margin:0 auto 1.5mm auto;
-        border-left:8mm solid transparent; border-right:8mm solid transparent;
-        border-bottom:16mm solid #000; /* smuka melna bulta uz augšu */
-      }
-      body.print-mode #printNorthTR .n{
-        font:10pt/1 system-ui, sans-serif; font-weight:700; letter-spacing:1px; color:#000;
-      }
-
-/* redzami arī bērni, lai bulta nepazūd */
+/* TOP-RIGHT – ziemeļu bulta (uz lapas augšu) */
 body.print-mode #printNorthTR,
 body.print-mode #printNorthTR *{ visibility:visible !important; }
+
+body.print-mode #printNorthTR{
+  position:fixed !important;
+  top:6mm !important; right:10mm !important;  /* sader ar mēroga/virsraksta 6mm */
+  width:12mm; height:14mm;                     /* bija 16×18mm — samazinām */
+  text-align:center; 
+  font-size:0;                                  /* ← noņem jebkādas “liecītes” */
+  user-select:none;
+}
+
+body.print-mode #printNorthTR .arrow{
+  width:0; height:0; margin:0 auto 1mm auto;
+  border-left:6mm solid transparent;           /* bija 8mm */
+  border-right:6mm solid transparent;
+  border-bottom:12mm solid #000;               /* bija 16mm */
+}
+
+body.print-mode #printNorthTR .n{
+  display:block;
+  font:9pt/1 system-ui, sans-serif;            /* bija 10pt */
+  font-weight:700; letter-spacing:1px; color:#000;
+}
 
 
 
