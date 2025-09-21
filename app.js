@@ -2031,7 +2031,7 @@ body.print-mode #printNorthTR .n{
 function buildPrintFooterLgIa(scaleVal, title){
   const elv = (n)=> (''+n).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
   const mapAttrib  = collectAttributionText() || 'Dati: kartes pakalpojums';
-  const toolAttrib = 'CADET.LV Interaktīvais kompass — janiseglis.github.io/Virtual-compass-cadet.lv';
+  const toolAttrib = '© CADET.LV Interaktīvais kompass — janiseglis.github.io/Virtual-compass-cadet.lv';
   const gridText   = getActiveGridLabel(); // UTM vai LKS (skat. funkciju zemāk)
 
   const els = [];
