@@ -1958,37 +1958,41 @@ body.print-mode #printNorthTR *{ visibility: visible !important; }
 
 body.print-mode #printNorthTR{
   position: fixed !important;
-  top: 8mm !important; right: 10mm !important;
+  top: 6mm !important; right: 10mm !important;
   display: flex; align-items: center; gap: 2mm;
-  /* pilns “resets”, lai nekas no UI neielien iekšā */
   z-index: 2147483647;
-  background: none !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  border: 0 !important;
-  outline: 0 !important;
-  filter: none !important;
-  mix-blend-mode: normal !important;
+  background: none !important; background-image: none !important;
+  box-shadow: none !important; border: 0 !important; outline: 0 !important;
+  filter: none !important; mix-blend-mode: normal !important;
   font-size: 0; user-select: none; pointer-events: none;
+  isolation: isolate;                    /* ← JAUNS */
 }
+
+/* jau bija: paša konteinera pseudo-elementi */
 body.print-mode #printNorthTR::before,
 body.print-mode #printNorthTR::after{ content: none !important; display: none !important; }
+
+/* JAUNS: izslēdz pseudo-elementus VISIEM bērniem */
+body.print-mode #printNorthTR *::before,
+body.print-mode #printNorthTR *::after{ content: none !important; display: none !important; }
+
+/* JAUNS: ja kaut kur iemantojas svg/img/canvas – slēdz ārā */
 body.print-mode #printNorthTR img,
 body.print-mode #printNorthTR svg,
 body.print-mode #printNorthTR canvas{ display: none !important; }
 
-/* Mazāka bulta + “N” blakus */
+/* pašas bultas ģeometrija un “N” */
 body.print-mode #printNorthTR .arrow{
-  width: 0; height: 0; margin: 0;
-  border-left: 4mm solid transparent;
-  border-right: 4mm solid transparent;
-  border-bottom: 8mm solid #000;
+  width:0; height:0; margin:0;
+  border-left:4mm solid transparent;
+  border-right:4mm solid transparent;
+  border-bottom:8mm solid #000;
 }
 body.print-mode #printNorthTR .n{
-  font: 9pt/1 system-ui, sans-serif;
-  font-weight: 700; letter-spacing: 1px; color: #000;
-  pointer-events: none;
+  font:9pt/1 system-ui, sans-serif; font-weight:700; letter-spacing:1px; color:#000;
+  pointer-events:none;
 }
+
 
 
 
