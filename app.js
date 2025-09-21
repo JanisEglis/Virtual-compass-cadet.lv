@@ -10,6 +10,7 @@ const onDomReady = (fn) => {
     document.addEventListener('DOMContentLoaded', fn, { once: true });
   } else {
     fn();
+  }
 };
 
 // Droša piekļuve elementiem
