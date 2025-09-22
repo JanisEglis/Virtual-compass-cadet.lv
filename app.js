@@ -1768,11 +1768,9 @@ function closeLgIaPrintDialog(){
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
 	
-const rc   = map.getContainer().getBoundingClientRect();
-const vpW  = window.innerWidth;
-const vpH  = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-const vpPx = L.point(vpW/2 - rc.left, vpH/2 - rc.top);   // viewport centrs → konteinera pikseļi
-const keepCenter = map.containerPointToLatLng(vpPx);     // precīzs lat/lng no sarkanā rāmja centra
+const rc = map.getContainer().getBoundingClientRect();
+const keepCenter = map.containerPointToLatLng(L.point(rc.width/2, rc.height/2));
+
 
 const keepZoom   = map.getZoom();
 
