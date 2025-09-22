@@ -1930,18 +1930,7 @@ body.print-mode #onlineMap{
 
 
 
-@media print{
-  body.print-mode #onlineMap .leaflet-pane,
-  body.print-mode #onlineMap .leaflet-pane > *,
-  body.print-mode #onlineMap .leaflet-layer,
-  body.print-mode #onlineMap .leaflet-zoom-animated,
-  body.print-mode #onlineMap .leaflet-zoom-animated > *{
-   
-  
-    transition: none !important;
-    animation: none !important;
-  }
-}
+
 
 
 
