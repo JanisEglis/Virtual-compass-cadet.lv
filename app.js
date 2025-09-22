@@ -1936,10 +1936,8 @@ body.print-mode #onlineMap{
   body.print-mode #onlineMap .leaflet-layer,
   body.print-mode #onlineMap .leaflet-zoom-animated,
   body.print-mode #onlineMap .leaflet-zoom-animated > *{
-    transform: translate(0,0) !important;   /* vai 'none' */
-    left: 0 !important;
-    top: 0 !important;
-    transform-origin: 0 0 !important;
+   
+  
     transition: none !important;
     animation: none !important;
   }
