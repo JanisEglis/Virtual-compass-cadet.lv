@@ -1840,7 +1840,7 @@ if (map) {
 
 setTimeout(() => { window.print(); }, 600);
 
-
+}, 0);
 
     function cleanup(){
       document.body.classList.remove('print-mode');
