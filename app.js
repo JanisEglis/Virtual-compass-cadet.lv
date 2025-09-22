@@ -1951,13 +1951,18 @@ body.print-mode #onlineMap{
 
 
 @media print{
-  #onlineMap .leaflet-map-pane,
-  #onlineMap .leaflet-tile-pane,
-  #onlineMap .leaflet-overlay-pane,
-  #onlineMap .leaflet-shadow-pane,
-  #onlineMap .leaflet-marker-pane{
-    transform: translate(0,0) !important;   /* resetē translate3d nobīdi */
-  }
+body.print-mode #onlineMap .leaflet-pane,
+body.print-mode #onlineMap .leaflet-pane > *,
+body.print-mode #onlineMap .leaflet-layer,
+body.print-mode #onlineMap .leaflet-zoom-animated,
+body.print-mode #onlineMap .leaflet-zoom-animated > * {
+  transform: none !important;
+  left: 0 !important;
+  top: 0 !important;
+  transform-origin: 0 0 !important;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
 }
 
 
