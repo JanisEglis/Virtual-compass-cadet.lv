@@ -1767,7 +1767,13 @@ function closeLgIaPrintDialog(){
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
-const keepCenter = map.getCenter();
+	
+const rc   = map.getContainer().getBoundingClientRect();
+const vpW  = window.innerWidth;
+const vpH  = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+const vpPx = L.point(vpW/2 - rc.left, vpH/2 - rc.top);   // viewport centrs → konteinera pikseļi
+const keepCenter = map.containerPointToLatLng(vpPx);     // precīzs lat/lng no sarkanā rāmja centra
+
 const keepZoom   = map.getZoom();
 
   // 1) Uzliek precīzu zoom izvēlētajam mērogam (frakcionēts zoom)
