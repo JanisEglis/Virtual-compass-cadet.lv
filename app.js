@@ -1855,6 +1855,15 @@ if (map) { map.invalidateSize(true); map.fire('resize'); }
 })();
 
 
+// tieši pirms drukas
+map.invalidateSize(true);
+if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
+else map.setView(keepCenter, map.getZoom(), {animate:false});
+
+// pikseļu enkurs precīzi vidū
+const pt = map.latLngToContainerPoint(keepCenter);
+const sz = map.getSize();
+map.panBy([(sz.x/2 - pt.x), (sz.y/2 - pt.y)], {animate:false});
 
 
 
