@@ -1820,56 +1820,27 @@ if (map) {
     setTimeout(()=>{
       window.addEventListener('afterprint', cleanup, {once:true});
 
-
-// aizver sānu paneļus un nullē “safe areas”, lai nekas neietekmē izkārtojumu
+// aizver paneļus un nullē “safe areas”
 try { window.closeBothSelectorsLegacy && window.closeBothSelectorsLegacy(); } catch(e){}
 try { closeBothMenus && closeBothMenus(); } catch(e){}
 document.documentElement.style.setProperty('--map-top-safe','0px');
 document.documentElement.style.setProperty('--map-bottom-safe','0px');
 
+// === VIENS recentrēšanas bloks (vienīgais nepieciešamais) ===
+if (map) {
+  map.invalidateSize(true); // pārrēķina kastes izmēru
+  if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
+  else map.setView(keepCenter, map.getZoom(), { animate:false });
 
-if (map) { map.invalidateSize(true); map.fire('resize'); }
-
-
-  // 👇 DROŠĪBAS RE-CENTRĒŠANA TIEŠI PIRMS DRUKAS
-  if (map) {
-    map.invalidateSize(true);
-    map.panTo(keepCenter, { animate:false });   // panTo dažkārt notur pikseļ-enkuru labāk
-    map.setView(keepCenter, map.getZoom(), { animate:false });
-	    // ⇩ JAUNAIS: pikseļu-precīza centrēšana
+  // pikseļu-precīzs enkurs tieši lapas vidū
   const pt = map.latLngToContainerPoint(keepCenter);
   const sz = map.getSize();
   map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
-  }
+}
+
+setTimeout(() => { window.print(); }, 600);
 
 
-
-(function hardCenter(){
-  const center = keepCenter;                  // ekrānā redzamais centrs
-  map.invalidateSize(true);
-  if (map._resetView) map._resetView(center, map.getZoom(), true);
-  else map.setView(center, map.getZoom(), { animate:false });
-  const sz = map.getSize();
-  const pt = map.latLngToContainerPoint(center);
-  map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false }); // pikseļu enkurs
-})();
-
-
-// tieši pirms drukas
-map.invalidateSize(true);
-if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
-else map.setView(keepCenter, map.getZoom(), {animate:false});
-
-// pikseļu enkurs precīzi vidū
-const pt = map.latLngToContainerPoint(keepCenter);
-const sz = map.getSize();
-map.panBy([(sz.x/2 - pt.x), (sz.y/2 - pt.y)], {animate:false});
-
-
-
-		
-      window.print();
-    }, 600);
 
     function cleanup(){
       document.body.classList.remove('print-mode');
@@ -1965,10 +1936,7 @@ body.print-mode #onlineMap .leaflet-pane > *,
 body.print-mode #onlineMap .leaflet-layer,
 body.print-mode #onlineMap .leaflet-zoom-animated,
 body.print-mode #onlineMap .leaflet-zoom-animated > * {
-  transform: none !important;
-  left: 0 !important;
-  top: 0 !important;
-  transform-origin: 0 0 !important;
+ 
   transition: none !important;
   animation: none !important;
   will-change: auto !important;
