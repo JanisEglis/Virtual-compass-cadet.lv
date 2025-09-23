@@ -1767,7 +1767,7 @@ function closeLgIaPrintDialog(){
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
-	
+	let keepCenter; // ← pacelts uz ārpusi, redzams visos blokos
 
 
 
@@ -1811,7 +1811,7 @@ mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
 if (map) {
   map.invalidateSize(true);
   const r = map.getContainer().getBoundingClientRect();                       // JAUNS
-  const keepCenter = map.containerPointToLatLng(L.point(r.width/2, r.height/2)); // JAUNS
+  keepCenter = map.containerPointToLatLng(L.point(r.width/2, r.height/2)); // JAUNS
   map.setView(keepCenter, map.getZoom(), { animate: false });
 }
 
@@ -1834,6 +1834,8 @@ document.documentElement.style.setProperty('--map-bottom-safe','0px');
 
 // === VIENS recentrēšanas bloks (vienīgais nepieciešamais) ===
 if (map) {
+	const r2 = map.getContainer().getBoundingClientRect();
+keepCenter = map.containerPointToLatLng(L.point(r2.width/2, r2.height/2));
   map.invalidateSize(true); // pārrēķina kastes izmēru
   if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
   else map.setView(keepCenter, map.getZoom(), { animate:false });
