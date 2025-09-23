@@ -1370,259 +1370,221 @@ body.preloading { overflow: hidden; }
 
 
 
+
 <script>
-/* ===================== PRINT DEBUGGER (drop-in) ===================== */
-/* Ielīmē tieši pirms </body>. Atver konsoli (F12) un spied “Sagatavot”. */
+/* ================== PRINT DEBUGGER v2 — CORS SAFE ================== */
+/* Drop-in skripts: rāda, no kā tiek veidots drukas priekšskatījums,
+   iezīmē drukas “kasti” (sarkans rāmis), žurnalē Leaflet darbības.
+   Nekādas piekļuves citu domēnu iframes → nav SecurityError. */
 (function(){
   'use strict';
+  const TAG='%c[PRINTDBG]'; const TAGS='background:#111;color:#9cff57;padding:1px 4px;border-radius:3px';
+  const log=(...a)=>console.log(TAG,TAGS,...a);
+  const warn=(...a)=>console.warn(TAG,TAGS,...a);
 
-  const TAG = '%c[PRINTDBG]';
-  const TAGS = 'background:#111;color:#9cff57;padding:1px 4px;border-radius:3px';
-  const log  = (...a)=>console.log(TAG, TAGS, ...a);
-  const warn = (...a)=>console.warn(TAG, TAGS, ...a);
-  const err  = (...a)=>console.error(TAG, TAGS, ...a);
+  const MM_TO_PX = mm => Math.round(mm * 96 / 25.4);
+  const $ = sel => document.querySelector(sel);
 
-  const MM_TO_PX = (mm)=> Math.round(mm * 96 / 25.4); // ekrāna vizuālai orientācijai
-
-  function $(id){ return document.getElementById(id); }
-
-  function findMap(){
-    const el = $('onlineMap');
-    if (!el) return null;
-    // 1) vispirms “map”
-    if (window.map && typeof window.map.getCenter==='function') {
-      try{ if (window.map.getContainer() === el) return window.map; }catch(_){}
-    }
-    // 2) brutāli izmeklē globālos
-    for (const k of Object.keys(window)){
-      const v = window[k];
-      if (v && typeof v==='object'){
-        if (v.getCenter && v.getSize && v.getContainer){
-          try{ if (v.getContainer() === el) return v; }catch(_){}
-        }
-      }
-    }
-    return null;
+  // ——— droši paņemam L.Map instanci, bez globālo logu “skanēšanas”
+  function getMapSafe(){
+    try{
+      if (window.map && window.L && window.map instanceof L.Map) return window.map;
+      // rezerves variants: mēģinām no #onlineMap iekšējā Leaflet instance
+      const el = document.getElementById('onlineMap');
+      if (!el || !window.L) return null;
+      // nav publiska API no elementa → paliek tikai window.map
+      return null;
+    }catch(_){ return null; }
   }
 
+  // ——— nolasa A4/A3 mm no TAVA @media print CSS (ignorē svešus/CORS stilus)
   function getPrintBoxMmFromCSS(){
-    // Mērķis: atrast noteikumu ar body.print-mode #onlineMap → width/height mm
-    let out = { w: 277, h: 190, source:'default (A4 landscape guess)' };
+    let out = { w:277, h:190, source:'default' }; // A4 landscape pieņēmums
     for (const ss of document.styleSheets){
-      let rules;
-      try { rules = ss.cssRules || ss.rules; } catch(e){ continue; } // CORS
+      let rules; try{ rules = ss.cssRules || ss.rules; }catch(_){ continue; } // CORS droši
       if (!rules) continue;
       for (const r of rules){
-        // var būt media vai parasts
-        if (r.type===CSSRule.MEDIA_RULE){
-          for (const rr of r.cssRules||[]){
-            out = pickFromRule(rr, out);
-          }
-        } else {
-          out = pickFromRule(r, out);
-        }
+        // atbalstām arī @media print
+        if (r.type === CSSRule.MEDIA_RULE){
+          if (!Array.from(r.media).some(m=>/print/i.test(m))) continue;
+          for (const rr of r.cssRules||[]){ pick(rr); }
+        } else { pick(r); }
       }
     }
     return out;
-
-    function pickFromRule(rule, prev){
-      const sel = rule.selectorText || '';
-      if (!sel) return prev;
-      if (sel.includes('body.print-mode') && sel.includes('#onlineMap')){
-        const txt = rule.cssText || '';
-        const mW = /width\s*:\s*([\d.]+)mm/i.exec(txt);
-        const mH = /height\s*:\s*([\d.]+)mm/i.exec(txt);
-        if (mW && mH){
-          return { w:+mW[1], h:+mH[1], source:'CSS ('+(rule.parentStyleSheet?.ownerNode?.id||'')+')' };
+    function pick(rule){
+      try{
+        const sel = rule.selectorText || '';
+        if (!sel) return;
+        if (sel.includes('body.print-mode') && sel.includes('#onlineMap')){
+          const txt = rule.cssText || '';
+          const mW = /width\s*:\s*([\d.]+)mm/i.exec(txt);
+          const mH = /height\s*:\s*([\d.]+)mm/i.exec(txt);
+          if (mW && mH) out = { w:+mW[1], h:+mH[1], source:'css' };
         }
-      }
-      return prev;
+      }catch(_){}
     }
   }
 
-  function getComputedBox(el){
-    const cs = getComputedStyle(el);
-    const rect = el.getBoundingClientRect();
-    return {
-      css: {
-        position: cs.position, top: cs.top, left: cs.left,
-        right: cs.right, bottom: cs.bottom, margin: cs.margin,
-        width: cs.width, height: cs.height, transform: cs.transform
-      },
-      rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
-    };
-  }
-
-  function overlayOn(show=true){
-    const ID='printDbgOverlay';
-    const STYLE='printDbgOverlayCSS';
-    if (!document.getElementById(STYLE)){
-      const st = document.createElement('style'); st.id=STYLE;
+  // ——— sarkanais pārklājums (rāda lapas mērķa kasti ekrāna centrā)
+  const OVER_ID='printDbgOverlay', OVER_CSS='printDbgOverlayCSS';
+  function ensureOverlay(){
+    if (!document.getElementById(OVER_CSS)){
+      const st = document.createElement('style'); st.id=OVER_CSS;
       st.textContent = `
-#${ID}{position:fixed;inset:0;margin:auto;width:0;height:0;z-index:2147483647;pointer-events:none;display:none}
-#${ID} .box{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);outline:3px dashed rgba(255,0,0,.85);background:rgba(255,0,0,.08)}
-#${ID} .cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:40px;height:40px}
-#${ID} .cross:before,#${ID} .cross:after{content:"";position:absolute;background:rgba(255,0,0,.9)}
-#${ID} .cross:before{left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%)}
-#${ID} .cross:after{top:50%;left:0;right:0;height:2px;transform:translateY(-50%)}
-#${ID} .label{position:absolute;right:10px;bottom:10px;font:600 12px/1.25 system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.6);padding:6px 8px;border-radius:6px}
+#${OVER_ID}{position:fixed;inset:0;margin:auto;width:0;height:0;z-index:2147483647;pointer-events:none;display:none}
+#${OVER_ID}.on{display:block}
+#${OVER_ID} .box{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);outline:3px dashed rgba(255,0,0,.9);background:rgba(255,0,0,.06)}
+#${OVER_ID} .cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:44px;height:44px}
+#${OVER_ID} .cross:before,#${OVER_ID} .cross:after{content:"";position:absolute;background:rgba(255,0,0,.95)}
+#${OVER_ID} .cross:before{left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%)}
+#${OVER_ID} .cross:after{top:50%;left:0;right:0;height:2px;transform:translateY(-50%)}
+#${OVER_ID} .label{position:absolute;right:10px;bottom:10px;font:600 12px/1.25 system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.6);padding:6px 8px;border-radius:6px}
       `;
       document.head.appendChild(st);
     }
-    let wrap = document.getElementById(ID);
-    if (!wrap){
-      wrap = document.createElement('div'); wrap.id=ID;
-      wrap.innerHTML = `<div class="box"></div><div class="cross"></div><div class="label"></div>`;
-      document.body.appendChild(wrap);
+    if (!document.getElementById(OVER_ID)){
+      const d=document.createElement('div'); d.id=OVER_ID;
+      d.innerHTML=`<div class="box"></div><div class="cross"></div><div class="label"></div>`;
+      document.body.appendChild(d);
     }
-    const {w,h,source} = getPrintBoxMmFromCSS();
-    const pxW = MM_TO_PX(w), pxH = MM_TO_PX(h);
+  }
+  function overlay(on){
+    ensureOverlay();
+    const { w,h,source } = getPrintBoxMmFromCSS();
+    const wrap = document.getElementById(OVER_ID);
     const box = wrap.querySelector('.box');
-    box.style.width = pxW+'px'; box.style.height = pxH+'px';
-    wrap.querySelector('.label').textContent = `Print box: ${w}×${h} mm (${pxW}×${pxH}px) • ${source}`;
-    wrap.style.display = show ? 'block':'none';
-  }
-  function overlayOff(){ const el=$('printDbgOverlay'); if (el) el.style.display='none'; }
-
-  function ll(thing){
-    try{ return (thing && thing.lat!==undefined) ? `${thing.lat.toFixed(6)}, ${thing.lng.toFixed(6)}` : String(thing); }
-    catch(_){ return String(thing); }
+    box.style.width  = MM_TO_PX(w)+'px';
+    box.style.height = MM_TO_PX(h)+'px';
+    wrap.querySelector('.label').textContent = `Print box: ${w}×${h} mm • ${source}`;
+    wrap.classList.toggle('on', !!on);
   }
 
-  function measure(why=''){
-    const el = $('onlineMap');
-    const m  = findMap();
-    const inPrintMode = document.body.classList.contains('print-mode');
+  // ——— galvenā mērījumu funkcija (nekad nemet kļūdu)
+  function measure(tag='STATE'){
+    try{
+      const mapEl = document.getElementById('onlineMap');
+      const m = getMapSafe();
+      const inPrint = document.body.classList.contains('print-mode');
 
-    const cssMm = getPrintBoxMmFromCSS();
-    const pxW = MM_TO_PX(cssMm.w), pxH = MM_TO_PX(cssMm.h);
+      const cssMm = getPrintBoxMmFromCSS();
+      const cssPx = { w: MM_TO_PX(cssMm.w), h: MM_TO_PX(cssMm.h) };
 
-    const box = el ? getComputedBox(el) : null;
+      let info = {
+        tag, printMode: inPrint,
+        css: { mm: cssMm, px: cssPx },
+        onlineMap: null, map: null
+      };
 
-    let keepCenter=null, containerCenterLL=null, size=null, centerPx=null, panFix=null, deltaMeters=null;
+      if (mapEl){
+        const cs = getComputedStyle(mapEl);
+        const rc = mapEl.getBoundingClientRect();
+        info.onlineMap = {
+          pos: cs.position, inset:{top:cs.top,left:cs.left,right:cs.right,bottom:cs.bottom},
+          margin: cs.margin, sizeCss:{w:cs.width,h:cs.height},
+          rect: { x:Math.round(rc.x), y:Math.round(rc.y), w:Math.round(rc.width), h:Math.round(rc.height) },
+          transform: cs.transform
+        };
+      }
 
-    if (m){
-      try {
-        keepCenter = m.getCenter();
-        size       = m.getSize();
-        centerPx   = m.latLngToContainerPoint(keepCenter);
-        // aprēķinam LL pie konteinera ģeometriskā centra:
-        const rect = el.getBoundingClientRect();
-        containerCenterLL = m.containerPointToLatLng(L.point(rect.width/2, rect.height/2));
-        deltaMeters = L.latLng(keepCenter).distanceTo(containerCenterLL);
-        panFix = { dx: (size.x/2 - centerPx.x), dy: (size.y/2 - centerPx.y) };
-      } catch(e){ warn('Measure failed:', e); }
-    }
-
-    log(why||'STATE', {
-      printMode: inPrintMode,
-      printCSS_mm: cssMm,
-      printCSS_px: { w:pxW, h:pxH },
-      map: !!m && {
-        zoom: m.getZoom && m.getZoom(),
-        keepCenter: keepCenter && { lat:+keepCenter.lat.toFixed(6), lng:+keepCenter.lng.toFixed(6) },
-        containerCenterLL: containerCenterLL && { lat:+containerCenterLL.lat.toFixed(6), lng:+containerCenterLL.lng.toFixed(6) },
-        centerDeltaMeters: deltaMeters!=null ? Math.round(deltaMeters) : null,
-        size: size || null,
-        centerPx: centerPx || null,
-        panFix: panFix || null
-      },
-      onlineMap: box
-    });
-  }
-
-  function patchMapLogging(){
-    const m = findMap();
-    if (!m || m.__printDbgPatched) return;
-    m.__printDbgPatched = true;
-
-    ['setView','panBy','invalidateSize','_resetView'].forEach(fn=>{
-      if (typeof m[fn] !== 'function') return;
-      const orig = m[fn].bind(m);
-      m[fn] = function(){
-        log(`map.${fn}(`, ...arguments, ')');
-        try {
-          return orig.apply(this, arguments);
-        } finally {
-          measure('after map.'+fn);
+      if (m && window.L){
+        const keepCenter = m.getCenter();
+        const size = m.getSize();
+        const centerPx = m.latLngToContainerPoint(keepCenter);
+        // “ģeometriskais” konteinera centrs lat/lng:
+        let containerCenterLL = null;
+        if (mapEl){
+          const rc = mapEl.getBoundingClientRect();
+          containerCenterLL = m.containerPointToLatLng(L.point(rc.width/2, rc.height/2));
         }
+        let deltaMeters = null;
+        if (containerCenterLL){
+          try{ deltaMeters = L.latLng(keepCenter).distanceTo(containerCenterLL); }catch(_){}
+        }
+
+        info.map = {
+          zoom: m.getZoom(), size, centerPx,
+          keepCenter: { lat:+keepCenter.lat.toFixed(6), lng:+keepCenter.lng.toFixed(6) },
+          containerCenterLL: containerCenterLL && { lat:+containerCenterLL.lat.toFixed(6), lng:+containerCenterLL.lng.toFixed(6) },
+          centerDeltaMeters: (deltaMeters!=null)? Math.round(deltaMeters) : null,
+          panFix: { dx: (size.x/2 - centerPx.x), dy: (size.y/2 - centerPx.y) }
+        };
+      }
+
+      log(tag, info);
+      return info;
+    }catch(e){
+      warn('measure suppressed error:', e);
+      return null;
+    }
+  }
+
+  // ——— ielāpam Leaflet metodes, lai redzēt secību (droši)
+  function patchLeafletLogging(){
+    const m = getMapSafe();
+    if (!m || m.__dbgPatched) return;
+    m.__dbgPatched = true;
+    ['setView','panBy','invalidateSize','_resetView'].forEach(name=>{
+      if (typeof m[name] !== 'function') return;
+      const orig = m[name].bind(m);
+      m[name] = function(){
+        log(`map.${name}(`, ...arguments, ')');
+        const r = orig.apply(this, arguments);
+        measure(`after ${name}`);
+        return r;
       };
     });
-
-    log('Leaflet hooks ready:', { on:['setView','panBy','invalidateSize','_resetView'] });
+    log('Leaflet hooks ready: setView/panBy/invalidateSize/_resetView');
   }
 
-  // Hooko prepareMapForPrintLgIa, ja pieejams
-  (function hookPrepare(){
-    const t = setInterval(()=>{
-      if (typeof window.prepareMapForPrintLgIa === 'function'){
-        clearInterval(t);
-        const orig = window.prepareMapForPrintLgIa;
-        window.prepareMapForPrintLgIa = function(opts){
-          log('prepareMapForPrintLgIa(opts):', opts);
-          patchMapLogging();
-          measure('pre prepare');
-          const r = orig.apply(this, arguments);
-          measure('post prepare');
-          return r;
-        };
-        log('Hooked prepareMapForPrintLgIa ✓');
-      }
-    }, 300);
-  })();
-
-  // Hooko window.print
+  // ——— hookojam window.print, BET NEliekam measure pirms orig.print (lai nekas nelūzt)
   (function hookPrint(){
-    const orig = window.print;
-    if (!orig) return;
+    if (!window.print) return;
+    const orig = window.print.bind(window);
     window.print = function(){
-      log('window.print() called');
-      overlayOn(true);
-      measure('BEFORE window.print');
-      try { return orig.call(window); }
-      finally { /* pēc atgriešanās (ne vienmēr izsaucas) */ }
+      log('window.print()');
+      overlay(true);              // vizuāli parādam mērķa “kasti”
+      try{ return orig(); }
+      finally{}
     };
     log('Hooked window.print ✓');
   })();
 
-  // beforeprint/afterprint
+  // ——— before/after print + izmaiņas body klasēs
   window.addEventListener('beforeprint', ()=>{
     log('beforeprint');
-    overlayOn(true);
+    overlay(true);
+    patchLeafletLogging();
     measure('beforeprint');
-  }, false);
+  });
   window.addEventListener('afterprint', ()=>{
     log('afterprint');
     measure('afterprint');
-    overlayOff();
-  }, false);
+    overlay(false);
+  });
 
-  // Novēro body klases pārmaiņas (print-mode)
   new MutationObserver(list=>{
     for (const m of list){
       if (m.type==='attributes' && m.attributeName==='class'){
         const on = document.body.classList.contains('print-mode');
-        log('body.class changed → print-mode:', on);
-        overlayOn(on);
+        log('body.class → print-mode:', on);
+        overlay(on);
         measure(on ? 'PRINT-MODE ON' : 'PRINT-MODE OFF');
       }
     }
   }).observe(document.body, { attributes:true });
 
-  // Publiska API pogai/konsolei
+  // ——— publiska API testiem
   window.__printDebug = {
-    measure,
-    showOverlay: ()=>overlayOn(true),
-    hideOverlay: overlayOff
+    measure: tag => measure(tag),
+    show: ()=>overlay(true),
+    hide: ()=>overlay(false)
   };
 
-  // Sākotnējais stāvoklis
-  setTimeout(()=>{ patchMapLogging(); measure('on load'); }, 1000);
-
-  log('Print debugger injected ✓  — izmanto window.__printDebug.measure("tag")');
+  // sākotnējais stāvoklis
+  setTimeout(()=>{ patchLeafletLogging(); measure('onload'); }, 800);
 })();
 </script>
-
 
 
 
