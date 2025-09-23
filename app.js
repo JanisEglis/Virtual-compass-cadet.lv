@@ -1768,6 +1768,7 @@ function closeLgIaPrintDialog(){
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
 	
+// Fiksē tieši redzamā skata ģeodēzisko centru (nevis kastes ģeometrisko centru)
 const keepCenter = map.getCenter();
 
 
@@ -1839,6 +1840,15 @@ if (map) {
   const pt = map.latLngToContainerPoint(keepCenter);
   const sz = map.getSize();
   map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
+
+
+console.log('[PRINT] keepCenter=%s,%s • size=%sx%s • centerPx=%sx%s • panFix=%s,%s',
+  keepCenter.lat.toFixed(6), keepCenter.lng.toFixed(6),
+  sz.x, sz.y,
+  pt.x.toFixed(1), pt.y.toFixed(1),
+  (sz.x/2 - pt.x).toFixed(1), (sz.y/2 - pt.y).toFixed(1)
+);
+	
 }
 
 setTimeout(() => { window.print(); }, 600);
