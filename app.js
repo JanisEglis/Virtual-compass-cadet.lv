@@ -1764,6 +1764,111 @@ function closeLgIaPrintDialog(){
   if (m) m.remove();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// --- HELPERS: izņem translate(x,y) no CSS transform
+function __parseTranslate(el){
+  const t = (getComputedStyle(el).transform || '').trim();
+  if (!t || t === 'none') return {x:0, y:0};
+  if (t.startsWith('matrix3d(')){
+    const n = t.slice(9,-1).split(',').map(parseFloat);
+    return {x: n[12] || 0, y: n[13] || 0};
+  }
+  if (t.startsWith('matrix(')){
+    const n = t.slice(7,-1).split(',').map(parseFloat);
+    return {x: n[4]  || 0, y: n[5]  || 0};
+  }
+  return {x:0, y:0};
+}
+
+// --- PIRMS DRUKAS: "iekausē" Leaflet translācijas left/top iekšā
+function freezeLeafletForPrint(map){
+  if (!map || !map._panes) return;
+  const p = map._panes;
+  const targets = [
+    p.mapPane, p.tilePane, p.overlayPane, p.shadowPane,
+    p.markerPane, p.tooltipPane, p.popupPane
+  ].filter(Boolean);
+
+  map.__printFreeze = [];
+  targets.forEach(el => {
+    const pos = el._leaflet_pos ? { x: el._leaflet_pos.x, y: el._leaflet_pos.y }
+                                : __parseTranslate(el);
+    map.__printFreeze.push({
+      el,
+      transform: el.style.transform,
+      left: el.style.left,
+      top: el.style.top
+    });
+    el.style.transform = 'none';           // lai druka neskaita transformus
+    el.style.left = Math.round(pos.x) + 'px';
+    el.style.top  = Math.round(pos.y) + 'px';
+  });
+}
+
+// --- PĒC DRUKAS: atjauno sākotnējos stilus
+function restoreLeafletAfterPrint(map){
+  const stash = map && map.__printFreeze || [];
+  stash.forEach(({el, transform, left, top}) => {
+    if (!el) return;
+    el.style.transform = transform || '';
+    el.style.left = left || '';
+    el.style.top  = top || '';
+  });
+  if (map) map.__printFreeze = null;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
@@ -1806,6 +1911,16 @@ mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
   document.body.classList.add('print-mode');
   const styleEl = injectDynamicPrintStyle(format, orient);
 
+
+// Pirms pārejas uz print — iekausē translācijas left/top
+window.addEventListener('beforeprint', () => freezeLeafletForPrint(map), { once:true });
+// Pēc print — atjauno transformus
+window.addEventListener('afterprint',  () => restoreLeafletAfterPrint(map), { once:true });
+
+
+
+
+	
   // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
   requestAnimationFrame(()=>{
 
