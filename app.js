@@ -1798,7 +1798,12 @@ mapEl && (mapEl.style.width = mapEl.clientWidth + 'px');
 mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
 
 
-
+// 0) Fiksē ekrāna (sarkanā rāmja) centru PIRMS print-mode
+const rc   = map.getContainer().getBoundingClientRect();
+const vpW  = window.innerWidth;
+const vpH  = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+const vpPx = L.point(vpW/2 - rc.left, vpH/2 - rc.top);
+const keepCenter = map.containerPointToLatLng(vpPx); // ← īstais centrs drukai
 
 	
   // 2) Ieslēdz “print-mode” un ielādē dinamisku @page + mm izmērorientāciju
@@ -1810,8 +1815,7 @@ mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
 
 if (map) {
   map.invalidateSize(true);
-  const r = map.getContainer().getBoundingClientRect();                       // JAUNS
-  keepCenter = map.containerPointToLatLng(L.point(r.width/2, r.height/2)); // JAUNS
+
   map.setView(keepCenter, map.getZoom(), { animate: false });
 }
 
