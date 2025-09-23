@@ -1798,11 +1798,50 @@ mapEl && (mapEl.style.width = mapEl.clientWidth + 'px');
 mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
 
 
+// DZĒST šo veco bloku, ja vēl ir
+const rc   = map.getContainer().getBoundingClientRect();
+const vpW  = window.innerWidth;
+const vpH  = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+const vpPx = L.point(vpW/2 - rc.left, vpH/2 - rc.top);
+const kc = map.containerPointToLatLng(vpPx);
+keepCenter = (kc && isFinite(kc.lat) && isFinite(kc.lng)) ? kc : map.getCenter();
+
 
 
 	
   // 2) Ieslēdz “print-mode” un ielādē dinamisku @page + mm izmērorientāciju
   document.body.classList.add('print-mode');
+
+
+function __reanchorPrintCenter(){
+  map.invalidateSize(true);
+  const r = map.getContainer().getBoundingClientRect();
+  const cpx = map.containerPointToLatLng(L.point(r.width/2, r.height/2));
+  keepCenter = (cpx && isFinite(cpx.lat) && isFinite(cpx.lng)) ? cpx : map.getCenter();
+
+  const c = keepCenter || map.getCenter();
+  if (map._resetView) map._resetView(c, map.getZoom(), true);
+  else map.setView(c, map.getZoom(), { animate:false });
+
+  const pt = map.latLngToContainerPoint(c);
+  const sz = map.getSize();
+  map.panBy([ sz.x/2 - pt.x, sz.y/2 - pt.y ], { animate:false });
+}
+window.addEventListener('beforeprint', __reanchorPrintCenter, { once:true });
+const mq = window.matchMedia && window.matchMedia('print');
+if (mq && mq.addEventListener){
+  mq.addEventListener('change', e => { if (e.matches) __reanchorPrintCenter(); }, { once:true });
+}
+
+
+
+
+
+
+
+
+
+	
   const styleEl = injectDynamicPrintStyle(format, orient);
 
 
@@ -1840,7 +1879,10 @@ if (__mq && __mq.addEventListener){
 if (map) {
   map.invalidateSize(true);
 
-  map.setView(keepCenter, map.getZoom(), { animate: false });
+  {
+  const c = (keepCenter && isFinite(keepCenter.lat) && isFinite(keepCenter.lng)) ? keepCenter : map.getCenter();
+  map.setView(c, map.getZoom(), { animate:false });
+}
 }
 
 
@@ -1868,6 +1910,17 @@ keepCenter = map.containerPointToLatLng(L.point(r2.width/2, r2.height/2));
   if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
   else map.setView(keepCenter, map.getZoom(), { animate:false });
 
+
+
+{
+  const c = (keepCenter && isFinite(keepCenter.lat) && isFinite(keepCenter.lng)) ? keepCenter : map.getCenter();
+  const pt = map.latLngToContainerPoint(c);
+  const sz = map.getSize();
+  map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
+}
+
+
+	
   // pikseļu-precīzs enkurs tieši lapas vidū
   const pt = map.latLngToContainerPoint(keepCenter);
   const sz = map.getSize();
