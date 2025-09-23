@@ -2065,17 +2065,17 @@ body.print-mode #printNorthTR .n{
   `;
 
 
- // Drošības filtrs: izmet jebkuru veco Leaflet transform-reset bloku, ja vēl kur iemaldījies
-  const cleanedCss = css
-    // @media print blokiem, kuros .leaflet-* tiek uzspiests transform/left/top
-    .replace(/@media\s+print\s*\{[\s\S]*?#onlineMap\s+\.leaflet-[\s\S]*?\{[\s\S]*?(?:transform\s*:\s*(?:none|translate\(0,0\))\s*!important;|left\s*:\s*0\s*!important;|top\s*:\s*0\s*!important;)[\s\S]*?\}[\s\S]*?\}/g, '');
-
-
+const cssNoLeafletResets = css.replace(
+  /@media\s+print\s*\{[\s\S]*?#onlineMap\s+\.leaflet-[\s\S]*?\{[\s\S]*?(?:transform\s*:\s*(?:none|translate\(0,0\))\s*!important;|left\s*:\s*0\s*!important;|top\s*:\s*0\s*!important;)[\s\S]*?\}[\s\S]*?\}/g,
+  ''
+);
 
 	
   let el = document.getElementById('dynamicPrintStyle');
   if (!el){ el = document.createElement('style'); el.id = 'dynamicPrintStyle'; document.head.appendChild(el); }
-  el.textContent = css;
+//  el.textContent = css;
+	// un tālāk lieto šo
+el.textContent = cssNoLeafletResets;
   return el;
 }
 
