@@ -1767,8 +1767,9 @@ function closeLgIaPrintDialog(){
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
-	let keepCenter; // ← pacelts uz ārpusi, redzams visos blokos
-
+	
+const rc = map.getContainer().getBoundingClientRect();
+const keepCenter = map.containerPointToLatLng(L.point(rc.width/2, rc.height/2));
 
 
 const keepZoom   = map.getZoom();
@@ -1798,93 +1799,20 @@ mapEl && (mapEl.style.width = mapEl.clientWidth + 'px');
 mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
 
 
-// DZĒST šo veco bloku, ja vēl ir
-const rc   = map.getContainer().getBoundingClientRect();
-const vpW  = window.innerWidth;
-const vpH  = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-const vpPx = L.point(vpW/2 - rc.left, vpH/2 - rc.top);
-const kc = map.containerPointToLatLng(vpPx);
-keepCenter = (kc && isFinite(kc.lat) && isFinite(kc.lng)) ? kc : map.getCenter();
-
 
 
 	
   // 2) Ieslēdz “print-mode” un ielādē dinamisku @page + mm izmērorientāciju
   document.body.classList.add('print-mode');
-
-
-function __reanchorPrintCenter(){
-  map.invalidateSize(true);
-  const r = map.getContainer().getBoundingClientRect();
-  const cpx = map.containerPointToLatLng(L.point(r.width/2, r.height/2));
-  keepCenter = (cpx && isFinite(cpx.lat) && isFinite(cpx.lng)) ? cpx : map.getCenter();
-
-  const c = keepCenter || map.getCenter();
-  if (map._resetView) map._resetView(c, map.getZoom(), true);
-  else map.setView(c, map.getZoom(), { animate:false });
-
-  const pt = map.latLngToContainerPoint(c);
-  const sz = map.getSize();
-  map.panBy([ sz.x/2 - pt.x, sz.y/2 - pt.y ], { animate:false });
-}
-window.addEventListener('beforeprint', __reanchorPrintCenter, { once:true });
-const mq = window.matchMedia && window.matchMedia('print');
-if (mq && mq.addEventListener){
-  mq.addEventListener('change', e => { if (e.matches) __reanchorPrintCenter(); }, { once:true });
-}
-
-
-
-
-
-
-
-
-
-	
   const styleEl = injectDynamicPrintStyle(format, orient);
 
-
-
-
-// === Re-enkurs tieši pirms drukas (kad print-CSS jau aktīvs) ===
-function __reanchorPrintCenter(){
-  map.invalidateSize(true);
-  const r = map.getContainer().getBoundingClientRect();
-  keepCenter = map.containerPointToLatLng(L.point(r.width/2, r.height/2));
-
-  if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
-  else map.setView(keepCenter, map.getZoom(), { animate:false });
-
-  const pt = map.latLngToContainerPoint(keepCenter);
-  const sz = map.getSize();
-  map.panBy([ sz.x/2 - pt.x, sz.y/2 - pt.y ], { animate:false });
-}
-
-// iedarbina brīdī, kad pārlūks reāli pārslēdzas uz print
-window.addEventListener('beforeprint', __reanchorPrintCenter, { once:true });
-const __mq = window.matchMedia && window.matchMedia('print');
-if (__mq && __mq.addEventListener){
-  __mq.addEventListener('change', e => { if (e.matches) __reanchorPrintCenter(); }, { once:true });
-}
-
-
-
-
-
-	
   // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
   requestAnimationFrame(()=>{
 
 if (map) {
   map.invalidateSize(true);
-
-  {
-  const c = (keepCenter && isFinite(keepCenter.lat) && isFinite(keepCenter.lng)) ? keepCenter : map.getCenter();
-  map.setView(c, map.getZoom(), { animate:false });
+  map.setView(keepCenter, map.getZoom(), { animate: false }); // ← noturam tieši ekrāna centru
 }
-}
-
 
 
 
@@ -1904,23 +1832,10 @@ document.documentElement.style.setProperty('--map-bottom-safe','0px');
 
 // === VIENS recentrēšanas bloks (vienīgais nepieciešamais) ===
 if (map) {
-	const r2 = map.getContainer().getBoundingClientRect();
-keepCenter = map.containerPointToLatLng(L.point(r2.width/2, r2.height/2));
   map.invalidateSize(true); // pārrēķina kastes izmēru
   if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
   else map.setView(keepCenter, map.getZoom(), { animate:false });
 
-
-
-{
-  const c = (keepCenter && isFinite(keepCenter.lat) && isFinite(keepCenter.lng)) ? keepCenter : map.getCenter();
-  const pt = map.latLngToContainerPoint(c);
-  const sz = map.getSize();
-  map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
-}
-
-
-	
   // pikseļu-precīzs enkurs tieši lapas vidū
   const pt = map.latLngToContainerPoint(keepCenter);
   const sz = map.getSize();
@@ -1991,11 +1906,10 @@ function injectDynamicPrintStyle(fmt, orient){
 
     /* pirms/drukas laikā “izslaukam” lapu līdz vienai vienībai */
     html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
-	
     @media print {
       html, body { height:auto !important; overflow:hidden !important; }
 	    /* slēdzam arī ekrāna UI rokturi, ja tas vēl eksistē */
-  		#resizeHandle{ display:none !important; }
+  #resizeHandle{ display:none !important; }
 
       /* ļaujam palikt tikai kartei un mūsu overlay */
       body.print-mode > *:not(#canvasContainer):not(#printScaleTop):not(#printTitleTL):not(#printNorthTR):not(#printSourceBL):not(#printGridBR){
@@ -2144,19 +2058,9 @@ body.print-mode #printNorthTR .n{
    
     }
   `;
-
-
-const cssNoLeafletResets = css.replace(
-  /@media\s+print\s*\{[\s\S]*?#onlineMap\s+\.leaflet-[\s\S]*?\{[\s\S]*?(?:transform\s*:\s*(?:none|translate\(0,0\))\s*!important;|left\s*:\s*0\s*!important;|top\s*:\s*0\s*!important;)[\s\S]*?\}[\s\S]*?\}/g,
-  ''
-);
-
-	
   let el = document.getElementById('dynamicPrintStyle');
   if (!el){ el = document.createElement('style'); el.id = 'dynamicPrintStyle'; document.head.appendChild(el); }
-//  el.textContent = css;
-	// un tālāk lieto šo
-el.textContent = cssNoLeafletResets;
+  el.textContent = css;
   return el;
 }
 
@@ -5840,21 +5744,3 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
     showOverlay(); // vizualizē print kasti
   }, true);
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
