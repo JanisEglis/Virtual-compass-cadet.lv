@@ -1768,8 +1768,7 @@ function closeLgIaPrintDialog(){
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
 	
-const rc = map.getContainer().getBoundingClientRect();
-const keepCenter = map.containerPointToLatLng(L.point(rc.width/2, rc.height/2));
+
 
 
 const keepZoom   = map.getZoom();
@@ -1811,6 +1810,10 @@ mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
 
 if (map) {
   map.invalidateSize(true);
+	// ← JAUNS: paņem kastes (#onlineMap) centru PĒC print-mode izmēra
+const r = map.getContainer().getBoundingClientRect();
+const keepCenter = map.containerPointToLatLng(L.point(r.width/2, r.height/2));
+
   map.setView(keepCenter, map.getZoom(), { animate: false }); // ← noturam tieši ekrāna centru
 }
 
@@ -1906,10 +1909,11 @@ function injectDynamicPrintStyle(fmt, orient){
 
     /* pirms/drukas laikā “izslaukam” lapu līdz vienai vienībai */
     html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
+	
     @media print {
       html, body { height:auto !important; overflow:hidden !important; }
 	    /* slēdzam arī ekrāna UI rokturi, ja tas vēl eksistē */
-  #resizeHandle{ display:none !important; }
+  		#resizeHandle{ display:none !important; }
 
       /* ļaujam palikt tikai kartei un mūsu overlay */
       body.print-mode > *:not(#canvasContainer):not(#printScaleTop):not(#printTitleTL):not(#printNorthTR):not(#printSourceBL):not(#printGridBR){
