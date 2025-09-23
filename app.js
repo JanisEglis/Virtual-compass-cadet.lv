@@ -1768,8 +1768,7 @@ function closeLgIaPrintDialog(){
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
 	
-const rc = map.getContainer().getBoundingClientRect();
-const keepCenter = map.containerPointToLatLng(L.point(rc.width/2, rc.height/2));
+const keepCenter = map.getCenter();
 
 
 const keepZoom   = map.getZoom();
