@@ -1810,12 +1810,11 @@ mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
 
 if (map) {
   map.invalidateSize(true);
-	// ← JAUNS: paņem kastes (#onlineMap) centru PĒC print-mode izmēra
-const r = map.getContainer().getBoundingClientRect();
-const keepCenter = map.containerPointToLatLng(L.point(r.width/2, r.height/2));
-
-  map.setView(keepCenter, map.getZoom(), { animate: false }); // ← noturam tieši ekrāna centru
+  const r = map.getContainer().getBoundingClientRect();                       // JAUNS
+  const keepCenter = map.containerPointToLatLng(L.point(r.width/2, r.height/2)); // JAUNS
+  map.setView(keepCenter, map.getZoom(), { animate: false });
 }
+
 
 
 
