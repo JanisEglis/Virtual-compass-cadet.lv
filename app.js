@@ -1798,18 +1798,42 @@ mapEl && (mapEl.style.width = mapEl.clientWidth + 'px');
 mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
 
 
-// 0) Fiksē ekrāna (sarkanā rāmja) centru PIRMS print-mode
-const rc   = map.getContainer().getBoundingClientRect();
-const vpW  = window.innerWidth;
-const vpH  = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-const vpPx = L.point(vpW/2 - rc.left, vpH/2 - rc.top);
-keepCenter = map.containerPointToLatLng(vpPx);  // ← īstais centrs drukai
+
 
 	
   // 2) Ieslēdz “print-mode” un ielādē dinamisku @page + mm izmērorientāciju
   document.body.classList.add('print-mode');
   const styleEl = injectDynamicPrintStyle(format, orient);
 
+
+
+
+// === Re-enkurs tieši pirms drukas (kad print-CSS jau aktīvs) ===
+function __reanchorPrintCenter(){
+  map.invalidateSize(true);
+  const r = map.getContainer().getBoundingClientRect();
+  keepCenter = map.containerPointToLatLng(L.point(r.width/2, r.height/2));
+
+  if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
+  else map.setView(keepCenter, map.getZoom(), { animate:false });
+
+  const pt = map.latLngToContainerPoint(keepCenter);
+  const sz = map.getSize();
+  map.panBy([ sz.x/2 - pt.x, sz.y/2 - pt.y ], { animate:false });
+}
+
+// iedarbina brīdī, kad pārlūks reāli pārslēdzas uz print
+window.addEventListener('beforeprint', __reanchorPrintCenter, { once:true });
+const __mq = window.matchMedia && window.matchMedia('print');
+if (__mq && __mq.addEventListener){
+  __mq.addEventListener('change', e => { if (e.matches) __reanchorPrintCenter(); }, { once:true });
+}
+
+
+
+
+
+	
   // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
   requestAnimationFrame(()=>{
 
