@@ -1803,7 +1803,7 @@ const rc   = map.getContainer().getBoundingClientRect();
 const vpW  = window.innerWidth;
 const vpH  = window.visualViewport ? window.visualViewport.height : window.innerHeight;
 const vpPx = L.point(vpW/2 - rc.left, vpH/2 - rc.top);
-const keepCenter = map.containerPointToLatLng(vpPx); // ← īstais centrs drukai
+keepCenter = map.containerPointToLatLng(vpPx);  // ← īstais centrs drukai
 
 	
   // 2) Ieslēdz “print-mode” un ielādē dinamisku @page + mm izmērorientāciju
