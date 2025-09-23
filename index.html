@@ -1592,202 +1592,136 @@ body.preloading { overflow: hidden; }
 
 <script>
 /* =========================================================
-   PRINT INSPECTOR v3 — centrēšana pēc “sarkanā laukuma”
-   Pievieno tieši pirms </body> iekš index.html
+   PRINT ANCHOR FIX v1 — druka pēc “sarkanā laukuma” centra
+   Likt tieši pirms </body>. Atzīmē savu sarkano kasti ar
+   data-print-anchor (piem.: <div id="redBox" data-print-anchor>…)
    ========================================================= */
 (function(){
   'use strict';
+  if (window.__printAnchorFixHooked) return;
+  window.__printAnchorFixHooked = true;
 
-  // ---- mazie palīgi ----
-  const $$ = sel => document.querySelector(sel);
-  const log = (...a)=>console.log('[PRINTDBG]', ...a);
-  const err = (...a)=>console.error('[PRINTDBG]', ...a);
-  const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
-  const to2 = n => Math.round(n*100)/100;
+  const log = (...a)=>console.log('[PRINTFIX]', ...a);
+  const err = (...a)=>console.error('[PRINTFIX]', ...a);
 
-  // Atrodam Leaflet karti (pieņemam, ka globāli pieejams "map")
+  // Droša piekļuve Leaflet kartei (izmanto tavu app.js āķi)
   function getMap(){
-    if (window.map && typeof window.map.getCenter==='function') return window.map;
-    // fallback: mēģinam no DOM atrast .leaflet-container (ja tev nav "map" globā)
-    const c = document.querySelector('#onlineMap .leaflet-container');
-    if (c && c._leaflet_id && window.L && L && L.Map) {
-      // Leaflet neeksportē publisku reģistru; ja nav "map", tad bez garantijas.
-      // Šajā gadījumā paļaujamies uz window.map eksistenci.
-    }
-    return window.map || null;
+    try {
+      if (typeof window.__getMap === 'function') return window.__getMap();
+      if (window.map && typeof window.map.getCenter === 'function') return window.map;
+    } catch(_) {}
+    return null;
   }
 
-  // Kurš IR “sarkanais laukums”?
-  // 1) ja lapā ir elements ar data-print-anchor => ņemam to
-  // 2) citādi ņemam pašu kartes konteineru (#onlineMap)
+  // ENKURS: sarkanais laukums (vai #onlineMap, ja enkura nav)
   function getAnchorEl(){
-    return document.querySelector('[data-print-anchor]') || document.getElementById('onlineMap') || document.body;
+    return document.querySelector('[data-print-anchor]') ||
+           document.getElementById('onlineMap') ||
+           document.body;
   }
 
-  // Izrēķinām “enkura” centru pikseļos (viewport koordinātēs)
-  function getAnchorCenterPx(){
-    const el = getAnchorEl();
-    const r = el.getBoundingClientRect();
-    return { el, rect:r, x:r.left + r.width/2, y:r.top + r.height/2 };
+  // Pilna telemetrija par enkurpunktu un konversiju uz LatLng
+  function anchorInfo(map){
+    const anchor = getAnchorEl();
+    const aR = anchor.getBoundingClientRect();
+    const cx = aR.left + aR.width/2;
+    const cy = aR.top  + aR.height/2;
+
+    const mc = map.getContainer();
+    const mR = mc.getBoundingClientRect();
+    const pt = L.point(cx - mR.left, cy - mR.top);    // konteinera pikseļi
+    const ll = map.containerPointToLatLng(pt);
+
+    const sz = map.getSize();
+    const cpx = sz.x/2, cpy = sz.y/2;
+    const dX = (cpx - pt.x), dY = (cpy - pt.y);
+
+    return { anchor, aR, cx, cy, mc, mR, pt, ll, sz, cpx, cpy, dX, dY };
   }
 
-  // Pārveidojam viewport px → kartes LatLng
-  function pxToLatLng(map, x, y){
+  // Reāla centrēšana pēc enkura, bez animācijas
+  function recenterByAnchor(map){
+    const i = anchorInfo(map);
+
+    // 1) pieliekam LatLng tieši par centru
+    map.setView(i.ll, map.getZoom(), { animate:false });
+
+    // 2) pikseļu korekcija, ja enkurs (pt) nav precīzi vidū
+    map.panBy([ i.dX, i.dY ], { animate:false });
+
+    log(
+      'ENKURS:',
+      `el=${i.anchor.id || i.anchor.className || i.anchor.tagName}`,
+      `rect=${Math.round(i.aR.left)}:${Math.round(i.aR.top)} ${Math.round(i.aR.width)}x${Math.round(i.aR.height)}`
+    );
+    log(
+      'KONVERSIJA:',
+      `anchorPx=${i.pt.x.toFixed(1)}x${i.pt.y.toFixed(1)} (container)`,
+      `keepCenter=${i.ll.lat.toFixed(6)},${i.ll.lng.toFixed(6)}`,
+      `panFix=${i.dX.toFixed(1)},${i.dY.toFixed(1)}`
+    );
+  }
+
+  // Papildu izdrukas izmērs/mm → px diagnostika (ja vajag)
+  function logPrintBox(){
     try{
-      // Leaflet: no klienta px uz kartes konteinera punktu, tad uz LatLng
-      const pt = map.mouseEventToContainerPoint({clientX:x, clientY:y});
-      return map.containerPointToLatLng(pt);
-    }catch(e){
-      err('pxToLatLng kļūda', e);
-      return map.getCenter();
-    }
+      const m = getMap(); if (!m) return;
+      const el = m.getContainer();
+      const cs = getComputedStyle(el);
+      log('SIZE @print CSS:',
+        `width=${cs.width} height=${cs.height}`,
+        '(ja ieliets dinamiskais @page, izmēri būs mm→px)'
+      );
+    }catch(_){}
   }
 
-  // Uzvelkam uz ekrāna “kur drukāsim” pārklājumu
-  function showOverlay(rect){
-    try{
-      removeOverlay();
-      const d = document.createElement('div');
-      d.id = '__printTargetOverlay';
-      d.style.cssText = [
-        'position:fixed','inset:auto','pointer-events:none','z-index:2147483000',
-        'border:2px dashed rgba(255,0,0,.85)','background:rgba(255,0,0,.08)',
-        'box-shadow:0 0 0 3000px rgba(255,0,0,.04) inset'
-      ].join(';');
-      // ja iedots konkrēts rect — lietojam to, citādi kartes laukumu
-      const r = rect || getAnchorEl().getBoundingClientRect();
-      d.style.left = r.left+'px';
-      d.style.top = r.top+'px';
-      d.style.width = r.width+'px';
-      d.style.height = r.height+'px';
-      document.body.appendChild(d);
-
-      // mazs centrs
-      const dot = document.createElement('div');
-      dot.style.cssText = 'position:absolute;width:10px;height:10px;border-radius:50%;background:red;left:50%;top:50%;transform:translate(-50%,-50%)';
-      d.appendChild(dot);
-    }catch(e){/* ignore */}
-  }
-  function removeOverlay(){
-    try{ const d=$$('#__printTargetOverlay'); d && d.remove(); }catch(_){}
-  }
-
-  // Izvilks mm izmēru, ko dotā brīdī mēģinām lietot (ja tavs kods iestata inline width/height mm)
-  function readPrintSizeMM(){
-    const om = document.getElementById('onlineMap');
-    if (!om) return null;
-    const cs = getComputedStyle(om);
-    // parasti mēs iestādām width/height uz mm ar !important
-    const w = cs.width, h = cs.height;
-    // pārrēķins px→mm pēc 96dpi pieņēmuma (1in=96px; 1in=25.4mm; 1mm≈3.78px)
-    const pxToMm = px => px/96*25.4;
-    const pxW = parseFloat(w)||0, pxH = parseFloat(h)||0;
-    return { mmW: to2(pxToMm(pxW)), mmH: to2(pxToMm(pxH)), pxW: to2(pxW), pxH: to2(pxH) };
-  }
-
-  // Galvenais: pirms drukas nopozicionējam karti PĒC “sarkanā laukuma” centra.
-  function centerMapForPrint(){
+  // ——— Hook: beforeprint ———
+  window.addEventListener('beforeprint', ()=>{
     const map = getMap();
     if (!map){ err('Map nav pieejams'); return; }
-
-    const a = getAnchorCenterPx();
-    const keep = pxToLatLng(map, a.x, a.y);
-
-    // info par kartes konteinera centru (lai redzētu nobīdi)
-    const mapRect = ($$('#onlineMap')||document.body).getBoundingClientRect();
-    const cpx = mapRect.left + mapRect.width/2;
-    const cpy = mapRect.top + mapRect.height/2;
-
-    log('[PRINT] ENKURS',
-        `anchorEl=${a.el.id||a.el.className||a.el.tagName}`,
-        `anchorCenterPx=${to2(a.x)}x${to2(a.y)}`
-    );
-    log('[PRINT] MAP-CENTER PX', `containerCenterPx=${to2(cpx)}x${to2(cpy)}`,
-        `offsetPx=(${to2(a.x-cpx)}, ${to2(a.y-cpy)})`);
-
-    // Pannojam bez animācijas
-    const prev = {
-      snap: map.options.zoomSnap,
-      anim: map.options.zoomAnimation,
-      fad:  map.options.fadeAnimation,
-      mza:  map.options.markerZoomAnimation
-    };
-    map.options.zoomSnap=0; map.options.zoomAnimation=false; map.options.fadeAnimation=false; map.options.markerZoomAnimation=false;
     try{
-      map.panTo(keep, {animate:false});
-    }finally{
-      map.options.zoomSnap = prev.snap;
-      map.options.zoomAnimation = prev.anim;
-      map.options.fadeAnimation = prev.fad;
-      map.options.markerZoomAnimation = prev.mza;
-    }
-
-    // Vizuālais pārklājums tieši virs “enkura” laukuma
-    showOverlay(a.rect);
-
-    const s = readPrintSizeMM();
-    if (s){
-      log('[PRINT] SIZE',
-          `onlineMap=${s.mmW}x${s.mmH}mm (${s.pxW}x${s.pxH}px @96dpi)`);
-    }
-
-    // Nobeiguma izvade
-    const ctr = map.getCenter();
-    const sz = map.getSize();
-    const centerPx = { x: sz.x/2, y: sz.y/2 };
-    log('[PRINT] KEEP CENTER',
-        `lat=${to2(ctr.lat)},lng=${to2(ctr.lng)}`,
-        `mapHalfPx=${to2(centerPx.x)}x${to2(centerPx.y)}`);
-  }
-
-  // ——— Iekabināmies drukas ciklā ———
-  window.addEventListener('beforeprint', ()=>{
-    log('beforeprint');
-    try{
-      document.body.classList.add('print-mode');
-      centerMapForPrint();
+      document.body.classList.add('print-mode'); // saskaņā ar tavu CSS
+      // Pārrēķins pirms centrēšanas (ja konteiners maina izmēru)
+      try { map.invalidateSize(true); } catch(_){}
+      recenterByAnchor(map);
+      setTimeout(logPrintBox, 50);
     }catch(e){ err('beforeprint kļūda', e); }
   });
 
+  // ——— Hook: afterprint ———
   window.addEventListener('afterprint', ()=>{
-    log('afterprint');
     try{
-      removeOverlay();
       document.body.classList.remove('print-mode');
+      log('afterprint – print-mode OFF');
+      // drošībai: atjauno Leaflet izmēru
+      const map = getMap(); try { map && map.invalidateSize(true); } catch(_){}
     }catch(e){ err('afterprint kļūda', e); }
   });
 
-  // Papildus: aizstājam window.print, lai vienmēr redzētu procesu
-  (function hookPrint(){
+  // ——— Hook: window.print (vienreiz) ———
+  (function hookPrintOnce(){
     if (window.__printHooked) return;
     const orig = window.print;
     window.print = function(){
       try{
-        console.log('[PRINTDBG] window.print()');
-        // nodrošinām klasīti un centrēšanu arī gadījumā,
-        // ja pārlūks neizsauc beforeprint nekavējoties
-        document.body.classList.add('print-mode');
-        centerMapForPrint();
-      }catch(e){ err('print() pirms-centrēšana izgāzās', e); }
-      // nelieku nekādas pauzes — ļauju pārlūkam atvērt priekšskatījumu
+        const map = getMap();
+        if (map){
+          document.body.classList.add('print-mode');
+          map.invalidateSize(true);
+          recenterByAnchor(map);
+        }else{
+          err('Map nav pieejams (print call)');
+        }
+      }catch(e){ err('print pirms-centrēšana izgāzās', e); }
       return orig.call(window);
     };
     window.__printHooked = true;
-    log('Hooked window.print ✓');
+    log('Hooked window.print ✓ (anchor-aware)');
   })();
 
-  // Debug: poga F2 atjauno pārklājumu bez drukas
-  window.addEventListener('keydown', (e)=>{
-    if (e.key==='F2'){
-      removeOverlay();
-      centerMapForPrint();
-      e.preventDefault();
-    }
-  });
-
-  log('Print Inspector ielādēts. — Atzīmē “sarkano laukumu” ar data-print-anchor, ja vajag (piem., <div id="redBox" data-print-anchor>…).');
 })();
 </script>
+
 	
 	
 </body>
