@@ -2341,3 +2341,16 @@ body.print-mode .leaflet-control { display:none !important; }
     display: block !important;
   }
 } */
+
+@media print{
+  body.print-mode #onlineMap{
+    position: fixed !important;
+    inset: 0 !important;
+    margin: auto !important;
+    transform: none !important;
+  }
+}
+
+
+
+	
