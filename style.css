@@ -2296,60 +2296,6 @@ body.print-mode .leaflet-left .leaflet-control{
 
 
 
-/* ===== STRIKTS DRUKAS REŽĪMS ===== */
-body.print-mode {
-  -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-  background:#fff !important;
-}
-
-/* Paslēp VISU UI (whitelist tikai kartei un pēdai) */
-body.print-mode * { visibility: hidden !important; }
-body.print-mode #onlineMap,
-body.print-mode #onlineMap * ,
-body.print-mode #printFooter,
-body.print-mode #printFooter * { visibility: visible !important; }
-
-/* Drošībai arī display:none svarīgajiem UI gabaliem */
-body.print-mode #compassContainer,
-body.print-mode #about,
-body.print-mode #iframeContainerAbout,
-body.print-mode #iframeContainerQR,
-body.print-mode #contentFrame,
-body.print-mode #instructionFrame,
-body.print-mode #fullscreenMessage,
-body.print-mode #orientation-overlay,
-body.print-mode #mobile-warning,
-body.print-mode #buttonContainer,
-body.print-mode #resizeHandle,
-body.print-mode .leaflet-control { display:none !important; }
-
-/* --- PRINT: vienota, fiksēta kartes pozīcija --- */
-@media print{
-  /* drošībai atslēdz flex uz body */
-  body.print-mode{ display:block !important; }
-
-  /* karte vienmēr 10mm no malām ar īstu mm izmēru */
-/* @media print{
-  body.print-mode #onlineMap{
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    width: var(--print-w,190mm) !important;
-    height: var(--print-h,277mm) !important;
-    display: block !important;
-  }
-} */
-
-@media print{
-  body.print-mode #onlineMap{
-    position: fixed !important;
-    inset: 0 !important;
-    margin: auto !important;
-    transform: none !important;
-  }
-}
 
 
 
