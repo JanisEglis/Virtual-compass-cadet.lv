@@ -1925,10 +1925,10 @@ body.print-mode #onlineMap {
   position: fixed !important;
   top: 50% !important;
   left: 50% !important;
-  transform: translate(-50%, -50%) !important; /* <-- GALVENĀS IZMAIŅAS */
+  transform: translate(-50%, -50%) !important; /* <-- Uzticamāka centrēšana drukai */
   width: ${mm.w}mm !important;
   height: ${mm.h}mm !important;
-  margin: 0 !important; /* Noņemam 'auto' marginu, jo tas vairs nav vajadzīgs */
+  margin: 0 !important; /* Noņemam 'auto' marginu */
   display: block !important;
   page-break-inside: avoid;
   break-inside: avoid;
