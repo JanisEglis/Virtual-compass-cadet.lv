@@ -1807,44 +1807,32 @@ mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
   const styleEl = injectDynamicPrintStyle(format, orient);
 
   // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
-  requestAnimationFrame(()=>{
-
-if (map) {
-  map.invalidateSize(true);
-  map.setView(keepCenter, map.getZoom(), { animate: false }); // ← noturam tieši ekrāna centru
-}
-
-
-
-
-
-	  
+// Aizstājiet visu requestAnimationFrame bloku ar šo:
+requestAnimationFrame(() => {
     const footer = buildPrintFooterLgIa(scale, title);
-    // ļaujam ielādēt flīzes/līnijas
-    setTimeout(()=>{
-      window.addEventListener('afterprint', cleanup, {once:true});
 
-// aizver paneļus un nullē “safe areas”
-try { window.closeBothSelectorsLegacy && window.closeBothSelectorsLegacy(); } catch(e){}
-try { closeBothMenus && closeBothMenus(); } catch(e){}
-document.documentElement.style.setProperty('--map-top-safe','0px');
-document.documentElement.style.setProperty('--map-bottom-safe','0px');
+    // Dodam pārlūkam mirkli laika apstrādāt jaunos CSS stilus
+    setTimeout(() => {
+        if (map) {
+            // Leaflet ir jāpasaka pārbaudīt savu izmēru no jaunajiem CSS stiliem
+            map.invalidateSize(true);
 
-// === VIENS recentrēšanas bloks (vienīgais nepieciešamais) ===
-if (map) {
-  map.invalidateSize(true); // pārrēķina kastes izmēru
-  if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
-  else map.setView(keepCenter, map.getZoom(), { animate:false });
+            // Pēc izmēra atjaunošanas, vienkārši iestatām centru no jauna. 
+            // Tā kā CSS jau ir centrējis pašu konteineri, Leaflet automātiski
+            // pareizi centrēs saturu.
+            map.setView(keepCenter, map.getZoom(), { animate: false });
+        }
 
-  // pikseļu-precīzs enkurs tieši lapas vidū
-  const pt = map.latLngToContainerPoint(keepCenter);
-  const sz = map.getSize();
-  map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
-}
+        // Pievienojam 'afterprint' notikumu, lai pēc drukāšanas visu sakārtotu
+        window.addEventListener('afterprint', cleanup, { once: true });
 
-setTimeout(() => { window.print(); }, 600);
+        // Izsaucam drukas dialogu ar nelielu aizturi, lai karte paspēj pārkrāsoties
+        setTimeout(() => {
+            window.print();
+        }, 600); 
 
-}, 0);
+    }, 100); // Neliela aizture (100ms) ir kritiski svarīga
+});
 
     function cleanup(){
       document.body.classList.remove('print-mode');
