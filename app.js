@@ -1815,30 +1815,28 @@ requestAnimationFrame(() => {
     window.addEventListener('afterprint', cleanup, { once: true });
 
     // Dodam pārlūkam pietiekami daudz laika, lai apstrādātu jaunos CSS stilus
-    setTimeout(() => {
-        if (map) {
-            // Šī ir jaunā, svarīgākā daļa:
-            // Mēs sagaidīsim, kad Leaflet paziņos, ka ir pabeidzis kartes centrēšanu.
-            map.once('moveend', () => {
-                // TIKAI TAD, kad karte ir savā vietā, saucam drukas logu.
-                // Neliela papildu aizture ļauj ielādēties pēdējām kartes daļām.
-                setTimeout(() => {
-                    window.print();
-                }, 400); // Nedaudz palielināta aizture drošībai
-            });
+   const footer = buildPrintFooterLgIa(scale, title);
+window.addEventListener('afterprint', cleanup, { once: true });
 
-            // Pasakām Leaflet, ka tā konteinera izmērs ir mainījies
-            map.invalidateSize(true);
-            
-            // Dodam komandu pārvietot karti uz saglabāto centru
-            map.setView(keepCenter, map.getZoom(), { animate: false });
-        }
-    }, 200); // Palielināta sākotnējā aizture uz 200ms, lai stili noteikti ielādētos
+// Vienkāršs un uzticams taimeris, lai pārlūks paspēj visu apstrādāt
+setTimeout(() => {
+    if (map) {
+        // Pārrēķinām kartes izmēru atbilstoši drukas stiliem
+        map.invalidateSize(true);
+        // Iestatām pareizo centru
+        map.setView(keepCenter, map.getZoom(), { animate: false });
+
+        // Dodam vēl vienu mirkli, lai karte paspētu pārkrāsoties pirms drukas loga atvēršanas
+        setTimeout(() => {
+            window.print();
+        }, 800); // Palielināta aizture maksimālai stabilitātei
+    }
+}, 300); // Palielināta aizture CSS stilu piemērošanai
 });
 
     function cleanup(){
       document.body.classList.remove('print-mode');
-      footer && footer.remove();
+    //  footer && footer.remove();
       styleEl && styleEl.remove();
   // JAUNAIS: drošībai pārskaiti drošās zonas un pārzīmē Leaflet
   try { window.__updateMapSafeAreas && window.__updateMapSafeAreas(); } catch(e){}
