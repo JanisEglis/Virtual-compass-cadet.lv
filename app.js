@@ -1921,15 +1921,17 @@ function injectDynamicPrintStyle(fmt, orient){
 
       /* pati karte: fiksēta vieta lapā, ar rāmi iekšpusē */
 /* @media print sadaļā, kartes fiksētā vieta lapā */
-body.print-mode #onlineMap{
+body.print-mode #onlineMap {
   position: fixed !important;
-  inset: 0 !important;          /* top/right/bottom/left = 0 */
-  margin: auto !important;      /* centrē bez transformiem */
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important; /* <-- GALVENĀS IZMAIŅAS */
   width: ${mm.w}mm !important;
   height: ${mm.h}mm !important;
-  transform: none !important;   /* ← noņemam */
+  margin: 0 !important; /* Noņemam 'auto' marginu, jo tas vairs nav vajadzīgs */
   display: block !important;
-  page-break-inside: avoid; break-inside: avoid;
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 
