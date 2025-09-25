@@ -1815,8 +1815,7 @@ requestAnimationFrame(() => {
     window.addEventListener('afterprint', cleanup, { once: true });
 
     // Dodam pārlūkam pietiekami daudz laika, lai apstrādātu jaunos CSS stilus
-   const footer = buildPrintFooterLgIa(scale, title);
-window.addEventListener('afterprint', cleanup, { once: true });
+
 
 // Vienkāršs un uzticams taimeris, lai pārlūks paspēj visu apstrādāt
 setTimeout(() => {
