@@ -1765,73 +1765,103 @@ function closeLgIaPrintDialog(){
 }
 
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
-function prepareMapForPrintLgIa(opts){
-  const { format, orient, scale, title } = opts;
-	
-const rc = map.getContainer().getBoundingClientRect();
-const keepCenter = map.containerPointToLatLng(L.point(rc.width/2, rc.height/2));
-
-
-const keepZoom   = map.getZoom();
-
-  // 1) Uzliek precīzu zoom izvēlētajam mērogam (frakcionēts zoom)
-  const prev = {
-    zoomSnap: map.options.zoomSnap,
-    zoomDelta: map.options.zoomDelta,
-    zoomAnim: map.options.zoomAnimation,
-    fadeAnim: map.options.fadeAnimation,
-    markerZoomAnim: map.options.markerZoomAnimation
-  };
-  map.options.zoomSnap = 0;
-  map.options.zoomDelta = 0.25;
-  map.options.zoomAnimation = false;
-  map.options.fadeAnimation = false;
-  map.options.markerZoomAnimation = false;
-  map.setZoom( zoomForScale(scale), { animate:false } );
-  if (typeof updateRatio === 'function') updateRatio();
-
-
-
-// PIRMS print-mode:
-const mapEl = document.getElementById('onlineMap');
-const prevInlineStyle = mapEl?.getAttribute('style') || '';
-mapEl && (mapEl.style.width = mapEl.clientWidth + 'px');
-mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
-
-
-
-
-	
-  // 2) Ieslēdz “print-mode” un ielādē dinamisku @page + mm izmērorientāciju
-  document.body.classList.add('print-mode');
-  const styleEl = injectDynamicPrintStyle(format, orient);
-
-  // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
-// Aizstājiet visu requestAnimationFrame bloku ar šo:
-requestAnimationFrame(() => {
-    const footer = buildPrintFooterLgIa(scale, title);
+// Aizstājiet visu prepareMapForPrintLgIa funkciju ar šo galīgo versiju
+function prepareMapForPrintLgIa(opts) {
+    const { format, orient, scale, title } = opts;
+    const rc = map.getContainer().getBoundingClientRect();
+    const keepCenter = map.containerPointToLatLng(L.point(rc.width / 2, rc.height / 2));
     
-    // Pievienojam 'afterprint' notikumu, lai pēc drukāšanas visu sakārtotu
+    // Saglabājam iepriekšējos iestatījumus, lai tos vēlāk atjaunotu
+    const prev = {
+        zoomSnap: map.options.zoomSnap,
+        zoomDelta: map.options.zoomDelta,
+        zoomAnim: map.options.zoomAnimation,
+        fadeAnim: map.options.fadeAnimation,
+        markerZoomAnim: map.options.markerZoomAnimation
+    };
+
+    // Atspējojam animācijas un ļaujam precīzi iestatīt mērogu
+    map.options.zoomSnap = 0;
+    map.options.zoomDelta = 0.25;
+    map.options.zoomAnimation = false;
+    map.options.fadeAnimation = false;
+    map.options.markerZoomAnimation = false;
+    map.setZoom(zoomForScale(scale), { animate: false });
+    if (typeof updateRatio === 'function') updateRatio();
+
+    const mapEl = document.getElementById('onlineMap');
+    const prevInlineStyle = mapEl?.getAttribute('style') || '';
+
+    let styleEl = null;
+
+    // Funkcija, kas visu sakārto pēc drukāšanas
+    function cleanup() {
+        document.body.classList.remove('print-mode');
+        if (styleEl) styleEl.remove();
+
+        try {
+            if (window.__printOverlayEls) {
+                window.__printOverlayEls.forEach(el => { try { el.remove(); } catch (e) {} });
+                window.__printOverlayEls = null;
+            }
+        } catch (e) {}
+
+        if (mapEl) {
+            mapEl.setAttribute('style', prevInlineStyle);
+        }
+        
+        try {
+            window.__updateMapSafeAreas && window.__updateMapSafeAreas();
+            if (map) map.invalidateSize(true);
+        } catch (e) {}
+
+        map.options.zoomSnap = prev.zoomSnap;
+        map.options.zoomDelta = prev.zoomDelta;
+        map.options.zoomAnimation = prev.zoomAnim;
+        map.options.fadeAnimation = prev.fadeAnim;
+        map.options.markerZoomAnimation = prev.markerZoomAnim;
+    }
+
+    // === JAUNĀ, SVARĪGĀKĀ DAĻA ===
+    
+    // 1. Aprēķinām drukas izmērus milimetros
+    const base = (format === 'A3')
+        ? { w: 400, h: 277 } // A3 ainava, ar nelielām malām
+        : { w: 277, h: 190 }; // A4 ainava, ar nelielām malām
+    const mm = { w: base.w, h: base.h };
+
+    // 2. Pārveidojam milimetrus uz ekrāna pikseļiem (96 DPI ir standarts)
+    const mm2px = mmVal => Math.round(mmVal * 96 / 25.4);
+    const printWidthPx = mm2px(mm.w);
+    const printHeightPx = mm2px(mm.h);
+
+    // 3. Pievienojam drukas klasi un ģenerējam CSS
+    document.body.classList.add('print-mode');
+    styleEl = injectDynamicPrintStyle(format, orient);
+    buildPrintFooterLgIa(scale, title);
     window.addEventListener('afterprint', cleanup, { once: true });
 
-    // Dodam pārlūkam pietiekami daudz laika, lai apstrādātu jaunos CSS stilus
-
-
-// Vienkāršs un uzticams taimeris, lai pārlūks paspēj visu apstrādāt
-setTimeout(() => {
-    if (map) {
-        // Pārrēķinām kartes izmēru atbilstoši drukas stiliem
-        map.invalidateSize(true);
-        // Iestatām pareizo centru
-        map.setView(keepCenter, map.getZoom(), { animate: false });
-
-        // Dodam vēl vienu mirkli, lai karte paspētu pārkrāsoties pirms drukas loga atvēršanas
-        setTimeout(() => {
-            window.print();
-        }, 800); // Palielināta aizture maksimālai stabilitātei
+    // 4. Piespiedu kārtā iestatām kartes konteineram precīzus drukas izmērus pikseļos
+    if (mapEl) {
+        mapEl.style.width = printWidthPx + 'px';
+        mapEl.style.height = printHeightPx + 'px';
     }
-}, 300); // Palielināta aizture CSS stilu piemērošanai
-});
+
+    // 5. Dodam pārlūkam mirkli laika apstrādāt jaunos izmērus
+    setTimeout(() => {
+        if (map) {
+            // Tagad invalidateSize nolasīs pareizos, mūsu iestatītos pikseļu izmērus
+            map.invalidateSize(true);
+            // setView centrēs karti pareizā izmēra konteinerī
+            map.setView(keepCenter, map.getZoom(), { animate: false });
+            
+            // Pagaidām, kamēr pēdējās kartes daļas ielādējas, un tad drukājam
+            setTimeout(() => {
+                window.print();
+            }, 800);
+        }
+    }, 100);
+}
 
     function cleanup(){
       document.body.classList.remove('print-mode');
