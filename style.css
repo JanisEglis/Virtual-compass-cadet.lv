@@ -2279,7 +2279,7 @@ body.print-mode .leaflet-left .leaflet-control{
 }
 
 
-@media print{
+/* @media print{
   html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
 
   #printFooter{
@@ -2290,7 +2290,7 @@ body.print-mode .leaflet-left .leaflet-control{
   #printFooter .left, #printFooter .center, #printFooter .right{
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-}
+} */
 
 
 
