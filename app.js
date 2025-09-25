@@ -1767,11 +1767,12 @@ function closeLgIaPrintDialog(){
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 // Aizstājiet visu prepareMapForPrintLgIa funkciju ar šo galīgo versiju
 // Atrodiet un AIZSTĀJIET visu šo funkciju app.js failā
+// Atrodiet un AIZSTĀJIET visu šo funkciju app.js failā
 function prepareMapForPrintLgIa(opts) {
     const { format, orient, scale, title } = opts;
     const rc = map.getContainer().getBoundingClientRect();
     const keepCenter = map.containerPointToLatLng(L.point(rc.width / 2, rc.height / 2));
-    
+
     const prev = {
         zoomSnap: map.options.zoomSnap,
         zoomDelta: map.options.zoomDelta,
@@ -1786,6 +1787,7 @@ function prepareMapForPrintLgIa(opts) {
     map.options.fadeAnimation = false;
     map.options.markerZoomAnimation = false;
     map.setZoom(zoomForScale(scale), { animate: false });
+
     if (typeof updateRatio === 'function') updateRatio();
 
     const mapEl = document.getElementById('onlineMap');
