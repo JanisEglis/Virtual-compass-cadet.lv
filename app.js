@@ -1869,7 +1869,7 @@ try{
       map.options.fadeAnimation = prev.fadeAnim;
       map.options.markerZoomAnimation = prev.markerZoomAnim;
     }
-  });
+
 }
 
 // Dinamiski iedod @page size + #onlineMap mm izmēru pēc formāta/orientācijas
