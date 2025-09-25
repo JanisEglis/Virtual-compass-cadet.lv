@@ -1810,28 +1810,30 @@ mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
 // Aizstājiet visu requestAnimationFrame bloku ar šo:
 requestAnimationFrame(() => {
     const footer = buildPrintFooterLgIa(scale, title);
+    
+    // Pievienojam 'afterprint' notikumu, lai pēc drukāšanas visu sakārtotu
+    window.addEventListener('afterprint', cleanup, { once: true });
 
-    // Dodam pārlūkam mirkli laika apstrādāt jaunos CSS stilus
+    // Dodam pārlūkam pietiekami daudz laika, lai apstrādātu jaunos CSS stilus
     setTimeout(() => {
         if (map) {
-            // Leaflet ir jāpasaka pārbaudīt savu izmēru no jaunajiem CSS stiliem
-            map.invalidateSize(true);
+            // Šī ir jaunā, svarīgākā daļa:
+            // Mēs sagaidīsim, kad Leaflet paziņos, ka ir pabeidzis kartes centrēšanu.
+            map.once('moveend', () => {
+                // TIKAI TAD, kad karte ir savā vietā, saucam drukas logu.
+                // Neliela papildu aizture ļauj ielādēties pēdējām kartes daļām.
+                setTimeout(() => {
+                    window.print();
+                }, 400); // Nedaudz palielināta aizture drošībai
+            });
 
-            // Pēc izmēra atjaunošanas, vienkārši iestatām centru no jauna. 
-            // Tā kā CSS jau ir centrējis pašu konteineri, Leaflet automātiski
-            // pareizi centrēs saturu.
+            // Pasakām Leaflet, ka tā konteinera izmērs ir mainījies
+            map.invalidateSize(true);
+            
+            // Dodam komandu pārvietot karti uz saglabāto centru
             map.setView(keepCenter, map.getZoom(), { animate: false });
         }
-
-        // Pievienojam 'afterprint' notikumu, lai pēc drukāšanas visu sakārtotu
-        window.addEventListener('afterprint', cleanup, { once: true });
-
-        // Izsaucam drukas dialogu ar nelielu aizturi, lai karte paspēj pārkrāsoties
-        setTimeout(() => {
-            window.print();
-        }, 600); 
-
-    }, 100); // Neliela aizture (100ms) ir kritiski svarīga
+    }, 200); // Palielināta sākotnējā aizture uz 200ms, lai stili noteikti ielādētos
 });
 
     function cleanup(){
