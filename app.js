@@ -1766,12 +1766,12 @@ function closeLgIaPrintDialog(){
 
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 // Aizstājiet visu prepareMapForPrintLgIa funkciju ar šo galīgo versiju
+// Atrodiet un AIZSTĀJIET visu šo funkciju app.js failā
 function prepareMapForPrintLgIa(opts) {
     const { format, orient, scale, title } = opts;
     const rc = map.getContainer().getBoundingClientRect();
     const keepCenter = map.containerPointToLatLng(L.point(rc.width / 2, rc.height / 2));
     
-    // Saglabājam iepriekšējos iestatījumus, lai tos vēlāk atjaunotu
     const prev = {
         zoomSnap: map.options.zoomSnap,
         zoomDelta: map.options.zoomDelta,
@@ -1780,7 +1780,6 @@ function prepareMapForPrintLgIa(opts) {
         markerZoomAnim: map.options.markerZoomAnimation
     };
 
-    // Atspējojam animācijas un ļaujam precīzi iestatīt mērogu
     map.options.zoomSnap = 0;
     map.options.zoomDelta = 0.25;
     map.options.zoomAnimation = false;
@@ -1791,10 +1790,9 @@ function prepareMapForPrintLgIa(opts) {
 
     const mapEl = document.getElementById('onlineMap');
     const prevInlineStyle = mapEl?.getAttribute('style') || '';
-
+    
     let styleEl = null;
 
-    // Funkcija, kas visu sakārto pēc drukāšanas
     function cleanup() {
         document.body.classList.remove('print-mode');
         if (styleEl) styleEl.remove();
@@ -1822,8 +1820,6 @@ function prepareMapForPrintLgIa(opts) {
         map.options.markerZoomAnimation = prev.markerZoomAnim;
     }
 
-    // === JAUNĀ, SVARĪGĀKĀ DAĻA ===
-    
     // 1. Aprēķinām drukas izmērus milimetros
     const base = (format === 'A3')
         ? { w: 400, h: 277 } // A3 ainava, ar nelielām malām
@@ -1835,7 +1831,7 @@ function prepareMapForPrintLgIa(opts) {
     const printWidthPx = mm2px(mm.w);
     const printHeightPx = mm2px(mm.h);
 
-    // 3. Pievienojam drukas klasi un ģenerējam CSS
+    // 3. Sagatavojam vidi drukāšanai
     document.body.classList.add('print-mode');
     styleEl = injectDynamicPrintStyle(format, orient);
     buildPrintFooterLgIa(scale, title);
@@ -1847,15 +1843,12 @@ function prepareMapForPrintLgIa(opts) {
         mapEl.style.height = printHeightPx + 'px';
     }
 
-    // 5. Dodam pārlūkam mirkli laika apstrādāt jaunos izmērus
+    // 5. Dodam pārlūkam mirkli apstrādāt jaunos izmērus un tad centrējam un drukājam
     setTimeout(() => {
         if (map) {
-            // Tagad invalidateSize nolasīs pareizos, mūsu iestatītos pikseļu izmērus
             map.invalidateSize(true);
-            // setView centrēs karti pareizā izmēra konteinerī
             map.setView(keepCenter, map.getZoom(), { animate: false });
             
-            // Pagaidām, kamēr pēdējās kartes daļas ielādējas, un tad drukājam
             setTimeout(() => {
                 window.print();
             }, 800);
