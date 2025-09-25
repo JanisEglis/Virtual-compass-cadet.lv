@@ -3216,7 +3216,7 @@ function hideOnlineMap(){
   window.addEventListener('resize', ()=> map && map.invalidateSize());
 if (dimRange){ window.__bindDimmer(dimRange); }
 
-})();
+
 
 
 
