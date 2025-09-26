@@ -1782,6 +1782,31 @@ function getPrintBoxPx(format, orient){
 
 
 
+function waitLeafletTilesLoaded(timeoutMs = 8000) {
+  const root = document.getElementById('onlineMap') || document.body;
+  const t0 = performance.now();
+  let idleSince = 0;
+
+  return new Promise(resolve => {
+    function check() {
+      const loading = root.querySelectorAll('.leaflet-tile-loading').length;
+      let incomplete = 0;
+      root.querySelectorAll('img.leaflet-tile').forEach(img => { if (!img.complete) incomplete++; });
+
+      if (loading === 0 && incomplete === 0) {
+        if (!idleSince) idleSince = performance.now();
+        // neliela “stabilizācijas” pauze
+        if (performance.now() - idleSince > 150) return resolve();
+      } else {
+        idleSince = 0;
+      }
+
+      if (performance.now() - t0 > timeoutMs) return resolve(); // drošības griesti
+      requestAnimationFrame(check);
+    }
+    check();
+  });
+}
 
 
 
@@ -1811,8 +1836,12 @@ const keepZoom   = map.getZoom();
   map.options.fadeAnimation = false;
   map.options.markerZoomAnimation = false;
   map.setZoom( zoomForScale(scale), { animate:false } );
-  if (typeof updateRatio === 'function') updateRatio();
 
+  if (typeof updateRatio === 'function') updateRatio();
+	const targetZoom = zoomForScale(scale);
+if (Math.abs(targetZoom - map.getZoom()) > 1e-3) {
+  map.setZoom(targetZoom, { animate:false });   // tikai ja patiešām jāmaina
+}
 
 
 // PIRMS print-mode:
@@ -1918,11 +1947,10 @@ const sz = map.getSize();
 map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
 
 }
-// ... pēc panBy, pirms window.print():
-void map._mapPane.offsetWidth;   // piespiež reflow
-setTimeout(() => { window.print(); }, 600);
-
-}, 0);
+waitLeafletTilesLoaded(8000).then(() => {
+  void map._mapPane.offsetWidth;  // piespied reflow, lai jaunā pozīcija stājas spēkā
+  window.print();
+});
 
     function cleanup(){
       document.body.classList.remove('print-mode');
