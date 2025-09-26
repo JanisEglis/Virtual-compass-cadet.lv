@@ -1764,6 +1764,29 @@ function closeLgIaPrintDialog(){
   if (m) m.remove();
 }
 
+
+
+
+
+function mmToPx(mm){ return Math.round(mm * 96 / 25.4); }
+function getPrintBoxPx(format, orient){
+  const base = (format==='A3')
+    ? (orient==='portrait' ? {w:277,h:400} : {w:400,h:277})
+    : (orient==='portrait' ? {w:190,h:277} : {w:277,h:190});
+  const slackW = (orient==='landscape' ? 2 : 0);
+  const slackH = (orient==='landscape' ? 14 : 0);
+  return { w: mmToPx(base.w - slackW), h: mmToPx(base.h - slackH) };
+}
+
+
+
+
+
+
+
+
+
+	  
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
@@ -1837,9 +1860,11 @@ if (map) {
   else map.setView(keepCenter, map.getZoom(), { animate:false });
 
   // pikseļu-precīzs enkurs tieši lapas vidū
-  const pt = map.latLngToContainerPoint(keepCenter);
-  const sz = map.getSize();
-  map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
+const pt = map.latLngToContainerPoint(keepCenter);
+// izmanto paredzamo DRUKAS kastes izmēru pikseļos (nevis ekrāna)
+const target = getPrintBoxPx(format, orient);
+map.panBy([ (target.w/2 - pt.x), (target.h/2 - pt.y) ], { animate:false });
+
 }
 
 setTimeout(() => { window.print(); }, 600);
