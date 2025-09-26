@@ -1844,6 +1844,43 @@ L.DomUtil.setPosition = function(el, point) {
 
 
 
+
+// ⬇ Pievieno blakus tavam origSetPosition ielāpam
+const origSetTransform = L.DomUtil.setTransform;
+L.DomUtil.setTransform = function(el, offset /*, scale */){
+  // drukas laikā NElieto translate3d – pozicionē ar left/top
+  el.style.left = Math.round(offset.x) + 'px';
+  el.style.top  = Math.round(offset.y) + 'px';
+  el.style.transform = ''; // noņem transformus
+};
+
+// Normalizē jau esošo mapPane stāvokli (no transform -> left/top)
+try {
+  const pane = map._mapPane;
+  if (pane){
+    // Leaflet iekšējais saglabātais pos vai 0,0
+    const pos = (typeof L.DomUtil.getPosition === 'function')
+      ? (L.DomUtil.getPosition(pane) || L.point(0,0))
+      : (map._getMapPanePos ? map._getMapPanePos() : L.point(0,0));
+    pane.style.left = Math.round(pos.x) + 'px';
+    pane.style.top  = Math.round(pos.y) + 'px';
+    pane.style.transform = '';
+  }
+} catch(e){}
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
 	
   // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
   requestAnimationFrame(()=>{
@@ -1898,7 +1935,7 @@ setTimeout(() => { window.print(); }, 600);
   try{ if (window.__printScaleTopEl){ window.__printScaleTopEl.remove(); window.__printScaleTopEl = null; } }catch(e){}
 
 
-
+try { if (origSetTransform) L.DomUtil.setTransform = origSetTransform; } catch(e){}
 // cleanup iekšpusē (pirms atgriez map opcijas)
 try { if (origSetPosition) L.DomUtil.setPosition = origSetPosition; } catch(e){}
 
@@ -1983,21 +2020,39 @@ body.print-mode #onlineMap{
 }
 
 
-
-
-
-
-
-
-
-@media print{
-  #onlineMap .leaflet-zoom-anim,
+ #onlineMap .leaflet-zoom-anim,
   #onlineMap .leaflet-zoom-animated{
     transition: none !important;
     animation: none !important;
     will-change: auto !important;
   }
+
+
+
+
+
+/* Neitralizē visus Leaflet transformus drukas laikā */
+#onlineMap .leaflet-map-pane,
+#onlineMap .leaflet-pane,
+#onlineMap .leaflet-tile-pane,
+#onlineMap .leaflet-overlay-pane,
+#onlineMap .leaflet-objects-pane,
+#onlineMap .leaflet-popup-pane,
+#onlineMap .leaflet-marker-pane,
+#onlineMap .leaflet-shadow-pane {
+  transform: none !important;
+  left: 0 !important; top: 0 !important;
 }
+#onlineMap .leaflet-layer,
+#onlineMap .leaflet-tile,
+#onlineMap .leaflet-zoom-animated,
+#onlineMap .leaflet-zoom-hide,
+#onlineMap svg,
+#onlineMap canvas {
+  transform: none !important;
+}
+
+
 
 
 
