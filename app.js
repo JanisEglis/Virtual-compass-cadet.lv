@@ -1859,11 +1859,10 @@ if (map) {
   if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
   else map.setView(keepCenter, map.getZoom(), { animate:false });
 
-  // pikseļu-precīzs enkurs tieši lapas vidū
+// enkurs un reālais konteinera izmērs pēc print-mode
 const pt = map.latLngToContainerPoint(keepCenter);
-// izmanto paredzamo DRUKAS kastes izmēru pikseļos (nevis ekrāna)
-const target = getPrintBoxPx(format, orient);
-map.panBy([ (target.w/2 - pt.x), (target.h/2 - pt.y) ], { animate:false });
+const sz = map.getSize();
+map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
 
 }
 
