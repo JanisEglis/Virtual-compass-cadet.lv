@@ -2008,13 +2008,31 @@ function injectDynamicPrintStyle(fmt, orient){
   const slackH = (orient==='landscape' ? 14 : 0);
 
   const mm = { w: base.w - slackW, h: base.h - slackH };
-  const pageSize = (fmt==='A3' ? 'A3' : 'A4') + ' ' + (orient==='portrait' ? 'portrait' : 'landscape');
-
+   // px simulācija dzīvajam DOM-am pirms window.print()
+  const pxW = Math.round(mm.w * 96/25.4);
+  const pxH = Math.round(mm.h * 96/25.4);
   const css = `
     @page { size:${pageSize}; margin:0; }
 
     /* pirms/drukas laikā “izslaukam” lapu līdz vienai vienībai */
     html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
+
+
+
+  /* >>> ŠIS IR JAUNAIS BLOKS: dzīvajā DOM, kad body.print-mode, iedodam #onlineMap drukas izmēru PX un centrējam */
+    body.print-mode #onlineMap{
+      position: fixed !important;
+      left: 50% !important; top: 50% !important;
+      width: ${pxW}px !important; height: ${pxH}px !important;
+      transform: translate(-50%, -50%) !important;
+      display: block !important;
+      page-break-inside: avoid; break-inside: avoid;
+    }
+
+
+
+
+	
     @media print {
       html, body { height:auto !important; overflow:hidden !important; }
 	    /* slēdzam arī ekrāna UI rokturi, ja tas vēl eksistē */
@@ -2028,18 +2046,15 @@ function injectDynamicPrintStyle(fmt, orient){
         display:none !important;
       }
 
-      /* pati karte: fiksēta vieta lapā, ar rāmi iekšpusē */
-/* @media print sadaļā, kartes fiksētā vieta lapā */
-body.print-mode #onlineMap{
-  position: fixed !important;
-  inset: 0 !important;          /* top/right/bottom/left = 0 */
-  margin: auto !important;      /* centrē bez transformiem */
-  width: ${mm.w}mm !important;
-  height: ${mm.h}mm !important;
-  transform: none !important;   /* ← noņemam */
-  display: block !important;
-  page-break-inside: avoid; break-inside: avoid;
-}
+ /* >>> Un drukas kokā to pašu uzliekam MM vienībās */
+      body.print-mode #onlineMap{
+        position: fixed !important;
+        left: 50% !important; top: 50% !important;
+        width: ${mm.w}mm !important; height: ${mm.h}mm !important;
+        transform: translate(-50%, -50%) !important;
+        display: block !important;
+      }
+
 
 
  #onlineMap .leaflet-zoom-anim,
