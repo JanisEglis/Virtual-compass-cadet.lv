@@ -1881,7 +1881,8 @@ const sz = map.getSize();
 map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
 
 }
-
+// ... pēc panBy, pirms window.print():
+void map._mapPane.offsetWidth;   // piespiež reflow
 setTimeout(() => { window.print(); }, 600);
 
 }, 0);
