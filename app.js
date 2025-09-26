@@ -1829,6 +1829,22 @@ mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
   document.body.classList.add('print-mode');
   const styleEl = injectDynamicPrintStyle(format, orient);
 
+
+// ⬇⬇⬇ PAGAIDU IEKĀRTAS: drukai atslēdzam transform panus, lietojam left/top
+const origSetPosition = L.DomUtil.setPosition;
+L.DomUtil.setPosition = function(el, point) {
+  // Leaflet iekšējā state
+  el._leaflet_pos = point;
+  // piespiedu top/left pozicionēšana (drukai uzticama)
+  el.style.left = Math.round(point.x) + 'px';
+  el.style.top  = Math.round(point.y) + 'px';
+  // iztīri transformus, ja tādi palikuši
+  el.style.transform = '';
+};
+
+
+
+	
   // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
   requestAnimationFrame(()=>{
 
@@ -1880,6 +1896,15 @@ setTimeout(() => { window.print(); }, 600);
  // noņemam top mēroga uzlīmi:
   try{ if (window.__printScaleTopEl){ window.__printScaleTopEl.remove(); window.__printScaleTopEl = null; } }catch(e){}
 
+
+
+// cleanup iekšpusē (pirms atgriez map opcijas)
+try { if (origSetPosition) L.DomUtil.setPosition = origSetPosition; } catch(e){}
+
+
+
+
+		
 try{
   const mapEl = document.getElementById('onlineMap');
   if (mapEl){
@@ -2078,7 +2103,11 @@ body.print-mode #printNorthTR .n{
         white-space:nowrap;
       }
 
-
+ /* ↙︎ Papildu ielāps: lai drukā transformi neatslādz panningu */
+  body.print-mode #onlineMap .leaflet-map-pane,
+  body.print-mode #onlineMap .leaflet-pane {
+    transform: none !important;
+  }
    
     }
   `;
