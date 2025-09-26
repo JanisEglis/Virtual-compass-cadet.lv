@@ -2069,7 +2069,7 @@ body.print-mode #onlineMap{
 #onlineMap .leaflet-marker-pane,
 #onlineMap .leaflet-shadow-pane {
   transform: none !important;
-  left: 0 !important; top: 0 !important;
+  
 }
 #onlineMap .leaflet-layer,
 #onlineMap .leaflet-tile,
