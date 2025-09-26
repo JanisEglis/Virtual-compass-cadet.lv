@@ -2002,6 +2002,9 @@ function injectDynamicPrintStyle(fmt, orient){
   const base = (fmt==='A3')
     ? (orient==='portrait' ? {w:277, h:400} : {w:400, h:277})
     : (orient==='portrait' ? {w:190, h:277} : {w:277, h:190});
+ const pageSize =
+    (fmt === 'A3' ? 'A3' : 'A4') + ' ' +
+    (orient === 'portrait' ? 'portrait' : 'landscape'); // ← PIETRŪKA
 
   // drošības “slack”, lai nebūtu otrā lapa (header/footer situācijās)
   const slackW = (orient==='landscape' ? 2 : 0);
