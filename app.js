@@ -1921,11 +1921,33 @@ if (map) {
   map.setView(keepCenter, map.getZoom(), { animate: false }); // ← noturam tieši ekrāna centru
 }
 
-// pēc map.invalidateSize(true) un setView(keepCenter, ...):
-const pt = map.latLngToContainerPoint(keepCenter);
-// izmanto tieši DRUKAS kastes izmēru (px) – A4/A3:
-const target = getPrintBoxPx(format, orient);
-map.panBy([ (target.w/2 - pt.x), (target.h/2 - pt.y) ], { animate:false });
+// ===== Centrējam uz SARKANĀ RĀMJA centru =====
+const rect = map.getContainer().getBoundingClientRect();
+const fallbackPx = L.point(rect.width / 2, rect.height / 2);
+
+let anchorPx = fallbackPx;             // kur šobrīd atrodas rāmja centrs pikseļos
+let target   = getPrintBoxPx(format, orient); // kādai jābūt #onlineMap kastei (px)
+
+if (typeof imgX === "number" && typeof imgY === "number" &&
+    typeof imgWidth === "number" && typeof imgHeight === "number" &&
+    typeof imgScale === "number" && imgWidth > 0 && imgHeight > 0) {
+  const redW = imgWidth * imgScale;
+  const redH = imgHeight * imgScale;
+  anchorPx = L.point(imgX + redW / 2, imgY + redH / 2); // rāmja centrs
+  target   = { w: redW, h: redH };                      // kastes mērķis = rāmis
+}
+
+// pan = cik daudz jāpārbīda, lai rāmja centrs iekrīt kastes vidū
+const pan = L.point(target.w / 2 - anchorPx.x, target.h / 2 - anchorPx.y);
+map.panBy(pan, { animate: false });
+
+// un #onlineMap kasti (ekrānā) saliekam tieši tik lielu, cik rāmis
+const mapEl = document.getElementById('onlineMap');
+if (mapEl) {
+  mapEl.style.setProperty('width',  target.w + 'px', 'important');
+  mapEl.style.setProperty('height', target.h + 'px', 'important');
+}
+
 
 
 
