@@ -1781,6 +1781,7 @@ function closeLgIaPrintDialog(){
 
 
 /* === PRINT aizsargs + gaidīšana līdz flīzes ielādētas === */
+/* Aizvieto TAVĀ failā “app (33).js” funkcijā __showPrintGuardOverlay ... */
 function __showPrintGuardOverlay(text = 'Gatavojam karti drukai…'){
   let el = document.getElementById('printGuardOverlay');
   if (!el){
@@ -1788,11 +1789,14 @@ function __showPrintGuardOverlay(text = 'Gatavojam karti drukai…'){
     el.id = 'printGuardOverlay';
     Object.assign(el.style, {
       position:'fixed', inset:0, display:'grid', placeItems:'center',
-      background:'rgba(0,0,0,.35)', color:'#fff', zIndex: 2147483647,
+      // NB: pareizi alpha, citādi pārlūks ignorē vai rīkojas dīvaini
+      background:'rgba(0,0,0,.35)',
+      color:'#fff', zIndex: 2147483647,
       font:'14px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
       backdropFilter:'blur(2px)'
     });
     const inner = document.createElement('div');
+    // NB: pareizi alpha + border alpha
     inner.style.cssText = 'background:rgba(0,0,0,.55); padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.18)';
     inner.textContent = text;
     el.appendChild(inner);
@@ -1806,62 +1810,105 @@ function __hidePrintGuardOverlay(){
 }
 
 /* Gaidām līdz Leaflet flīžu slāņi ir gatavi (vai beidzas timeout) */
+/* ================== PATCH #2: robusta gaidīšana ================== */
+/* AIZVIETO viso TAVU waitForMapToRender(...) ar šo versiju */
 function waitForMapToRender(map, opts = {}){
-  const timeout = Math.max(1000, +opts.timeout || 10000);
+  const timeout = Math.max(1000, +opts.timeout || 12000);
   const settle  = Math.max(0, +opts.settle  || 200);
+  const root    = (map && map.getContainer && map.getContainer()) || document.getElementById('onlineMap');
 
   return new Promise((resolve) => {
-    if (!map || typeof L === 'undefined') return resolve();
+    if (!root) return resolve();
 
-    const tileLayers = [];
-    map.eachLayer(l => {
-      if (l && ((L.TileLayer && l instanceof L.TileLayer) || l._tiles)) tileLayers.push(l);
-    });
-    if (!tileLayers.length){
-      return requestAnimationFrame(()=>requestAnimationFrame(resolve));
+    const pending = new Set();
+    let lastChange = Date.now();
+    let rafId = null, toId = null;
+
+    const isMapImg = (n) =>
+      n && n.tagName === 'IMG' &&
+      (n.classList.contains('leaflet-tile') || n.classList.contains('leaflet-image-layer'));
+
+    function arm(img){
+      if (!img || pending.has(img)) return;
+      if (img.complete && img.naturalWidth > 0) return;
+      pending.add(img);
+      img.addEventListener('load',  onDone, { once:true });
+      img.addEventListener('error', onDone, { once:true });
+    }
+    function disarm(img){
+      try { img.removeEventListener('load', onDone); } catch(_) {}
+      try { img.removeEventListener('error', onDone); } catch(_) {}
+      pending.delete(img);
     }
 
-    let pending = 0;
-    const handlers = new Map();
-    const tilesLeft = () => tileLayers.reduce((sum, tl) => sum + Math.max(0, +tl._tilesToLoad || 0), 0);
+    function collectVisible(){
+      const rRoot = root.getBoundingClientRect();
+      const imgs = root.querySelectorAll('img.leaflet-tile, img.leaflet-image-layer');
+      imgs.forEach(img => {
+        const r = img.getBoundingClientRect();
+        const vis = (r.right > rRoot.left && r.left < rRoot.right && r.bottom > rRoot.top && r.top < rRoot.bottom);
+        if (vis) arm(img);
+      });
+    }
 
-    const tryFinish = () => {
-      if (pending === 0 && tilesLeft() === 0){
-        requestAnimationFrame(()=>requestAnimationFrame(()=>{
-          setTimeout(()=>{ cleanup(); resolve(); }, settle);
-        }));
+    function onDone(e){
+      disarm(e.currentTarget || e.target);
+      lastChange = Date.now();
+    }
+
+    const mo = new MutationObserver(muts => {
+      let added = false;
+      muts.forEach(m => {
+        m.addedNodes && m.addedNodes.forEach(n => {
+          if (isMapImg(n)) { arm(n); added = true; }
+          // arī gadījumam, ja img ielikts iekš konteineriem
+          if (n && n.querySelectorAll) {
+            n.querySelectorAll('img.leaflet-tile, img.leaflet-image-layer').forEach(img => { arm(img); added = true; });
+          }
+        });
+      });
+      if (added) lastChange = Date.now();
+    });
+    mo.observe(root, { childList:true, subtree:true });
+
+    const tick = () => {
+      // Ja nav gaidāmo un kopš pēdējās izmaiņas pagājuši >= settle ms → gatavs
+      if (pending.size === 0 && (Date.now() - lastChange) >= settle) {
+        cleanup(); resolve(); return;
       }
+      rafId = requestAnimationFrame(tick);
     };
 
-    function onLoading(){ pending++; }
-    function onDone(){ if (pending>0) pending--; tryFinish(); }
-
-    tileLayers.forEach(tl => {
-      pending += Math.max(0, +tl._tilesToLoad || 0);
-      const h = { loading:onLoading, tileload:onDone, tileerror:onDone };
-      tl.on('loading', h.loading);
-      tl.on('tileload', h.tileload);
-      tl.on('tileerror',h.tileerror);
-      handlers.set(tl, h);
-    });
-
-    const to = setTimeout(()=>{ cleanup(); resolve(); }, timeout);
-
     function cleanup(){
-      clearTimeout(to);
-      handlers.forEach((h, tl)=>{
-        try{ tl.off('loading',  h.loading); }catch(_){}
-        try{ tl.off('tileload', h.tileload); }catch(_){}
-        try{ tl.off('tileerror',h.tileerror);}catch(_){}
-      });
-      handlers.clear();
+      if (rafId) cancelAnimationFrame(rafId);
+      if (toId) clearTimeout(toId);
+      mo.disconnect();
+      Array.from(pending).forEach(disarm);
+      pending.clear();
     }
 
-    // ja viss jau kešā
-    tryFinish();
+    // starta kolekcija (pēc izmēra maiņas/centerēšanas)
+    collectVisible();
+
+    // Drošības timeouts (nekrītam ārā bezgalīgi)
+    toId = setTimeout(() => { cleanup(); resolve(); }, timeout);
+
+    // Seko arī kustībām/slāņu maiņām (var ienākt jaunas flīzes)
+    if (map && map.on) {
+      const kick = () => { lastChange = Date.now(); collectVisible(); };
+      map.on('move moveend zoom zoomend layeradd layerremove', kick);
+      // notīrīt eventus noslēgumā
+      const _cleanup = cleanup;
+      cleanup = function(){
+        try { map.off('move', kick).off('moveend', kick).off('zoom', kick).off('zoomend', kick).off('layeradd', kick).off('layerremove', kick); } catch(_){}
+        _cleanup();
+      };
+    }
+
+    // startē spēli
+    tick();
   });
 }
-
 
 
 
