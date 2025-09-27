@@ -1782,11 +1782,13 @@ function closeLgIaPrintDialog(){
 
 /* === PRINT aizsargs + gaidīšana līdz flīzes ielādētas === */
 /* Aizvieto TAVĀ failā “app (33).js” funkcijā __showPrintGuardOverlay ... */
-/* ── AIZSTĀJ esošo versiju ── */
-function __showPrintGuardOverlay(text = 'Gatavojam karti drukai…'){
-  let el = document.getElementById('printGuardOverlay');
+// ==================== FIX: PRINT aizsargs + progressbar ====================
+function __showPrintGuardOverlay(text = 'Gatavojam karti drukai…') {
+  let el  = document.getElementById('printGuardOverlay');
   let css = document.getElementById('printGuardOverlayCSS');
-  if (!css){
+
+  // 1) Iespricējam (vienreiz) CSS ar pareizām alfa vērtībām
+  if (!css) {
     css = document.createElement('style');
     css.id = 'printGuardOverlayCSS';
     css.textContent = `
@@ -1806,7 +1808,9 @@ function __showPrintGuardOverlay(text = 'Gatavojam karti drukai…'){
     `;
     document.head.appendChild(css);
   }
-  if (!el){
+
+  // 2) Izveidojam overlay (vienreiz)
+  if (!el) {
     el = document.createElement('div');
     el.id = 'printGuardOverlay';
     el.innerHTML = `
@@ -1817,32 +1821,32 @@ function __showPrintGuardOverlay(text = 'Gatavojam karti drukai…'){
       </div>`;
     document.body.appendChild(el);
   }
-  // teksts + rādāms
+
+  // 3) Uzliekam virsrakstu un parādam
   const titleEl = document.getElementById('pgo-title');
   if (titleEl) titleEl.textContent = text;
   el.style.display = 'grid';
 
-  // API progressa atjaunināšanai (kāpēc: neatkarīgs no gaidītāja implementācijas)
+  // 4) Progressa API (sauc to no flīžu gaidītāja)
   window.__setPrintProgress = (loaded, total) => {
     const pct = total > 0 ? Math.round((loaded / total) * 100) : 100;
     const bar = document.getElementById('pgo-bar-fill');
     const sub = document.getElementById('pgo-sub');
     if (bar) bar.style.width = pct + '%';
-    if (sub) sub.textContent = (total > 0)
+    if (sub) sub.textContent = total > 0
       ? `Ielādētas flīzes: ${loaded}/${total} (${pct}%)`
       : `Ielādētas flīzes: ${loaded} (${pct}%)`;
   };
 }
-function __hidePrintGuardOverlay(){
+
+// Atstāj tikai ŠO vienu versiju (izdzēs dublikātu)
+function __hidePrintGuardOverlay() {
   const el = document.getElementById('printGuardOverlay');
   if (el) el.style.display = 'none';
-  window.__setPrintProgress = null; // notīrām callback
+  // IMPORTANT: atbrīvojam callback, lai nekas nejauši neziņo pēc drukas
+  window.__setPrintProgress = null;
 }
 
-function __hidePrintGuardOverlay(){
-  const el = document.getElementById('printGuardOverlay');
-  if (el) el.style.display = 'none';
-}
 
 /* Gaidām līdz Leaflet flīžu slāņi ir gatavi (vai beidzas timeout) */
 /* ================== PATCH #2: robusta gaidīšana ================== */
