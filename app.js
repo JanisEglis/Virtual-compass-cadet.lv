@@ -1764,54 +1764,6 @@ function closeLgIaPrintDialog(){
   if (m) m.remove();
 }
 
-
-
-
-
-function mmToPx(mm){ return Math.round(mm * 96 / 25.4); }
-function getPrintBoxPx(format, orient){
-  const base = (format==='A3')
-    ? (orient==='portrait' ? {w:277,h:400} : {w:400,h:277})
-    : (orient==='portrait' ? {w:190,h:277} : {w:277,h:190});
-  const slackW = (orient==='landscape' ? 2 : 0);
-  const slackH = (orient==='landscape' ? 14 : 0);
-  return { w: mmToPx(base.w - slackW), h: mmToPx(base.h - slackH) };
-}
-
-
-
-
-
-function waitLeafletTilesLoaded(timeoutMs = 8000) {
-  const root = document.getElementById('onlineMap') || document.body;
-  const t0 = performance.now();
-  let idleSince = 0;
-
-  return new Promise(resolve => {
-    function check() {
-      const loading = root.querySelectorAll('.leaflet-tile-loading').length;
-      let incomplete = 0;
-      root.querySelectorAll('img.leaflet-tile').forEach(img => { if (!img.complete) incomplete++; });
-
-      if (loading === 0 && incomplete === 0) {
-        if (!idleSince) idleSince = performance.now();
-        // neliela “stabilizācijas” pauze
-        if (performance.now() - idleSince > 150) return resolve();
-      } else {
-        idleSince = 0;
-      }
-
-      if (performance.now() - t0 > timeoutMs) return resolve(); // drošības griesti
-      requestAnimationFrame(check);
-    }
-    check();
-  });
-}
-
-
-
-
-	  
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
@@ -1836,12 +1788,8 @@ const keepZoom   = map.getZoom();
   map.options.fadeAnimation = false;
   map.options.markerZoomAnimation = false;
   map.setZoom( zoomForScale(scale), { animate:false } );
-
   if (typeof updateRatio === 'function') updateRatio();
-	const targetZoom = zoomForScale(scale);
-if (Math.abs(targetZoom - map.getZoom()) > 1e-3) {
-  map.setZoom(targetZoom, { animate:false });   // tikai ja patiešām jāmaina
-}
+
 
 
 // PIRMS print-mode:
@@ -1858,59 +1806,6 @@ mapEl && (mapEl.style.height = mapEl.clientHeight + 'px');
   document.body.classList.add('print-mode');
   const styleEl = injectDynamicPrintStyle(format, orient);
 
-
-// ⬇⬇⬇ PAGAIDU IEKĀRTAS: drukai atslēdzam transform panus, lietojam left/top
-const origSetPosition = L.DomUtil.setPosition;
-L.DomUtil.setPosition = function(el, point) {
-  // Leaflet iekšējā state
-  el._leaflet_pos = point;
-  // piespiedu top/left pozicionēšana (drukai uzticama)
-  el.style.left = Math.round(point.x) + 'px';
-  el.style.top  = Math.round(point.y) + 'px';
-  // iztīri transformus, ja tādi palikuši
-  el.style.transform = '';
-};
-
-
-
-
-// ⬇ Pievieno blakus tavam origSetPosition ielāpam
-const origSetTransform = L.DomUtil.setTransform;
-L.DomUtil.setTransform = function(el, offset /*, scale */){
-  // drukas laikā NElieto translate3d – pozicionē ar left/top
-  el.style.left = Math.round(offset.x) + 'px';
-  el.style.top  = Math.round(offset.y) + 'px';
-  el.style.transform = ''; // noņem transformus
-};
-
-// Normalizē jau esošo mapPane stāvokli (no transform -> left/top)
-try {
-  const pane = map._mapPane;
-  if (pane){
-    // Leaflet iekšējais saglabātais pos vai 0,0
-    const pos = (typeof L.DomUtil.getPosition === 'function')
-      ? (L.DomUtil.getPosition(pane) || L.point(0,0))
-      : (map._getMapPanePos ? map._getMapPanePos() : L.point(0,0));
-    pane.style.left = Math.round(pos.x) + 'px';
-    pane.style.top  = Math.round(pos.y) + 'px';
-    pane.style.transform = '';
-  }
-} catch(e){}
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-	
   // 3) Izmēru pārrēķins un “drukas pēda” ar mērogu/atsaucēm
   requestAnimationFrame(()=>{
 
@@ -1941,16 +1836,15 @@ if (map) {
   if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
   else map.setView(keepCenter, map.getZoom(), { animate:false });
 
-// enkurs un reālais konteinera izmērs pēc print-mode
-const pt = map.latLngToContainerPoint(keepCenter);
-const sz = map.getSize();
-map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
-
+  // pikseļu-precīzs enkurs tieši lapas vidū
+  const pt = map.latLngToContainerPoint(keepCenter);
+  const sz = map.getSize();
+  map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
 }
-waitLeafletTilesLoaded(8000).then(() => {
-  void map._mapPane.offsetWidth;  // piespied reflow, lai jaunā pozīcija stājas spēkā
-  window.print();
-});
+
+setTimeout(() => { window.print(); }, 600);
+
+}, 0);
 
     function cleanup(){
       document.body.classList.remove('print-mode');
@@ -1962,15 +1856,6 @@ waitLeafletTilesLoaded(8000).then(() => {
  // noņemam top mēroga uzlīmi:
   try{ if (window.__printScaleTopEl){ window.__printScaleTopEl.remove(); window.__printScaleTopEl = null; } }catch(e){}
 
-
-try { if (origSetTransform) L.DomUtil.setTransform = origSetTransform; } catch(e){}
-// cleanup iekšpusē (pirms atgriez map opcijas)
-try { if (origSetPosition) L.DomUtil.setPosition = origSetPosition; } catch(e){}
-
-
-
-
-		
 try{
   const mapEl = document.getElementById('onlineMap');
   if (mapEl){
@@ -2048,39 +1933,21 @@ body.print-mode #onlineMap{
 }
 
 
- #onlineMap .leaflet-zoom-anim,
+
+
+
+
+
+
+
+@media print{
+  #onlineMap .leaflet-zoom-anim,
   #onlineMap .leaflet-zoom-animated{
     transition: none !important;
     animation: none !important;
     will-change: auto !important;
   }
-
-
-
-
-
-/* Neitralizē visus Leaflet transformus drukas laikā */
-#onlineMap .leaflet-map-pane,
-#onlineMap .leaflet-pane,
-#onlineMap .leaflet-tile-pane,
-#onlineMap .leaflet-overlay-pane,
-#onlineMap .leaflet-objects-pane,
-#onlineMap .leaflet-popup-pane,
-#onlineMap .leaflet-marker-pane,
-#onlineMap .leaflet-shadow-pane {
-  transform: none !important;
-  left: 0 !important; top: 0 !important;
 }
-#onlineMap .leaflet-layer,
-#onlineMap .leaflet-tile,
-#onlineMap .leaflet-zoom-animated,
-#onlineMap .leaflet-zoom-hide,
-#onlineMap svg,
-#onlineMap canvas {
-  transform: none !important;
-}
-
-
 
 
 
@@ -2187,11 +2054,7 @@ body.print-mode #printNorthTR .n{
         white-space:nowrap;
       }
 
- /* ↙︎ Papildu ielāps: lai drukā transformi neatslādz panningu */
-  body.print-mode #onlineMap .leaflet-map-pane,
-  body.print-mode #onlineMap .leaflet-pane {
-    transform: none !important;
-  }
+
    
     }
   `;
