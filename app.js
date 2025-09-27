@@ -2112,7 +2112,7 @@ async function prepareMapForPrintLgIa(opts){
     } catch(_) {}
   }
 }, 0);
-  
+});
 }
 
 // Dinamiski iedod @page size + #onlineMap mm izmēru pēc formāta/orientācijas
