@@ -1764,6 +1764,121 @@ function closeLgIaPrintDialog(){
   if (m) m.remove();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* === PRINT aizsargs + gaidīšana līdz flīzes ielādētas === */
+function __showPrintGuardOverlay(text = 'Gatavojam karti drukai…'){
+  let el = document.getElementById('printGuardOverlay');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'printGuardOverlay';
+    Object.assign(el.style, {
+      position:'fixed', inset:0, display:'grid', placeItems:'center',
+      background:'rgba(0,0,0,.35)', color:'#fff', zIndex: 2147483647,
+      font:'14px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
+      backdropFilter:'blur(2px)'
+    });
+    const inner = document.createElement('div');
+    inner.style.cssText = 'background:rgba(0,0,0,.55); padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.18)';
+    inner.textContent = text;
+    el.appendChild(inner);
+    document.body.appendChild(el);
+  }
+  el.style.display = 'grid';
+}
+function __hidePrintGuardOverlay(){
+  const el = document.getElementById('printGuardOverlay');
+  if (el) el.style.display = 'none';
+}
+
+/* Gaidām līdz Leaflet flīžu slāņi ir gatavi (vai beidzas timeout) */
+function waitForMapToRender(map, opts = {}){
+  const timeout = Math.max(1000, +opts.timeout || 10000);
+  const settle  = Math.max(0, +opts.settle  || 200);
+
+  return new Promise((resolve) => {
+    if (!map || typeof L === 'undefined') return resolve();
+
+    const tileLayers = [];
+    map.eachLayer(l => {
+      if (l && ((L.TileLayer && l instanceof L.TileLayer) || l._tiles)) tileLayers.push(l);
+    });
+    if (!tileLayers.length){
+      return requestAnimationFrame(()=>requestAnimationFrame(resolve));
+    }
+
+    let pending = 0;
+    const handlers = new Map();
+    const tilesLeft = () => tileLayers.reduce((sum, tl) => sum + Math.max(0, +tl._tilesToLoad || 0), 0);
+
+    const tryFinish = () => {
+      if (pending === 0 && tilesLeft() === 0){
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{
+          setTimeout(()=>{ cleanup(); resolve(); }, settle);
+        }));
+      }
+    };
+
+    function onLoading(){ pending++; }
+    function onDone(){ if (pending>0) pending--; tryFinish(); }
+
+    tileLayers.forEach(tl => {
+      pending += Math.max(0, +tl._tilesToLoad || 0);
+      const h = { loading:onLoading, tileload:onDone, tileerror:onDone };
+      tl.on('loading', h.loading);
+      tl.on('tileload', h.tileload);
+      tl.on('tileerror',h.tileerror);
+      handlers.set(tl, h);
+    });
+
+    const to = setTimeout(()=>{ cleanup(); resolve(); }, timeout);
+
+    function cleanup(){
+      clearTimeout(to);
+      handlers.forEach((h, tl)=>{
+        try{ tl.off('loading',  h.loading); }catch(_){}
+        try{ tl.off('tileload', h.tileload); }catch(_){}
+        try{ tl.off('tileerror',h.tileerror);}catch(_){}
+      });
+      handlers.clear();
+    }
+
+    // ja viss jau kešā
+    tryFinish();
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
@@ -1821,8 +1936,8 @@ if (map) {
 	  
     const footer = buildPrintFooterLgIa(scale, title);
     // ļaujam ielādēt flīzes/līnijas
-    setTimeout(()=>{
-      window.addEventListener('afterprint', cleanup, {once:true});
+ setTimeout(async () => {
+  window.addEventListener('afterprint', cleanup, { once: true });
 
 // aizver paneļus un nullē “safe areas”
 try { window.closeBothSelectorsLegacy && window.closeBothSelectorsLegacy(); } catch(e){}
@@ -1842,8 +1957,12 @@ if (map) {
   map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
 }
 
-setTimeout(() => { window.print(); }, 600);
+  // — JAUNAIS aizsargs —
+  __showPrintGuardOverlay();
+  await waitForMapToRender(map, { timeout: 12000, settle: 200 });
+  __hidePrintGuardOverlay();
 
+  window.print();
 }, 0);
 
     function cleanup(){
