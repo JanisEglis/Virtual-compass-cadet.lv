@@ -1816,7 +1816,10 @@ function waitLeafletTilesLoaded(timeoutMs = 8000) {
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
 	
-const keepCenter = map.getCenter();   // droši saglabājam ekrāna centru
+// vietā, kur veido keepCenter:
+const rc = map.getContainer().getBoundingClientRect();
+const keepCenter = map.containerPointToLatLng(L.point(rc.width/2, rc.height/2));
+
 
 
 const keepZoom   = map.getZoom();
@@ -1918,6 +1921,11 @@ if (map) {
   map.setView(keepCenter, map.getZoom(), { animate: false }); // ← noturam tieši ekrāna centru
 }
 
+// pēc map.invalidateSize(true) un setView(keepCenter, ...):
+const pt = map.latLngToContainerPoint(keepCenter);
+// izmanto tieši DRUKAS kastes izmēru (px) – A4/A3:
+const target = getPrintBoxPx(format, orient);
+map.panBy([ (target.w/2 - pt.x), (target.h/2 - pt.y) ], { animate:false });
 
 
 
