@@ -1816,7 +1816,8 @@ function waitLeafletTilesLoaded(timeoutMs = 8000) {
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
 	
-const keepCenter = map.getCenter();   // droši saglabājam ekrāna centru
+const rc = map.getContainer().getBoundingClientRect();
+const keepCenter = map.containerPointToLatLng(L.point(rc.width/2, rc.height/2));
 
 
 const keepZoom   = map.getZoom();
@@ -1937,8 +1938,13 @@ document.documentElement.style.setProperty('--map-bottom-safe','0px');
 // === VIENS recentrēšanas bloks (vienīgais nepieciešamais) ===
 if (map) {
   map.invalidateSize(true); // pārrēķina kastes izmēru
-if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
- else map.setView(keepCenter, map.getZoom(), { animate:false });
+  if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
+  else map.setView(keepCenter, map.getZoom(), { animate:false });
+
+// enkurs un reālais konteinera izmērs pēc print-mode
+const pt = map.latLngToContainerPoint(keepCenter);
+const sz = map.getSize();
+map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
 }
 }, 0);		
 waitLeafletTilesLoaded(8000).then(() => {
@@ -2063,7 +2069,7 @@ body.print-mode #onlineMap{
 #onlineMap .leaflet-marker-pane,
 #onlineMap .leaflet-shadow-pane {
   transform: none !important;
-  
+  left: 0 !important; top: 0 !important;
 }
 #onlineMap .leaflet-layer,
 #onlineMap .leaflet-tile,
