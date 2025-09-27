@@ -2030,6 +2030,35 @@ if (map) {
  setTimeout(async () => {
   window.addEventListener('afterprint', cleanup, { once: true });
 
+
+
+ // --- [JAUNAIS] izslēdz tumšošanas pārklājumu drukai (kāpēc: citādi drukā balti laukumi) ---
+  const dimEl = document.getElementById('onlineMapDim'); // pārklājums virs #onlineMap
+  const prevDimStyle = dimEl ? dimEl.getAttribute('style') : null; // saglabājam atjaunošanai
+  if (dimEl) dimEl.style.display = 'none'; // tūlītēji paslēp (pirms gaidīšanas)
+
+  // “drošības josta” – ja pārlūks ignorē inline display, @media print notiek tāpat
+  let dimCss = document.getElementById('printDimOffCSS');
+  if (!dimCss) {
+    dimCss = document.createElement('style');
+    dimCss.id = 'printDimOffCSS';
+    dimCss.textContent = `
+      @media print{
+        /* noņemam tumšošanas pārklājumu un jebkuru filtru drukā */
+        body.print-mode #onlineMapDim{ display:none !important; background:transparent !important; }
+        body.print-mode #onlineMap{ filter:none !important; }
+      }
+    `;
+    document.head.appendChild(dimCss);
+  }
+  // --- [JAUNAIS] beidzas ---
+
+
+
+
+
+
+	 
 // aizver paneļus un nullē “safe areas”
 try { window.closeBothSelectorsLegacy && window.closeBothSelectorsLegacy(); } catch(e){}
 try { closeBothMenus && closeBothMenus(); } catch(e){}
