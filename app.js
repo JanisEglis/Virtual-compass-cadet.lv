@@ -1780,6 +1780,7 @@ function closeLgIaPrintDialog(){
 // Palīgs, kas sagaida, ka karte pabeigusi pārzīmēties un ielādēt aktīvo flīžu slāņus
 function waitForMapReady(map, opts = {}){
   const timeout = typeof opts.timeout === 'number' ? opts.timeout : 5000;
+	 const idleDelay = typeof opts.idleDelay === 'number' ? opts.idleDelay : 200;
 
   return new Promise(resolve => {
     if (!map || typeof map.eachLayer !== 'function') {
@@ -1829,19 +1830,55 @@ function waitForMapReady(map, opts = {}){
       tasks.push(new Promise(res => {
         let done = false;
         let sawLoading = layer._loading || (layer._tilesToLoad > 0);
+		    let idleTimer = null;
 
         const finalize = () => {
           if (done) return;
           done = true;
+			 if (idleTimer) {
+            clearTimeout(idleTimer);
+            idleTimer = null;
+          }
           layer.off('load', onLoad);
           layer.off('tileerror', onError);
           layer.off('loading', onLoading);
           res();
         };
 
+
+  const maybeScheduleIdle = () => {
+          if (done || sawLoading) return;
+          if (layer._loading || (layer._tilesToLoad > 0)) {
+            sawLoading = true;
+            if (idleTimer) {
+              clearTimeout(idleTimer);
+              idleTimer = null;
+            }
+            return;
+          }
+          if (idleTimer) return;
+          idleTimer = setTimeout(() => {
+            idleTimer = null;
+            if (!layer._loading && (layer._tilesToLoad === 0)) {
+              finalize();
+            }
+          }, idleDelay);
+        };
+
+
+
+
+
+		  
         const onLoad = () => finalize();
         const onError = () => finalize();
-        const onLoading = () => { sawLoading = true; };
+     const onLoading = () => {
+          sawLoading = true;
+          if (idleTimer) {
+            clearTimeout(idleTimer);
+            idleTimer = null;
+          }
+        };
 
         layer.on('load', onLoad);
         layer.on('tileerror', onError);
@@ -1849,16 +1886,9 @@ function waitForMapReady(map, opts = {}){
         cleanups.push(() => finalize());
 
         if (!sawLoading) {
-          const checkIdle = () => {
-            if (sawLoading) return;
-            if (layer._loading || (layer._tilesToLoad > 0)) {
-              sawLoading = true;
-              return;
-            }
-            finalize();
-          };
+      
           requestAnimationFrame(() => {
-            requestAnimationFrame(() => checkIdle());
+             requestAnimationFrame(() => maybeScheduleIdle());
           });
         }
       }));
