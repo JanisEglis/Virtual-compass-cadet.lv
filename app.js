@@ -1782,28 +1782,63 @@ function closeLgIaPrintDialog(){
 
 /* === PRINT aizsargs + gaidīšana līdz flīzes ielādētas === */
 /* Aizvieto TAVĀ failā “app (33).js” funkcijā __showPrintGuardOverlay ... */
+/* ── AIZSTĀJ esošo versiju ── */
 function __showPrintGuardOverlay(text = 'Gatavojam karti drukai…'){
   let el = document.getElementById('printGuardOverlay');
+  let css = document.getElementById('printGuardOverlayCSS');
+  if (!css){
+    css = document.createElement('style');
+    css.id = 'printGuardOverlayCSS';
+    css.textContent = `
+      #printGuardOverlay{position:fixed;inset:0;display:grid;place-items:center;
+        background:rgba(0,0,0,.35);color:#fff;z-index:2147483647;
+        font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+        backdrop-filter:blur(2px)}
+      #printGuardOverlay .box{background:rgba(0,0,0,.55);padding:12px 16px;border-radius:12px;
+        border:1px solid rgba(255,255,255,.18);min-width:240px;max-width:78vw}
+      #printGuardOverlay .title{font-weight:700;margin-bottom:8px}
+      #printGuardOverlay .pgo-bar{width:100%;height:8px;border-radius:999px;overflow:hidden;
+        background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.12)}
+      #printGuardOverlay .pgo-bar > span{display:block;height:100%;width:0%;
+        background:linear-gradient(90deg, rgba(255,255,255,.9), rgba(255,255,255,.6))}
+      #printGuardOverlay .pgo-sub{margin-top:6px;font-size:12px;opacity:.9}
+      @media print{ #printGuardOverlay{ display:none !important } }
+    `;
+    document.head.appendChild(css);
+  }
   if (!el){
     el = document.createElement('div');
     el.id = 'printGuardOverlay';
-    Object.assign(el.style, {
-      position:'fixed', inset:0, display:'grid', placeItems:'center',
-      // NB: pareizi alpha, citādi pārlūks ignorē vai rīkojas dīvaini
-      background:'rgba(0,0,0,.35)',
-      color:'#fff', zIndex: 2147483647,
-      font:'14px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
-      backdropFilter:'blur(2px)'
-    });
-    const inner = document.createElement('div');
-    // NB: pareizi alpha + border alpha
-    inner.style.cssText = 'background:rgba(0,0,0,.55); padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.18)';
-    inner.textContent = text;
-    el.appendChild(inner);
+    el.innerHTML = `
+      <div class="box">
+        <div class="title" id="pgo-title"></div>
+        <div class="pgo-bar"><span id="pgo-bar-fill"></span></div>
+        <div class="pgo-sub" id="pgo-sub">Sākam ielādi…</div>
+      </div>`;
     document.body.appendChild(el);
   }
+  // teksts + rādāms
+  const titleEl = document.getElementById('pgo-title');
+  if (titleEl) titleEl.textContent = text;
   el.style.display = 'grid';
+
+  // API progressa atjaunināšanai (kāpēc: neatkarīgs no gaidītāja implementācijas)
+  window.__setPrintProgress = (loaded, total) => {
+    const pct = total > 0 ? Math.round((loaded / total) * 100) : 100;
+    const bar = document.getElementById('pgo-bar-fill');
+    const sub = document.getElementById('pgo-sub');
+    if (bar) bar.style.width = pct + '%';
+    if (sub) sub.textContent = (total > 0)
+      ? `Ielādētas flīzes: ${loaded}/${total} (${pct}%)`
+      : `Ielādētas flīzes: ${loaded} (${pct}%)`;
+  };
 }
+function __hidePrintGuardOverlay(){
+  const el = document.getElementById('printGuardOverlay');
+  if (el) el.style.display = 'none';
+  window.__setPrintProgress = null; // notīrām callback
+}
+
 function __hidePrintGuardOverlay(){
   const el = document.getElementById('printGuardOverlay');
   if (el) el.style.display = 'none';
@@ -1812,6 +1847,7 @@ function __hidePrintGuardOverlay(){
 /* Gaidām līdz Leaflet flīžu slāņi ir gatavi (vai beidzas timeout) */
 /* ================== PATCH #2: robusta gaidīšana ================== */
 /* AIZVIETO viso TAVU waitForMapToRender(...) ar šo versiju */
+/* ── AIZSTĀJ esošo versiju ── */
 function waitForMapToRender(map, opts = {}){
   const timeout = Math.max(1000, +opts.timeout || 12000);
   const settle  = Math.max(0, +opts.settle  || 200);
@@ -1821,6 +1857,7 @@ function waitForMapToRender(map, opts = {}){
     if (!root) return resolve();
 
     const pending = new Set();
+    let total = 0;
     let lastChange = Date.now();
     let rafId = null, toId = null;
 
@@ -1828,32 +1865,37 @@ function waitForMapToRender(map, opts = {}){
       n && n.tagName === 'IMG' &&
       (n.classList.contains('leaflet-tile') || n.classList.contains('leaflet-image-layer'));
 
+    function bumpProgress(){
+      const loaded = Math.max(0, total - pending.size);
+      if (typeof window.__setPrintProgress === 'function') {
+        window.__setPrintProgress(loaded, total);
+      }
+    }
+
     function arm(img){
       if (!img || pending.has(img)) return;
-      if (img.complete && img.naturalWidth > 0) return;
-      pending.add(img);
+      // Ja jau gatavs (kešs), neskaitām “pending”
+      if (img.complete && img.naturalWidth > 0){ total++; bumpProgress(); return; }
+      pending.add(img); total++; lastChange = Date.now();
       img.addEventListener('load',  onDone, { once:true });
       img.addEventListener('error', onDone, { once:true });
+      bumpProgress();
     }
     function disarm(img){
-      try { img.removeEventListener('load', onDone); } catch(_) {}
-      try { img.removeEventListener('error', onDone); } catch(_) {}
-      pending.delete(img);
+      try { img.removeEventListener('load', onDone); } catch(_){}
+      try { img.removeEventListener('error', onDone);} catch(_){}
+      pending.delete(img); lastChange = Date.now();
+      bumpProgress();
     }
+    function onDone(e){ disarm(e.currentTarget || e.target); }
 
     function collectVisible(){
       const rRoot = root.getBoundingClientRect();
-      const imgs = root.querySelectorAll('img.leaflet-tile, img.leaflet-image-layer');
-      imgs.forEach(img => {
+      root.querySelectorAll('img.leaflet-tile, img.leaflet-image-layer').forEach(img => {
         const r = img.getBoundingClientRect();
         const vis = (r.right > rRoot.left && r.left < rRoot.right && r.bottom > rRoot.top && r.top < rRoot.bottom);
         if (vis) arm(img);
       });
-    }
-
-    function onDone(e){
-      disarm(e.currentTarget || e.target);
-      lastChange = Date.now();
     }
 
     const mo = new MutationObserver(muts => {
@@ -1861,7 +1903,6 @@ function waitForMapToRender(map, opts = {}){
       muts.forEach(m => {
         m.addedNodes && m.addedNodes.forEach(n => {
           if (isMapImg(n)) { arm(n); added = true; }
-          // arī gadījumam, ja img ielikts iekš konteineriem
           if (n && n.querySelectorAll) {
             n.querySelectorAll('img.leaflet-tile, img.leaflet-image-layer').forEach(img => { arm(img); added = true; });
           }
@@ -1872,9 +1913,13 @@ function waitForMapToRender(map, opts = {}){
     mo.observe(root, { childList:true, subtree:true });
 
     const tick = () => {
-      // Ja nav gaidāmo un kopš pēdējās izmaiņas pagājuši >= settle ms → gatavs
+      // Gatavs, ja nav gaidāmo un kopš pēdējām izmaiņām notecējis “settle”
       if (pending.size === 0 && (Date.now() - lastChange) >= settle) {
-        cleanup(); resolve(); return;
+        cleanup(); 
+        // fināls: 100%
+        if (typeof window.__setPrintProgress === 'function') window.__setPrintProgress(total, total);
+        resolve();
+        return;
       }
       rafId = requestAnimationFrame(tick);
     };
@@ -1887,17 +1932,17 @@ function waitForMapToRender(map, opts = {}){
       pending.clear();
     }
 
-    // starta kolekcija (pēc izmēra maiņas/centerēšanas)
+    // starta kolekcija + progress
     collectVisible();
+    bumpProgress();
 
-    // Drošības timeouts (nekrītam ārā bezgalīgi)
+    // drošības timeouts
     toId = setTimeout(() => { cleanup(); resolve(); }, timeout);
 
-    // Seko arī kustībām/slāņu maiņām (var ienākt jaunas flīzes)
+    // seko kartes kustībām/slāņu maiņām
     if (map && map.on) {
       const kick = () => { lastChange = Date.now(); collectVisible(); };
       map.on('move moveend zoom zoomend layeradd layerremove', kick);
-      // notīrīt eventus noslēgumā
       const _cleanup = cleanup;
       cleanup = function(){
         try { map.off('move', kick).off('moveend', kick).off('zoom', kick).off('zoomend', kick).off('layeradd', kick).off('layerremove', kick); } catch(_){}
@@ -1905,7 +1950,6 @@ function waitForMapToRender(map, opts = {}){
       };
     }
 
-    // startē spēli
     tick();
   });
 }
