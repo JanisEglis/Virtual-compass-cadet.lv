@@ -1942,12 +1942,15 @@ try { closeBothMenus && closeBothMenus(); } catch(e){}
 document.documentElement.style.setProperty('--map-top-safe','0px');
 document.documentElement.style.setProperty('--map-bottom-safe','0px');
 
-// === VIENS recentrēšanas bloks (vienīgais nepieciešamais) ===
+// NEPĀRSTATI centru – panBy jau salika karti precīzi drukas rāmja centrā.
+// Tikai pārrēķinam izmēru, saglabājot pašreizējo centru.
 if (map) {
-  map.invalidateSize(true); // pārrēķina kastes izmēru
-if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
- else map.setView(keepCenter, map.getZoom(), { animate:false });
+  map.invalidateSize(true);
+  const cur = map.getCenter(); // saglabā to, ko panBy jau iestatīja
+  if (map._resetView) map._resetView(cur, map.getZoom(), true);
+  else map.setView(cur, map.getZoom(), { animate:false });
 }
+
 }, 0);		
 waitLeafletTilesLoaded(8000).then(() => {
   void map._mapPane.offsetWidth;  // piespied reflow, lai jaunā pozīcija stājas spēkā
