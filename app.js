@@ -1764,6 +1764,132 @@ function closeLgIaPrintDialog(){
   if (m) m.remove();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Palīgs, kas sagaida, ka karte pabeigusi pārzīmēties un ielādēt aktīvo flīžu slāņus
+function waitForMapReady(map, opts = {}){
+  const timeout = typeof opts.timeout === 'number' ? opts.timeout : 5000;
+
+  return new Promise(resolve => {
+    if (!map || typeof map.eachLayer !== 'function') {
+      resolve();
+      return;
+    }
+
+    const cleanups = [];
+    let settled = false;
+    let safetyTimer;
+
+    const settle = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(safetyTimer);
+      while (cleanups.length){
+        const fn = cleanups.pop();
+        try { fn && fn(); } catch(e){}
+      }
+      resolve();
+    };
+
+    const tasks = [];
+
+    tasks.push(new Promise(res => {
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        map.off('moveend', onMoveEnd);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => res());
+        });
+      };
+      const onMoveEnd = () => finish();
+      if (map._animatingZoom || map._moveInProgress) {
+        map.on('moveend', onMoveEnd);
+        cleanups.push(() => finish());
+      } else {
+        finish();
+      }
+    }));
+
+    map.eachLayer(layer => {
+      if (!(layer instanceof L.TileLayer)) return;
+
+      tasks.push(new Promise(res => {
+        let done = false;
+        let sawLoading = layer._loading || (layer._tilesToLoad > 0);
+
+        const finalize = () => {
+          if (done) return;
+          done = true;
+          layer.off('load', onLoad);
+          layer.off('tileerror', onError);
+          layer.off('loading', onLoading);
+          res();
+        };
+
+        const onLoad = () => finalize();
+        const onError = () => finalize();
+        const onLoading = () => { sawLoading = true; };
+
+        layer.on('load', onLoad);
+        layer.on('tileerror', onError);
+        layer.on('loading', onLoading);
+        cleanups.push(() => finalize());
+
+        if (!sawLoading) {
+          const checkIdle = () => {
+            if (sawLoading) return;
+            if (layer._loading || (layer._tilesToLoad > 0)) {
+              sawLoading = true;
+              return;
+            }
+            finalize();
+          };
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => checkIdle());
+          });
+        }
+      }));
+    });
+
+    if (tasks.length === 0) {
+      resolve();
+      return;
+    }
+
+    safetyTimer = setTimeout(() => settle(), timeout);
+
+    Promise.all(tasks)
+      .then(() => settle())
+      .catch(() => settle());
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  
 // Pati druka: fiksēts formāts/orientācija, fiksēts mērogs, paslēpts UI
 function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
@@ -1842,7 +1968,8 @@ if (map) {
   map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
 }
 
-setTimeout(() => { window.print(); }, 600);
+    // Gaidām dinamisku apstiprinājumu, ka karte ir gatava (vairs nepaļaujamies uz cieto 600ms taimautu)
+    waitForMapReady(map).then(() => window.print());
 
 }, 0);
 
