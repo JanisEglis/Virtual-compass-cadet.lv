@@ -1945,8 +1945,8 @@ if (map) {
 const pt = map.latLngToContainerPoint(keepCenter);
 const sz = map.getSize();
 map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
+
 }
-}, 0);		
 waitLeafletTilesLoaded(8000).then(() => {
   void map._mapPane.offsetWidth;  // piespied reflow, lai jaunā pozīcija stājas spēkā
   window.print();
