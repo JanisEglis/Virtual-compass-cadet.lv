@@ -161,31 +161,34 @@ function lksToWGS(E, N){                   // atpakaļ uz WGS84
   })();
 
   // “window load” — ķer arī gadījumu, ja tas jau ir noticis
-  const pageLoaded = new Promise(res => {
-    if (document.readyState === 'complete') { tick('win-complete'); res(); }
-    else window.addEventListener('load', () => { tick('win-load'); res(); }, {once:true});
-  });
+ // DOM gatavs → pietiek, lai rādītu app (negaidām iframe/fontus)
+const domReady = new Promise(res => {
+  if (document.readyState === 'interactive' || document.readyState === 'complete') res();
+  else document.addEventListener('DOMContentLoaded', res, { once: true });
+});
 
-// Poga “Turpināt” un cietais timeouts
-const showSkip = setTimeout(() => pre && pre.classList.add('show-skip'), 6000);
-const hardCut  = setTimeout(() => finish('hard-timeout'), 8000);
-if (skipBtn) skipBtn.addEventListener('click', () => finish('skip'), { once: true });
+// Drošais cietais “fuse”, ja kas aizķeras (8s)
+setTimeout(() => finish('safety-8s'), 8000);
 
-// drošs "allSettled" arī bez native atbalsta (neliekam polyfillu vēlāk)
-var allSettled = Promise.allSettled
-  ? function(promises){ return Promise.allSettled(promises); }
-  : function(promises){
-      return Promise.all(promises.map(function(p){
-        return Promise.resolve(p).then(
-          function(value){  return { status: 'fulfilled', value:  value }; },
-          function(reason){ return { status: 'rejected',  reason: reason }; }
-        );
-      }));
-    };
+// Skip poga pēc ~6s (tev jau bija — atstāj)
+setTimeout(() => pre.classList.add('show-skip'), 6000);
+skipBtn && skipBtn.addEventListener('click', () => finish('skip'));
 
-Promise.all([ pageLoaded, allSettled(imgPromises) ])
-  .then(() => new Promise(r => setTimeout(r, 300)))
-  .then(() => finish('ready'));
+// Bildes: turpini skaitīt, bet neliec tās bloķēt UI atvēršanu
+const imgPromises = [...document.images]
+  .filter(img => img && img.src)  // ignorē tukšus/placeholder img
+  .map(img => img.complete ? Promise.resolve() :
+    new Promise(r => { img.addEventListener('load', r, {once:true}); img.addEventListener('error', r, {once:true}); })
+  );
+
+// HIDE ātri, tiklīdz DOM ir gatavs (vai bildes jau gatavas) — izmanto RACE, nevis ALL
+Promise.race([domReady, Promise.allSettled(imgPromises)])
+  .then(() => setTimeout(() => finish('dom-or-img'), 250));
+
+// Papildu drošība — jebkura kļūda arī aizver preloaderi
+window.addEventListener('error', () => finish('window-error'), { once: true });
+window.addEventListener('unhandledrejection', () => finish('unhandledrejection'), { once: true });
+
 
 
 
@@ -3655,12 +3658,16 @@ function getEls(){
 
 	
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
-async function showOnlineMap(){
-  // droši atlasi elementus katru reizi
-  const { mapDiv, mapDim, canvas, resizeH, btn } = getEls();
+async function showOnlineMap() {
+  // elementi jāpaņem TIEŠI tagad (nevis globālajā tvērumā)
+  const mapDiv  = $id('map');           // ← izmanto tavus īstos ID
+  const mapDim  = $id('map-dimmer');    // ← ja cita ID — pielabo
+  const canvas  = $id('canvas');
+  const resizeH = $id('resizeHandle');
+  const btn     = $id('btnOnlineMap');  // vai kā nu tev saucas
+
   if (!mapDiv || !mapDim || !canvas) {
-    console.warn('[onlineMap] host elementi nav gatavi');
-    localStorage.setItem('onlineMapActive','0');
+    console.warn('[onlineMap] Nepieciešamie elementi nav atrasti — atceļu parādīšanu.');
     return;
   }
 
@@ -3668,7 +3675,7 @@ async function showOnlineMap(){
   try { await leafletReady; }
   catch(e){ 
     console.warn('[onlineMap] Leaflet neielādējās laikā:', e);
-    localStorage.setItem('onlineMapActive','0');
+    
     return;
   }
   // PARĀDĀM karti, paslēpjam kanvu + rokturi
