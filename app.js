@@ -1345,97 +1345,195 @@ function utmToLL(E, N, zone, hemi){
   return compact ? tight : pretty;
 }
 
+
+
+
+
+
+
+/* ----------------- helpers: drošs tile layer + watchdog ----------------- */
+function createSafeTileLayer(url, opts = {}) {
+  const defaults = {
+    maxZoom: 20,
+    maxNativeZoom: opts.maxNativeZoom ?? 19,
+    subdomains: 'abc',
+    updateWhenIdle: true,
+    // mazāk “trokšņa” pie agresīva zoom
+    updateWhenZooming: false,
+    updateInterval: 150,
+    keepBuffer: 3,
+    detectRetina: false,        // nepasūta 2× vairāk flīzes
+    noWrap: true,               // nerauj ārpus pasaules robežām
+    crossOrigin: true,
+    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw='
+  };
+  const layer = L.tileLayer(url, { ...defaults, ...opts });
+  // “mīksts” tileerror: aizstāj ar caurspīdīgo un izlaiž
+  layer.on('tileerror', (e) => {
+    try { e.tile.src = defaults.errorTileUrl; } catch(_) {}
+  });
+  return layer;
+}
+
+function installTileErrorWatch(layer, opts){
+  const name      = opts?.name || 'layer';
+  const threshold = opts?.threshold || 12;
+  const windowMs  = opts?.windowMs  || 3000;
+  const onTrip    = opts?.onTrip    || (()=>{});
+  let errs = [];
+  function purge(){ const t=Date.now(); errs = errs.filter(x => t-x < windowMs); }
+  function onErr(){ errs.push(Date.now()); purge(); if (errs.length >= threshold) { layer.off('tileerror', onErr); onTrip(); } }
+  layer.on('tileerror', onErr);
+  return () => layer.off('tileerror', onErr);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
   /* ---------------------- KARTES iestatīšana ---------------------- */
   function initMap(){
     if (inited) return true;
     if (!window.L){ console.warn('Leaflet nav ielādēts'); return false; }
 
-    map = L.map(mapDiv, { zoomControl:true, attributionControl:true });
-window.__getMap = () => map;   // 👈 Ieliec tieši šeit
-    const osm  = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  // [A] MAP OPTIONS — pievieno max/min un smalkāku soli
+  map = L.map(mapDiv, {
+    zoomControl: true,
+    attributionControl: true,
+    minZoom: 2,                // ADD
+    maxZoom: 20,               // ADD (varēsi iezūmot dziļāk par native)
+    zoomSnap: 0.25             // ADD (smalkāks zoom solis)
+  });
+  window.__getMap = () => map;
+
+
+
+
+
+
+	  // ===== Base slāņi =====  
+ const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap',
-	  maxZoom: 19,
+    subdomains: 'abc',         // ADD
+    maxZoom: 20,               // ADD
+    maxNativeZoom: 19,         // KEEP
+    updateWhenIdle: true,      // KEEP
+    keepBuffer: 2,             // KEEP
+    detectRetina: false,       // KEEP
+    crossOrigin: true,         // KEEP
+    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' // ADD (caurspīdīga)
+  }).addTo(map);
 
+	  
+ const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    attribution: 'Map data: &copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap (CC-BY-SA)',
+    subdomains: 'abc',
+    maxZoom: 20,               // CHANGE 19 → 20
+    maxNativeZoom: 17,         // KEEP (svarīgi)
+    updateWhenIdle: true,
+    keepBuffer: 2,
+    detectRetina: false,
+    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' // KEEP/ADD
+  });
 
+	  
+  const esri = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {
+      attribution: 'Tiles &copy; Esri',
+      subdomains: 'abc',       // ADD (lai {s} strādā vienādi)
+      maxZoom: 20,             // ADD
+      maxNativeZoom: 19,       // ADD
+      detectRetina: false,     // ADD
+      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' // ADD
+    }
+  );
 
-		
-  maxNativeZoom: 19,
-  subdomains: 'abc',
-  updateWhenIdle: true,
-  keepBuffer: 2,
-  detectRetina: false,         // samazina flīžu skaitu
-  crossOrigin: true	
-    }).addTo(map);
+	  
+  const hot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+    attribution: '&copy; OSM, HOT',
+    subdomains: 'abc',         // ADD
+    maxZoom: 20,               // KEEP
+    maxNativeZoom: 19,         // ADD
+    detectRetina: false,       // ADD
+    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' // ADD
+  });
 
-    const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-     
-      attribution: 'Map data: &copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap (CC-BY-SA)',
-		  subdomains: 'abc',
-  maxZoom: 19,
-  maxNativeZoom: 17,           // <- svarīgi
-  updateWhenIdle: true,
-  keepBuffer: 2,
-  detectRetina: false,
-  errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' // nerāda “salūzušo
-    });
+	  
+  const cyclo = L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+    attribution: '&copy; OSM, CyclOSM',
+    subdomains: 'abc',         // ADD
+    maxZoom: 20,               // KEEP
+    maxNativeZoom: 20,         // ADD (serveris atbalsta līdz 20)
+    detectRetina: false,       // ADD
+    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' // ADD
+  });
 
-    const esri = L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19, attribution: 'Tiles &copy; Esri'
-    });
-
-    const hot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-      maxZoom: 20, attribution: '&copy; OSM, HOT'
-    });
-
-    const cyclo = L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
-      maxZoom: 20, attribution: '&copy; OSM, CyclOSM'
-    });
-
+	  
 	// OSM German style (tīrāks stils, labs kā pamats)
-	const osmDe = L.tileLayer('https://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
-	  maxZoom: 19,
-	  attribution: '© OpenStreetMap contributors, tiles by openstreetmap.de'
-	});
-	
+  const osmDe = L.tileLayer('https://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors, tiles by openstreetmap.de',
+    subdomains: 'abc',         // ADD
+    maxZoom: 20,               // ADD
+    maxNativeZoom: 19,         // ADD
+    detectRetina: false,       // ADD
+    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' // ADD
+  });
+
+	  
 	// OSM France (osmfr)
-	const osmFr = L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
-	  maxZoom: 20,
-	  attribution: '© OpenStreetMap contributors, tiles by openstreetmap.fr'
-	});
+  const osmFr = L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors, tiles by openstreetmap.fr',
+    subdomains: 'abc',         // ADD
+    maxZoom: 20,               // KEEP
+    maxNativeZoom: 20,         // ADD
+    detectRetina: false,       // ADD
+    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' // ADD
+  });
 	
 	// CartoDB Positron (gaišs, “bez trokšņa” — labs kā pamats datu pārklājumiem)
-	const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-	  maxZoom: 20, subdomains: 'abcd',
-	  attribution: '© OpenStreetMap contributors, © CARTO'
-	});
+  const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap contributors, © CARTO',
+    subdomains: 'abcd',        // KEEP
+    maxZoom: 20,               // KEEP
+    maxNativeZoom: 20,         // ADD
+    detectRetina: false,       // ADD
+    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' // ADD
+  });
 
+	  
 // LVM Topo50 — GWC TMS (ātrāks kešots slānis)
-
-const lvmTopo50_wms = L.tileLayer.wms(
-  'https://lvmgeoserver.lvm.lv/geoserver/ows?',
-  {
+  const lvmTopo50_wms = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
     layers: 'public:Topo50',
     format: 'image/png',
     transparent: true,
-    // crs: L.CRS.EPSG3857  // (pēc noklusējuma Leaflet tāpat ir 3857)
-  }
-);
+    tiled: true,               // ADD
+    maxZoom: 19                // ADD
+    // crs: L.CRS.EPSG3857
+  });
 
 
-const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
-  layers: 'public:OSM',
-  format: 'image/png',
-  transparent: false,
-  tiled:false,
-  attribution: '© LVM'
-});
-
-
-
-
-
-
+  const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
+    layers: 'public:OSM',
+    format: 'image/png',
+    transparent: false,
+    tiled: true,               // CHANGE false → true
+    maxZoom: 19,               // ADD
+    attribution: '© LVM'
+  });
 
 
 
@@ -1443,33 +1541,47 @@ const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
 	  
 
 	// --- Pārklājumi (overlay) ---
-	const hiking = L.tileLayer('https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png', {
-	  opacity: 0.8, attribution: '© waymarkedtrails.org, © OSM līdzstrādnieki'
-	});
-	const cycling = L.tileLayer('https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png', {
-	  opacity: 0.8, attribution: '© waymarkedtrails.org, © OSM līdzstrādnieki'
-	});
-	const rail = L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
-	  subdomains: 'abc',
-		opacity: 0.9, 
-		attribution: '© OpenRailwayMap, © OSM',
-		  maxZoom: 19,
-  maxNativeZoom: 19,
-  updateWhenIdle: true,
-  keepBuffer: 2,
-  detectRetina: false,
-  errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw='
-	});
-	const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
-	  opacity: 0.9, attribution: '© OpenSeaMap, dati © OSM (ODbL)'
-	});
+ const hiking = L.tileLayer('https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png', {
+    opacity: 0.8,
+    maxZoom: 20,               // ADD
+    maxNativeZoom: 19,         // ADD
+    detectRetina: false,       // ADD
+    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=',
+    attribution: '© waymarkedtrails.org, © OSM līdzstrādnieki'
+  });
 
+	  
+  const cycling = L.tileLayer('https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png', {
+    opacity: 0.8,
+    maxZoom: 20,               // ADD
+    maxNativeZoom: 19,         // ADD
+    detectRetina: false,       // ADD
+    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=',
+    attribution: '© waymarkedtrails.org, © OSM līdzstrādnieki'
+  });
 
+	  
+  const rail = L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
+    subdomains: 'abc',
+    opacity: 0.9,
+    attribution: '© OpenRailwayMap, © OSM',
+    maxZoom: 20,               // ADD
+    maxNativeZoom: 19,         // KEEP
+    updateWhenIdle: true,      // KEEP
+    keepBuffer: 2,             // KEEP
+    detectRetina: false,       // KEEP
+    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' // KEEP
+  });
 
-
-
-
-
+	  
+ const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+    opacity: 0.9,
+    maxZoom: 20,               // ADD
+    maxNativeZoom: 19,         // ADD
+    detectRetina: false,       // ADD
+    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=',
+    attribution: '© OpenSeaMap, dati © OSM (ODbL)'
+  });
 
 
 
@@ -1483,16 +1595,22 @@ const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
 	  'OSM DE': osmDe,
 	  'OSM France': osmFr,	
 	  'CartoDB Positron': cartoLight,	
-'LVM Topo50': lvmTopo50_wms,	
-'LVM OSM (WMS)': lvmOSM
-
-    };
-
+	  'LVM Topo50': lvmTopo50_wms,	
+	  'LVM OSM (WMS)': lvmOSM
+	};
 
 
-[osmDe, osmFr, cartoLight].forEach(l =>
-  l.on('tileerror', (e) => console.warn('[tileerror]', e?.coords, e?.error))
-);
+
+  // [E] PAPLAŠINI tavu tileerror listeneri uz VISIEM slāņiem
+  [
+    osm, topo, esri, hot, cyclo, osmDe, osmFr, cartoLight,
+    lvmTopo50_wms, lvmOSM,
+    hiking, cycling, rail, seamarks
+  ].forEach(l => l.on('tileerror', (e) => {
+    // nerādīt “salūzušo bildi” + logā redzēt avotu
+    try { if (e && e.tile) e.tile.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACw='; } catch(_){}
+    console.warn('[tileerror]', l && l._url, e?.coords || e);
+  }));
 
 
 
