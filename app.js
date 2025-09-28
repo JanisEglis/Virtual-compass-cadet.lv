@@ -2025,22 +2025,41 @@ async function __recenterMapToLL(map, ll){
   map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
 }
 
+// ======================= PATCH 1/2: hook ar atvienošanu =======================
 function __hookPrintMediaRecenter(map, ll){
-  // Kāpēc: brīdī, kad nostrādā @media print (mql:true), konteiners pārmaina izmēru/pozīciju
+  let mq = null;
+  let onChange = null;
+  let onBefore = null;
+
   try{
-    const mq = window.matchMedia('print');
-    const onChange = (e) => {
+    mq = window.matchMedia('print');
+    onChange = (e) => {
       if (e.matches) {
         __recenterMapToLL(map, ll);
-        setTimeout(()=>__recenterMapToLL(map, ll), 50); // drošības atkārtojums
+        setTimeout(()=>__recenterMapToLL(map, ll), 50);
       }
     };
+    // add
     mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener(onChange);
   }catch(_){}
-  window.addEventListener('beforeprint', () => {
+
+  onBefore = () => {
     __recenterMapToLL(map, ll);
     setTimeout(()=>__recenterMapToLL(map, ll), 50);
-  });
+  };
+  window.addEventListener('beforeprint', onBefore);
+
+  // ← svarīgi: atgriež atvienotāju
+  return function unhook(){
+    try{
+      if (mq && onChange){
+        mq.removeEventListener ? mq.removeEventListener('change', onChange) : mq.removeListener(onChange);
+      }
+    }catch(_){}
+    try{
+      if (onBefore) window.removeEventListener('beforeprint', onBefore);
+    }catch(_){}
+  };
 }
 
 
@@ -2065,7 +2084,7 @@ async function prepareMapForPrintLgIa(opts){
   const rc = map.getContainer().getBoundingClientRect();
   const px = __centerPxInContainerFromOverlayOrViewport(rc);
   const keepCenter = map.containerPointToLatLng(L.point(px.x, px.y));
-
+  const prevView = { center: map.getCenter(), zoom: map.getZoom() };
   // 2) fiksējam animācijas un mērogu
   const prev = {
     zoomSnap: map.options.zoomSnap,
@@ -2101,7 +2120,7 @@ async function prepareMapForPrintLgIa(opts){
 
 // → UZREIZ ZEM ŠĪ ANKURA IEVADI:
 await __recenterMapToLL(map, keepCenter);     // <-- ADD-A
-__hookPrintMediaRecenter(map, keepCenter);     // <-- ADD-B
+  const unhookPrint = __hookPrintMediaRecenter(map, keepCenter);   // <-- ADD-B
 
 
 
@@ -2172,14 +2191,17 @@ await __recenterMapToLL(map, keepCenter);     // <-- ADD-C
 	  
     window.print();
 
-    // viss atpakaļ stabili vienuviet
+   // ==================== CLEANUP: PRECĪZS ATJAUNOJUMS ====================
     function cleanup(){
+      // 0) atvieno hook'us (lai nākamreiz nekas neiešaujas nepareizā brīdī)
+      try { unhookPrint && unhookPrint(); } catch(_){}
+
+      // 1) izslēdz print režīmu un noņem ģenerēto stilu
       document.body.classList.remove('print-mode');
-      try { footer && footer.remove(); } catch(_) {}
-      try { styleEl && styleEl.remove(); } catch(_) {}
-      try { map && map.invalidateSize(true); } catch(_) {}
-      try { mapEl && mapEl.setAttribute('style', prevInlineStyle); } catch(_) {}
-      // atjauno tumšošanu
+      try { footer && footer.remove(); } catch(_){}
+      try { styleEl && styleEl.remove(); } catch(_){}
+
+      // 2) atjauno tumšošanas pārklājumu
       try {
         const dimCssEl = document.getElementById('printDimOffCSS');
         if (dimCssEl) dimCssEl.remove();
@@ -2187,14 +2209,28 @@ await __recenterMapToLL(map, keepCenter);     // <-- ADD-C
           if (prevDimStyle !== null) dimEl.setAttribute('style', prevDimStyle);
           else dimEl.removeAttribute('style');
         }
-      } catch(_) {}
-      // atjauno safe areas
+      } catch(_){}
+
+      // 3) atjauno inline width/height, lai kaste atgriežas sākuma izmērā
       try {
-        document.documentElement.style.setProperty('--map-top-safe', prevTopSafe.trim() || '0px');
-        document.documentElement.style.setProperty('--map-bottom-safe', prevBottomSafe.trim() || '0px');
+        const el = document.getElementById('onlineMap');
+        if (el) el.setAttribute('style', prevInlineStyle);
+      } catch(_){}
+
+      // 4) atjauno safe-areas un pārskaiti layout
+      try {
+        document.documentElement.style.setProperty('--map-top-safe',    (prevTopSafe || '0px').trim());
+        document.documentElement.style.setProperty('--map-bottom-safe', (prevBottomSafe || '0px').trim());
         window.__updateMapSafeAreas && window.__updateMapSafeAreas();
-      } catch(_) {}
-      // atpakaļ animācijas
+      } catch(_){}
+
+      // 5) pārzīmē Leaflet un **ATJAUNO sākotnējo centru/zooma līmeni**
+      try {
+        map.invalidateSize(true);
+        map.setView(prevView.center, prevView.zoom, { animate:false });
+      } catch(_){}
+
+      // 6) atjauno animāciju iestatījumus
       map.options.zoomSnap = prev.zoomSnap;
       map.options.zoomDelta = prev.zoomDelta;
       map.options.zoomAnimation = prev.zoomAnim;
