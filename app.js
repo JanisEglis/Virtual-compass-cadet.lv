@@ -3635,67 +3635,20 @@ window.__bindDimmer = function(inputEl){
   inputEl.addEventListener('input', () => setDarkness(inputEl.value));
   setDarkness(saved); // piemēro uzreiz
 };
-
-
-
-
-
-
-
-
-// vienreizējs gaidītājs
-function waitForLeaflet(timeout = 8000) {
-  return new Promise((resolve, reject) => {
-    if (window.L) return resolve();
-    const t0 = Date.now();
-    const id = setInterval(() => {
-      if (window.L) { clearInterval(id); resolve(); }
-      else if (Date.now() - t0 > timeout) { clearInterval(id); reject(new Error('Leaflet timeout')); }
-    }, 40);
-  });
-}
-const leafletReady = waitForLeaflet();
-
-
-
-
-
-
-
-	
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
-async function showOnlineMap() {
-  try {
-    await leafletReady;            // <- garantējam, ka L ir klāt pirms init
-  } catch (_e) {
-    // nevis “parādīt karti un atlekt atpakaļ”, bet paliekam kanvā
-    localStorage.setItem('onlineMapActive', '0');
-    console.warn('Tiešsaistes karte nav ielādēta (timeout).');
-    return;
-  }
-
-  // iestatām izmērus pirms rādīšanas (kā tev jau ir)
-  if (!mapDiv.offsetWidth || !mapDiv.offsetHeight) {
-    const p = mapDiv.parentElement;
-    mapDiv.style.width  = (p?.clientWidth  || window.innerWidth)  + 'px';
-    mapDiv.style.height = (p?.clientHeight || window.innerHeight) + 'px';
-  }
-
-  // inicializējam karti — ja neveiksme, neturam UI “pusceļā”
-  if (!initMap()) {                         // te vairs reti kad atgriezīs false
-    localStorage.setItem('onlineMapActive','0');
-    console.warn('Neizdevās inicializēt karti.');
-    return;
-  }
-
-	
+function showOnlineMap(){
   // PARĀDĀM karti, paslēpjam kanvu + rokturi
   mapDiv.style.display = 'block';
   mapDim.style.display = 'block';
   canvas.style.display = 'none';
   if (resizeH) resizeH.style.display = 'none';
 
- 
+  // nodrošinam izmēru pirms init/invalidate
+  if (!mapDiv.offsetWidth || !mapDiv.offsetHeight){
+    const p = mapDiv.parentElement;
+    mapDiv.style.width  = (p && p.clientWidth  ? p.clientWidth  : window.innerWidth)  + 'px';
+    mapDiv.style.height = (p && p.clientHeight ? p.clientHeight : window.innerHeight) + 'px';
+  }
 
   const v = +(localStorage.getItem('mapDarken') || 0);
   setDarkness(v);
