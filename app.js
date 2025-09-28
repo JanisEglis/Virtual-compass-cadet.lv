@@ -1438,16 +1438,29 @@ function installTileErrorWatch(layer, opts){
   }).addTo(map);
 
 	  
- const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-    attribution: 'Map data: &copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap (CC-BY-SA)',
-    subdomains: 'abc',
-    maxZoom: 20,               // CHANGE 19 → 20
-    maxNativeZoom: 17,         // KEEP (svarīgi)
-    updateWhenIdle: true,
-    keepBuffer: 2,
-    detectRetina: false,
-    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' // KEEP/ADD
-  });
+// REPLACE tikai topo definīciju:
+const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+  attribution: 'Map data: © OpenStreetMap, SRTM | Style: © OpenTopoMap (CC-BY-SA)',
+  subdomains: 'abc',
+  maxZoom: 19,
+  maxNativeZoom: 17,
+  updateWhenIdle: true,
+  keepBuffer: 2,
+  detectRetina: false,
+  crossOrigin: true,
+  errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw='
+});
+
+// ADD: automātiska pārslēgšanās uz OSM, ja OTM birst
+let topoErrors = 0;
+topo.on('load',      () => { topoErrors = 0; });      // ja ielādējas, skaitītāju nullējam
+topo.on('tileerror', () => {
+  if (++topoErrors >= 4 && map && map.hasLayer(topo)) {
+    console.warn('[layers] OpenTopoMap nav pieejams — pārslēdzos uz OSM');
+    map.removeLayer(topo);
+    if (!map.hasLayer(osm)) osm.addTo(map);
+  }
+});
 
 	  
   const esri = L.tileLayer(
