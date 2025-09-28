@@ -1353,12 +1353,30 @@ function utmToLL(E, N, zone, hemi){
     map = L.map(mapDiv, { zoomControl:true, attributionControl:true });
 window.__getMap = () => map;   // 👈 Ieliec tieši šeit
     const osm  = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution: '&copy; OpenStreetMap'
+    attribution: '&copy; OpenStreetMap',
+	  maxZoom: 19,
+
+
+
+		
+  maxNativeZoom: 19,
+  subdomains: 'abc',
+  updateWhenIdle: true,
+  keepBuffer: 2,
+  detectRetina: false,         // samazina flīžu skaitu
+  crossOrigin: true	
     }).addTo(map);
 
     const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: 'Map data: &copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap (CC-BY-SA)'
+     
+      attribution: 'Map data: &copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap (CC-BY-SA)',
+		  subdomains: 'abc',
+  maxZoom: 19,
+  maxNativeZoom: 17,           // <- svarīgi
+  updateWhenIdle: true,
+  keepBuffer: 2,
+  detectRetina: false,
+  errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' // nerāda “salūzušo
     });
 
     const esri = L.tileLayer(
@@ -1432,7 +1450,15 @@ const lvmOSM = L.tileLayer.wms('https://lvmgeoserver.lvm.lv/geoserver/ows?', {
 	  opacity: 0.8, attribution: '© waymarkedtrails.org, © OSM līdzstrādnieki'
 	});
 	const rail = L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
-	  subdomains: 'abc', opacity: 0.9, attribution: '© OpenRailwayMap, © OSM'
+	  subdomains: 'abc',
+		opacity: 0.9, 
+		attribution: '© OpenRailwayMap, © OSM',
+		  maxZoom: 19,
+  maxNativeZoom: 19,
+  updateWhenIdle: true,
+  keepBuffer: 2,
+  detectRetina: false,
+  errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw='
 	});
 	const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
 	  opacity: 0.9, attribution: '© OpenSeaMap, dati © OSM (ODbL)'
