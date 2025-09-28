@@ -3643,6 +3643,47 @@ function getEls(){
 }
 
 
+
+
+
+// --- Leaflet loader (idempotent) -------------------------------------------
+window.leafletReady = window.leafletReady || (function () {
+  return new Promise((resolve, reject) => {
+    const done = () => resolve(window.L);
+
+    // jau ielādēts?
+    if (window.L && window.L.map) return done();
+
+    // mēģinām atrast jau esošu <script> ar leaflet
+    let s = document.querySelector('script[src*="leaflet"]');
+    if (!s) {
+      // ja nav – ieliekam no CDN (CSS + JS)
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(css);
+
+      s = document.createElement('script');
+      s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      s.defer = true;
+      document.head.appendChild(s);
+    }
+
+    s.addEventListener('load', () => (window.L && window.L.map) ? done() : reject(new Error('Leaflet loaded but L.map missing')));
+    s.addEventListener('error', () => reject(new Error('Leaflet script error')));
+
+    // drošības timeouts
+    setTimeout(() => {
+      (window.L && window.L.map) ? done() : reject(new Error('Leaflet timeout'));
+    }, 7000);
+  });
+})();
+
+
+
+
+
+	
 	
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
 
@@ -3657,6 +3698,11 @@ async function showOnlineMap(){
     
     return;
   }
+
+const leafletReady = window.leafletReady; // lai esošais kods nemainās
+
+
+	
   // PARĀDĀM karti, paslēpjam kanvu + rokturi
   mapDiv.style.display = 'block';
   mapDim.style.display = 'block';
