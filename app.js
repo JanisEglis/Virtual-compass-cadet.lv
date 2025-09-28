@@ -3635,80 +3635,8 @@ window.__bindDimmer = function(inputEl){
   inputEl.addEventListener('input', () => setDarkness(inputEl.value));
   setDarkness(saved); // piemēro uzreiz
 };
-
-
-
-
-
-
-
-
-// ---- Leaflet gatavības gaidīšana (vienreiz visā app.js) ----
-function waitForLeaflet(timeout = 8000) {
-  return new Promise((resolve, reject) => {
-    if (window.L && typeof L.map === 'function') return resolve();
-
-    const s = document.querySelector('script[src*="leaflet"]');
-    if (s) {
-      s.addEventListener('load', () => resolve(), { once: true });
-      s.addEventListener('error', () => reject(new Error('Leaflet script error')), { once: true });
-    }
-
-    const iv = setInterval(() => {
-      if (window.L && typeof L.map === 'function') {
-        clearInterval(iv); clearTimeout(to); resolve();
-      }
-    }, 50);
-
-    const to = setTimeout(() => {
-      clearInterval(iv);
-      reject(new Error('Leaflet timeout'));
-    }, timeout);
-  });
-}
-const leafletReady = waitForLeaflet();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
-async function showOnlineMap() {
-
-  // paņemam SVAIGAS atsauces katru reizi
-  const mapDiv  = $id('onlineMap');
-  const mapDim  = $id('onlineMapDim');
-  const canvas  = $id('mapCanvas');
-  const resizeH = $id('resizeHandle');           // ja ir
-  const btn     = $id('toggleOnlineMap');
-
-  if (!mapDiv || !mapDim || !canvas) {
-    console.warn('[onlineMap] Trūkst DOM elementu – atslēdzu auto-startu');
-    localStorage.setItem('onlineMapActive','0');
-    return;
-  }
-
-
-	
-  // 1) sagaidām Leaflet
-  try {
-    await leafletReady;
-  } catch (e) {
-    console.warn('[onlineMap] Leaflet neielādējās laikā:', e);
-    localStorage.setItem('onlineMapActive', '0');
-    return; // paliekam kanvā, nekas nesalūzt
-  }
+function showOnlineMap(){
   // PARĀDĀM karti, paslēpjam kanvu + rokturi
   mapDiv.style.display = 'block';
   mapDim.style.display = 'block';
@@ -3721,12 +3649,10 @@ async function showOnlineMap() {
     mapDiv.style.width  = (p && p.clientWidth  ? p.clientWidth  : window.innerWidth)  + 'px';
     mapDiv.style.height = (p && p.clientHeight ? p.clientHeight : window.innerHeight) + 'px';
   }
-	
- // 3) tumšuma atjaunošana (tava funkcija)
-  const v = +(localStorage.getItem('mapDarken') || 0);
- if (typeof setDarkness === 'function') setDarkness(v);
 
-	// 4) inicializē kartei, ja vēl nav
+  const v = +(localStorage.getItem('mapDarken') || 0);
+  setDarkness(v);
+
   if (!initMap()){
     // Atpakaļ uz kanvu, ja Leaflet nav
     mapDiv.style.display = 'none';
@@ -3737,29 +3663,19 @@ async function showOnlineMap() {
     alert('Tiešsaistes karte nav ielādēta! Mēģiniet vēlreiz.'); // Leaflet nav ielādējies — tiešsaistes karte izslēgta.
     return;
   }
-	
- // 5) pēc parādīšanas pārkalkulē izmēru
+
   requestAnimationFrame(()=> map && map.invalidateSize(true));
   setTimeout(()=> map && map.invalidateSize(true), 100);
 
   if (btn) btn.classList.add('active');
   localStorage.setItem('onlineMapActive','1');
-	
-// 6) tavas sinhronizācijas
-  if (typeof syncDimOverlay === 'function') syncDimOverlay();
+
+  syncDimOverlay();
   window.__updateDimmerWidth && window.__updateDimmerWidth();
   window.__fitDock && window.__fitDock();
 }
 
 function hideOnlineMap(){
-  const mapDiv  = $id('onlineMap');
-  const mapDim  = $id('onlineMapDim');
-  const canvas  = $id('mapCanvas');
-  const resizeH = $id('resizeHandle');
-  const btn     = $id('toggleOnlineMap');
-
-  if (!mapDiv || !mapDim || !canvas) return;
-
   mapDiv.style.display = 'none';
   mapDim.style.display = 'none';
   canvas.style.display = 'block';
@@ -3780,33 +3696,15 @@ function hideOnlineMap(){
 
 
 
-onDomReady(() => {
-  const btn = $id('toggleOnlineMap');
-  if (btn) {
-    btn.addEventListener('click', () => {
-      const mapDiv = $id('onlineMap');
-      const isOn = !!mapDiv && mapDiv.style.display === 'block';
-      isOn ? hideOnlineMap() : showOnlineMap();
-    }, { passive: true });
-  }
-	
- // ja iepriekš bija ieslēgta, parādām tikai tad, kad Leaflet gatavs
-  if (localStorage.getItem('onlineMapActive') === '1') {
-  leafletReady
-    .then(() => showOnlineMap())
-    .catch(() => localStorage.setItem('onlineMapActive','0'));
-}
-
-
-  // resize -> pārkalkulē izmēru kartei (ja eksistē)
-  window.addEventListener('resize', () => {
-    if (window.map && map.invalidateSize) map.invalidateSize();
+  btn && btn.addEventListener('click', () => {
+    const isOn = mapDiv.style.display === 'block';
+    isOn ? hideOnlineMap() : showOnlineMap();
   });
-	
+
+  if (localStorage.getItem('onlineMapActive') === '1'){ showOnlineMap(); }
+
   window.addEventListener('resize', ()=> map && map.invalidateSize());
 if (dimRange){ window.__bindDimmer(dimRange); }
-
-
 
 })();
 
