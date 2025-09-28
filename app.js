@@ -1357,7 +1357,7 @@ window.__getMap = () => map;   // 👈 Ieliec tieši šeit
     }).addTo(map);
 
     const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      maxZoom: 17,
+      maxZoom: 19,
       attribution: 'Map data: &copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap (CC-BY-SA)'
     });
 
