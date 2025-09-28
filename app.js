@@ -3636,12 +3636,27 @@ window.__bindDimmer = function(inputEl){
   setDarkness(saved); // piemēro uzreiz
 };
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
-function showOnlineMap(){
-  // PARĀDĀM karti, paslēpjam kanvu + rokturi
-  mapDiv.style.display = 'block';
-  mapDim.style.display = 'block';
-  canvas.style.display = 'none';
-  if (resizeH) resizeH.style.display = 'none';
+async function showOnlineMap() {
+  // svaigas atsauces katru reizi
+  const mapDiv  = document.getElementById('onlineMap');
+  const mapDim  = document.getElementById('onlineMapDim');
+  const canvas  = document.getElementById('mapCanvas');
+  const resizeH = document.getElementById('resizeHandle');
+  const btn     = document.getElementById('toggleOnlineMap');
+
+  if (!mapDiv || !mapDim || !canvas) {
+    console.warn('[onlineMap] Trūkst DOM elementu — palieku kanvā');
+    return;
+  }
+
+  // gaidām Leaflet pirms *jebkādas* UI pārslēgšanas
+  try {
+    await leafletReady; // tava waitForLeaflet/leafletReady
+  } catch (e) {
+    console.warn('[onlineMap] Leaflet nav gatavs:', e);
+    return; // neizkustinām UI, paliekam kanvā
+  }
+ 
 
   // nodrošinam izmēru pirms init/invalidate
   if (!mapDiv.offsetWidth || !mapDiv.offsetHeight){
@@ -3650,6 +3665,17 @@ function showOnlineMap(){
     mapDiv.style.height = (p && p.clientHeight ? p.clientHeight : window.innerHeight) + 'px';
   }
 
+  // inicializē karti — ja atgriež false, neko nepārslēdzam
+  if (typeof initMap === 'function' && !initMap()) {
+    console.warn('[onlineMap] initMap() atteica — palieku kanvā');
+    return;
+  }
+	
+ // PARĀDĀM karti, paslēpjam kanvu + rokturi
+  mapDiv.style.display = 'block';
+  mapDim.style.display = 'block';
+  canvas.style.display = 'none';
+  if (resizeH) resizeH.style.display = 'none';
   const v = +(localStorage.getItem('mapDarken') || 0);
   setDarkness(v);
 
