@@ -1963,15 +1963,37 @@ function waitForMapToRender(map, opts = {}){
 
 
 // ── Aprēķina rāmja/viewport centru kartes konteinera koordinātēs (px) ──
+/* ============================================================
+ * 1) AIZVIETO centrēšanas palīgfunkciju (ņem vērā abus sarkanos rāmjus)
+ * ============================================================ */
 function __centerPxInContainerFromOverlayOrViewport(containerRect){
-  const ov = document.getElementById('printAreaOverlay'); // sarkanais rāmis
-  if (ov && ov.style.display !== 'none' && ov.offsetWidth && ov.offsetHeight){
-    const r = ov.getBoundingClientRect();
-    return { x: (r.left + r.width/2) - containerRect.left, y: (r.top + r.height/2) - containerRect.top };
+  // mēģina atrast redzamu overlay un atgriež tā centra koordinātes (ekrāna pikseļos)
+  function pickScreenCenterFromOverlays(){
+    // a) “PrintMedia overlay tester” (#printAreaOverlay)
+    const a = document.getElementById('printAreaOverlay');
+    if (a && a.style.display !== 'none' && a.offsetWidth && a.offsetHeight){
+      const r = a.getBoundingClientRect();
+      return { x: r.left + r.width/2, y: r.top + r.height/2 };
+    }
+    // b) “Dev” pārklājums (#printDbgOverlay .box)
+    const dbg = document.getElementById('printDbgOverlay');
+    const box = dbg && dbg.querySelector('.box');
+    if (dbg && box && dbg.classList.contains('on') && box.offsetWidth && box.offsetHeight){
+      const r = box.getBoundingClientRect();
+      return { x: r.left + r.width/2, y: r.top + r.height/2 };
+    }
+    return null;
   }
+
+  const scr = pickScreenCenterFromOverlays();
+  if (scr){
+    return { x: scr.x - containerRect.left, y: scr.y - containerRect.top };
+  }
+
+  // Fallback — vizuālā viewport centra punkts → kartes konteinera koordinātēs
   const vv = window.visualViewport;
-  const cx = (vv ? vv.offsetLeft : 0) + (vv ? vv.width : window.innerWidth)  / 2;
-  const cy = (vv ? vv.offsetTop  : 0) + (vv ? vv.height: window.innerHeight) / 2;
+  const cx = (vv ? vv.offsetLeft : 0) + ((vv ? vv.width  : window.innerWidth)  / 2);
+  const cy = (vv ? vv.offsetTop  : 0) + ((vv ? vv.height : window.innerHeight) / 2);
   return { x: cx - containerRect.left, y: cy - containerRect.top };
 }
 
@@ -2049,13 +2071,25 @@ async function prepareMapForPrintLgIa(opts){
       document.head.appendChild(dimCss);
     }
 
-    // precīzs enkurs lapas centrā (kompensē subpikseļus)
-    map.invalidateSize(true);
-    if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
-    else map.setView(keepCenter, map.getZoom(), { animate:false });
-    const ptOnMap = map.latLngToContainerPoint(keepCenter);
-    const sz = map.getSize();
-    map.panBy([ (sz.x/2 - ptOnMap.x), (sz.y/2 - ptOnMap.y) ], { animate:false });
+   // — 2.1) precīzs “reset” uz keepCenter + ģeometriskā centra pan (1. reize)
+map.invalidateSize(true);
+if (map._resetView) map._resetView(keepCenter, map.getZoom(), true);
+else map.setView(keepCenter, map.getZoom(), { animate:false });
+
+{
+  // 2.2) pan uz tiešu konteinera centru (ņem vērā subpikseļus, borderus utt.)
+  const sz = map.getSize();
+  const onMap = map.latLngToContainerPoint(keepCenter);
+  map.panBy([ (sz.x * 0.5 - onMap.x), (sz.y * 0.5 - onMap.y) ], { animate:false });
+}
+
+// — 2.3) 1 rAF, lai nofiksētos transforms, tad vēlreiz pan uz tiešu centru (2. reize)
+await new Promise(r => requestAnimationFrame(r));
+{
+  const sz2 = map.getSize();
+  const p2  = map.latLngToContainerPoint(keepCenter);
+  map.panBy([ (sz2.x * 0.5 - p2.x), (sz2.y * 0.5 - p2.y) ], { animate:false });
+}
 
     // gaidām flīzes, drukājam
     __showPrintGuardOverlay('Gatavojam karti drukai…');
