@@ -3635,8 +3635,64 @@ window.__bindDimmer = function(inputEl){
   inputEl.addEventListener('input', () => setDarkness(inputEl.value));
   setDarkness(saved); // piemēro uzreiz
 };
+
+
+
+
+
+
+
+
+// ---- Leaflet gatavības gaidīšana (vienreiz visā app.js) ----
+function waitForLeaflet(timeout = 8000) {
+  return new Promise((resolve, reject) => {
+    if (window.L && typeof L.map === 'function') return resolve();
+
+    const s = document.querySelector('script[src*="leaflet"]');
+    if (s) {
+      s.addEventListener('load', () => resolve(), { once: true });
+      s.addEventListener('error', () => reject(new Error('Leaflet script error')), { once: true });
+    }
+
+    const iv = setInterval(() => {
+      if (window.L && typeof L.map === 'function') {
+        clearInterval(iv); clearTimeout(to); resolve();
+      }
+    }, 50);
+
+    const to = setTimeout(() => {
+      clearInterval(iv);
+      reject(new Error('Leaflet timeout'));
+    }, timeout);
+  });
+}
+const leafletReady = waitForLeaflet();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
-function showOnlineMap(){
+async function showOnlineMap() {
+  // 1) sagaidām Leaflet
+  try {
+    await leafletReady;
+  } catch (e) {
+    console.warn('[onlineMap] Leaflet neielādējās laikā:', e);
+    localStorage.setItem('onlineMapActive', '0');
+    return; // paliekam kanvā, nekas nesalūzt
+  }
   // PARĀDĀM karti, paslēpjam kanvu + rokturi
   mapDiv.style.display = 'block';
   mapDim.style.display = 'block';
@@ -3701,7 +3757,11 @@ function hideOnlineMap(){
     isOn ? hideOnlineMap() : showOnlineMap();
   });
 
-  if (localStorage.getItem('onlineMapActive') === '1'){ showOnlineMap(); }
+  if (localStorage.getItem('onlineMapActive') === '1') {
+  leafletReady
+    .then(() => showOnlineMap())
+    .catch(() => localStorage.setItem('onlineMapActive','0'));
+}
 
   window.addEventListener('resize', ()=> map && map.invalidateSize());
 if (dimRange){ window.__bindDimmer(dimRange); }
