@@ -1724,202 +1724,241 @@ body.preloading { overflow: hidden; }
 
 
 
-
-<!-- ===== DEBUG: Print Center Reader (drop-in; no app.js changes) ===== -->
-<script>
+<script id="print-center-reader">
 (function(){
-  // Nepielikt divreiz
-  if (window.__printCenterReaderInstalled) return; window.__printCenterReaderInstalled = true;
+  'use strict';
 
-  // ——— Palīgi ———
-  function getMap(){
-    try{
-      if (window.map && typeof window.map.getCenter === 'function') return window.map;
-      if (typeof window.__getMap === 'function') { const m = window.__getMap(); if (m && m.getCenter) return m; }
-    }catch(e){}
-    return null;
-  }
-  function visible(el){
-    if (!el) return false;
-    const s = getComputedStyle(el);
-    return !!(el.offsetWidth && el.offsetHeight && s.display!=='none' && s.visibility!=='hidden');
-  }
-  function overlayScreenCenter(){
-    const a = document.getElementById('printAreaOverlay');
-    if (visible(a)){ const r=a.getBoundingClientRect(); return {x:r.left+r.width/2,y:r.top+r.height/2,src:'#printAreaOverlay'}; }
-    const dbg = document.getElementById('printDbgOverlay'); const box = dbg && dbg.querySelector('.box');
-    if (dbg && box && dbg.classList.contains('on') && visible(box)){ const r=box.getBoundingClientRect(); return {x:r.left+r.width/2,y:r.top+r.height/2,src:'#printDbgOverlay .box'}; }
-    const vv = window.visualViewport;
-    const cx = (vv?vv.offsetLeft:0) + ((vv?vv.width:window.innerWidth)/2);
-    const cy = (vv?vv.offsetTop:0)  + ((vv?vv.height:window.innerHeight)/2);
-    return { x:cx, y:cy, src:'visualViewport' };
-  }
+  /* ---------- Konstantes ---------- */
+  const OVER_ID = 'printAreaOverlay';        // sarkanā kaste, ko izmanto TAVS kods
+  const OVER_CSS_ID = 'printAreaOverlayCSS';
+  const HUD_ID  = 'printCenterHUD';
 
-  // ——— UI ———
-  function installUI(){
-    if (document.getElementById('pcd-css')) return;
-    const css = document.createElement('style'); css.id='pcd-css';
-    css.textContent = `
-      #pcd-wrap{position:fixed;inset:0;pointer-events:none;z-index:2147483600}
-      #pcd-wrap .cross{position:fixed;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:2px solid currentColor;box-shadow:0 0 0 1px rgba(0,0,0,.5)}
-      #pcd-wrap .cross::before,#pcd-wrap .cross::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:2px;background:currentColor;transform:translate(-50%,-50%)}
-      #pcd-wrap .cross::after{width:2px;height:14px}
-      #pcd-ovl{color:#3aa3ff}   /* 🔵 overlay centrs (ekrāns) */
-      #pcd-keep{color:#00ff88}  /* 🟩 keepCenter */
-      #pcd-map{color:#ff3355}   /* 🔴 map.getCenter() */
-      #pcd-panel{position:fixed;left:10px;bottom:10px;z-index:2147483601;pointer-events:auto;background:rgba(0,0,0,.65);color:#fff;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.2);font:12px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial}
-      #pcd-panel code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
-      #pcd-panel button{all:unset;cursor:pointer;background:rgba(255,255,255,.12);padding:2px 6px;border-radius:6px;margin-left:6px}
-      #pcd-panel .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-      @media print{ #pcd-wrap, #pcd-panel{ display:none !important } }
-    `;
-    document.head.appendChild(css);
+  /* ---------- Palīgi ---------- */
+  const mm2px = mm => Math.round(mm * 96 / 25.4);
 
-    const wrap = document.createElement('div'); wrap.id='pcd-wrap';
-    wrap.innerHTML = `<div id="pcd-ovl" class="cross"></div><div id="pcd-keep" class="cross"></div><div id="pcd-map" class="cross"></div>`;
-    document.body.appendChild(wrap);
-
-    const panel = document.createElement('div'); panel.id='pcd-panel';
-    panel.innerHTML = `
-      <div class="row"><strong>Print Center Reader</strong>
-        <button id="pcd-toggle">hide</button>
-        <button id="pcd-probe">probe</button>
-      </div>
-      <div id="pcd-info">waiting…</div>`;
-    document.body.appendChild(panel);
-
-    document.getElementById('pcd-toggle').onclick = function(){
-      const on = wrap.style.display !== 'none';
-      wrap.style.display = on ? 'none' : 'block';
-      this.textContent = on ? 'show' : 'hide';
-    };
-    document.getElementById('pcd-probe').onclick = function(){ probe('manual'); };
-  }
-  function placeCross(id, abs){ const el=document.getElementById(id); if (el){ el.style.left=abs.x+'px'; el.style.top=abs.y+'px'; } }
-  function infoHTML(p){
-    return `
-      <div><b>stage:</b> ${p.stage}</div>
-      <div><b>overlay src:</b> ${p.overlaySrc}</div>
-      <div><b>container:</b> ${p.containerSize.w}×${p.containerSize.h}px</div>
-      <div><b>keepPt:</b> <code>${p.keepPt.x}, ${p.keepPt.y}</code> px</div>
-      <div><b>mapPt:</b> <code>${p.mapPt.x}, ${p.mapPt.y}</code> px</div>
-      <div><b>Δpx to center:</b> <code>dx=${p.deltaPx.dx}, dy=${p.deltaPx.dy}</code></div>
-      <div><b>Δmeters:</b> <code>${p.deltaMeters}</code></div>
-      <div><b>keepCenter:</b> <code>${p.keepCenter.lat}, ${p.keepCenter.lng}</code></div>
-      <div><b>mapCenter:</b> <code>${p.mapCenter.lat}, ${p.mapCenter.lng}</code></div>`;
-  }
-
-  // ——— Lasītājs ———
-  function probe(stage){
-    try{
-      installUI();
-      const map = getMap();
-      const cont = (map && map.getContainer && map.getContainer()) || document.getElementById('onlineMap') || document.querySelector('.leaflet-container');
-      const rc = cont ? cont.getBoundingClientRect() : { left:0, top:0, width:0, height:0 };
-      const ov = overlayScreenCenter();                          // ekrāna px
-      const ovInCont = { x: ov.x - rc.left, y: ov.y - rc.top };  // kartes konteinera px
-
-      let payload;
-      if (map && window.L){
-        const keepCenter = map.containerPointToLatLng(L.point(ovInCont.x, ovInCont.y));
-        const keepPt     = map.latLngToContainerPoint(keepCenter);
-        const mapCenter  = map.getCenter();
-        const mapPt      = map.latLngToContainerPoint(mapCenter);
-        const sz         = map.getSize();
-        const dx = +(sz.x/2 - keepPt.x).toFixed(2);
-        const dy = +(sz.y/2 - keepPt.y).toFixed(2);
-        const distM = +L.latLng(keepCenter).distanceTo(mapCenter).toFixed(2);
-
-        // krustiņi
-        placeCross('pcd-ovl',  { x: ov.x,             y: ov.y });
-        placeCross('pcd-keep', { x: rc.left+keepPt.x, y: rc.top+keepPt.y });
-        placeCross('pcd-map',  { x: rc.left+mapPt.x,  y: rc.top+mapPt.y });
-
-        payload = {
-          stage, overlaySrc: ov.src,
-          containerSize: { w: sz.x, h: sz.y },
-          keepPt: { x:+keepPt.x.toFixed(2), y:+keepPt.y.toFixed(2) },
-          mapPt:  { x:+mapPt.x.toFixed(2),  y:+mapPt.y.toFixed(2)  },
-          deltaPx: { dx, dy },
-          deltaMeters: distM,
-          keepCenter: { lat:+keepCenter.lat.toFixed(6), lng:+keepCenter.lng.toFixed(6) },
-          mapCenter:  { lat:+mapCenter.lat.toFixed(6),  lng:+mapCenter.lng.toFixed(6)  }
-        };
-      } else {
-        // nav Leaflet → vismaz rādam overlay krustiņu un pamatinfo
-        placeCross('pcd-ovl',  { x: ov.x, y: ov.y });
-        payload = { stage, overlaySrc: ov.src, note: 'Leaflet map not available yet' };
+  function findPrintBoxMm() {
+    // Nolasa no Tavas @media print noteikuma: body.print-mode #onlineMap { width:..mm; height:..mm }
+    // (droši pret CORS)  :contentReference[oaicite:1]{index=1}
+    let mm = { w:277, h:190, src:'default' };
+    for (const ss of document.styleSheets) {
+      let rules; try { rules = ss.cssRules || ss.rules; } catch(_) { continue; }
+      if (!rules) continue;
+      const pick = (rule) => {
+        try {
+          const sel = rule.selectorText || '';
+          if (sel && sel.includes('body.print-mode') && sel.includes('#onlineMap')) {
+            const txt = rule.cssText || '';
+            const mW = /width\s*:\s*([\d.]+)mm/i.exec(txt);
+            const mH = /height\s*:\s*([\d.]+)mm/i.exec(txt);
+            if (mW && mH) mm = { w:+mW[1], h:+mH[1], src:'css' };
+          }
+        } catch(_){}
+      };
+      for (const r of rules) {
+        if (r.type === CSSRule.MEDIA_RULE && r.cssRules) {
+          for (const rr of r.cssRules) pick(rr);
+        } else pick(r);
       }
-
-      console.info('[PrintCenterReader]', payload);
-      const info = document.getElementById('pcd-info'); if (info && payload) info.innerHTML = infoHTML(payload);
-      return payload;
-    }catch(e){
-      console.warn('[PrintCenterReader] probe failed', e);
     }
+    return mm;
   }
 
-  // ——— Piesaiste notikumiem (LASĪTĀJS, neko nelabo) ———
-  function wire(){
-    window.probePrintCenter = (stage='manual') => probe(stage);
-    window.togglePrintCenterDebug = function(){
-      installUI();
-      const w = document.getElementById('pcd-wrap');
-      const p = document.getElementById('pcd-panel');
-      const on = w && w.style.display !== 'none';
-      if (w) w.style.display = on ? 'none' : 'block';
-      if (p) p.style.display = on ? 'none' : 'block';
+  function ensureOverlayCSS(){
+    if (document.getElementById(OVER_CSS_ID)) return;
+    const st = document.createElement('style');
+    st.id = OVER_CSS_ID;
+    st.textContent = `
+#${OVER_ID}{position:fixed;inset:0;margin:auto;width:0;height:0;z-index:2147483647;pointer-events:none;
+  outline:3px dashed rgba(255,0,0,.9); background:rgba(255,0,0,.06);
+  box-shadow:0 0 0 9999px rgba(0,0,0,.15); display:none}
+#${OVER_ID} .label{position:absolute;right:8px;bottom:8px;font:600 12px/1.2 system-ui,sans-serif;
+  padding:6px 8px;background:rgba(0,0,0,.55);color:#fff;border-radius:6px}
+#${HUD_ID}{position:fixed;left:10px;bottom:10px;z-index:2147483647;
+  font:12px/1.25 system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.55);
+  padding:6px 8px;border-radius:6px;display:none}
+@media print{ #${OVER_ID}, #${HUD_ID}{ display:none !important } }
+    `;
+    document.head.appendChild(st);
+  }
+  function ensureOverlay(){
+    let el = document.getElementById(OVER_ID);
+    if (!el){
+      el = document.createElement('div');
+      el.id = OVER_ID;
+      el.innerHTML = '<div class="label"></div>';
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  function ensureHUD(){
+    let el = document.getElementById(HUD_ID);
+    if (!el){
+      el = document.createElement('div');
+      el.id = HUD_ID;
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+
+  function layoutOverlay(){
+    ensureOverlayCSS();
+    const el = ensureOverlay();
+    const { w, h } = findPrintBoxMm();
+    // mm→px un ieskaļo skatlogā, lai kaste stāvētu centrā (ekrāna mērogā)
+    const vpW = window.innerWidth;
+    const vpH = (window.visualViewport ? window.visualViewport.height : window.innerHeight) || window.innerHeight;
+    const wpx = mm2px(w), hpx = mm2px(h);
+    const scale = Math.min(vpW / wpx, vpH / hpx, 1);
+    el.style.width  = Math.floor(wpx * scale) + 'px';
+    el.style.height = Math.floor(hpx * scale) + 'px';
+    el.querySelector('.label').textContent = `print: ${w}×${h} mm  ≈  ${Math.round(wpx)}×${Math.round(hpx)} px`;
+    return el;
+  }
+
+  function showOverlay(show=true){
+    const el = layoutOverlay();
+    el.style.display = show ? 'block' : 'none';
+  }
+
+  function getOverlayCenterInContainerPx(mapContainer){
+    const over = document.getElementById(OVER_ID);
+    if (!over || over.style.display === 'none') return null;
+    const rcOver = over.getBoundingClientRect();
+    const rcCont = mapContainer.getBoundingClientRect();
+    return {
+      x: (rcOver.left + rcOver.width/2) - rcCont.left,
+      y: (rcOver.top  + rcOver.height/2) - rcCont.top
+    };
+  }
+
+  function logHUD(obj){
+    const hud = ensureHUD();
+    hud.style.display = 'block';
+    hud.textContent = [
+      'PrintCenterDebug',
+      `src: overlay`,
+      `container: ${Math.round(obj.cw)}×${Math.round(obj.ch)} px`,
+      `pt: ${Math.round(obj.ptx)}, ${Math.round(obj.pty)}`,
+      `lat: ${obj.lat.toFixed(6)}`,
+      `lng: ${obj.lng.toFixed(6)}`
+    ].join(' | ');
+  }
+
+  /* ---------- Wrapper priekš prepareMapForPrintLgIa ---------- */
+  function installWrapper(){
+    if (!window.prepareMapForPrintLgIa || !window.L || !window.map) return false;
+
+    // Nemainām Tavu app.js – tikai aptinam
+    const orig = window.prepareMapForPrintLgIa;
+
+    window.prepareMapForPrintLgIa = async function wrappedPrepare(opts){
+      try{
+        // 1) Noturam sarkano rāmi redzamu līdz drukai
+        showOverlay(true);
+
+        // 2) Aprēķinam PIESPIESTO centru no rāmja
+        const cont = window.map.getContainer();
+        const pt   = getOverlayCenterInContainerPx(cont);
+        let forcedLL = null;
+
+        if (pt){
+          forcedLL = window.map.containerPointToLatLng(L.point(pt.x, pt.y));
+          logHUD({ cw:cont.clientWidth, ch:cont.clientHeight, ptx:pt.x, pty:pt.y, lat:forcedLL.lat, lng:forcedLL.lng });
+        } else {
+          // Ja rāmis nebija redzams — parādi, bet strādāsim no vizuālā viewport
+          showOverlay(true);
+          const rc = cont.getBoundingClientRect();
+          const vv = window.visualViewport;
+          const cx = (vv ? vv.offsetLeft : 0) + ((vv ? vv.width : window.innerWidth) / 2);
+          const cy = (vv ? vv.offsetTop  : 0) + ((vv ? vv.height: window.innerHeight) / 2);
+          const p2 = { x: cx - rc.left, y: cy - rc.top };
+          forcedLL = window.map.containerPointToLatLng(L.point(p2.x, p2.y));
+          logHUD({ cw:cont.clientWidth, ch:cont.clientHeight, ptx:p2.x, pty:p2.y, lat:forcedLL.lat, lng:forcedLL.lng });
+        }
+
+        // 3) Uz īsu brīdi pārķeram map.setView un window.print,
+        //    lai TIEŠI pirms drukas centru ieliktu uz forcedLL
+        const map = window.map;
+        const _setView = map.setView.bind(map);
+        map.setView = (center, zoom, opts) => _setView(forcedLL || center, zoom, opts);
+
+        const _print = window.print.bind(window);
+        window.print = function patchedPrint(){
+          try {
+            // precīza enkurēšana pirms drukas
+            const z = map.getZoom();
+            map.setView(forcedLL || map.getCenter(), z, { animate:false });
+            // subpikseļu kompensācija
+            const p = map.latLngToContainerPoint(forcedLL || map.getCenter());
+            const sz = map.getSize();
+            map.panBy([ (sz.x/2 - p.x), (sz.y/2 - p.y) ], { animate:false });
+          } catch(_){}
+          return _print();
+        };
+
+        // 4) Izpildām Tavu oriģinālo drukas plūsmu
+        const res = await orig.call(this, opts);
+
+        // 5) Atjaunojam stāvokli
+        try { map.setView = _setView; } catch(_){}
+        try { window.print = _print; } catch(_){}
+
+        // 6) Pēc drukas paslēpjam HUD, rāmi atstājam izvēlei
+        window.addEventListener('afterprint', ()=> {
+          const hud = document.getElementById(HUD_ID);
+          if (hud) hud.style.display = 'none';
+          // showOverlay(false); // ja gribi automātiski paslēpt
+        }, { once:true });
+
+        return res;
+      } catch(err){
+        console.warn('[PrintCenterDebug] wrapper error:', err);
+        return orig.call(this, opts);
+      }
     };
 
-    const m = getMap();
-    if (m && m.on){ m.on('moveend zoomend', () => probe('move/zoom')); }
-
-    // rāmju izmaiņas
-    [document.getElementById('printAreaOverlay')||document.body,
-     document.getElementById('printDbgOverlay')||document.body].forEach(t=>{
-      try{ const mo = new MutationObserver(()=>probe('overlay-mut')); mo.observe(t,{attributes:true,childList:true,subtree:true}); }catch(e){}
-    });
-
-    // print notikumi
-    window.addEventListener('beforeprint', ()=>probe('beforeprint'));
-    window.addEventListener('afterprint',  ()=>probe('afterprint'));
-
-    // matchMedia('print')
-    try{
-      const mq = window.matchMedia('print');
-      const onCh = (e)=> probe(e.matches ? 'mql:true' : 'mql:false');
-      mq.addEventListener ? mq.addEventListener('change', onCh) : mq.addListener(onCh);
-    }catch(e){}
-
-    // body.class “print-mode”
-    try{
-      const moBody = new MutationObserver(()=>{
-        if (document.body.classList.contains('print-mode')) probe('print-mode:on');
-        else probe('print-mode:off');
-      });
-      moBody.observe(document.body, { attributes:true, attributeFilter:['class'] });
-    }catch(e){}
-
-    // Hotkey: Ctrl+Alt+P
-    window.addEventListener('keydown', (ev)=>{
-      if ((ev.ctrlKey || ev.metaKey) && ev.altKey && (ev.key==='p' || ev.key==='P')) { ev.preventDefault(); probe('hotkey'); }
-    });
-
-    // starta probes
-    window.addEventListener('load', ()=>probe('load'));
-    document.addEventListener('DOMContentLoaded', ()=>probe('domready'));
-    setTimeout(()=>probe('t+2s'), 2000);
+    return true;
   }
 
-  // palaišana droši pēc DOM
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire, { once:true });
-  else wire();
+  /* ---------- Startējam, kad viss gatavs ---------- */
+  function init(){
+    // Izveido sākotnējo kasti (var slēpt ar O)
+    showOverlay(true);
+
+    // Uzliekam wrapperi; ja karti ielādē vēlāk – mēģinām vairākas reizes
+    let tries = 0;
+    const t = setInterval(()=>{
+      tries++;
+      if (installWrapper() || tries > 50) clearInterval(t);
+    }, 200);
+
+    // Reakcija uz viewport izmaiņām
+    addEventListener('resize', layoutOverlay, { passive:true });
+    if (window.visualViewport){
+      visualViewport.addEventListener('resize', layoutOverlay, { passive:true });
+      visualViewport.addEventListener('scroll', layoutOverlay,  { passive:true });
+    }
+
+    // Ātras pogas: O — rāmis on/off, D — HUD on/off
+    addEventListener('keydown', (e)=>{
+      if (e.key.toLowerCase() === 'o'){ // overlay toggle
+        const el = document.getElementById(OVER_ID);
+        showOverlay(!el || el.style.display === 'none');
+      }
+      if (e.key.toLowerCase() === 'd'){ // HUD toggle
+        const hud = ensureHUD();
+        hud.style.display = (hud.style.display === 'none' || !hud.style.display) ? 'block' : 'none';
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once:true });
+  } else {
+    init();
+  }
 })();
 </script>
-<!-- ===== /DEBUG ===== -->
-
-
-
 
 
 
