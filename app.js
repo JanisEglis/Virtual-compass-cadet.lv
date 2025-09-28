@@ -753,18 +753,10 @@ function bindAutoCloseOnToggleLegacy(){
     // DEMO: parādi abus un aizver pēc 5s (bultiņas pareizi)
     demoSelectorsAutoCloseLegacy(5000);
   }
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', startAll, false);
-    window.addEventListener('load', startAll, false);
-  }else{
-    startAll();
-  }
+
 })();
 
-// Ja citur kodā gribi manuāli aizvērt abus ar pareizām bultiņām:
-window.closeBothSelectorsLegacy = closeBothSelectorsLegacy;
-// Ja vajag manuāli “armēt” idle-close, pieejams arī:
-window.armSelectorIdleCloseLegacy = armSelectorIdleCloseLegacy;
+
 
 
 
@@ -3659,17 +3651,7 @@ function getEls(){
 	
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
 async function showOnlineMap() {
-  // elementi jāpaņem TIEŠI tagad (nevis globālajā tvērumā)
-  const mapDiv  = $id('map');           // ← izmanto tavus īstos ID
-  const mapDim  = $id('map-dimmer');    // ← ja cita ID — pielabo
-  const canvas  = $id('canvas');
-  const resizeH = $id('resizeHandle');
-  const btn     = $id('btnOnlineMap');  // vai kā nu tev saucas
 
-  if (!mapDiv || !mapDim || !canvas) {
-    console.warn('[onlineMap] Nepieciešamie elementi nav atrasti — atceļu parādīšanu.');
-    return;
-  }
 
   // droši sagaidi Leaflet
   try { await leafletReady; }
