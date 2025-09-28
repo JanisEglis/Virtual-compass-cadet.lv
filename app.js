@@ -3635,8 +3635,42 @@ window.__bindDimmer = function(inputEl){
   inputEl.addEventListener('input', () => setDarkness(inputEl.value));
   setDarkness(saved); // piemēro uzreiz
 };
+
+
+
+
+
+// ieliec tieši virs showOnlineMap/hideOnlineMap
+function getEls(){
+  return {
+    mapDiv:  document.getElementById('onlineMap'),
+    mapDim:  document.getElementById('onlineMapDim'),
+    canvas:  document.getElementById('mapCanvas'),
+    resizeH: document.getElementById('resizeHandle'),
+    btn:     document.getElementById('toggleOnlineMap'),
+    dimRange:document.getElementById('dimRange'),
+  };
+}
+
+
+	
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
-function showOnlineMap(){
+async function showOnlineMap(){
+  // droši atlasi elementus katru reizi
+  const { mapDiv, mapDim, canvas, resizeH, btn } = getEls();
+  if (!mapDiv || !mapDim || !canvas) {
+    console.warn('[onlineMap] host elementi nav gatavi');
+    localStorage.setItem('onlineMapActive','0');
+    return;
+  }
+
+  // droši sagaidi Leaflet
+  try { await leafletReady; }
+  catch(e){ 
+    console.warn('[onlineMap] Leaflet neielādējās laikā:', e);
+    localStorage.setItem('onlineMapActive','0');
+    return;
+  }
   // PARĀDĀM karti, paslēpjam kanvu + rokturi
   mapDiv.style.display = 'block';
   mapDim.style.display = 'block';
@@ -3676,6 +3710,8 @@ function showOnlineMap(){
 }
 
 function hideOnlineMap(){
+  const { mapDiv, mapDim, canvas, resizeH, btn } = getEls();
+  if (!mapDiv || !mapDim || !canvas) return;
   mapDiv.style.display = 'none';
   mapDim.style.display = 'none';
   canvas.style.display = 'block';
@@ -3696,15 +3732,27 @@ function hideOnlineMap(){
 
 
 
-  btn && btn.addEventListener('click', () => {
-    const isOn = mapDiv.style.display === 'block';
-    isOn ? hideOnlineMap() : showOnlineMap();
-  });
+onDomReady(() => {
+  const { btn, dimRange } = getEls();
 
-  if (localStorage.getItem('onlineMapActive') === '1'){ showOnlineMap(); }
+  if (btn) {
+    btn.addEventListener('click', () => {
+      const { mapDiv } = getEls();
+      const isOn = !!mapDiv && mapDiv.style.display === 'block';
+      isOn ? hideOnlineMap() : showOnlineMap();
+    }, { passive: true });
+  }
 
-  window.addEventListener('resize', ()=> map && map.invalidateSize());
-if (dimRange){ window.__bindDimmer(dimRange); }
+  if (localStorage.getItem('onlineMapActive') === '1') {
+    leafletReady
+      .then(() => showOnlineMap())
+      .catch(() => localStorage.setItem('onlineMapActive','0'));
+  }
+
+  window.addEventListener('resize', () => window.map && map.invalidateSize());
+  if (dimRange) window.__bindDimmer(dimRange);
+});
+
 
 })();
 
