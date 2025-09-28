@@ -175,11 +175,7 @@ setTimeout(() => pre.classList.add('show-skip'), 6000);
 skipBtn && skipBtn.addEventListener('click', () => finish('skip'));
 
 // Bildes: turpini skaitīt, bet neliec tās bloķēt UI atvēršanu
-const imgPromises = [...document.images]
-  .filter(img => img && img.src)  // ignorē tukšus/placeholder img
-  .map(img => img.complete ? Promise.resolve() :
-    new Promise(r => { img.addEventListener('load', r, {once:true}); img.addEventListener('error', r, {once:true}); })
-  );
+
 
 // HIDE ātri, tiklīdz DOM ir gatavs (vai bildes jau gatavas) — izmanto RACE, nevis ALL
 Promise.race([domReady, Promise.allSettled(imgPromises)])
@@ -3650,8 +3646,10 @@ function getEls(){
 
 	
   /* ---------------------- Rādīt / slēpt tiešsaistes karti ---------------------- */
-async function showOnlineMap() {
 
+async function showOnlineMap(){
+  const { mapDiv, mapDim, canvas, resizeH, btn } = getEls();
+  if (!mapDiv || !mapDim || !canvas) return; // sargs
 
   // droši sagaidi Leaflet
   try { await leafletReady; }
@@ -3698,9 +3696,10 @@ async function showOnlineMap() {
   window.__fitDock && window.__fitDock();
 }
 
+ 
 function hideOnlineMap(){
   const { mapDiv, mapDim, canvas, resizeH, btn } = getEls();
-  if (!mapDiv || !mapDim || !canvas) return;
+  if (!mapDiv || !mapDim || !canvas) return; // sargs
   mapDiv.style.display = 'none';
   mapDim.style.display = 'none';
   canvas.style.display = 'block';
