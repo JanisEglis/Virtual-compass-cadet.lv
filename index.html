@@ -1722,6 +1722,253 @@ body.preloading { overflow: hidden; }
 })();
 </script> -->
 
+
+
+
+
+
+<!-- ===== DEBUG: Print Center Reader (drop-in; no app.js changes) ===== -->
+<script>
+(function(){
+  if (window.__printCenterDebugInstalled) return;
+  window.__printCenterDebugInstalled = true;
+
+  // ---------- helpers: map / dom ----------
+  function getMap(){
+    try{
+      if (window.map && typeof window.map.getCenter === 'function') return window.map;
+      if (typeof window.__getMap === 'function') { const m = window.__getMap(); if (m && m.getCenter) return m; }
+      const el = document.getElementById('onlineMap') || document.querySelector('.leaflet-container');
+      if (el && el._leaflet_id && window.L && L && L.layerGroup) {
+        // fallback: mēģinām izvilkt no globālajiem — ja nav, atmetam
+      }
+    }catch(e){}
+    return null;
+  }
+  function vis(el){ return !!(el && el.offsetWidth && el.offsetHeight && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden'); }
+
+  // ---------- overlay center (screen px) ----------
+  function getOverlayScreenCenter(){
+    const a = document.getElementById('printAreaOverlay');
+    if (vis(a)){
+      const r = a.getBoundingClientRect();
+      return { x: r.left + r.width/2, y: r.top + r.height/2, src: '#printAreaOverlay' };
+    }
+    const dbg = document.getElementById('printDbgOverlay');
+    const box = dbg && dbg.querySelector('.box');
+    if (dbg && box && dbg.classList.contains('on') && vis(box)){
+      const r = box.getBoundingClientRect();
+      return { x: r.left + r.width/2, y: r.top + r.height/2, src: '#printDbgOverlay .box' };
+    }
+    // fallback: vizuālā viewport centra punkts
+    const vv = window.visualViewport;
+    const cx = (vv ? vv.offsetLeft : 0) + ((vv ? vv.width  : window.innerWidth)  / 2);
+    const cy = (vv ? vv.offsetTop  : 0) + ((vv ? vv.height : window.innerHeight) / 2);
+    return { x: cx, y: cy, src: 'visualViewport' };
+  }
+
+  // ---------- UI (crosshairs + panel) ----------
+  function installUI(){
+    if (document.getElementById('printCenterDebugCSS')) return;
+    const css = document.createElement('style');
+    css.id = 'printCenterDebugCSS';
+    css.textContent = `
+      #printCenterDebug{position:fixed;inset:0;pointer-events:none;z-index:2147483600}
+      #printCenterDebug .cross{position:fixed;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;
+        border:2px solid currentColor;box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+      #printCenterDebug .cross::before,#printCenterDebug .cross::after{
+        content:"";position:absolute;left:50%;top:50%;width:14px;height:2px;background:currentColor;transform:translate(-50%,-50%)}
+      #printCenterDebug .cross::after{width:2px;height:14px}
+      #pcd-ovl{color:#3aa3ff}   /* 🔵 overlay centrs (rāmja centrs ekrānā) */
+      #pcd-keep{color:#00ff88}  /* 🟩 keepCenter (aprēķins Leafletā) */
+      #pcd-map{color:#ff3355}   /* 🔴 reālais kartes centrs */
+      #pcd-panel{position:fixed;left:10px;bottom:10px;z-index:2147483601;pointer-events:auto;
+        background:rgba(0,0,0,.65);color:#fff;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.2);
+        font:12px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+      #pcd-panel code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+      #pcd-panel button{all:unset;cursor:pointer;background:rgba(255,255,255,.12);padding:2px 6px;border-radius:6px;margin-left:6px}
+      #pcd-panel .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+      @media print{ #printCenterDebug, #pcd-panel{ display:none !important } }
+    `;
+    document.head.appendChild(css);
+
+    const wrap = document.createElement('div');
+    wrap.id = 'printCenterDebug';
+    wrap.innerHTML = `
+      <div id="pcd-ovl"  class="cross" title="Overlay center (screen)"></div>
+      <div id="pcd-keep" class="cross" title="keepCenter (Leaflet)"></div>
+      <div id="pcd-map"  class="cross" title="Map center (Leaflet)"></div>
+    `;
+    document.body.appendChild(wrap);
+
+    const panel = document.createElement('div');
+    panel.id = 'pcd-panel';
+    panel.innerHTML = `
+      <div class="row"><strong>Print Center Debug</strong>
+        <button id="pcd-toggle">hide</button>
+        <button id="pcd-probe">probe</button>
+      </div>
+      <div id="pcd-info"></div>
+    `;
+    document.body.appendChild(panel);
+
+    document.getElementById('pcd-toggle').onclick = function(){
+      const on = wrap.style.display !== 'none';
+      wrap.style.display = on ? 'none' : 'block';
+      this.textContent = on ? 'show' : 'hide';
+    };
+    document.getElementById('pcd-probe').onclick = function(){ probe('manual'); };
+  }
+
+  function placeCross(id, abs){
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.left = abs.x + 'px';
+    el.style.top  = abs.y + 'px';
+  }
+  function infoHTML(p){
+    return `
+      <div><b>stage:</b> ${p.stage}</div>
+      <div><b>overlay src:</b> ${p.overlaySrc}</div>
+      <div><b>container:</b> ${p.containerSize.w}×${p.containerSize.h}px</div>
+      <div><b>keepPt:</b> <code>${p.keepPt.x}, ${p.keepPt.y}</code> px</div>
+      <div><b>mapPt:</b> <code>${p.mapPt.x}, ${p.mapPt.y}</code> px</div>
+      <div><b>Δpx to center:</b> <code>dx=${p.deltaPx.dx}, dy=${p.deltaPx.dy}</code></div>
+      <div><b>Δmeters:</b> <code>${p.deltaMeters}</code></div>
+      <div><b>keepCenter:</b> <code>${p.keepCenter.lat}, ${p.keepCenter.lng}</code></div>
+      <div><b>mapCenter:</b> <code>${p.mapCenter.lat}, ${p.mapCenter.lng}</code></div>
+    `;
+  }
+
+  // ---------- core probe ----------
+  function probe(stage){
+    try{
+      const map = getMap();
+      if (!map) { console.warn('[pcd] no map'); return; }
+      installUI();
+
+      const cont = (map.getContainer && map.getContainer()) || document.getElementById('onlineMap') || document.querySelector('.leaflet-container');
+      const rc = cont.getBoundingClientRect();
+
+      const ov = getOverlayScreenCenter(); // screen px
+      const ovInCont = { x: ov.x - rc.left, y: ov.y - rc.top };
+
+      // Leaflet punkti
+      const keepCenter = map.containerPointToLatLng(L.point(ovInCont.x, ovInCont.y));
+      const keepPt     = map.latLngToContainerPoint(keepCenter);
+      const mapCenter  = map.getCenter();
+      const mapPt      = map.latLngToContainerPoint(mapCenter);
+      const sz         = map.getSize();
+
+      // delta: cik pikseļu no īstā centra (container center = sz/2)
+      const dx = +(sz.x/2 - keepPt.x).toFixed(2);
+      const dy = +(sz.y/2 - keepPt.y).toFixed(2);
+
+      // metri starp keepCenter un reālo kartes centru
+      const distM = +L.latLng(keepCenter).distanceTo(mapCenter).toFixed(2);
+
+      // pozicionē krustiņus: 🔵 overlay (ekrāna), 🟩 keep, 🔴 map
+      placeCross('pcd-ovl',  { x: ov.x,             y: ov.y });
+      placeCross('pcd-keep', { x: rc.left+keepPt.x, y: rc.top+keepPt.y });
+      placeCross('pcd-map',  { x: rc.left+mapPt.x,  y: rc.top+mapPt.y  });
+
+      const payload = {
+        stage,
+        overlaySrc: ov.src,
+        containerSize: { w: sz.x, h: sz.y },
+        keepPt: { x:+keepPt.x.toFixed(2), y:+keepPt.y.toFixed(2) },
+        mapPt:  { x:+mapPt.x.toFixed(2),  y:+mapPt.y.toFixed(2)  },
+        deltaPx: { dx, dy },
+        deltaMeters: distM,
+        keepCenter: { lat:+keepCenter.lat.toFixed(6), lng:+keepCenter.lng.toFixed(6) },
+        mapCenter:  { lat:+mapCenter.lat.toFixed(6),  lng:+mapCenter.lng.toFixed(6)  }
+      };
+
+      console.info('[PrintCenterDebug]', payload);
+      const info = document.getElementById('pcd-info');
+      if (info) info.innerHTML = infoHTML(payload);
+
+      // nosūtam, ja tev ir devtool bridge
+      try { typeof window.__devtoolSend === 'function' && window.__devtoolSend('print', 'center-debug', payload); } catch(e){}
+      return payload;
+    }catch(e){
+      console.warn('[pcd] probe failed', e);
+    }
+  }
+
+  // ---------- event wiring (nekas netiek labots!) ----------
+  function wire(){
+    // manuālais API
+    window.probePrintCenter = (stage='manual') => probe(stage);
+    window.togglePrintCenterDebug = function(){
+      installUI();
+      const w = document.getElementById('printCenterDebug');
+      const p = document.getElementById('pcd-panel');
+      const on = w && w.style.display !== 'none';
+      if (w) w.style.display = on ? 'none' : 'block';
+      if (p) p.style.display = on ? 'none' : 'block';
+    };
+
+    // kartes kustības
+    const m = getMap();
+    if (m && m.on){
+      m.on('moveend zoomend', () => probe('move/zoom'));
+    }
+
+    // mutācijas: rāmji
+    const moTargets = [document.getElementById('printAreaOverlay') || document.body,
+                       document.getElementById('printDbgOverlay')   || document.body];
+    moTargets.forEach(t=>{
+      try{
+        const mo = new MutationObserver(()=>probe('overlay-mut'));
+        mo.observe(t, { attributes:true, childList:true, subtree:true });
+      }catch(e){}
+    });
+
+    // print notikumi
+    window.addEventListener('beforeprint', () => probe('beforeprint'));
+    window.addEventListener('afterprint',  () => probe('afterprint'));
+
+    // matchMedia print
+    try{
+      const mq = window.matchMedia('print');
+      const onChange = (e)=> probe(e.matches ? 'mql:print=true' : 'mql:print=false');
+      if (mq.addEventListener) mq.addEventListener('change', onChange);
+      else if (mq.addListener)  mq.addListener(onChange);
+    }catch(e){}
+
+    // body.class izmaiņas (print-mode)
+    try{
+      const moBody = new MutationObserver(()=> {
+        if (document.body.classList.contains('print-mode')) probe('print-mode:on');
+        else probe('print-mode:off');
+      });
+      moBody.observe(document.body, { attributes:true, attributeFilter:['class'] });
+    }catch(e){}
+
+    // hotkey: Ctrl+Alt+P → probe
+    window.addEventListener('keydown', (ev)=>{
+      if ((ev.ctrlKey || ev.metaKey) && ev.altKey && (ev.key==='p' || ev.key==='P')) {
+        ev.preventDefault();
+        probe('hotkey');
+      }
+    });
+
+    // sākuma probes
+    window.addEventListener('load', ()=>probe('load'));
+    document.addEventListener('DOMContentLoaded', ()=>probe('domready'));
+    setTimeout(()=>probe('t+2s'), 2000);
+  }
+
+  // boot
+  wire();
+})();
+</script>
+<!-- ===== /DEBUG ===== -->
+
+
+
+
 	
 	
 </body>
