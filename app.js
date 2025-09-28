@@ -129,11 +129,11 @@ function lksToWGS(E, N){                   // atpakaļ uz WGS84
     });
   });
 
-  const imgPromises = Array.from(imgSet).map(imgEl => new Promise(res=>{
-    if (imgEl.complete && imgEl.naturalWidth > 0) { res('cached'); return; }
-    imgEl.addEventListener('load',  () => res('load'),  {once:true});
-    imgEl.addEventListener('error', () => res('error'), {once:true});
-  }).then(tick));
+  const imgPromises = Array.from(document.images || []).map(imgEl => new Promise((resolve) => {
+  if (imgEl.complete) return resolve();
+  imgEl.addEventListener('load', resolve, { once: true });
+  imgEl.addEventListener('error', resolve, { once: true });
+}));
   total += imgPromises.length;
 
   // (ja izmanto tiešsaistes karti startā – tikai progressam; nekad nebloķē finish)
@@ -3638,7 +3638,7 @@ function getEls(){
     canvas:  document.getElementById('mapCanvas'),
     resizeH: document.getElementById('resizeHandle'),
     btn:     document.getElementById('toggleOnlineMap'),
-    dimRange:document.getElementById('dimRange'),
+   dimRange: document.getElementById('mapDimmerRange'),
   };
 }
 
@@ -3691,15 +3691,13 @@ async function showOnlineMap(){
   const { mapDiv, mapDim, canvas, resizeH, btn } = getEls();
   if (!mapDiv || !mapDim || !canvas) return; // sargs
 
-  // droši sagaidi Leaflet
-  try { await leafletReady; }
-  catch(e){ 
+  try { await window.leafletReady; }
+  catch (e) {
     console.warn('[onlineMap] Leaflet neielādējās laikā:', e);
-    
     return;
   }
 
-const leafletReady = window.leafletReady; // lai esošais kods nemainās
+
 
 
 	
