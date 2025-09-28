@@ -168,10 +168,9 @@ const domReady = new Promise(res => {
 });
 
 // Drošais cietais “fuse”, ja kas aizķeras (8s)
-setTimeout(() => finish('safety-8s'), 8000);
-
-// Skip poga pēc ~6s (tev jau bija — atstāj)
-setTimeout(() => pre.classList.add('show-skip'), 6000);
+// Saglabājam timeout ID, lai finish var tos notīrīt
+const showSkip = setTimeout(() => pre && pre.classList.add('show-skip'), 6000);
+const hardCut  = setTimeout(() => finish('safety-8s'), 8000);
 skipBtn && skipBtn.addEventListener('click', () => finish('skip'));
 
 // Bildes: turpini skaitīt, bet neliec tās bloķēt UI atvēršanu
