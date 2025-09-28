@@ -90,7 +90,7 @@ function lksToWGS(E, N){                   // atpakaļ uz WGS84
 
 
 
-(function(){
+onDomReady(() => {
   const pre = document.getElementById('app-preloader');
   if(!pre) return;
 
@@ -158,7 +158,7 @@ function lksToWGS(E, N){                   // atpakaļ uz WGS84
       obs.observe(host, {subtree:true, childList:true});
       setTimeout(()=>obs.disconnect(), 4000);
     }catch(e){}
-  })();
+  });
 
   // “window load” — ķer arī gadījumu, ja tas jau ir noticis
  // DOM gatavs → pietiek, lai rādītu app (negaidām iframe/fontus)
@@ -183,6 +183,7 @@ Promise.race([domReady, Promise.allSettled(imgPromises)])
 // Papildu drošība — jebkura kļūda arī aizver preloaderi
 window.addEventListener('error', () => finish('window-error'), { once: true });
 window.addEventListener('unhandledrejection', () => finish('unhandledrejection'), { once: true });
+window.addEventListener('load', () => finish('window-load'), { once:true });
 
 
 
