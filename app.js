@@ -158,7 +158,7 @@ onDomReady(() => {
       obs.observe(host, {subtree:true, childList:true});
       setTimeout(()=>obs.disconnect(), 4000);
     }catch(e){}
-  });
+  })();
 
   // “window load” — ķer arī gadījumu, ja tas jau ir noticis
  // DOM gatavs → pietiek, lai rādītu app (negaidām iframe/fontus)
@@ -199,7 +199,7 @@ window.addEventListener('load', () => finish('window-load'), { once:true });
     console.debug('[preloader] finish:', reason, {done, total});
     setTimeout(()=> pre.remove(), 480);
   }
-})();
+});
 
 
 
