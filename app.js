@@ -3659,7 +3659,7 @@ function showOnlineMap(){
     mapDim.style.display = 'none';
     canvas.style.display = 'block';
     if (resizeH && hasImage()) positionResizeHandle(true);
-    localStorage.setItem('onlineMapActive','0');
+  
     alert('Tiešsaistes karte nav ielādēta! Mēģiniet vēlreiz.'); // Leaflet nav ielādējies — tiešsaistes karte izslēgta.
     return;
   }
@@ -3668,7 +3668,7 @@ function showOnlineMap(){
   setTimeout(()=> map && map.invalidateSize(true), 100);
 
   if (btn) btn.classList.add('active');
-  localStorage.setItem('onlineMapActive','1');
+
 
   syncDimOverlay();
   window.__updateDimmerWidth && window.__updateDimmerWidth();
@@ -3688,7 +3688,7 @@ function hideOnlineMap(){
   }
 
   if (btn) btn.classList.remove('active');
-  localStorage.setItem('onlineMapActive','0');
+ 
   window.__updateDimmerWidth && window.__updateDimmerWidth();
   window.__fitDock && window.__fitDock();
 }
@@ -3701,7 +3701,7 @@ function hideOnlineMap(){
     isOn ? hideOnlineMap() : showOnlineMap();
   });
 
-  if (localStorage.getItem('onlineMapActive') === '1'){ showOnlineMap(); }
+
 
   window.addEventListener('resize', ()=> map && map.invalidateSize());
 if (dimRange){ window.__bindDimmer(dimRange); }
