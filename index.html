@@ -1723,6 +1723,277 @@ body.preloading { overflow: hidden; }
 </script> -->
 
 
+<!-- ===== PrintCenterAudit (DROP-IN READER; insert before </body>) ===== -->
+<script>
+(function(){
+  'use strict';
+  if (window.__printCenterAuditInstalled) return; window.__printCenterAuditInstalled = true;
+
+  /* ----------------- helpers ----------------- */
+  const mm2px = mm => Math.round(mm * 96 / 25.4);
+
+  function getMap(){
+    try{
+      if (window.map && typeof window.map.getCenter === 'function') return window.map;
+      if (typeof window.__getMap === 'function'){ const m = window.__getMap(); if (m && m.getCenter) return m; }
+    }catch(_){}
+    return null;
+  }
+  function visible(el){
+    if (!el) return false;
+    const cs = getComputedStyle(el);
+    return !!(el.offsetWidth && el.offsetHeight && cs.display!=='none' && cs.visibility!=='hidden');
+  }
+  function getOverlayScreenCenter(){
+    // 1) tavs “drukas rāmis”
+    const a = document.getElementById('printAreaOverlay');
+    if (visible(a)){ const r=a.getBoundingClientRect(); return { x:r.left+r.width/2, y:r.top+r.height/2, src:'#printAreaOverlay' }; }
+    // 2) dev rāmis (ja lieto)
+    const dbg = document.getElementById('printDbgOverlay'); const box = dbg && dbg.querySelector('.box');
+    if (dbg && box && dbg.classList.contains('on') && visible(box)){ const r=box.getBoundingClientRect(); return { x:r.left+r.width/2, y:r.top+r.height/2, src:'#printDbgOverlay .box' }; }
+    // 3) fallback – vizuālā viewport centra punkts
+    const vv = window.visualViewport;
+    const cx = (vv?vv.offsetLeft:0) + ((vv?vv.width:window.innerWidth)/2);
+    const cy = (vv?vv.offsetTop:0)  + ((vv?vv.height:window.innerHeight)/2);
+    return { x:cx, y:cy, src:'visualViewport' };
+  }
+  function readSafeAreas(){
+    const cs = getComputedStyle(document.documentElement);
+    return {
+      top:    (cs.getPropertyValue('--map-top-safe')||'').trim() || null,
+      bottom: (cs.getPropertyValue('--map-bottom-safe')||'').trim() || null
+    };
+  }
+  function readPrintBoxMm(){
+    // mēģinām nolasīt @media print body.print-mode #onlineMap { width/height: ..mm }
+    let mm = { w:null, h:null, src:null };
+    for (const ss of document.styleSheets){
+      let rules; try{ rules = ss.cssRules || ss.rules; }catch(_){ continue; }
+      if (!rules) continue;
+      const scan = (rule) => {
+        try{
+          const sel = rule.selectorText || '';
+          if (sel && sel.includes('body.print-mode') && sel.includes('#onlineMap')){
+            const txt = rule.cssText || '';
+            const mW = /width\s*:\s*([\d.]+)mm/i.exec(txt);
+            const mH = /height\s*:\s*([\d.]+)mm/i.exec(txt);
+            if (mW && mH) { mm = { w:+mW[1], h:+mH[1], src:'css' }; }
+          }
+        }catch(_){}
+      };
+      for (const r of rules){
+        if (r.type === CSSRule.MEDIA_RULE && r.cssRules){ for (const rr of r.cssRules) scan(rr); }
+        else scan(r);
+      }
+    }
+    return mm;
+  }
+  function nowIso(){ try{ return new Date().toISOString(); }catch(_){ return ''+Date.now(); } }
+
+  /* ----------------- UI (tiny) ----------------- */
+  function ensureUI(){
+    if (document.getElementById('pca-btn')) return;
+    const css = document.createElement('style');
+    css.textContent = `
+#pca-btn{
+  position:fixed; left:12px; bottom:38px; z-index:2147483600;
+  width:44px; height:44px; border-radius:12px; display:grid; place-items:center;
+  border:1px solid rgba(255,255,255,.16); background:rgba(0,0,0,.6); color:#fff; cursor:pointer; user-select:none;
+}
+#pca-hud{
+  position:fixed; left:64px; bottom:38px; z-index:2147483600; display:none;
+  padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.18);
+  background:rgba(0,0,0,.65); color:#fff; font:12px/1.35 ui-monospace,Menlo,Consolas,monospace;
+  max-width:min(88vw,600px); white-space:pre-wrap; word-break:break-word;
+}
+#pca-hud .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:4px }
+#pca-hud button{ all:unset; cursor:pointer; background:rgba(255,255,255,.12); padding:2px 6px; border-radius:6px }
+@media print{ #pca-btn, #pca-hud{ display:none !important } }
+    `;
+    document.head.appendChild(css);
+
+    const btn = document.createElement('button');
+    btn.id = 'pca-btn'; btn.title = 'PrintCenterAudit';
+    btn.textContent = '📄';
+    document.body.appendChild(btn);
+
+    const hud = document.createElement('div');
+    hud.id = 'pca-hud';
+    hud.innerHTML = `
+      <div class="row">
+        <strong>PrintCenterAudit</strong>
+        <button id="pca-probe">probe</button>
+        <button id="pca-dl">download JSON</button>
+        <button id="pca-toggle">hide</button>
+      </div>
+      <div id="pca-info">ready</div>`;
+    document.body.appendChild(hud);
+
+    btn.onclick = () => { hud.style.display = (hud.style.display==='block'?'none':'block'); };
+    document.getElementById('pca-toggle').onclick = () => { hud.style.display = 'none'; };
+    document.getElementById('pca-probe').onclick  = () => snapshot('manual');
+    document.getElementById('pca-dl').onclick     = () => downloadJSON();
+  }
+
+  /* ----------------- core snapshot ----------------- */
+  const records = [];
+  window.__printCenterAudit = { records };
+
+  function snapshot(stage){
+    try{
+      ensureUI();
+
+      const map = getMap();
+      const hasLeaflet = !!(map && window.L);
+      const cont = (map && map.getContainer && map.getContainer()) || document.getElementById('onlineMap') || document.querySelector('.leaflet-container');
+      const rc   = cont ? cont.getBoundingClientRect() : { left:0, top:0, width:0, height:0 };
+      const vv   = window.visualViewport;
+      const dim  = document.getElementById('onlineMapDim');
+      const mm   = readPrintBoxMm();
+      const sa   = readSafeAreas();
+
+      const ov   = getOverlayScreenCenter(); // ekrāna px
+      const ovIn = { x: ov.x - rc.left, y: ov.y - rc.top }; // konteinera px
+
+      let keepCenter=null, keepPt=null, mapCenter=null, mapPt=null, sz={x:0,y:0}, dx=0, dy=0, distM=null, zoom=null;
+      if (hasLeaflet){
+        zoom       = map.getZoom();
+        sz         = map.getSize();
+        keepCenter = map.containerPointToLatLng(L.point(ovIn.x, ovIn.y));
+        keepPt     = map.latLngToContainerPoint(keepCenter);
+        mapCenter  = map.getCenter();
+        mapPt      = map.latLngToContainerPoint(mapCenter);
+        dx         = +(sz.x/2 - keepPt.x).toFixed(2);
+        dy         = +(sz.y/2 - keepPt.y).toFixed(2);
+        distM      = +L.latLng(keepCenter).distanceTo(mapCenter).toFixed(2);
+      }
+
+      // papildu: map pane transform (ja briļļo subpikseļus)
+      let mapPaneTransform = null;
+      try{
+        const mp = cont && cont.querySelector('.leaflet-map-pane');
+        if (mp){ mapPaneTransform = getComputedStyle(mp).transform || null; }
+      }catch(_){}
+
+      const payload = {
+        t: nowIso(),
+        stage,
+        dpr: window.devicePixelRatio || 1,
+        viewport: {
+          w: window.innerWidth, h: window.innerHeight,
+          vw: vv ? vv.width  : null, vh: vv ? vv.height : null,
+          vo: vv ? { x:vv.offsetLeft, y:vv.offsetTop, scale:vv.scale } : null
+        },
+        printMode: document.body.classList.contains('print-mode'),
+        printMedia: (function(){ try{ return window.matchMedia && window.matchMedia('print').matches; }catch(_){ return null; }})(),
+        containerRect: { left:+rc.left.toFixed(2), top:+rc.top.toFixed(2), width:+rc.width.toFixed(2), height:+rc.height.toFixed(2) },
+        overlay: { src: ov.src, screen:{ x:+ov.x.toFixed(2), y:+ov.y.toFixed(2) }, inContainer:{ x:+ovIn.x.toFixed(2), y:+ovIn.y.toFixed(2) } },
+        printBoxMm: mm, printBoxPxApprox: (mm.w && mm.h) ? { w:mm2px(mm.w), h:mm2px(mm.h) } : null,
+        dimOverlay: dim ? { display:getComputedStyle(dim).display, bg:getComputedStyle(dim).backgroundColor } : null,
+        safeAreas: sa,
+        leaflet: hasLeaflet ? {
+          zoom,
+          size: { w: sz.x, h: sz.y },
+          keepPt: keepPt ? { x:+keepPt.x.toFixed(2), y:+keepPt.y.toFixed(2) } : null,
+          mapPt:  mapPt  ? { x:+mapPt.x.toFixed(2),  y:+mapPt.y.toFixed(2)  } : null,
+          deltaPx: { dx, dy },
+          keepCenter: keepCenter ? { lat:+keepCenter.lat.toFixed(6), lng:+keepCenter.lng.toFixed(6) } : null,
+          mapCenter:  mapCenter  ? { lat:+mapCenter.lat.toFixed(6),  lng:+mapCenter.lng.toFixed(6)  } : null,
+          deltaMeters: distM
+        } : { note:'Leaflet map not ready' },
+        mapPaneTransform
+      };
+
+      records.push(payload);
+      try{
+        const info = document.getElementById('pca-info');
+        if (info){
+          const L1 = payload.leaflet;
+          const ln = (L1 && L1.keepPt) ? `Δpx dx=${L1.deltaPx.dx}, dy=${L1.deltaPx.dy} | Δm=${L1.deltaMeters}` : 'no map';
+          info.textContent = `[${payload.stage}] overlay=${payload.overlay.src} | printMode=${payload.printMode} | ${ln}`;
+        }
+      }catch(_){}
+
+      console.info('[PrintCenterAudit]', payload);
+      return payload;
+    }catch(e){
+      console.warn('[PrintCenterAudit] snapshot failed', e);
+    }
+  }
+
+  function downloadJSON(){
+    try{
+      const blob = new Blob([ JSON.stringify({ records }, null, 2) ], { type:'application/json' });
+      const a = document.createElement('a');
+      a.download = `print-center-audit-${Date.now()}.json`;
+      a.href = URL.createObjectURL(blob);
+      document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    }catch(e){ console.warn('[PrintCenterAudit] download failed', e); }
+  }
+
+  /* ----------------- wiring (reader only) ----------------- */
+  function wire(){
+    ensureUI();
+
+    // manuāli pieejams:
+    window.probePrintCenter = (stage='manual') => snapshot(stage);
+    window.downloadPrintAudit = downloadJSON;
+
+    // “aptinam” prepareMapForPrintLgIa — tikai snapshoti, nekas netiek mainīts
+    (function wrapPrepare(){
+      let tries = 0, wrapped = false;
+      const t = setInterval(()=>{
+        tries++;
+        if (typeof window.prepareMapForPrintLgIa === 'function' && !wrapped){
+          const orig = window.prepareMapForPrintLgIa;
+          window.prepareMapForPrintLgIa = function wrappedPrepare(){
+            snapshot('prepare-call');
+            try{
+              const p = orig.apply(this, arguments);
+              return (p && typeof p.then==='function')
+                ? p.finally(()=>snapshot('prepare-done'))
+                : p;
+            }catch(e){
+              snapshot('prepare-throw');
+              throw e;
+            }
+          };
+          wrapped = true; clearInterval(t);
+        }
+        if (tries > 50) clearInterval(t);
+      }, 200);
+    })();
+
+    // drukas notikumi
+    window.addEventListener('beforeprint', ()=> snapshot('beforeprint'));
+    window.addEventListener('afterprint',  ()=> snapshot('afterprint'));
+
+    // matchMedia('print')
+    try{
+      const mq = window.matchMedia('print');
+      const onCh = (e)=> snapshot(e.matches ? 'mql:true' : 'mql:false');
+      mq.addEventListener ? mq.addEventListener('change', onCh) : mq.addListener(onCh);
+    }catch(_){}
+
+    // body.class “print-mode” on/off
+    try{
+      const mo = new MutationObserver(()=> {
+        const on = document.body.classList.contains('print-mode');
+        snapshot(on ? 'print-mode:on' : 'print-mode:off');
+      });
+      mo.observe(document.body, { attributes:true, attributeFilter:['class'] });
+    }catch(_){}
+
+    // vienreiz pēc ielādes
+    window.addEventListener('load', ()=> snapshot('load'));
+    document.addEventListener('DOMContentLoaded', ()=> snapshot('domready'));
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire, { once:true });
+  else wire();
+})();
+</script>
+<!-- ===== /PrintCenterAudit ===== -->
 
 
 	
