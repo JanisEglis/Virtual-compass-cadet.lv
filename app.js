@@ -741,15 +741,27 @@ function bindAutoCloseOnToggleLegacy(){
   }
 }
 
+
 // Startē gan uz DOMContentLoaded, gan uz load (legacy drošībai)
-(function(){
-  function startAll(){
-    bindAutoCloseOnToggleLegacy();
-    // DEMO: parādi abus un aizver pēc 5s (bultiņas pareizi)
-    demoSelectorsAutoCloseLegacy(5000);
+(function () {
+  function startAll() {
+    if (typeof bindAutoCloseOnToggleLegacy === 'function') {
+      bindAutoCloseOnToggleLegacy();
+    }
+    if (typeof demoSelectorsAutoCloseLegacy === 'function') {
+      demoSelectorsAutoCloseLegacy(5000); // aizver pēc 5s, ja neatver/nelieto
+    }
   }
 
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startAll, { once: true });
+  } else {
+    startAll();
+  }
+  // Drošībai – ja kaut kas ielādējas vēlu
+  window.addEventListener('load', startAll, { once: true });
 })();
+
 
 
 
