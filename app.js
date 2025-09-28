@@ -1997,6 +1997,66 @@ function __centerPxInContainerFromOverlayOrViewport(containerRect){
   return { x: cx - containerRect.left, y: cy - containerRect.top };
 }
 
+
+
+
+
+
+
+
+
+
+
+/* 1) PALĪGI (ieliec vienreiz, jebkur virs prepareMapForPrintLgIa) */
+async function __recenterMapToLL(map, ll){
+  // Kāpēc: pēc print-mode mainās #onlineMap izmērs → Leaflet jāzina jaunais izmērs
+  map.invalidateSize(true);
+  map.setView(ll, map.getZoom(), { animate:false });
+
+  // pikseļu-precīza korekcija uz konteinera ģeometrisko centru
+  let pt = map.latLngToContainerPoint(ll);
+  let sz = map.getSize();
+  map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
+
+  // subpikseļi/transformi
+  await new Promise(r => requestAnimationFrame(r));
+  pt = map.latLngToContainerPoint(ll);
+  sz = map.getSize();
+  map.panBy([ (sz.x/2 - pt.x), (sz.y/2 - pt.y) ], { animate:false });
+}
+
+function __hookPrintMediaRecenter(map, ll){
+  // Kāpēc: brīdī, kad nostrādā @media print (mql:true), konteiners pārmaina izmēru/pozīciju
+  try{
+    const mq = window.matchMedia('print');
+    const onChange = (e) => {
+      if (e.matches) {
+        __recenterMapToLL(map, ll);
+        setTimeout(()=>__recenterMapToLL(map, ll), 50); // drošības atkārtojums
+      }
+    };
+    mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener(onChange);
+  }catch(_){}
+  window.addEventListener('beforeprint', () => {
+    __recenterMapToLL(map, ll);
+    setTimeout(()=>__recenterMapToLL(map, ll), 50);
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  
 // ── GALVENĀ: drukas sagatavošana (līdzsvarotas iekavas, atjaunošana iekš cleanup) ──
 async function prepareMapForPrintLgIa(opts){
   const { format, orient, scale, title } = opts;
@@ -2039,6 +2099,14 @@ async function prepareMapForPrintLgIa(opts){
   map.invalidateSize(true);
   map.setView(keepCenter, map.getZoom(), { animate:false });
 
+// → UZREIZ ZEM ŠĪ ANKURA IEVADI:
+await __recenterMapToLL(map, keepCenter);     // <-- ADD-A
+__hookPrintMediaRecenter(map, keepCenter);     // <-- ADD-B
+
+
+
+
+	
   // 6) uzliekam drukas elementus
   const footer = buildPrintFooterLgIa(scale, title);
 
@@ -2096,6 +2164,12 @@ await new Promise(r => requestAnimationFrame(r));
     await waitForMapToRender(map, { timeout: 12000, settle: 200 });
     __hidePrintGuardOverlay();
 
+
+// → PIRMS window.print(); IEVADI:
+await __recenterMapToLL(map, keepCenter);     // <-- ADD-C
+
+
+	  
     window.print();
 
     // viss atpakaļ stabili vienuviet
