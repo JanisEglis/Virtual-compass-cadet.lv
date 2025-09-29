@@ -5,136 +5,89 @@
 
 
 
-<!-- Mini Dev Reader (ielikt PATS PIRMAIS <head> iekšā) -->
+<!-- DEBUG: crash + preloader monitor -->
 <script>
 (function(){
-  if (window.__MiniDev) return;
-  var startedAt = performance.now(), events = [];
-  function now(){return performance.now();}
-  function add(t,d){var e={t:t,ts:Date.now(),rel:(now()-startedAt).toFixed(1),data:d||{}};events.push(e);ui.add(e);return e;}
+  const t0 = performance.now();
+  const EVT = [];
+  const log = (type, data={})=>{
+    EVT.push({t:type, ts:Date.now(), rel:+(performance.now()-t0).toFixed(1), data});
+    const m = type==='ERR'?'error':type==='WRN'?'warn':type==='INF'?'info':'log';
+    (console[m]||console.log).call(console,'[debug]',type,data);
+  };
 
-  // --- UI ---
-  var ui=(function(){
-    var box=document.createElement('div');
-    box.id='mini-dev';
-    box.style.cssText='position:fixed;z-index:999999;right:6px;bottom:6px;width:360px;max-height:55vh;background:rgba(0,0,0,.82);color:#fff;font:12px/1.35 system-ui,Segoe UI,Arial,sans-serif;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.35);overflow:hidden;backdrop-filter:saturate(1.2) blur(2px)';
-    var head=document.createElement('div');
-    head.style.cssText='display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.1)';
-    head.innerHTML='<strong style="font-weight:700">DevReader</strong><span id="dev-nav" style="opacity:.8;font-size:11px;margin-left:auto"></span><button id="dev-copy" style="background:#333;color:#fff;border:1px solid #555;border-radius:6px;padding:2px 6px;cursor:pointer">Copy</button><button id="dev-hide" style="background:#333;color:#fff;border:1px solid #555;border-radius:6px;padding:2px 6px;cursor:pointer">✕</button>';
-    var list=document.createElement('div'); list.style.cssText='font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;padding:6px 8px;overflow:auto;max-height:45vh';
-    head.querySelector('#dev-copy').onclick=function(){try{navigator.clipboard.writeText(JSON.stringify({url:location.href,ua:navigator.userAgent,events:events},null,2));}catch(_){}};
-    head.querySelector('#dev-hide').onclick=function(){box.remove();};
-    box.appendChild(head); box.appendChild(list); document.documentElement.appendChild(box);
-    function addItem(e){
-      var row=document.createElement('div');
-      var s='['+e.rel+'ms] '+e.t+' '; try{s+=JSON.stringify(e.data)}catch(_){}
-      row.textContent=s;
-      if(e.t==='ERR'||e.t==='REJECTION'||e.t==='RES-ERR') row.style.color='#ff8a8a';
-      else if(e.t==='WRN') row.style.color='#ffd17a';
-      list.appendChild(row); list.scrollTop=list.scrollHeight;
-    }
-    return {add:addItem,nav:function(s){head.querySelector('#dev-nav').textContent=s||''}};
-  })();
+  // Pamat notikumi
+  const nav = performance.getEntriesByType('navigation')[0];
+  log('NAV',{type: nav?.type});
+  document.addEventListener('readystatechange', ()=>log('RS',{state:document.readyState}));
+  document.addEventListener('DOMContentLoaded', ()=>log('DCL',{}), {once:true});
+  window.addEventListener('load', ()=>log('LOAD',{}), {once:true});
+  window.addEventListener('pageshow', e=>log('PAGESHOW',{persisted:e.persisted}), {once:true});
 
-  // Navigācijas tips + ilgums
-  var nav=performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
-  ui.nav(nav ? (nav.type+' • '+Math.round(nav.duration)+'ms') : 'nav?');
-  add('NAV',{type:nav&&nav.type});
-
-  // readyState
-  add('RS',{state:document.readyState});
-  document.addEventListener('readystatechange',function(){add('RS',{state:document.readyState});});
-
-  // DCL / load
-  document.addEventListener('DOMContentLoaded',function(){add('DCL');},{once:true});
-  window.addEventListener('load',function(){
-    add('LOAD');
-    try{
-      var n=performance.getEntriesByType('navigation')[0];
-      add('TIMING',{
-        ttfb:Math.round(n.responseStart),
-        domInteractive:Math.round(n.domInteractive),
-        dcl:Math.round(n.domContentLoadedEventEnd),
-        load:Math.round(n.loadEventEnd),
-        transfer:Math.round(n.transferSize||0)
-      });
-    }catch(_){}
-    // Resursu kopsavilkums
-    try{
-      var r=performance.getEntriesByType('resource')||[];
-      var last=r.slice(-30).map(function(e){
-        return {name:(e.name||'').split('?')[0].slice(-80), type:e.initiatorType, dur:Math.round(e.duration),
-                cached:(e.transferSize===0 && e.encodedBodySize>0)};
-      });
-      add('RES-SUM',{count:r.length,last:last});
-    }catch(_){}
-  },{once:true});
-
-  // pageshow/pagehide (BFCache)
-  window.addEventListener('pageshow',function(ev){add('PAGESHOW',{persisted:!!ev.persisted});});
-  window.addEventListener('pagehide',function(ev){add('PAGEHIDE',{persisted:!!ev.persisted});});
-
-  // visibility
-  document.addEventListener('visibilitychange',function(){add('VIS',{hidden:document.hidden});});
-
-  // Resource kļūdas (script/img/link)
-  window.addEventListener('error',function(ev){
-    var t=ev.target;
-    if(t && t!==window){
-      add('RES-ERR',{tag:t.tagName,src:t.src||t.href||t.currentSrc||null});
-    }else{
-      add('ERR',{msg:ev.message,src:ev.filename,line:ev.lineno,col:ev.colno});
-    }
-  },true);
-
-  // Neapstrādātas promisas
-  window.addEventListener('unhandledrejection',function(ev){
-    var r=ev.reason; add('REJECTION',{reason:(r&&(r.stack||r.message))||String(r)});
-  });
-
-  // Console proxys
-  ['log','info','warn','error'].forEach(function(m){
-    var orig=console[m];
-    console[m]=function(){
-      try{
-        var args=[].slice.call(arguments).map(function(a){
-          if(a && a instanceof Error) return a.stack||a.message;
-          try{return typeof a==='string'?a:JSON.stringify(a);}catch(_){return String(a);}
-        });
-        add(m.toUpperCase().slice(0,3),{msg:args.join(' ')});
-      }catch(_){}
-      return orig.apply(console,arguments);
-    };
-  });
-
-  // Long tasks (ja ir)
-  if('PerformanceObserver' in window){
-    try{
-      var po=new PerformanceObserver(function(list){
-        list.getEntries().forEach(function(e){ add('LONGTASK',{dur:Math.round(e.duration)}); });
-      });
-      po.observe({entryTypes:['longtask']});
-    }catch(_){}
+  // Pāķojam konsoli, lai neko nepalaistu garām
+  for (const k of ['log','info','warn','error','debug']) {
+    const orig = console[k].bind(console);
+    console[k] = (...args)=>{ try{log(k.toUpperCase(),{msg:String(args[0]),args});}catch{} orig(...args); };
   }
 
-  // Preloader sargs (jo tev ir #app-preloader) – ziņo, ja “dzīvs” >6s
-  var preChk=setInterval(function(){
-    var pre=document.getElementById('app-preloader');
-    if(!pre){clearInterval(preChk);return;}
-    var hidden=pre.classList.contains('hidden');
-    add('PRELOADER',{exists:true,hidden:hidden});
-  },3000);
-  setTimeout(function(){clearInterval(preChk);},20000);
+  // Kļūdas + resursu kļūdas
+  window.addEventListener('error', e=>{
+    const t = e.target;
+    if (t && (t.tagName==='IMG'||t.tagName==='SCRIPT'||t.tagName==='LINK')){
+      log('RESERR',{tag:t.tagName, url:t.currentSrc||t.src||t.href});
+    } else {
+      log('ERR',{message:e.message, filename:e.filename, lineno:e.lineno, colno:e.colno, stack:e.error?.stack});
+    }
+  }, true);
+  window.addEventListener('unhandledrejection', e=>log('ERR',{message:e.reason?.message||e.reason, stack:e.reason?.stack}));
 
-  // Rokas atzīmes no tava koda: window.__devMark('XYZ',{...})
-  window.__devMark=function(label,data){ add('MARK:'+label,data||{}); };
+  // LCP/FID/CLS (ja pieejams)
+  try{
+    const po = new PerformanceObserver(list=>{
+      for (const entry of list.getEntries()){
+        log('METRIC',{name:entry.name||entry.entryType, value:entry.value, startTime:Math.round(entry.startTime)});
+      }
+    });
+    po.observe({type:'largest-contentful-paint', buffered:true});
+    po.observe({type:'first-input', buffered:true});
+    po.observe({type:'layout-shift', buffered:true});
+  }catch{}
 
-  // Publiskā API
-  window.__MiniDev={
-    dump:function(){return{url:location.href,ua:navigator.userAgent,events:events};},
-    clear:function(){events.length=0;},
-    events:events
-  };
+  // Preloader novērošana + “watchdog”
+  const pre = document.getElementById('app-preloader');
+  if (pre){
+    log('PRE',{state:'seen', classList:[...pre.classList]});
+    pre.addEventListener('animationend', ()=>log('PRE',{state:'animationend'}));
+  }
+  const watchdogMs = 4000;
+  setTimeout(()=>{
+    const stuck = document.body.classList.contains('preloading') || (pre && pre.offsetParent !== null);
+    log('PRECHK',{after:watchdogMs, stuck});
+    if (stuck){
+      // piespiedu paslēpšana, lai lietotājs neiesprūst
+      try{
+        document.body.classList.remove('preloading');
+        if (pre){ pre.style.display='none'; pre.style.opacity='0'; pre.style.pointerEvents='none'; }
+        log('PRE-FORCE-HIDE',{});
+      }catch{}
+    }
+    // Taimingi + resursu kopsavilkums
+    const n = performance.getEntriesByType('navigation')[0];
+    log('TIMING',{
+      ttfb: Math.round(n?.responseStart - n?.requestStart),
+      domInteractive: Math.round(n?.domInteractive - n?.startTime),
+      dcl: Math.round(n?.domContentLoadedEventEnd - n?.startTime),
+      load: Math.round(n?.loadEventEnd - n?.startTime),
+      transfer: Math.round(n?.responseEnd - n?.requestStart)
+    });
+    const all = performance.getEntriesByType('resource');
+    const last = all.slice(-24).map(r=>({name:r.name, type:r.initiatorType, dur:Math.round(r.duration), cached:r.transferSize===0}));
+    log('RES-SUM',{count: all.length, last});
+
+    // Ērti nokopēt no konsoles
+    window.__lastDebugReport = {url: location.href, ua: navigator.userAgent, events: EVT};
+    console.info(JSON.stringify(window.__lastDebugReport, null, 2));
+  }, watchdogMs);
 })();
 </script>
 
