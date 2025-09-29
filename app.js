@@ -1,13 +1,12 @@
 console.info('[modern] app.js start');
 
 
-// Aizsardzība pret dubultu startu (ātrs reload/bfcache)
-if (window.__CADET_APP_BOOTED__) {
-  console.warn('[boot] otrā palaišana ignorēta');
-  // nekas vairs netiek darīts
+// ===== Boot guard =====
+const BUILD = '2025-09-29-01';            // palielini, kad maini kodu
+if (window.__CADET_APP_BOOTED__ === BUILD) {
+  console.warn('[boot] jau palaists, ignorēju otro startu');
 } else {
-  window.__CADET_APP_BOOTED__ = true;
-}
+  window.__CADET_APP_BOOTED__ = BUILD;
 
 
 // Palaist, kad DOM gatavs (strādā visur)
@@ -6333,3 +6332,4 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
     showOverlay(); // vizualizē print kasti
   }, true);
 })();
+}
