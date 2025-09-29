@@ -5,92 +5,6 @@
 
 
 
-<!-- DEBUG: crash + preloader monitor -->
-<script>
-(function(){
-  const t0 = performance.now();
-  const EVT = [];
-  const log = (type, data={})=>{
-    EVT.push({t:type, ts:Date.now(), rel:+(performance.now()-t0).toFixed(1), data});
-    const m = type==='ERR'?'error':type==='WRN'?'warn':type==='INF'?'info':'log';
-    (console[m]||console.log).call(console,'[debug]',type,data);
-  };
-
-  // Pamat notikumi
-  const nav = performance.getEntriesByType('navigation')[0];
-  log('NAV',{type: nav?.type});
-  document.addEventListener('readystatechange', ()=>log('RS',{state:document.readyState}));
-  document.addEventListener('DOMContentLoaded', ()=>log('DCL',{}), {once:true});
-  window.addEventListener('load', ()=>log('LOAD',{}), {once:true});
-  window.addEventListener('pageshow', e=>log('PAGESHOW',{persisted:e.persisted}), {once:true});
-
-  // Pāķojam konsoli, lai neko nepalaistu garām
-  for (const k of ['log','info','warn','error','debug']) {
-    const orig = console[k].bind(console);
-    console[k] = (...args)=>{ try{log(k.toUpperCase(),{msg:String(args[0]),args});}catch{} orig(...args); };
-  }
-
-  // Kļūdas + resursu kļūdas
-  window.addEventListener('error', e=>{
-    const t = e.target;
-    if (t && (t.tagName==='IMG'||t.tagName==='SCRIPT'||t.tagName==='LINK')){
-      log('RESERR',{tag:t.tagName, url:t.currentSrc||t.src||t.href});
-    } else {
-      log('ERR',{message:e.message, filename:e.filename, lineno:e.lineno, colno:e.colno, stack:e.error?.stack});
-    }
-  }, true);
-  window.addEventListener('unhandledrejection', e=>log('ERR',{message:e.reason?.message||e.reason, stack:e.reason?.stack}));
-
-  // LCP/FID/CLS (ja pieejams)
-  try{
-    const po = new PerformanceObserver(list=>{
-      for (const entry of list.getEntries()){
-        log('METRIC',{name:entry.name||entry.entryType, value:entry.value, startTime:Math.round(entry.startTime)});
-      }
-    });
-    po.observe({type:'largest-contentful-paint', buffered:true});
-    po.observe({type:'first-input', buffered:true});
-    po.observe({type:'layout-shift', buffered:true});
-  }catch{}
-
-  // Preloader novērošana + “watchdog”
-  const pre = document.getElementById('app-preloader');
-  if (pre){
-    log('PRE',{state:'seen', classList:[...pre.classList]});
-    pre.addEventListener('animationend', ()=>log('PRE',{state:'animationend'}));
-  }
-  const watchdogMs = 4000;
-  setTimeout(()=>{
-    const stuck = document.body.classList.contains('preloading') || (pre && pre.offsetParent !== null);
-    log('PRECHK',{after:watchdogMs, stuck});
-    if (stuck){
-      // piespiedu paslēpšana, lai lietotājs neiesprūst
-      try{
-        document.body.classList.remove('preloading');
-        if (pre){ pre.style.display='none'; pre.style.opacity='0'; pre.style.pointerEvents='none'; }
-        log('PRE-FORCE-HIDE',{});
-      }catch{}
-    }
-    // Taimingi + resursu kopsavilkums
-    const n = performance.getEntriesByType('navigation')[0];
-    log('TIMING',{
-      ttfb: Math.round(n?.responseStart - n?.requestStart),
-      domInteractive: Math.round(n?.domInteractive - n?.startTime),
-      dcl: Math.round(n?.domContentLoadedEventEnd - n?.startTime),
-      load: Math.round(n?.loadEventEnd - n?.startTime),
-      transfer: Math.round(n?.responseEnd - n?.requestStart)
-    });
-    const all = performance.getEntriesByType('resource');
-    const last = all.slice(-24).map(r=>({name:r.name, type:r.initiatorType, dur:Math.round(r.duration), cached:r.transferSize===0}));
-    log('RES-SUM',{count: all.length, last});
-
-    // Ērti nokopēt no konsoles
-    window.__lastDebugReport = {url: location.href, ua: navigator.userAgent, events: EVT};
-    console.info(JSON.stringify(window.__lastDebugReport, null, 2));
-  }, watchdogMs);
-})();
-</script>
-
 
 
 
@@ -1205,11 +1119,98 @@ body.preloading { overflow: hidden; }
 
 /* sākuma “paslēpts” stāvoklis – saskaņā ar JS */
 #iframeContainerAbout { bottom: -620px; display: none; }
-#iframeContainerQR    { bottom: -370px; display: none; }
-
-
-	
+#iframeContainerQR    { bottom: -370px; display: none; }	
 </style>
+
+
+
+
+
+
+
+
+
+
+
+<!-- DEBUG (SAFE): kļūdas + preloader watchdog, bez console pārrakstīšanas -->
+<script>
+(function(){
+  const t0 = performance.now();
+  const EVT = [];
+  const OC = {
+    log: console.log.bind(console),
+    info: console.info.bind(console),
+    warn: console.warn.bind(console),
+    error: console.error.bind(console),
+    debug: console.debug.bind(console),
+  };
+  const push = (t, data={}) => {
+    EVT.push({ t, ts: Date.now(), rel: +(performance.now()-t0).toFixed(1), data });
+  };
+
+  // Pamat notikumi
+  const nav = performance.getEntriesByType('navigation')[0];
+  push('NAV', { type: nav?.type });
+  document.addEventListener('readystatechange', () => push('RS', { state: document.readyState }));
+  document.addEventListener('DOMContentLoaded', () => push('DCL', {}), { once: true });
+  window.addEventListener('load', () => push('LOAD', {}), { once: true });
+  window.addEventListener('pageshow', e => push('PAGESHOW', { persisted: e.persisted }), { once: true });
+
+  // Kļūdas + resursu kļūdas (bez console pārrakstīšanas)
+  window.addEventListener('error', e => {
+    const t = e.target;
+    if (t && (t.tagName === 'IMG' || t.tagName === 'SCRIPT' || t.tagName === 'LINK')) {
+      push('RESERR', { tag: t.tagName, url: t.currentSrc || t.src || t.href });
+    } else {
+      push('ERR', { message: e.message, filename: e.filename, lineno: e.lineno, colno: e.colno, stack: e.error?.stack });
+    }
+  }, true);
+  window.addEventListener('unhandledrejection', e => {
+    push('ERR', { message: e.reason?.message || String(e.reason), stack: e.reason?.stack });
+  });
+
+  // Preloader watchdog: ja pēc 4s vēl redzams — paslēpjam piespiedu kārtā
+  const pre = document.getElementById('app-preloader');
+  setTimeout(() => {
+    const stuck = document.body.classList.contains('preloading') || (pre && pre.offsetParent !== null);
+    push('PRECHK', { after: 4000, stuck });
+    if (stuck) {
+      document.body.classList.remove('preloading');
+      if (pre) { pre.style.display = 'none'; pre.style.opacity = '0'; pre.style.pointerEvents = 'none'; }
+      push('PRE-FORCE-HIDE', {});
+    }
+    // Taimingi
+    const n = performance.getEntriesByType('navigation')[0];
+    if (n) {
+      push('TIMING', {
+        ttfb: Math.round(n.responseStart - n.requestStart),
+        domInteractive: Math.round(n.domInteractive - n.startTime),
+        dcl: Math.round(n.domContentLoadedEventEnd - n.startTime),
+        load: Math.round(n.loadEventEnd - n.startTime),
+        transfer: Math.round(n.responseEnd - n.requestStart),
+      });
+    }
+    // Kopsavilkums
+    const all = performance.getEntriesByType('resource');
+    const last = all.slice(-24).map(r => ({ name: r.name, type: r.initiatorType, dur: Math.round(r.duration), cached: r.transferSize === 0 }));
+    push('RES-SUM', { count: all.length, last });
+
+    window.__lastDebugReport = { url: location.href, ua: navigator.userAgent, events: EVT };
+    OC.info('=== DevTool Report (safe) ===\n' + JSON.stringify(window.__lastDebugReport, null, 2));
+  }, 4000);
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+
 
 	
 </head>
