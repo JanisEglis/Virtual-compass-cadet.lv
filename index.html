@@ -2,10 +2,89 @@
 <html lang="lv">
 <head>
   <meta charset="utf-8" />
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>CADET.LV Interaktīvais kompass © Jānis Eglis</title>
+<!-- ===== No-cache & BUILD ===== -->
+  
+
+<!-- ====== Keša atslēgšana un būves versija ====== -->
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 
+<script>
+  // Katru ielādi ģenerē jaunu versiju -> pārlūks nekad neņem no keša
+  window.__BUILD = String(Date.now());
+</script>
+
+<!-- ====== Dinamiska CSS/JS ielāde pareizā secībā ar cache-buster ====== -->
+<script>
+(function(){
+  const V = window.__BUILD;
+
+  function withV(u){ return u + (u.includes('?')?'&':'?') + 'v=' + encodeURIComponent(V); }
+
+  function addCSS(href){
+    const el = document.createElement('link');
+    el.rel = 'stylesheet';
+    el.href = withV(href);
+    document.head.appendChild(el);
+  }
+
+  function loadJS(src){
+    return new Promise((resolve, reject)=>{
+      const s = document.createElement('script');
+      s.src = withV(src);
+      // svarīgi: bez defer, lai noturētu sekvenci
+      s.onload = ()=> resolve();
+      s.onerror = (e)=> reject(e);
+      document.head.appendChild(s);
+    });
+  }
+
+  // 1) CSS
+  addCSS('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+  addCSS('style.css');
+
+  // 2) JS secība: proj4 -> leaflet -> pdfjs -> (uzstādi worker) -> tavs app
+  loadJS('https://cdn.jsdelivr.net/npm/proj4@2.10.0/dist/proj4.min.js')
+    .then(()=> loadJS('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'))
+    .then(()=> loadJS('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js'))
+    .then(()=>{
+      if (window.pdfjsLib) {
+        // arī worker failam pieliekam versiju
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          withV('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js');
+        console.log('PDF.js OK?', !!window.pdfjsLib, window.pdfjsLib.version);
+      } else {
+        console.warn('PDF.js nav ielādējies.');
+      }
+    })
+    .then(()=> loadJS('app.js')) // šeit startē tavs kods (redzēs jau ielādētu Leaflet/PDFJS/Proj4)
+    .catch((e)=>{
+      console.error('[boot] Resource load failed:', e);
+      // izvēles: šeit vari parādīt avārijas ekrānu
+    });
+})();
+</script>
+
+<!-- (neobligāti) nomodule polyfilliem pieliekam versiju -->
+<script nomodule src="https://cdn.jsdelivr.net/npm/core-js-bundle/minified.js?dummy=1"></script>
+<script nomodule src="https://cdn.jsdelivr.net/npm/resize-observer-polyfill@1.5.1/dist/ResizeObserver.global.js?dummy=1"></script>
+
+<!-- (izvēles) BFCache aizliegums (atpakaļ/uz priekšu) -->
+<script>
+(function(){
+  const k='__no_bfcache_reload__';
+  addEventListener('pageshow', function(e){
+    if (e.persisted && !sessionStorage.getItem(k)) {
+      sessionStorage.setItem(k,'1'); location.reload();
+    } else {
+      sessionStorage.removeItem(k);
+    }
+  });
+})();
+</script>
 
 
 
@@ -515,7 +594,7 @@
 
 
 
-<script>
+<!-- <script>
 	// tests layerctl 
 (function(){
   window.__probeLayers = function(layersCtl){
@@ -564,7 +643,7 @@
     }catch(err){ console.error('[layers-probe fatal]', err); }
   };
 })();
-</script>
+</script> -->
 
 
 
@@ -792,58 +871,7 @@
 
 	
 	
-<!-- PDF.js 3.x (ļoti stabila) -->
-<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script>
-  if (window.pdfjsLib) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
-    console.log("PDF.js OK?", !!window.pdfjsLib, pdfjsLib.version);
-  } else {
-    console.warn("PDF.js nav ielādējies (CDN bloķēts/404).");
-  }
-</script>
 
-
-
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <title>CADET.LV Interaktīvais kompass © Jānis Eglis</title>
-
-  <!-- Trešo pušu CSS vispirms -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-
-
-
-
-
-
-
-  <!-- Tavs CSS pēc tam, lai var pārrakstīt -->
-  <link rel="stylesheet" href="style.css?v=2025-09-29-01">
-
-  <!-- (pēc vajadzības) vieta JS ģenerētiem stiliem -->
-  <style id="runtime-styles"></style>
-
-  <!-- Leaflet JS pirms tava koda -->
-  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-
-
-
-
-
-
-
-
-	
-<!-- Tikai vecajiem pārlūkiem (Chrome 60 u.c.) -->
-<script nomodule src="https://cdn.jsdelivr.net/npm/core-js-bundle/minified.js"></script>
-<script nomodule src="https://cdn.jsdelivr.net/npm/resize-observer-polyfill@1.5.1/dist/ResizeObserver.global.js"></script>
-
-
-
-
-<script src="https://cdn.jsdelivr.net/npm/proj4@2.10.0/dist/proj4.min.js"></script>
 <style>
   /* plānas etiķetes režģa malās */
   .grid-label{font:12px/1.1 system-ui,Segoe UI,Arial; padding:2px 4px; background:#fff8; border:1px solid #0003; border-radius:4px; }
