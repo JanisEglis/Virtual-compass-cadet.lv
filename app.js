@@ -1,7 +1,13 @@
 console.info('[modern] app.js start');
 
 
-
+// Aizsardzība pret dubultu startu (ātrs reload/bfcache)
+if (window.__CADET_APP_BOOTED__) {
+  console.warn('[boot] otrā palaišana ignorēta');
+  // nekas vairs netiek darīts
+} else {
+  window.__CADET_APP_BOOTED__ = true;
+}
 
 
 // Palaist, kad DOM gatavs (strādā visur)
