@@ -6,6 +6,197 @@
 
 
 
+<script>
+/* ===== Reload Debugger (RD) — ieliec PATS PIRMAIS <head> ===== */
+(function(){
+  'use strict';
+
+  /* --- konfigurācija --- */
+  var SHOW_UI = (window.__RD_NO_UI !== true);   // ja gribi tikai konsolē: window.__RD_NO_UI=true pirms skripta
+  var PRELOADER_ID = 'app-preloader';           // tavam CSS/HTML atbilst
+  var WARN_IMG_LATE = true;                     // brīdināt par vēliem <img> klausītājiem
+  var RD = { t0: (performance && performance.timeOrigin) || Date.now() };
+
+  function pad(n){ return (n<10?'0':'')+n; }
+  function ts(){
+    var ms = Math.max(0, Math.round(performance.now ? performance.now() : (Date.now()-RD.t0)));
+    var s = Math.floor(ms/1000), m = Math.floor(s/60), rem = s%60;
+    return '['+pad(m)+':'+pad(rem)+'.'+(''+(ms%1000)).padStart(3,'0')+']';
+  }
+  function safe(v){
+    try{ if (typeof v==='string') return v; if (v && v.stack) return v.stack; return JSON.stringify(v); }catch(_){ return String(v); }
+  }
+  var buf=[], MAX=1500, ERR=0, WRN=0;
+  function push(kind){
+    var args=[].slice.call(arguments,1).map(safe);
+    var line = ts()+' '+kind+' '+args.join(' ');
+    if (buf.length>=MAX) buf.shift();
+    buf.push(line);
+    try {
+      var m = (kind==='ERR'?'error':kind==='WRN'?'warn':kind==='INF'?'info':'log');
+      console[m] ? console[m](line) : console.log(line);
+    } catch(_){}
+    if (SHOW_UI) appendUI(line, kind);
+  }
+
+  /* --- event flagi, lai piefiksētu “vēlos klausītājus” --- */
+  var domReadyFired = (document.readyState !== 'loading');
+  var loadFired     = (document.readyState === 'complete');
+
+  document.addEventListener('DOMContentLoaded', function(){ domReadyFired = true; push('INF','DOMContentLoaded'); }, {once:true});
+  window.addEventListener('load', function(){ loadFired = true; push('INF','window.load'); }, {once:true});
+
+  document.addEventListener('readystatechange', function(){
+    push('INF','readyState=', document.readyState);
+  });
+
+  window.addEventListener('pageshow', function(e){
+    push('INF','pageshow persisted='+!!e.persisted);
+  });
+  window.addEventListener('pagehide', function(e){
+    push('INF','pagehide persisted='+!!e.persisted);
+  });
+  document.addEventListener('visibilitychange', function(){
+    push('INF','visibilitychange', document.visibilityState);
+  });
+  (window as any).onfreeze && window.addEventListener('freeze', ()=>push('WRN','freeze'));
+  window.addEventListener('beforeunload', ()=>push('INF','beforeunload'));
+  window.addEventListener('unload', ()=>push('INF','unload'));
+
+  /* --- globālās kļūdas / resursi / promises --- */
+  window.addEventListener('error', function(e){
+    ERR++; push('ERR', e.message, '@', e.filename+':'+e.lineno+':'+e.colno);
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    ERR++; var r=e && e.reason; push('ERR','UnhandledPromise', r && (r.stack||r.message||String(r)));
+  });
+  document.addEventListener('error', function(e){
+    var el = e.target||{}; var tag = el.tagName||'?';
+    if (tag==='IMG'||tag==='SCRIPT'||tag==='LINK'){
+      var src = el.currentSrc||el.src||el.href||'(nav)';
+      WRN++; push('WRN','Resursa kļūda <'+tag.toLowerCase()+'>:', src);
+    }
+  }, true);
+
+  /* --- “Vēlo klausītāju” detektors (window/document/img) --- */
+  (function(){
+    var wAdd = window.addEventListener.bind(window);
+    window.addEventListener = function(type, fn, opt){
+      if (type==='load' && loadFired){
+        WRN++; push('WRN','VĒLS window.load klausītājs – notikums jau ir noticis. (Pievienots pēc load)');
+      }
+      return wAdd(type, fn, opt);
+    };
+    var dAdd = document.addEventListener.bind(document);
+    document.addEventListener = function(type, fn, opt){
+      if (type==='DOMContentLoaded' && domReadyFired){
+        WRN++; push('WRN','VĒLS DOMContentLoaded klausītājs – notikums jau ir noticis.');
+      }
+      return dAdd(type, fn, opt);
+    };
+    if (window.HTMLImageElement && WARN_IMG_LATE){
+      var iAdd = HTMLImageElement.prototype.addEventListener;
+      HTMLImageElement.prototype.addEventListener = function(type, fn, opt){
+        if (type==='load' && this.complete){
+          WRN++; push('WRN','<img> load klausītājs pievienots PĒC ielādes – notikums neizšaus. src=', this.currentSrc||this.src||'(?)');
+        }
+        return iAdd.call(this, type, fn, opt);
+      };
+    }
+  })();
+
+  /* --- preloader novērotājs (#app-preloader) --- */
+  (function watchPreloader(){
+    function check(tag){
+      var el = document.getElementById(PRELOADER_ID);
+      if (!el) { push('INF','Preloader nav atrasts (#'+PRELOADER_ID+') – izlaižu.'); return; }
+      var hidden = el.classList.contains('hidden') || el.style.display==='none' || getComputedStyle(el).display==='none' || getComputedStyle(el).visibility==='hidden';
+      push(hidden ? 'INF' : 'WRN', 'Preloader stāvoklis ['+tag+']: visible=', !hidden, ' class=', el.className);
+      if (!hidden){
+        setTimeout(function(){
+          var still = document.getElementById(PRELOADER_ID);
+          if (!still) return;
+          var vis = getComputedStyle(still).display!=='none' && !still.classList.contains('hidden');
+          if (vis) { WRN++; push('WRN','Preloader, šķiet, iesprūdis ('+tag+' +2s). Pārbaudi, vai “finish” loģika nav piesieta vēlam “load/img.load”.'); }
+        }, 2000);
+      }
+    }
+    document.addEventListener('DOMContentLoaded', function(){ check('DOMContentLoaded'); }, {once:true});
+    window.addEventListener('load', function(){ check('window.load'); }, {once:true});
+  })();
+
+  /* --- navigācijas dati --- */
+  setTimeout(function(){
+    try{
+      var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+      if (nav){
+        var data = {
+          type: nav.type, ttfb: Math.round(nav.responseStart),
+          domInteractive: Math.round(nav.domInteractive),
+          domContentLoaded: Math.round(nav.domContentLoadedEventEnd),
+          loadEventEnd: Math.round(nav.loadEventEnd)
+        };
+        push('INF','navigation', JSON.stringify(data));
+      }
+    }catch(_){}
+  },0);
+
+  /* --- UI (neliels) --- */
+  var ui, bodyEl, badge;
+  function appendUI(line, kind){
+    if (!ui) buildUI();
+    bodyEl.appendChild(document.createTextNode(line+'\n'));
+    if (kind==='ERR') badge.style.background = '#E53935';
+    badge.textContent = 'E:'+ERR+(WRN?(' W:'+WRN):'');
+    bodyEl.scrollTop = bodyEl.scrollHeight;
+  }
+  function buildUI(){
+    if (!SHOW_UI) return;
+    if (!document.body){ return setTimeout(buildUI, 0); }
+    var btn = document.createElement('button');
+    btn.id='rdToggle'; btn.type='button';
+    btn.style.cssText='position:fixed;right:12px;bottom:90px;width:40px;height:40px;border-radius:11px;border:1px solid #fff3;background:#1e1e24;color:#fff;z-index:2147483600;';
+    btn.textContent='🧭';
+    badge = document.createElement('span');
+    badge.style.cssText='position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:10px;border:1px solid #fff3;background:#777;color:#fff;font:11px/18px ui-monospace,monospace;text-align:center;';
+    btn.appendChild(badge);
+    document.body.appendChild(btn);
+    var panel = document.createElement('div');
+    panel.id='rdPanel';
+    panel.style.cssText='position:fixed;right:60px;bottom:90px;width:360px;max-width:95vw;max-height:58vh;display:none;flex-direction:column;border:1px solid #fff2;border-radius:12px;background:rgba(18,20,28,.92);color:#eef;backdrop-filter:blur(6px);z-index:2147483600;';
+    panel.innerHTML='<div style="padding:8px 10px;border-bottom:1px solid #fff2;display:flex;gap:8px;align-items:center;"><strong style="font:13px system-ui">Reload Debugger</strong><span style="flex:1"></span><button id="rdClr" style="appearance:none;border:1px solid #fff3;background:#ffffff1a;color:#fff;border-radius:8px;padding:3px 8px;font-size:12px;cursor:pointer">Notīrīt</button><button id="rdClose" style="appearance:none;border:1px solid #fff3;background:#ffffff1a;color:#fff;border-radius:8px;padding:3px 8px;font-size:12px;cursor:pointer">✖</button></div><div id="rdBody" style="padding:10px;overflow:auto;white-space:pre-wrap;font:12px ui-monospace,monospace"></div>';
+    document.body.appendChild(panel);
+    bodyEl = panel.querySelector('#rdBody');
+    btn.addEventListener('click', function(){ panel.style.display = (panel.style.display==='none'?'flex':'none'); });
+    panel.querySelector('#rdClose').addEventListener('click', function(){ panel.style.display='none'; });
+    panel.querySelector('#rdClr').addEventListener('click', function(){ bodyEl.textContent=''; });
+    ui = panel;
+  }
+
+  /* --- sākuma rindas --- */
+  push('INF','RD start', navigator.userAgent);
+  push('INF','readyState initial =', document.readyState);
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
 
 
 
