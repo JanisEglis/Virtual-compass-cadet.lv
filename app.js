@@ -95,9 +95,10 @@ function lksToWGS(E, N){                   // atpakaļ uz WGS84
 
 
 
+// ===== PRELOADER (fix progress binding) =====
 onDomReady(() => {
   const pre = document.getElementById('app-preloader');
-  if(!pre) return;
+  if (!pre) return;
 
   document.body.classList.add('preloading');
 
@@ -105,94 +106,90 @@ onDomReady(() => {
   const msg = pre.querySelector('.msg');
   const skipBtn = pre.querySelector('#preloaderSkip');
 
-  let total = 1; // vismaz loga "load"
-  let done  = 0;
+  let total  = 1;  // vismaz viens solis
+  let done   = 0;
   let closed = false;
 
-  const tick = (why) => {
-    done = Math.min(done + 1, total);
-    const pct = Math.max(0, Math.min(100, Math.round((done/total)*100)));
+  const render = (pct) => {
     if (bar) bar.style.width = pct + '%';
     if (msg) msg.textContent = `Ielādējam… ${pct}%`;
   };
+  const tick = (why) => {
+    done = Math.min(done + 1, total);
+    render(Math.max(0, Math.min(100, Math.round((done / total) * 100))));
+  };
 
-  // === DROŠĀKA bildeņu savākšana (ignorē tukšu src) ===
-  const imgSet = new Set();
-  [
-    '#compassContainer img',
-    '#buttonContainer img',
-    '#fullscreenMessage img',
-    '.warning-content img',
-    '#qrCodeImage',
-    '#uploadedImg',
-    '#newUploadedImg',
-    '#resizeHandle img'
-  ].forEach(sel => {
-    document.querySelectorAll(sel).forEach(img => {
-      const raw = img.getAttribute('src');           // ← nevis img.src
-      if (raw && raw.trim() !== '') imgSet.add(img); // ignorē tukšos
-    });
+  // sākuma impulss, lai josla nekavējoties izkustas
+  tick('boot');
+
+ // ===== Bildes → progress =====
+  // Savāc visas aktuālās img; katrai pievieno tick uz load/error
+  const imgs = Array.from(document.images || []);
+  total += imgs.length;
+  imgs.forEach((imgEl) => {
+    if (imgEl.complete) {
+      // jau kešā → tūlīt skaiti kā pabeigtu
+      tick('img-cached');
+    } else {
+      const onOne = () => tick('img');
+      imgEl.addEventListener('load', onOne, { once: true });
+      imgEl.addEventListener('error', onOne, { once: true });
+    }
   });
 
-  const imgPromises = Array.from(document.images || []).map(imgEl => new Promise((resolve) => {
-  if (imgEl.complete) return resolve();
-  imgEl.addEventListener('load', resolve, { once: true });
-  imgEl.addEventListener('error', resolve, { once: true });
-}));
-  total += imgPromises.length;
-
-  // (ja izmanto tiešsaistes karti startā – tikai progressam; nekad nebloķē finish)
+  // ===== Leaflet flīzes (ja ieslēgtas) → progress =====
   (function watchTilesIfNeeded(){
     try{
-      if(localStorage.getItem('onlineMapActive') !== '1') return;
+      if (localStorage.getItem('onlineMapActive') !== '1') return;
       const host = document.getElementById('onlineMap');
-      if(!host) return;
-      let target = 8, seen = 0;
+      if (!host) return;
+      const target = 8; let seen = 0;
       total += target;
-      const onTile = ()=>{ if(seen < target){ seen++; tick('tile'); } };
+      const onTile = () => { if (seen < target) { seen++; tick('tile'); } };
       const obs = new MutationObserver(recs=>{
         recs.forEach(r=>{
           r.addedNodes.forEach(n=>{
-            if(n && n.tagName === 'IMG' && n.classList.contains('leaflet-tile')){
-              n.addEventListener('load', onTile, {once:true});
-              n.addEventListener('error', onTile, {once:true});
+            if (n && n.tagName === 'IMG' && n.classList.contains('leaflet-tile')) {
+              n.addEventListener('load', onTile, { once:true });
+              n.addEventListener('error', onTile, { once:true });
             }
           });
         });
       });
-      obs.observe(host, {subtree:true, childList:true});
+      obs.observe(host, { subtree:true, childList:true });
       setTimeout(()=>obs.disconnect(), 4000);
-    }catch(e){}
+    }catch(_){}
   })();
 
-  // “window load” — ķer arī gadījumu, ja tas jau ir noticis
- // DOM gatavs → pietiek, lai rādītu app (negaidām iframe/fontus)
-const domReady = new Promise(res => {
-  if (document.readyState === 'interactive' || document.readyState === 'complete') res();
-  else document.addEventListener('DOMContentLoaded', res, { once: true });
-});
+  // ===== DOM notikumi → progress =====
+  const domReady = new Promise((res) => {
+    if (document.readyState === 'interactive' || document.readyState === 'complete') res();
+    else document.addEventListener('DOMContentLoaded', res, { once: true });
+  });
+  domReady.then(() => tick('dom'));
 
-// Drošais cietais “fuse”, ja kas aizķeras (8s)
-// Saglabājam timeout ID, lai finish var tos notīrīt
-const showSkip = setTimeout(() => pre && pre.classList.add('show-skip'), 6000);
-const hardCut  = setTimeout(() => finish('safety-8s'), 8000);
-skipBtn && skipBtn.addEventListener('click', () => finish('skip'));
+  // Skip poga & drošības “fuses”
+  const showSkip = setTimeout(() => pre && pre.classList.add('show-skip'), 6000);
+  const hardCut  = setTimeout(() => finish('safety-8s'), 8000);
+  skipBtn && skipBtn.addEventListener('click', () => finish('skip'));
 
-// Bildes: turpini skaitīt, bet neliec tās bloķēt UI atvēršanu
+  // Ātra atvēršana, kad DOM vai bildes ir gatavas (saglabā kā pie tevis)
+  // NB: šis joprojām aizvērs pēc ~250ms, bet pa to laiku tiks sasisti vairāki tick()
+  const imgPromises = Promise.allSettled(imgs.map(img => {
+    return img.complete ? Promise.resolve() : new Promise(r => {
+      const done = () => r();
+      img.addEventListener('load', done, { once:true });
+      img.addEventListener('error', done, { once:true });
+    });
+  }));
+  Promise.race([domReady, imgPromises]).then(() => setTimeout(() => finish('dom-or-img'), 250));
 
+  // Kļūdas arī aizver, kā iepriekš
+  window.addEventListener('error', () => finish('window-error'), { once: true });
+  window.addEventListener('unhandledrejection', () => finish('unhandledrejection'), { once: true });
 
-// HIDE ātri, tiklīdz DOM ir gatavs (vai bildes jau gatavas) — izmanto RACE, nevis ALL
-Promise.race([domReady, Promise.allSettled(imgPromises)])
-  .then(() => setTimeout(() => finish('dom-or-img'), 250));
-
-// Papildu drošība — jebkura kļūda arī aizver preloaderi
-window.addEventListener('error', () => finish('window-error'), { once: true });
-window.addEventListener('unhandledrejection', () => finish('unhandledrejection'), { once: true });
-window.addEventListener('load', () => finish('window-load'), { once:true });
-
-
-
-
+  // load → vispirms progress, tad finish
+  window.addEventListener('load', () => { tick('window-load'); finish('window-load'); }, { once:true });
 
   function finish(reason){
     if (closed) return;
@@ -200,11 +197,17 @@ window.addEventListener('load', () => finish('window-load'), { once:true });
     clearTimeout(showSkip); clearTimeout(hardCut);
     pre.classList.add('hidden');
     document.body.classList.remove('preloading');
-    // debug, ja vajag:
-    console.debug('[preloader] finish:', reason, {done, total});
+    // ja gribi, šeit var uzspiest 100%:
+    render(100);
+    console.debug('[preloader] finish:', reason, { done, total });
     setTimeout(()=> pre.remove(), 480);
   }
 });
+// ===== /PRELOADER =====
+
+
+
+
 
 
 
