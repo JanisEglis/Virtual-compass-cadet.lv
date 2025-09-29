@@ -884,12 +884,13 @@
   };
 
   if (modern){
-    // MODERN: app.js ar defer (kā tev bija)
-    var s = document.createElement('script');
-    s.defer = true;
-    s.src = 'app.js?v=2025-09-29-01';
-    s.onerror = function(){ console.error('[loader] failed:', this.src); };
-    document.head.appendChild(s);
+    // PIRMS: s.defer = true; document.head.appendChild(s);
+    document.addEventListener('DOMContentLoaded', function(){
+      var s = document.createElement('script');
+      s.src = 'app.js?v=2025-09-29-01';
+      s.async = false;            // saglabā izpildes secību, neveic “agrīnu” startu
+      document.body.appendChild(s); // ievieto pēc <body> parse
+    }, { once:true });
   } else {
     // LEGACY: transpilo, BET palažu tikai pēc DOM gatavības
     var b = document.createElement('script');
