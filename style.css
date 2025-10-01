@@ -2294,7 +2294,38 @@ body.print-mode .leaflet-left .leaflet-control{
 
 
 
+/* ===== HELP FAB (peldošā “?” poga) ===== */
+#helpFab{
+position:fixed; right:16px; bottom:calc(var(--dock-bottom,35px) + 78px);
+width:46px; height:46px; border-radius:12px; border:1px solid #ffffff22;
+background:linear-gradient(180deg,#1b1f25,#2a0f0faa); color:#fff; font:900 20px/46px system-ui,sans-serif;
+text-align:center; cursor:pointer; z-index:2147482000;
+box-shadow:0 12px 28px rgba(0,0,0,.55);
+}
+#helpFab:focus{ outline:2px solid #437e12; outline-offset:2px; }
+#helpFab:hover{ background:linear-gradient(180deg,#232834,#381111aa); }
 
+
+/* Ja ir ļoti šaurs ekrāns – pabīdam nedaudz uz iekšu */
+@media (max-width:520px){ #helpFab{ right:10px; bottom:calc(var(--dock-bottom,30px) + 70px);} }
+
+
+/* ===== TOUR OVERLAY ===== */
+.tour-mask{ position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:2147483000; }
+.tour-hole{ position:fixed; z-index:2147483001; border-radius:12px; box-shadow:0 0 0 9999px rgba(0,0,0,.55); border:2px solid #ff3b3b; pointer-events:none; transition:all .18s ease; }
+.tour-tip{ position:fixed; max-width:min(420px, 88vw); z-index:2147483002; color:#eef2f7; background:linear-gradient(180deg,#1b1f25,#2a0f0faa); border:1px solid #ffffff22; border-radius:12px; padding:12px 14px; box-shadow:0 16px 40px rgba(0,0,0,.55); }
+.tour-tip h3{ margin:0 0 6px; font:700 15px/1.2 system-ui,sans-serif; }
+.tour-tip p{ margin:0; font:13px/1.35 system-ui,Segoe UI,Roboto,Arial; opacity:.95; }
+.tour-tip .nav{ display:flex; gap:8px; justify-content:flex-end; margin-top:10px; }
+.tour-tip .nav button{ appearance:none; border:1px solid #ffffff33; background:#ffffff12; color:#fff; border-radius:9px; padding:6px 10px; font:600 12px/1 system-ui; cursor:pointer; }
+.tour-tip .nav button:hover{ background:#ffffff22; }
+.tour-tip .nav .sp{ flex:1; text-align:left; color:#9aa4b2; font:12px/1.4 system-ui; }
+.tour-progress{ position:fixed; left:50%; bottom:12px; transform:translateX(-50%); z-index:2147483002; font:600 12px system-ui; color:#cfe8c1; background:#1b2118; border:1px solid #24361a; padding:4px 8px; border-radius:999px; }
+
+
+/* Neliels pulsējošs efekts mērķim */
+@keyframes pulseRing{ 0%{ box-shadow:0 0 0 0 rgba(255,59,59,.55);} 100%{ box-shadow:0 0 0 12px rgba(255,59,59,0);} }
+.tour-hole{ animation:pulseRing 1.2s ease-out infinite; }
 
 
 
