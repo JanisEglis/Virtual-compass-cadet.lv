@@ -6336,3 +6336,88 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
   }, true);
 })();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+// ===== Interaktīvais ceļvedis (vanilla, bez ārējām bibliotēkām) =====
+tries++; if (visible(qs(s.sel)) || tries>20){ clearInterval(t); visible(qs(s.sel)) ? show(i) : next(); }
+}, 120);
+return;
+}
+
+
+const r = rectOf(el);
+placeHole(r);
+tip.innerHTML = `<h3>${s.title||''}</h3><p>${s.body||''}</p>
+<div class="nav"><span class="sp">${i+1}/${steps.length}</span>
+${i>0?'<button data-act="prev">Atpakaļ</button>':''}
+<button data-act="next">${i<steps.length-1?'Tālāk':'Pabeigt'}</button>
+</div>`;
+placeTip(r, s.place);
+
+
+progress.textContent = `Ceļvedis — ${i+1}/${steps.length}`;
+}
+
+
+function next(){ show(i+1); }
+function prev(){ show(i-1); }
+function finish(){ clearUI(); localStorage.setItem('tourSeen','1'); }
+
+
+// Publiska palaišana
+window.startHelpTour = function(){ show(0); };
+
+
+// Klaviatūra: H — start, ESC — aizvērt, ←/→ — navigācija
+document.addEventListener('keydown', function(e){
+if (e.key==='h' || e.key==='H') { e.preventDefault(); window.startHelpTour(); }
+if (e.key==='Escape') { finish(); }
+if (!tip) return;
+if (e.key==='ArrowRight') { next(); }
+if (e.key==='ArrowLeft') { prev(); }
+});
+
+
+// Poga “?”
+const helpBtn = document.getElementById('helpFab');
+if (helpBtn) helpBtn.addEventListener('click', function(){ window.startHelpTour(); });
+
+
+// Kliki uz navigācijas pogām tipā
+document.addEventListener('click', function(ev){
+if (!tip) return;
+const act = ev.target && ev.target.getAttribute('data-act');
+if (act==='next'){ next(); }
+if (act==='prev'){ prev(); }
+});
+
+
+// Pirmā vizīte — automātiski parādi pēc ielādes
+window.addEventListener('load', function(){
+if (!localStorage.getItem('tourSeen')) {
+setTimeout(()=>{ if (document.visibilityState!=='hidden') window.startHelpTour(); }, 500);
+}
+});
+
+
+// Repozicionē tip/hole pie izmēra maiņas
+window.addEventListener('resize', function(){ if (tip && hole){ show(i); } });
+if (window.visualViewport){ visualViewport.addEventListener('resize', function(){ if (tip && hole){ show(i); } }); }
+})();
+// ===== /Interaktīvais ceļvedis =====
+
+
+
+
+
+
