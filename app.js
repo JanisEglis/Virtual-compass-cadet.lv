@@ -6336,7 +6336,7 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
   }, true);
 })();
 
-// iekava bez interaktīva ceļveža }
+ }
 
 
 
