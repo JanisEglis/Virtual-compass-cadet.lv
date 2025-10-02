@@ -2279,23 +2279,12 @@ body.print-mode .leaflet-left .leaflet-control{
 }
 
 
-/* @media print{
-  html, body { margin:0 !important; padding:0 !important; background:#fff !important; }
 
-  #printFooter{
-    position: fixed; left: 10mm; right: 10mm; bottom: 10mm;
-    display:flex; justify-content: space-between; gap:8mm;
-    font: 10pt/1.2 system-ui, sans-serif; color:#000;
-  }
-  #printFooter .left, #printFooter .center, #printFooter .right{
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-} */
 
 
 
 /* ===== HELP FAB (peldošā “?” poga) ===== */
-#helpFab{
+/*#helpFab{
 position:fixed; right:16px; bottom:calc(var(--dock-bottom,35px) + 78px);
 width:46px; height:46px; border-radius:12px; border:1px solid #ffffff22;
 background:linear-gradient(180deg,#1b1f25,#2a0f0faa); color:#fff; font:900 20px/46px system-ui,sans-serif;
@@ -2307,11 +2296,11 @@ box-shadow:0 12px 28px rgba(0,0,0,.55);
 
 
 /* Ja ir ļoti šaurs ekrāns – pabīdam nedaudz uz iekšu */
-@media (max-width:520px){ #helpFab{ right:10px; bottom:calc(var(--dock-bottom,30px) + 70px);} }
-
+/*@media (max-width:520px){ #helpFab{ right:10px; bottom:calc(var(--dock-bottom,30px) + 70px);} }
+*/
 
 /* ===== TOUR OVERLAY ===== */
-.tour-mask{ position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:2147483000; }
+/*.tour-mask{ position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:2147483000; }
 .tour-hole{ position:fixed; z-index:2147483001; border-radius:12px; box-shadow:0 0 0 9999px rgba(0,0,0,.55); border:2px solid #ff3b3b; pointer-events:none; transition:all .18s ease; }
 .tour-tip{ position:fixed; max-width:min(420px, 88vw); z-index:2147483002; color:#eef2f7; background:linear-gradient(180deg,#1b1f25,#2a0f0faa); border:1px solid #ffffff22; border-radius:12px; padding:12px 14px; box-shadow:0 16px 40px rgba(0,0,0,.55); }
 .tour-tip h3{ margin:0 0 6px; font:700 15px/1.2 system-ui,sans-serif; }
@@ -2321,82 +2310,82 @@ box-shadow:0 12px 28px rgba(0,0,0,.55);
 .tour-tip .nav button:hover{ background:#ffffff22; }
 .tour-tip .nav .sp{ flex:1; text-align:left; color:#9aa4b2; font:12px/1.4 system-ui; }
 .tour-progress{ position:fixed; left:50%; bottom:12px; transform:translateX(-50%); z-index:2147483002; font:600 12px system-ui; color:#cfe8c1; background:#1b2118; border:1px solid #24361a; padding:4px 8px; border-radius:999px; }
-
+*/
 
 /* Neliels pulsējošs efekts mērķim */
-@keyframes pulseRing{ 0%{ box-shadow:0 0 0 0 rgba(255,59,59,.55);} 100%{ box-shadow:0 0 0 12px rgba(255,59,59,0);} }
-.tour-hole{ animation:pulseRing 1.2s ease-out infinite; }
+/*@keyframes pulseRing{ 0%{ box-shadow:0 0 0 0 rgba(255,59,59,.55);} 100%{ box-shadow:0 0 0 12px rgba(255,59,59,0);} }
+.tour-hole{ animation:pulseRing 1.2s ease-out infinite; }*/
 
 
-
-/* ===== TOUR (modern spotlight + blur) ===== */
-#tourOverlay{
+/* ===== TOUR v3 — modern spotlight (rounded-rect), blur, gludas animācijas ===== */
+#tourOverlay {
   position: fixed; inset: 0; z-index: 2147483600;
-  /* Stikla tumšošana ar blur (Chrome/Edge/Safari); būs arī fallback */
-  background: rgba(5, 8, 12, .55);
-  backdrop-filter: blur(8px) saturate(1.1);
-  -webkit-backdrop-filter: blur(8px) saturate(1.1);
-  /* Izgriežam caurumu ar clip-path:path(...). Tas tiek iestatīts ar JS */
-  clip-path: path(var(--cp, 'M0 0H100%V100%H0Z')); /* fallback – viss tumšs */
-  /* cauruma izgriešanai izmantojam evenodd; Chrome 140 to atbalsta */
+  background: rgba(8, 10, 14, .55);
+  backdrop-filter: blur(10px) saturate(1.08);
+  -webkit-backdrop-filter: blur(10px) saturate(1.08);
+  /* Caurums tiks iegriezts ar CSS path(evenodd) caur --cp */
+  clip-path: path(var(--cp, 'M0 0H100%V100%H0Z'));
   clip-rule: evenodd;
-  transition: clip-path .18s ease;
-  pointer-events: auto; /* lai klikšķis uz maskas “aiz bloķē” fonu */
+  transition: clip-path .18s ease, background-color .18s ease;
+  pointer-events: auto;
 }
-
-/* Spilgts kvadrāts ap mērķi (gaismas gredzens) */
-#tourFocus{
+#tourFocus {
   position: fixed; z-index: 2147483602; pointer-events: none;
-  border-radius: 12px; /* vienmēr gludas malas */
-  outline: 2px solid #fff; outline-offset: 0;
+  border-radius: 12px;
+  outline: 2px solid rgba(255,255,255,.85);
+  outline-offset: 0;
   box-shadow:
-    0 0 0 2px rgba(255,255,255,.25) inset,
-    0 10px 30px rgba(0,0,0,.35),
-    0 0 0 10px rgba(255,255,255,.07); /* viegla “spilgtuma” oreola sajūta */
+    0 0 0 2px rgba(255,255,255,.18) inset,
+    0 14px 40px rgba(0,0,0,.45),
+    0 0 0 12px rgba(255,255,255,.07);
   transition: all .18s ease;
 }
-
-/* Tooltip (stikla kartiņa) ar bultiņu */
-#tourTip{
-  position: fixed; z-index: 2147483603; max-width: min(440px, 92vw);
+#tourTip {
+  position: fixed; z-index: 2147483603; max-width: min(460px, 92vw);
   color: #eaf1ff;
-  background: linear-gradient(180deg, rgba(17,21,29,.92), rgba(22,14,22,.86));
+  background: linear-gradient(180deg, rgba(17,21,29,.94), rgba(26,12,26,.90));
   border: 1px solid rgba(255,255,255,.12);
   border-radius: 14px; padding: 12px 14px;
-  box-shadow: 0 18px 46px rgba(0,0,0,.55);
+  box-shadow: 0 20px 54px rgba(0,0,0,.55);
 }
-#tourTip h3{ margin:0 0 6px; font:700 16px/1.2 system-ui,Segoe UI,Roboto,Arial; letter-spacing: .2px; }
-#tourTip p{ margin:0; font: 13px/1.45 system-ui,Segoe UI,Roboto,Arial; opacity:.95; }
-#tourTip .nav{ display:flex; gap:8px; justify-content:flex-end; margin-top:10px; }
-#tourTip .nav .sp{ margin-right:auto; color:#9fb3c8; font:12px/1.4 ui-monospace,monospace; }
+#tourTip h3 { margin:0 0 6px; font:700 16px/1.25 system-ui,Segoe UI,Roboto,Arial; letter-spacing:.2px; }
+#tourTip p  { margin:0; font:13px/1.45 system-ui,Segoe UI,Roboto,Arial; opacity:.95; }
+#tourTip .nav { display:flex; gap:8px; justify-content:flex-end; margin-top:10px; }
+#tourTip .nav .sp { margin-right:auto; color:#9fb3c8; font:12px/1.4 ui-monospace,monospace; }
 #tourTip .nav button{
-  appearance:none; border:1px solid #ffffff33; background:#ffffff10; color:#fff;
-  border-radius: 10px; padding:7px 11px; font:600 12px/1 system-ui; cursor:pointer;
+  appearance:none; border:1px solid #ffffff33; background:#ffffff12; color:#fff;
+  border-radius:10px; padding:7px 11px; font:600 12px/1 system-ui; cursor:pointer;
 }
-#tourTip .nav button:hover{ background:#ffffff1f; }
-#tourTip::after{ /* bultiņa (tiks pārorientēta ar transform) */
+#tourTip .nav button:hover{ background:#ffffff21; }
+
+#tourTip::after{ /* bultiņa; pozīciju regulē JS, rotācija ar --arrow-rot */
   content:''; position:absolute; width:12px; height:12px; background:inherit;
   border-left:1px solid rgba(255,255,255,.12); border-top:1px solid rgba(255,255,255,.12);
-  transform: translate(-50%, -50%) rotate(45deg); /* default: augšējā mala */
+  transform: translate(-50%, -50%) rotate(var(--arrow-rot,45deg));
 }
 
-/* Progress čips */
-#tourProgress{
+#tourProgress {
   position: fixed; left: 12px; bottom: 12px; z-index: 2147483603;
-  color: #cfe8c1; background: rgba(17,29,21,.85);
-  border: 1px solid #284523; border-radius: 999px;
+  color: #cfe8c1; background: rgba(20,30,20,.86);
+  border: 1px solid #2a4621; border-radius: 999px;
   padding: 5px 9px; font: 12px/1 ui-monospace,monospace;
 }
 
-/* FAB “?” (ja tev nav savējā) */
-#helpFab{
+/* “?” FAB, ja nav HTMLā. Ja tev jau ir savējā — šis netraucēs. */
+#helpFab {
   position:fixed; right:14px; bottom:calc(var(--dock-bottom,35px) + 78px);
-  width: 46px; height:46px; border-radius: 12px;
-  background: linear-gradient(180deg,#1b1f25,#371017aa); color: #fff; font: 900 20px/46px system-ui;
+  width:46px; height:46px; border-radius:12px;
+  background: linear-gradient(180deg,#1b1f25,#371017aa); color:#fff; font:900 20px/46px system-ui;
   border: 1px solid rgba(255,255,255,.16);
   box-shadow: 0 12px 28px rgba(0,0,0,.55);
   z-index: 2147483603; cursor:pointer;
 }
 #helpFab:hover{ background: linear-gradient(180deg,#232834,#4a1720aa); }
+
+/* Fallback, ja pārlūks nesaprot path() → būs vienkāršāks tumšums + gredzens */
+@supports not (clip-path: path('M0 0H1V1H0Z')) {
+  #tourOverlay{ clip-path: none; }
+}
+
 
 	
