@@ -2329,5 +2329,74 @@ box-shadow:0 12px 28px rgba(0,0,0,.55);
 
 
 
+/* ===== TOUR (modern spotlight + blur) ===== */
+#tourOverlay{
+  position: fixed; inset: 0; z-index: 2147483600;
+  /* Stikla tumšošana ar blur (Chrome/Edge/Safari); būs arī fallback */
+  background: rgba(5, 8, 12, .55);
+  backdrop-filter: blur(8px) saturate(1.1);
+  -webkit-backdrop-filter: blur(8px) saturate(1.1);
+  /* Izgriežam caurumu ar clip-path:path(...). Tas tiek iestatīts ar JS */
+  clip-path: path(var(--cp, 'M0 0H100%V100%H0Z')); /* fallback – viss tumšs */
+  /* cauruma izgriešanai izmantojam evenodd; Chrome 140 to atbalsta */
+  clip-rule: evenodd;
+  transition: clip-path .18s ease;
+  pointer-events: auto; /* lai klikšķis uz maskas “aiz bloķē” fonu */
+}
+
+/* Spilgts kvadrāts ap mērķi (gaismas gredzens) */
+#tourFocus{
+  position: fixed; z-index: 2147483602; pointer-events: none;
+  border-radius: 12px; /* vienmēr gludas malas */
+  outline: 2px solid #fff; outline-offset: 0;
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.25) inset,
+    0 10px 30px rgba(0,0,0,.35),
+    0 0 0 10px rgba(255,255,255,.07); /* viegla “spilgtuma” oreola sajūta */
+  transition: all .18s ease;
+}
+
+/* Tooltip (stikla kartiņa) ar bultiņu */
+#tourTip{
+  position: fixed; z-index: 2147483603; max-width: min(440px, 92vw);
+  color: #eaf1ff;
+  background: linear-gradient(180deg, rgba(17,21,29,.92), rgba(22,14,22,.86));
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px; padding: 12px 14px;
+  box-shadow: 0 18px 46px rgba(0,0,0,.55);
+}
+#tourTip h3{ margin:0 0 6px; font:700 16px/1.2 system-ui,Segoe UI,Roboto,Arial; letter-spacing: .2px; }
+#tourTip p{ margin:0; font: 13px/1.45 system-ui,Segoe UI,Roboto,Arial; opacity:.95; }
+#tourTip .nav{ display:flex; gap:8px; justify-content:flex-end; margin-top:10px; }
+#tourTip .nav .sp{ margin-right:auto; color:#9fb3c8; font:12px/1.4 ui-monospace,monospace; }
+#tourTip .nav button{
+  appearance:none; border:1px solid #ffffff33; background:#ffffff10; color:#fff;
+  border-radius: 10px; padding:7px 11px; font:600 12px/1 system-ui; cursor:pointer;
+}
+#tourTip .nav button:hover{ background:#ffffff1f; }
+#tourTip::after{ /* bultiņa (tiks pārorientēta ar transform) */
+  content:''; position:absolute; width:12px; height:12px; background:inherit;
+  border-left:1px solid rgba(255,255,255,.12); border-top:1px solid rgba(255,255,255,.12);
+  transform: translate(-50%, -50%) rotate(45deg); /* default: augšējā mala */
+}
+
+/* Progress čips */
+#tourProgress{
+  position: fixed; left: 12px; bottom: 12px; z-index: 2147483603;
+  color: #cfe8c1; background: rgba(17,29,21,.85);
+  border: 1px solid #284523; border-radius: 999px;
+  padding: 5px 9px; font: 12px/1 ui-monospace,monospace;
+}
+
+/* FAB “?” (ja tev nav savējā) */
+#helpFab{
+  position:fixed; right:14px; bottom:calc(var(--dock-bottom,35px) + 78px);
+  width: 46px; height:46px; border-radius: 12px;
+  background: linear-gradient(180deg,#1b1f25,#371017aa); color: #fff; font: 900 20px/46px system-ui;
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: 0 12px 28px rgba(0,0,0,.55);
+  z-index: 2147483603; cursor:pointer;
+}
+#helpFab:hover{ background: linear-gradient(180deg,#232834,#4a1720aa); }
 
 	
