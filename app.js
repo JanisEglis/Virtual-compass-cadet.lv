@@ -6342,296 +6342,257 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 
 
 
+// ===== Interaktīvais ceļvedis — precīzs spotlight + blur + dinamiska atklāšana =====
+(function(){
+  if (window.__HELP_TOUR_V2__) return; window.__HELP_TOUR_V2__ = 1;
 
-// ===== Interaktīvais ceļvedis (vanilla, bez ārējām bibliotēkām) =====
-(function () {
-  if (window.__HELP_TOUR_INIT__) return;
-  window.__HELP_TOUR_INIT__ = 1;
+  // ── Palīgi
+  const qs = s => document.querySelector(s);
+  const visible = el => !!el && el.offsetWidth > 0 && el.offsetHeight > 0
+    && getComputedStyle(el).visibility !== 'hidden' && getComputedStyle(el).display !== 'none';
+  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+  const vw = () => innerWidth, vh = () => (visualViewport ? visualViewport.height : innerHeight);
 
-  // ── Palīgi ─────────────────────────────────────────────────────────
-  const qs = (s) => document.querySelector(s);
-  const visible = (el) => !!el && el.offsetParent !== null;
-  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-
-  // UI elementi (tiek izveidoti pēc vajadzības)
-  let root, mask, tip, progress;
-  function ensureUI() {
-    if (root) return;
-    // Stili (minimāli, izolēti)
-    if (!document.getElementById('tourStyles')) {
-      const st = document.createElement('style');
-      st.id = 'tourStyles';
-      st.textContent = `
-      #tourRoot{position:fixed;inset:0;z-index:2147483600;pointer-events:none}
-      #tourMask{position:fixed;inset:0;background:rgba(0,0,0,.6);transition:clip-path .18s ease}
-      #tourTip{position:fixed;max-width:min(420px,92vw);background:#111;color:#fff;border-radius:12px;
-               padding:12px 14px;box-shadow:0 12px 30px rgba(0,0,0,.35);pointer-events:auto}
-      #tourTip h3{margin:0 0 6px;font:600 16px/1.2 system-ui,Segoe UI,Roboto,Arial}
-      #tourTip p{margin:0 0 10px;font:13px/1.4 system-ui,Segoe UI,Roboto,Arial}
-      #tourTip .nav{display:flex;gap:8px;align-items:center;justify-content:flex-end}
-      #tourTip .sp{margin-right:auto;opacity:.8;font:12px/1 ui-monospace,monospace}
-      #tourTip button{all:unset;cursor:pointer;background:#2a6bff;color:#fff;padding:6px 10px;border-radius:8px}
-      #tourTip button[data-act="prev"]{background:#444}
-      #tourProgress{position:fixed;left:12px;bottom:12px;color:#fff;background:rgba(0,0,0,.45);
-                    padding:5px 8px;border-radius:8px;font:12px/1 ui-monospace,monospace}
-      `;
-      document.head.appendChild(st);
-    }
-    root = document.createElement('div'); root.id = 'tourRoot';
-    mask = document.createElement('div'); mask.id = 'tourMask';
-    tip  = document.createElement('div'); tip.id  = 'tourTip';
-    progress = document.createElement('div'); progress.id = 'tourProgress';
-
-    root.appendChild(mask);
-    root.appendChild(tip);
-    root.appendChild(progress);
-    document.body.appendChild(root);
+  // ── UI
+  let overlay, ring, tip, progress;
+  function ensureUI(){
+    if (overlay) return;
+    overlay = document.createElement('div'); overlay.id = 'tourOverlay';
+    ring    = document.createElement('div'); ring.id    = 'tourFocus';
+    tip     = document.createElement('div'); tip.id     = 'tourTip';
+    progress= document.createElement('div'); progress.id= 'tourProgress';
+    document.body.append(overlay, ring, tip, progress);
+    // Klikšķis ārpus mērķa = “tālāk”
+    overlay.addEventListener('click', next, { passive:true });
   }
-  function clearUI() {
-    if (root && root.parentNode) root.parentNode.removeChild(root);
-    root = mask = tip = progress = null;
-  }
+  function clearUI(){ [overlay, ring, tip, progress].forEach(n=>n && n.remove()); overlay=ring=tip=progress=null; }
 
-  function rectOf(el) {
-    const r = el.getBoundingClientRect();
-    // vizuāli strādā ar viewport koordinātēm
-    return { left: r.left, top: r.top, width: r.width, height: r.height };
+  // ── Ģeometrija: izveido evenodd path => pilnekrāns mīnuss noapaļots mērķis
+  function roundedRectPath(x,y,w,h,r){
+    r = Math.max(0, Math.min(r, Math.min(w,h)/2));
+    // absolūts SVG path (CSS path() saprot)
+    const x2=x+w, y2=y+h;
+    return `M${x} ${y+r}A${r} ${r} 0 0 1 ${x+r} ${y}H${x2-r}A${r} ${r} 0 0 1 ${x2} ${y+r}V${y2-r}A${r} ${r} 0 0 1 ${x2-r} ${y2}H${x+r}A${r} ${r} 0 0 1 ${x} ${y2-r}Z`;
+  }
+  function screenRectPath(){ return `M0 0H${vw()}V${vh()}H0Z`; }
+
+  // Novieto spotlight (ring) un caurumu overlay
+  function placeSpot(elRect, pad=8, radius=12){
+    const x = clamp(Math.round(elRect.left) - pad, 0, vw());
+    const y = clamp(Math.round(elRect.top)  - pad, 0, vh());
+    const w = Math.round(elRect.width)  + pad*2;
+    const h = Math.round(elRect.height) + pad*2;
+
+    // clip-path: path('screenRect holeRect') ar evenodd
+    const hole = roundedRectPath(x, y, w, h, radius);
+    overlay.style.setProperty('--cp', `${screenRectPath()} ${hole}`);
+
+    // ring (gaismas rāmis) pozīcija
+    ring.style.left   = x + 'px';
+    ring.style.top    = y + 'px';
+    ring.style.width  = w + 'px';
+    ring.style.height = h + 'px';
+    ring.style.borderRadius = radius + 'px';
   }
 
-  function placeHole(r) {
-    // apļa caurums ap elementu (ar nelielu pagalmiņu)
-    const pad = 8;
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    const rad = Math.max(r.width, r.height) / 2 + pad;
-    mask.style.clipPath = `circle(${Math.ceil(rad)}px at ${Math.round(cx)}px ${Math.round(cy)}px)`;
-  }
-
-  function placeTip(r, place = 'right') {
-    // novietojam tooltip pie cauruma
+  // Tooltip novietojums + bultiņa
+  function placeTip(elRect, pref='right'){
+    tip.style.maxWidth = Math.min(440, vw() - 16) + 'px';
+    // ieliekam provizoriski, lai var nomērīt
+    tip.style.left='-9999px'; tip.style.top='-9999px';
     const gap = 12;
-    let x = r.left, y = r.top;
-    const vw = window.innerWidth, vh = window.innerHeight;
+    const tw = Math.min(tip.offsetWidth || 340, vw()-16);
+    const th = tip.offsetHeight || 120;
 
-    switch (place) {
-      case 'left':   x = r.left - tip.offsetWidth - gap;  y = r.top; break;
-      case 'top':    x = r.left;                          y = r.top - tip.offsetHeight - gap; break;
-      case 'bottom': x = r.left;                          y = r.top + r.height + gap; break;
-      default:       x = r.left + r.width + gap;          y = r.top; // right
-    }
-    // noturam ekrānā
-    x = clamp(x, 8, vw - tip.offsetWidth - 8);
-    y = clamp(y, 8, vh - tip.offsetHeight - 8);
+    let x = elRect.left + elRect.width + gap, y = elRect.top; // right
+    let arrowX = 0, arrowY = 0, arrowRot = 45;
+
+    if (pref==='left'  && elRect.left - gap - tw > 8)  { x = elRect.left - tw - gap; y = elRect.top; arrowRot = 225; }
+    if (pref==='top'   && elRect.top  - gap - th > 8)  { x = elRect.left; y = elRect.top - th - gap; arrowRot = 315; }
+    if (pref==='bottom'&& elRect.bottom + gap + th < vh()-8){ x = elRect.left; y = elRect.bottom + gap; arrowRot = 135; }
+
+    // clamp
+    x = clamp(x, 8, vw()-tw-8);
+    y = clamp(y, 8, vh()-th-8);
     tip.style.left = x + 'px';
     tip.style.top  = y + 'px';
+
+    // bultiņa – piesien pie malas
+    const prefer = pref || 'right';
+    const arrow = tip; // izmanto ::after
+    if (prefer==='right') { arrow.style.setProperty('--arrow-x', (elRect.left + elRect.width + 6) + 'px'); }
+    // CSS ::after pozicionēšana ar transform – vienkārši rotējam; precizitātei pietiek
+    tip.style.setProperty('--arrow-rot', arrowRot + 'deg');
   }
 
-  // ── Soļi ───────────────────────────────────────────────────────────
-  // Dinamiski mēģinām piemeklēt esošās pogas/elementus; ja kāds nav, to izlaižam
-  // ————— Soļi — pilnais ceļvedis visām funkcijām —————
-  const STEPS = [
-    // Sākums / navigācija
-    { sel: '#buttonContainer',
-      title: 'Ātrās darbības',
-      body: 'Šeit atrodas galvenās pogas: lokālā karte, tiešsaistes karte, kompass, 90° režģi, pilnekrāns, druka u.c.',
-      place: 'top' },
+  // ── Soļi (pamats). Dinamiku (vēlāk parādītos) pievienosim ar API addDynamicStep(...)
+  const BASE_STEPS = [
+    { sel:'#buttonContainer',  title:'Ātrās darbības', body:'Šeit atrodas galvenās pogas (kompass, karte, druka u.c.).', place:'top' },
+    { sel:'#compassContainer', title:'Kompass — pārvieto/mērogo/griez', body:'Pele: velc pārvieto; ALT+rullītis mērogs; SHIFT/CTRL+rullītis griež bāzi/skalu. Skārienā pincete + 2 pirkstu grieziens.', place:'right' },
+    { sel:'#toggleRotationMode', title:'Bāze ⇄ Skala', body:'Pārslēdz, kuru daļu griezt ar žestiem. “Bloķēt” lai nejauši neizkustinātu.', place:'top' },
+    { sel:'#lockRotationMode',   title:'Bloķēt rotāciju', body:'Slēdz rotācijas fiksāciju (īpaši ērti uz skārienierīcēm).', place:'top' },
+    { sel:'#rotateCompass90',  title:'Ātrā 90° izvēlne',   body:'Pagriez kompasu par ±90° (piem., saskaņošanai ar režģi).', place:'top' },
+    { sel:'#toggleOnlineMap',  title:'Tiešsaistes karte',   body:'Ieslēdz/izslēdz Leaflet karti; ritenis/pincete – tālummaiņa; labais klikšķis – koordinātes.', place:'bottom' },
+    { sel:'#mapDimmerRange',   title:'Tumšuma slīdnis',    body:'Samazini kartes spilgtumu, lai labāk redzētu kompasu/iezīmējumus.', place:'top' },
+    { sel:'#uploadMap',        title:'Augšupielādē lokālo karti', body:'Ielādē JPG/PNG; parādīsies izmēra rokturis.', place:'top' },
+    { sel:'#mapCanvas',        title:'Lokālā karte — darbs', body:'Ritenis – tālummaiņa; velc – pārvieto; skārienā: pincete/pārvietošana.', place:'top' },
+    { sel:'#resizeHandle',     title:'Izmēra rokturis',     body:'Velc apakšējo-labo rokturi, lai mainītu izmēru.', place:'top', optional:true },
+    { sel:'#preparePrintBtn',  title:'Druka',              body:'Atver drukas sagatavošanu (formāts, rāmis, mērogs).', place:'left' },
+    { sel:'#toggleFullscreen', title:'Pilnekrāns',         body:'Ieslēdz/izslēdz pilnekrānu.', place:'top' },
+    { sel:'#toggleInstruction',title:'Lietotāja ceļvedis', body:'Detalizētas instrukcijas un materiāli.', place:'bottom' },
+  ];
 
-    // Kompass — pamati un žesti
-    { sel: '#compassContainer',
-      title: 'Kompass — pārvieto',
-      body: 'Satver un velc, lai pārvietotu kompasu. Skārienā: velc ar 1 pirkstu.',
-      place: 'right' },
-    { sel: '#compassContainer',
-      title: 'Kompass — mērogs',
-      body: 'ALT + rullītis → maina kompasa izmēru (globāli). Skārienā: “pincete” (2 pirksti – tuvina/tālina).',
-      place: 'right' },
-    { sel: '#compassContainer',
-      title: 'Kompass — rotācija',
-      body: 'SHIFT + rullītis → griež bāzi. CTRL + rullītis → griež skalu. Skārienā: 2 pirkstu pagrieziens griež aktīvo daļu.',
-      place: 'right' },
+  // Dinamiskie soļi, ko var pievienot skrējiena laikā (piem., parādās pēc klikšķa)
+  const DYNAMIC_STEPS = [];
+  function addDynamicStep(step){ DYNAMIC_STEPS.push(step); }
 
-    // Kompass — režīmi un atjaunošana
-    { sel: '#toggleRotationMode',
-      title: 'Bāze ⇄ Skala',
-      body: 'Pārslēdz, kuru daļu grozīt ar žestiem/ritentiņu. (Datorā to pašu panāk ar SHIFT un CTRL.)',
-      place: 'top' },
-    { sel: '#lockRotationMode',
-      title: 'Bloķēt rotāciju',
-      body: 'Ieslēdz/izslēdz rotācijas bloķēšanu. Noder, lai nejauši nesagrozītu jau iestatīto virzienu.',
-      place: 'top' },
-    { sel: '#rotateCompass90',
-      title: 'Režģa 90° izvēlne',
-      body: 'Atver izvēlni ar +90°/-90° variantiem. Pēc izvēles var arī fiksēt kompasu (bloķēt).',
-      place: 'top' },
-    { sel: '#resetCompass',
-      title: 'Atiestatīt kompasu',
-      body: 'Atgriež kompasu sākumstāvoklī (pozīcija, mērogs, bāzes/skalās rotācija).',
-      place: 'top' },
+  // API piemērs (ja gribi ceļveža gaitā atvērt paneli un sagaidīt jaunu elementu):
+  // addDynamicStep({ sel: '.position-selector', title:'Novietojums', body:'Pārceļ dokus.', place:'left' });
 
-    // Tiešsaistes karte (Leaflet)
-    { sel: '#toggleOnlineMap',
-      title: 'Tiešsaistes karte',
-      body: 'Ieslēdz/izslēdz karti. Kartē: rullītis/pincete — tālummaiņa, velc — pārvieto, labais klikšķis — koordinātes (WGS84/MGRS) ar “Kopēt” pogām.',
-      place: 'bottom' },
-    { sel: '#onlineMap',
-      title: 'Kartes tumšums',
-      body: 'Tumšošanas pārklājums palīdz redzēt kompasu virs kartes. Zemāk ir slīdnis “Tumšums”.',
-      place: 'bottom' },
-    { sel: '#mapDimmerRange',
-      title: 'Tumšuma slīdnis',
-      body: 'Velc, lai mainītu kartes tumšumu. Vērtība ir redzama blakus. (Strādā arī, ja pogas ir sānos.)',
-      place: 'top' },
+  // ── Mašīna
+  let order = [];       // secība: BASE + dinamiski iemesti
+  let i = -1;           // pašreizējais indekss
+  let seen = new Set(); // jau parādītie selektori
+  let running = false;
 
-    // Lokālā karte (augšupielādēts attēls uz kanvas)
-    { sel: '#uploadMap',
-      title: 'Augšupielādēt karti',
-      body: 'Ielādē JPG/PNG. Pēc augšupielādes vari mērogot ar rullīti vai ar apakšējā-labā stūra rokturi.',
-      place: 'top' },
-    { sel: '#mapCanvas',
-      title: 'Lokālā karte — tālummaiņa/pārvietošana',
-      body: 'Rullītis → tālummaiņa. Velc uz kanvas → pārvieto attēlu. Skārienā: pincete mērogo, 2 pirksti pārvieto.',
-      place: 'top' },
-    { sel: '#resizeHandle',
-      title: 'Mērogošana ar rokturi',
-      body: 'Satver apakšējo labo rokturi un velc, lai mainītu attēla izmēru milimetros/pikseļos.',
-      place: 'top' },
-    { sel: '#resetMap',
-      title: 'Atiestatīt lokālo karti',
-      body: 'Notīra augšupielādēto attēlu un atgriež sākumstāvokli.',
-      place: 'top' },
-
-    // Druka
-    { sel: '#preparePrintBtn',
-      title: 'Druka',
-      body: 'Atver drukas iestatījumus (formāts, mērogs, virsraksts). Pirms drukas karte tiek izkārtota lapā ar rāmi un mērogu.',
-      place: 'left' },
-
-    // Pogu bloka novietojums un pilnekrāns
-    { sel: '#positionSelect',
-      title: 'Pogu novietojums',
-      body: 'Pārceļ pogu bloku: apakša / labā / kreisā. Tas pats pieejams arī kreisajā panelī.',
-      place: 'left' },
-    { sel: '#positionSelectLeft',
-      title: 'Novietojums (kreisais panelis)',
-      body: 'Paneļus vari atvērt/aizvērt ar bultiņām. Tie neaizsedz klikšķus kartei.',
-      place: 'right' },
-    { sel: '#toggleFullscreen',
-      title: 'Pilnekrāns',
-      body: 'Ieslēdz/izslēdz pilnekrānu — sevišķi ērti telefonā/planšetē.',
-      place: 'top' },
-
-    // Saites un materiāli
-    { sel: '#toggleInstruction',
-      title: 'Lietotāja ceļvedis (ārējās lapas)',
-      body: 'Atver detalizētās pamācības datoram un skārienierīcēm.',
-      place: 'bottom' },
-    { sel: '#toggleMaterials',
-      title: 'Mācību materiāli',
-      body: 'Saīsnes uz PDF/video materiāliem.',
-      place: 'bottom' },
-    { sel: '#about',
-      title: 'Par / Ziņot',
-      body: 'Atsauksmju forma un koplietošanas QR.',
-      place: 'top' }
-  ].filter(s => document.querySelector(s.sel));
-
-  // Ja nekas neatradās, ieliekam fallback uz body, lai moduļa UI strādātu
-  if (STEPS.length === 0) {
-    STEPS.push({ sel: 'body', title: 'Sveicināts!', body: 'Šis ir interaktīvs ceļvedis. Pievieno soļus ar sev vajadzīgiem selektoriem.', place: 'bottom' });
+  function activeSteps(){
+    // atlasām redzamos + tos, kurus vēl neesam rādījuši
+    const all = [...BASE_STEPS, ...DYNAMIC_STEPS];
+    return all.filter(s => !seen.has(s.sel));
   }
 
-  let i = -1;
+  function show(idx){
+    ensureUI(); running = true;
+    order = activeSteps();
+    if (!order.length){ return finish(); }
+    i = clamp(idx, 0, order.length-1);
 
-  function show(nextIndex) {
-    ensureUI();
-    i = clamp(nextIndex, 0, STEPS.length - 1);
-    const s  = STEPS[i];
-    const el = qs(s.sel);
+    let s = order[i];
 
-    if (!el) { next(); return; }
-
-    // Ja elements pagaidām nav redzams (piem., dropdown vēl nav atvērts) – gaidām līdz 2.4s
-    if (!visible(el)) {
-      let tries = 0;
-      const t = setInterval(() => {
-        tries++;
-        if (visible(qs(s.sel)) || tries > 20) {
-          clearInterval(t);
-          visible(qs(s.sel)) ? show(i) : next();
-        }
-      }, 120);
-      return;
-    }
-
-    const r = rectOf(el);
-    placeHole(r);
-    tip.innerHTML = `
-      <h3>${s.title || ''}</h3>
-      <p>${s.body || ''}</p>
-      <div class="nav">
-        <span class="sp">${i + 1}/${STEPS.length}</span>
-        ${i > 0 ? '<button data-act="prev">Atpakaļ</button>' : ''}
-        <button data-act="next">${i < STEPS.length - 1 ? 'Tālāk' : 'Pabeigt'}</button>
-      </div>`;
-    // jānomēra pēc satura ielikšanas
-    placeTip(r, s.place);
-    progress.textContent = `Ceļvedis — ${i + 1}/${STEPS.length}`;
+    // ja elements vēl nav gatavs — gaidām līdz 2.4s (20×/120ms), citādi skip
+    let tries = 0;
+    (function waitFor(){
+      const el = qs(s.sel);
+      if (visible(el)){
+        const r = el.getBoundingClientRect();
+        placeSpot(r, 8, 12);
+        tip.innerHTML = `<h3>${s.title||''}</h3><p>${s.body||''}</p>
+          <div class="nav"><span class="sp">${i+1}/${order.length}</span>
+            ${i>0?'<button data-act="prev">Atpakaļ</button>':''}
+            <button data-act="next">${i<order.length-1?'Tālāk':'Pabeigt'}</button>
+          </div>`;
+        placeTip(r, s.place||'right');
+        progress.textContent = `Ceļvedis — ${i+1}/${order.length}`;
+        seen.add(s.sel);
+        bindTipNav();
+      } else if (tries++ < 20){
+        setTimeout(waitFor, 120);
+      } else {
+        next(); // neredzams – izlaižam
+      }
+    })();
   }
 
-  function next()   { (i < STEPS.length - 1) ? show(i + 1) : finish(); }
-  function prev()   { (i > 0) ? show(i - 1) : show(0); }
-  function finish() { clearUI(); localStorage.setItem('tourSeen', '1'); }
-
-  // Publiska palaišana
-  window.startHelpTour = function () { show(0); };
-
-  // Klaviatūra: H — start, ESC — aizvērt, ←/→ — navigācija
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'h' || e.key === 'H') { e.preventDefault(); window.startHelpTour(); }
-    if (e.key === 'Escape') { finish(); }
-    if (!tip) return;
-    if (e.key === 'ArrowRight') { next(); }
-    if (e.key === 'ArrowLeft')  { prev(); }
-  });
-
-  // Peldošā “?” poga (ja neeksistē — uzģenerējam)
-  if (!document.getElementById('helpFab')) {
-    const fab = document.createElement('button');
-    fab.id = 'helpFab';
-    fab.type = 'button';
-    fab.title = 'Rādīt ceļvedi';
-    fab.textContent = '?';
-    Object.assign(fab.style, {
-      position: 'fixed', right: '12px', bottom: '12px',
-      width: '40px', height: '40px', borderRadius: '50%',
-      background: '#2a6bff', color: '#fff', border: '0',
-      boxShadow: '0 8px 20px rgba(0,0,0,.25)', zIndex: 2147483601, cursor: 'pointer'
+  function bindTipNav(){
+    tip.querySelectorAll('button[data-act]').forEach(b=>{
+      b.onclick = (e)=>{
+        const act = b.getAttribute('data-act');
+        if (act==='next') next(); else if (act==='prev') prev();
+      };
     });
-    document.body.appendChild(fab);
   }
-  document.getElementById('helpFab').addEventListener('click', () => window.startHelpTour());
 
-  // Kliki uz navigācijas pogām tipā
-  document.addEventListener('click', function (ev) {
-    if (!tip) return;
-    const act = ev.target && ev.target.getAttribute('data-act');
-    if (act === 'next') { next(); }
-    if (act === 'prev') { prev(); }
+  function next(){
+    const remaining = activeSteps();
+    if (!remaining.length) return finish();
+    const idx = Math.min(i+1, remaining.length-1);
+    show(idx);
+  }
+  function prev(){
+    const remaining = activeSteps();
+    if (!remaining.length) return finish();
+    const idx = Math.max(0, i-1);
+    show(idx);
+  }
+  function finish(){
+    running = false; clearUI();
+    localStorage.setItem('tourSeen','1');
+  }
+
+  // Publiskais starts
+  window.startHelpTour = function(){ seen.clear(); show(0); };
+
+  // Klaviatūra
+  document.addEventListener('keydown', (e)=>{
+    if (e.key==='h' || e.key==='H'){ e.preventDefault(); window.startHelpTour(); }
+    if (!running) return;
+    if (e.key==='Escape') finish();
+    if (e.key==='ArrowRight') next();
+    if (e.key==='ArrowLeft')  prev();
   });
 
-  // Pirmā vizīte — automātiski parādi pēc ielādes
-  window.addEventListener('load', function () {
-    if (!localStorage.getItem('tourSeen')) {
-      setTimeout(() => { if (document.visibilityState !== 'hidden') window.startHelpTour(); }, 500);
+  // Reakcionārs: uz resize/scroll/viewport izmaiņām pārrēķina
+  const reposition = () => {
+    if (!running || !overlay || !ring || !tip) return;
+    const cur = order[i]; if (!cur) return;
+    const el = qs(cur.sel); if (!visible(el)) return;
+    const r = el.getBoundingClientRect();
+    placeSpot(r, 8, 12);
+    placeTip(r, cur.place||'right');
+  };
+  addEventListener('resize', reposition);
+  addEventListener('scroll', reposition, true);
+  if (window.visualViewport){
+    visualViewport.addEventListener('resize', reposition);
+    visualViewport.addEventListener('scroll', reposition);
+  }
+
+  // Dinamiskā atklāšana: ja parādās jauni soļi (DOM mutācijas), iemet tos rindā
+  const mo = new MutationObserver(()=>{
+    if (!running) return;
+    // ja kāds no DYNAMIC_STEPS/aizlaistajiem BASE kļuva redzams – rādi to “nākamo”
+    const pool = activeSteps();
+    for (const s of pool){
+      const el = qs(s.sel);
+      if (visible(el)){
+        // Ievieto nākamo soli uzreiz aiz pašreizējā un pārstartē rāmi
+        order = pool;
+        show(Math.min(i+1, order.length-1));
+        break;
+      }
+    }
+  });
+  mo.observe(document.documentElement, { childList:true, subtree:true, attributes:true, attributeFilter:['class','style','open','hidden','aria-expanded'] });
+
+  // FAB (ja nav)
+  if (!qs('#helpFab')){
+    const b=document.createElement('button'); b.id='helpFab'; b.type='button'; b.textContent='?';
+    document.body.appendChild(b);
+    b.addEventListener('click', ()=> window.startHelpTour());
+  }
+
+  // Pirmā vizīte
+  addEventListener('load', ()=>{
+    if (!localStorage.getItem('tourSeen')){
+      setTimeout(()=>{ if (document.visibilityState!=='hidden') window.startHelpTour(); }, 500);
     }
   });
 
-  // Repozicionē pie izmēra maiņas
-  const onResize = () => { if (tip && mask) show(i); };
-  window.addEventListener('resize', onResize);
-  if (window.visualViewport) visualViewport.addEventListener('resize', onResize);
+
+
+// Piemērs: kad atveras labais panelis (.position-selector), lai parādās papildu solis
+if (window.__HELP_TOUR_V2__){
+  // Pievienos soli, tiklīdz elements parādās DOM un ceļvedis ir aktīvs
+  (window.addDynamicStep || (window.addDynamicStep = function(){}))({
+    sel: '.position-selector', title: 'Novietojums (labais panelis)', body: 'Pārceļ pogu bloku: apakša / kreisā / labā.', place: 'left'
+  });
+}
+
+
+
+	
 })();
-// ===== /Interaktīvais ceļvedis =====
+
 
 
 } // Boot guard end
