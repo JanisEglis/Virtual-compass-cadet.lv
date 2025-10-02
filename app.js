@@ -6349,7 +6349,7 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 
 
 // ===== Interaktīvais ceļvedis (vanilla, bez ārējām bibliotēkām) =====
-tries++; if (visible(qs(s.sel)) || tries>20){ clearInterval(t); visible(qs(s.sel)) ? show(i) : next(); }
+/* tries++; if (visible(qs(s.sel)) || tries>20){ clearInterval(t); visible(qs(s.sel)) ? show(i) : next(); }
 }, 120);
 return;
 }
@@ -6413,7 +6413,7 @@ setTimeout(()=>{ if (document.visibilityState!=='hidden') window.startHelpTour()
 // Repozicionē tip/hole pie izmēra maiņas
 window.addEventListener('resize', function(){ if (tip && hole){ show(i); } });
 if (window.visualViewport){ visualViewport.addEventListener('resize', function(){ if (tip && hole){ show(i); } }); }
-})();
+})(); */
 // ===== /Interaktīvais ceļvedis =====
 
 
