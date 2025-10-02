@@ -6335,8 +6335,7 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
     showOverlay(); // vizualizē print kasti
   }, true);
 })();
-
- }
+}
 
 
 
@@ -6349,9 +6348,21 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 
 
 // ===== Interaktīvais ceļvedis (vanilla, bez ārējām bibliotēkām) =====
- tries++; if (visible(qs(s.sel)) || tries>20){ clearInterval(t); visible(qs(s.sel)) ? show(i) : next(); }
-}, 120);
-return;
+
+if (!visible(el)) { // ja elements vēl nav redzams, mēģinām mazliet vēlāk
+  let tries = 0;
+  const t = setInterval(() => {
+    tries++;
+    if (visible(qs(s.sel)) || tries > 20) {
+      clearInterval(t);
+      if (visible(qs(s.sel))) {
+        show(i);   // elements parādījās — atkārtoti uzzīmē šo soli
+      } else {
+        next();    // pēc 20 mēģinājumiem pārejam uz nākamo soli
+      }
+    }
+  }, 120);
+  return;
 }
 
 
