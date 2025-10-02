@@ -6354,369 +6354,259 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 
 
 
-
-
-
-
-
-// ===== VC TOUR v10 — blur viss + izgriezts mērķis (formas aware), 0.2s ātra meklēšana, Try/Demo, Shadow DOM =====
+/* ===== VC TOUR v11 — clip-path izgriež mērķi no blur, stingra secība, “?” poga, demo animācijas ===== */
 (() => {
-  if (window.__VC_TOUR_V10__) return; window.__VC_TOUR_V10__ = 1;
+  if (window.__VC_TOUR_V11__) return; window.__VC_TOUR_V11__ = 1;
 
   // ——— Utils
-  const qs  = (s) => document.querySelector(s);
-  const vis = (el) => !!el && el.offsetWidth>0 && el.offsetHeight>0 &&
+  const qs  = (s, r=document)=> r.querySelector(s);
+  const vis = (el)=> !!el && el.offsetWidth>0 && el.offsetHeight>0 &&
     getComputedStyle(el).visibility!=='hidden' && getComputedStyle(el).display!=='none';
-  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const VW = ()=> innerWidth;
-  const VH = ()=> (visualViewport ? visualViewport.height : innerHeight);
+  const VH = ()=> (visualViewport?.height || innerHeight);
   const isTouch = ('ontouchstart' in window) || matchMedia?.('(pointer: coarse)').matches;
-  const supportsPath = CSS?.supports?.('clip-path', 'path("M0 0H1V1H0Z")');
 
-  // ——— UI (viena overlay ar clip-path; caurums formā + bez svītrām)
-  let host, sh, overlay, ring, tip, progress, hint, running=false;
-  let rafId=null, demoStop=null; // live-track un demo kontrolieri
-
+  // ——— UI (viens slānis ar clip-path, bez “šuvēm”)
+  let host, sh, overlay, ring, tip, progress, hint, running=false, idx=-1;
   function ensureUI(){
     if (host) return;
     host = document.createElement('div');
-    host.style.cssText = 'position:fixed;inset:0;z-index:2147483655;pointer-events:none;';
+    host.style.cssText = 'position:fixed;inset:0;z-index:2147483655;';
     sh = host.attachShadow({mode:'open'});
 
     const css = `
+      :host{ all:initial }
       .overlay{
         position:fixed; inset:0;
-        background: rgba(8,10,14,.56);
+        background:rgba(10,14,18,.55);
         backdrop-filter: blur(10px) saturate(1.05);
         -webkit-backdrop-filter: blur(10px) saturate(1.05);
-        clip-path: none; /* iestatām dinamiskā veidā */
+        clip-path:none; pointer-events:none;
         transition: clip-path .18s ease, background-color .18s ease;
-        pointer-events: none; /* caur caurumu viss ir lietojams */
       }
       .ring{
-        position:fixed; pointer-events:none;
-        border-radius:12px;
+        position:fixed; pointer-events:none; border-radius:12px;
         outline:2px solid rgba(255,255,255,.9);
         box-shadow:0 0 0 2px rgba(255,255,255,.18) inset, 0 14px 38px rgba(0,0,0,.45), 0 0 0 12px rgba(255,255,255,.06);
-        transition: all .18s ease;
+        transition:all .18s ease;
       }
       .tip{
-        position:fixed; max-width:min(480px,92vw); pointer-events:auto;
-        color:#eaf1ff;
-        background:linear-gradient(180deg,rgba(17,21,29,.95),rgba(26,12,26,.90));
-        border:1px solid rgba(255,255,255,.12);
-        border-radius:14px; padding:12px 14px;
-        box-shadow:0 20px 54px rgba(0,0,0,.55);
-        opacity:.98; transform:translateY(6px); animation:tipIn .18s ease forwards;
+        position:fixed; max-width:min(460px,92vw);
+        color:#eaf1ff; background:linear-gradient(180deg,rgba(17,21,29,.96),rgba(26,12,26,.92));
+        border:1px solid #ffffff1e; border-radius:14px; padding:12px 14px;
+        box-shadow:0 20px 54px rgba(0,0,0,.55); pointer-events:auto; opacity:.99;
+        transform:translateY(6px); animation:tipIn .18s ease forwards;
       }
-      @keyframes tipIn{to{transform:translateY(0)}}
-      .tip h3{margin:0 0 6px;font:700 16px/1.25 system-ui,Segoe UI,Roboto,Arial}
-      .tip p{margin:0;font:13px/1.45 system-ui,Segoe UI,Roboto,Arial;opacity:.95}
-      .nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:10px}
-      .sp{margin-right:auto;color:#9fb3c8;font:12px/1.4 ui-monospace,monospace;align-self:center}
-      .btn{appearance:none;border:1px solid #ffffff33;background:#ffffff12;color:#fff;border-radius:10px;padding:7px 11px;font:600 12px/1 system-ui;cursor:pointer}
-      .btn:hover{background:#ffffff21}
-      .x{position:absolute;right:8px;top:8px;width:26px;height:26px;border-radius:8px;border:1px solid #ffffff25;background:#ffffff14;color:#fff;font:700 14px/24px system-ui;text-align:center;cursor:pointer}
-
-      .progress{position:fixed; left:12px; bottom:12px; pointer-events:none; color:#cfe8c1; background:rgba(20,30,20,.86);
-                border:1px solid #2a4621;border-radius:999px;padding:5px 9px;font:12px/1 ui-monospace,monospace}
+      @keyframes tipIn{ to{ transform:translateY(0) } }
+      .tip h3{ margin:0 0 6px; font:700 16px/1.3 system-ui,Segoe UI,Roboto,Arial }
+      .tip p{ margin:0; font:13px/1.45 system-ui,Segoe UI,Roboto,Arial; opacity:.95 }
+      .nav{ display:flex; gap:8px; justify-content:flex-end; margin-top:10px }
+      .sp{ margin-right:auto; color:#9fb3c8; font:12px/1.4 ui-monospace,monospace }
+      .btn{ appearance:none; border:1px solid #ffffff33; background:#ffffff12; color:#fff; border-radius:10px; padding:7px 11px; font:600 12px/1 system-ui; cursor:pointer }
+      .btn:hover{ background:#ffffff21 }
+      .x{ position:absolute; right:8px; top:8px; width:26px; height:26px; border-radius:8px; border:1px solid #ffffff25; background:#ffffff14; color:#fff; font:700 14px/24px system-ui; text-align:center; cursor:pointer }
+      .progress{ position:fixed; left:12px; bottom:12px; pointer-events:none; color:#cfe8c1; background:rgba(20,30,20,.86); border:1px solid #2a4621; border-radius:999px; padding:5px 9px; font:12px/1 ui-monospace,monospace }
+      .hint{ position:fixed; width:28px; height:28px; border-radius:50%; pointer-events:none; opacity:.9; transition:opacity .2s }
+      .hint.drag{ outline:2px dashed #fff3; }
       .hide{ display:none !important }
-
-      /* Hint (roka/bulta) */
-      .hint{ position:fixed; width:28px; height:28px; pointer-events:none; opacity:.9; filter:drop-shadow(0 4px 14px rgba(0,0,0,.5)); }
-      .hint::before{ content:''; display:block; width:0;height:0; border-left:14px solid #fff; border-top:8px solid transparent; border-bottom:8px solid transparent; transform-origin:0 50%; }
-      .hint.drag{ animation:hint-drag 1.2s ease-in-out infinite; }
-      .hint.zoom{ animation:hint-zoom 1.2s ease-in-out infinite; }
-      @keyframes hint-drag{ 0%{transform:translateX(-6px)} 50%{transform:translateX(6px)} 100%{transform:translateX(-6px)} }
-      @keyframes hint-zoom{ 0%{transform:scale(0.9)} 50%{transform:scale(1.1)} 100%{transform:scale(0.9)} }
     `;
-    const style = document.createElement('style'); style.textContent = css; sh.appendChild(style);
-
-    overlay = document.createElement('div'); overlay.className='overlay';
-    ring    = document.createElement('div'); ring.className='ring';
-    tip     = document.createElement('div'); tip.className='tip';
-    progress= document.createElement('div'); progress.className='progress';
-    hint    = document.createElement('div'); hint.className='hint hide';
-
+    sh.appendChild(Object.assign(document.createElement('style'),{textContent:css}));
+    overlay = Object.assign(document.createElement('div'), {className:'overlay'});
+    ring    = Object.assign(document.createElement('div'), {className:'ring'});
+    tip     = Object.assign(document.createElement('div'), {className:'tip'});
+    progress= Object.assign(document.createElement('div'), {className:'progress'});
+    hint    = Object.assign(document.createElement('div'), {className:'hint hide'});
     sh.append(overlay, ring, tip, progress, hint);
     document.body.appendChild(host);
     hideUI();
   }
-  function showUI(){ if(!host) return; host.style.pointerEvents='auto'; [overlay,ring,tip,progress].forEach(n=>n.classList.remove('hide')); }
-  function hideUI(){ if(!host) return; host.style.pointerEvents='none'; [overlay,ring,tip,progress,hint].forEach(n=>n.classList.add('hide')); stopLiveTrack(); stopDemo(); }
+  function showUI(){ host.style.pointerEvents='none'; [overlay,ring,tip,progress].forEach(n=>n.classList.remove('hide')); }
+  function hideUI(){ host.style.pointerEvents='none'; [overlay,ring,tip,progress,hint].forEach(n=>n.classList.add('hide')); }
 
-  // ——— CSS radiusa parsēšana (px/% -> px)
-  function parseRad(v, size){
-    if (!v) return 0;
-    const [a] = String(v).trim().split(' ');
-    if (a.endsWith('%')) return (parseFloat(a)||0) / 100 * size;
-    if (a.endsWith('px')) return (parseFloat(a)||0);
-    const n = parseFloat(a); return isFinite(n) ? n : 0;
-  }
+  // ——— ģeometrija (viena path ar “caurumu” → nav svītru)
+  function placeCutout(rect, pad=8, radius=12){
+    const vw=VW(), vh=VH();
+    const x = clamp(Math.floor(rect.left)-pad, 0, vw);
+    const y = clamp(Math.floor(rect.top)-pad,  0, vh);
+    const w = Math.ceil(rect.width) + pad*2;
+    const h = Math.ceil(rect.height)+ pad*2;
 
-  // ——— Ceļš “noapaļots taisnstūris” ar 4 stūriem (var atšķirties)
-  function roundedRectPath4(x,y,w,h, rtl, rtr, rbr, rbl){
-    // nodrošinām, ka rādiusi nelielāki par malu pusi
-    const lim = (rx,ry, W, H) => [Math.min(rx, W/2), Math.min(ry, H/2)];
-    [rtl, rtr, rbr, rbl] = [
-      lim(rtl[0],rtl[1],w,h), lim(rtr[0],rtr[1],w,h),
-      lim(rbr[0],rbr[1],w,h), lim(rbl[0],rbl[1],w,h)
-    ];
-    const [rtlX,rtlY] = rtl, [rtrX,rtrY] = rtr, [rbrX,rbrY] = rbr, [rblX,rblY] = rbl;
-    const x2 = x + w, y2 = y + h;
-    // izmantojam elipses lokus (A rx ry 0 0 1)
-    return [
-      `M${x} ${y+rtlY}`,
-      `A${rtlX} ${rtlY} 0 0 1 ${x+rtlX} ${y}`,
-      `H${x2-rtrX}`,
-      `A${rtrX} ${rtrY} 0 0 1 ${x2} ${y+rtrY}`,
-      `V${y2-rbrY}`,
-      `A${rbrX} ${rbrY} 0 0 1 ${x2-rbrX} ${y2}`,
-      `H${x+rblX}`,
-      `A${rblX} ${rblY} 0 0 1 ${x} ${y2-rblY}`,
-      `Z`
-    ].join('');
-  }
-  function screenPath(){ return `M0 0H${VW()}V${VH()}H0Z`; }
+    // ārējais (CW)
+    const outer = `M0 0H${vw}V${vh}H0Z`;
+    // iekšējais (CCW) — ar nonzero noteikumu veido “caurumu”
+    const innerCCW = `M${x} ${y}V${y+h}H${x+w}V${y}H${x}Z`;
 
-  // ——— Ģeometrija: izgriez caurumu pēc īstā elementa izmēriem + stūra radiusiem
-  function placeSpotFromEl(el, pad=8){
-    const rect = el.getBoundingClientRect();
-    const cs = getComputedStyle(el);
-    // stūru radiusi (var būt “rx ry” vai %)
-    const rtl=[ parseRad(cs.borderTopLeftRadius.split(' ')[0], rect.width),
-                parseRad(cs.borderTopLeftRadius.split(' ')[1]||cs.borderTopLeftRadius, rect.height) ];
-    const rtr=[ parseRad(cs.borderTopRightRadius.split(' ')[0], rect.width),
-                parseRad(cs.borderTopRightRadius.split(' ')[1]||cs.borderTopRightRadius, rect.height) ];
-    const rbr=[ parseRad(cs.borderBottomRightRadius.split(' ')[0], rect.width),
-                parseRad(cs.borderBottomRightRadius.split(' ')[1]||cs.borderBottomRightRadius, rect.height) ];
-    const rbl=[ parseRad(cs.borderBottomLeftRadius.split(' ')[0], rect.width),
-                parseRad(cs.borderBottomLeftRadius.split(' ')[1]||cs.borderBottomLeftRadius, rect.height) ];
-
-    // pad tikai taisnstūrim (rādiusi arī palielinām proporcionāli)
-    const x  = clamp(Math.floor(rect.left) - pad, 0, VW());
-    const y  = clamp(Math.floor(rect.top)  - pad, 0, VH());
-    const w  = Math.ceil(rect.width)  + pad*2;
-    const h  = Math.ceil(rect.height) + pad*2;
-    const scaleX = (w - 2*pad) / Math.max(1, rect.width);
-    const scaleY = (h - 2*pad) / Math.max(1, rect.height);
-    const rtlS=[rtl[0]*scaleX, rtl[1]*scaleY], rtrS=[rtr[0]*scaleX, rtr[1]*scaleY],
-          rbrS=[rbr[0]*scaleX, rbr[1]*scaleY], rblS=[rbl[0]*scaleX, rbl[1]*scaleY];
-
-    // Ārējais poligons CW + iekšējais CCW => nonzero izgriež caurumu
-    const outer = screenPath();
-    const inner = roundedRectPath4(x,y,w,h, rtlS, rtrS, rbrS, rblS);
-    const d = `${outer} ${inner}`; // inner zīmēts CW; nonzero nevar izgriezt => pārvēršam CCW
-    // vienkāršāk: apmainām X asi (invertējam H virzienus) – bet path() nepatiks. Tāpēc izmantojam CCW triku:
-    // CCW: M->V->H->V->H atpakaļ virzienā (jau izdarīts inner konstrukcijā ar A/H/V virzieniem, kas izveido slēgtu riņķi)
+    const d = `${outer} ${innerCCW}`;
     overlay.style.clipPath = `path("${d}")`;
-    overlay.style.webkitClipPath = `path("${d}")`;
-
-    ring.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;border-radius:12px`;
-    return {left:x, top:y, width:w, height:h};
+    overlay.style.webkitClipPath = `path("${d}")`; // Safari
+    Object.assign(ring.style,{left:x+'px',top:y+'px',width:w+'px',height:h+'px',borderRadius:radius+'px'});
   }
 
-  // ——— Tooltip “lipīgs” (nemētājas)
+  // ——— stabila “lipīga” tip novietošana (nemētājas)
   const posMemo = Object.create(null);
-  function placeTip(rect, sel, pref='right'){
+  const clampPos=(x,y,tw,th)=>({x:clamp(x,8,VW()-tw-8), y:clamp(y,8,VH()-th-8)});
+  function placeTip(rect, key, pref='right'){
     tip.style.left='-9999px'; tip.style.top='-9999px';
-    const gap=12, vw=VW(), vh=VH();
-    const tw=Math.min(tip.offsetWidth||360, vw-16);
-    const th=tip.offsetHeight||120;
-
-    const base = posMemo[sel] || pref;
+    const gap=12, tw=Math.min(tip.offsetWidth||360,VW()-16), th=tip.offsetHeight||120;
+    const base = posMemo[key] || pref;
     const fits = {
-      right:  rect.left+rect.width+gap+tw < vw-8,
+      right:  rect.left+rect.width+gap+tw < VW()-8,
       left:   rect.left-gap-tw > 8,
       top:    rect.top-gap-th > 8,
-      bottom: rect.bottom+gap+th < vh-8
+      bottom: rect.bottom+gap+th < VH()-8
     };
-    let pos = fits[base] ? base : (['right','left','bottom','top'].find(p=>fits[p]) || base);
-
+    let pos = fits[base] ? base : (['right','left','bottom','top'].find(p=>fits[p])||base);
     let x=rect.left+rect.width+gap, y=rect.top;
-    if (pos==='left')   { x=rect.left - tw - gap; y=rect.top; }
+    if (pos==='left')   { x=rect.left - tw - gap; }
     if (pos==='top')    { x=rect.left; y=rect.top - th - gap; }
     if (pos==='bottom') { x=rect.left; y=rect.bottom + gap; }
-    x = clamp(x, 8, vw - tw - 8);
-    y = clamp(y, 8, vh - th - 8);
-    tip.style.left = x + 'px';
-    tip.style.top  = y + 'px';
-    posMemo[sel] = pos;
+    const p=clampPos(x,y,tw,th); tip.style.left=p.x+'px'; tip.style.top=p.y+'px'; posMemo[key]=pos;
   }
-  function resetPosMemo(){ for (const k in posMemo) delete posMemo[k]; }
+  function resetTipMemo(){ for(const k in posMemo) delete posMemo[k]; }
 
-  // ——— Hint (bulta/roka) novietošana
-  function showHint(rect, kind='drag'){
-    hint.className = `hint ${kind}`;
-    hint.style.left = (rect.left + rect.width/2 - 14) + 'px';
-    hint.style.top  = (rect.top  + rect.height/2 - 14) + 'px';
-    hint.classList.remove('hide');
+  // ——— īsa demo (“pamēģini” sajūta), nekad neblokē īstos eventus
+  let demoStop=null; const stopDemo=()=>{ if(demoStop){ try{demoStop()}catch{} demoStop=null; } hint.classList.add('hide'); };
+  function demoRotate(el){ if(!el) return ()=>{}; const prev=el.style.transform; let k=0;
+    const id=setInterval(()=>{ k++; el.style.transform = `${prev} rotate(${Math.sin(k/4)*4}deg)`; }, 60);
+    return ()=>{ clearInterval(id); el.style.transform=prev; };
   }
-  function hideHint(){ hint && hint.classList.add('hide'); }
-
-  // ——— DEMO (drošs, īss; atceļams)
-  function stopDemo(){ if (demoStop){ try{ demoStop(); }catch(_){ } demoStop=null; } hideHint(); }
-  function demoSlider(el){
-    const input = el;
-    if (!input) return ()=>{};
-    const orig = input.value;
-    let t=0, id = setInterval(()=>{
-      t+=0.06;
-      const v = Math.round(50 + 45*Math.sin(t));
-      input.value = v;
-      input.dispatchEvent(new Event('input', {bubbles:true}));
-      input.dispatchEvent(new Event('change', {bubbles:true}));
-    }, 60);
-    const stop = ()=>{ clearInterval(id); input.value = orig; input.dispatchEvent(new Event('input', {bubbles:true})); };
-    return stop;
-  }
-  function demoNudge(el){
-    if (!el) return ()=>{};
-    const prev = el.style.transform;
-    let k=0, id = setInterval(()=>{
-      k++; const a = Math.sin(k/4)*4; // neliels šūpojums
-      el.style.transform = `translateZ(0) rotate(${a}deg)`;
-    }, 60);
-    const stop = ()=>{ clearInterval(id); el.style.transform = prev; };
-    return stop;
+  function demoSlider(input){ if(!input) return ()=>{}; const orig=input.value; let t=0;
+    const id=setInterval(()=>{ t+=0.06; const v=Math.round(50+45*Math.sin(t)); input.value=v;
+      input.dispatchEvent(new Event('input',{bubbles:true})); input.dispatchEvent(new Event('change',{bubbles:true})); },60);
+    return ()=>{ clearInterval(id); input.value=orig; input.dispatchEvent(new Event('input',{bubbles:true})); };
   }
 
-  // ——— Teksti (desktop/touch)
+  // ——— Soļi: ļoti konkrēti elementi + “ensure” atvēršanai
   const T = {
     compass: isTouch
-      ? 'Skārienā: velc pārvieto; pincete mērogo; 2 pirkstu pagrieziens griež aktīvo daļu.'
-      : 'Pele: velc ↔ pārvieto; ALT+ritenis — mērogs; SHIFT/CTRL+ritenis — griež bāzi/skalu.',
-    localMap: isTouch
-      ? 'Pincete — tālummaiņa; velc ar 2 pirkstiem — pārvieto.'
-      : 'Ritenis — tālummaiņa; velc ar peli — pārvieto.',
-    layers: 'Slāņi: pārslēdz pamatkartes un pārklājumus.',
-    pdf: 'Sagatavo PDF/drukai: formāts, mērogs, rāmis.'
+      ? 'Skārienā: velc pārvieto; pincete — mērogs; 2 pirkstu grieziens — griež izvēlēto daļu.'
+      : 'Pele: velc pārvieto; ALT+rullītis — mērogs; SHIFT — griež bāzi, CTRL — griež skalu.',
+    base: 'Bāze griežas ap skalas centru (precīzi saskaņota). SHIFT+rullītis (pele) vai 2-pirkstu grieziens (skāriens).',
+    scale: 'Skala griežas neatkarīgi no bāzes. CTRL+rullītis (pele) vai 2-pirkstu grieziens (skāriens).'
   };
 
-  // ——— Fiksēta secība (ar try/demo/live īpašībām)
   const STEPS = [
-    { sel:'#compassContainer', title:'Kompass', body:T.compass, place:'right', try:true, demo:(el)=>demoNudge(el), hint:'drag', live:true },
-    { sel:'#toggleRotationMode', title:'Bāze ⇄ Skala', body:'Pārslēdz, kuru daļu griezt. “Bloķēt” pret nejaušu kustību.', place:'top', optional:true },
+    { sel:'#buttonContainer',  title:'Ātrās darbības', body:'Galvenās pogas: kompass, karte, druka, pilnekrāns u.c.', place:'top', optional:true },
+
+    // Kompass — vispārīgi
+    { sel:'#compassContainer', title:'Kompass (pārvieto/mērogo/griez)', body:T.compass, place:'right' },
+
+    // BĀZE (vizuāli iezīmējam #compassBase)
+    { sel:'#compassBase', title:'Griezt BĀZI', body:T.base, place:'right',
+      demo:(el)=>demoRotate(el) },
+
+    // SKALA (iezīmējam #compassScale, lai lietotājs saprot atšķirību)
+    { sel:'#compassScale', title:'Griezt SKALU', body:T.scale, place:'right',
+      demo:(el)=>demoRotate(el) },
+
+    // Režīma pogas
+    { sel:'#toggleRotationMode', title:'Bāze ⇄ Skala', body:'Pārslēdz, kuru daļu grozīt ar žestiem.', place:'top', optional:true },
     { sel:'#lockRotationMode',   title:'Bloķēt rotāciju', body:'Fiksē rotāciju (ērti skārienā).', place:'top', optional:true },
     { sel:'#rotateCompass90',    title:'Ātrie 90°', body:'Pagriez ±90° saskaņošanai ar režģi.', place:'top', optional:true },
     { sel:'#resetCompass',       title:'Kompass 0°', body:'Atgriež sākumstāvoklī.', place:'top', optional:true },
 
-    { sel:'#mapCanvas',        title:'Lokālā karte', body:T.localMap, place:'bottom', try:true, hint:'drag', live:true },
-    { sel:'#uploadMap',        title:'Augšupielādē karti', body:'Ielādē JPG/PNG; pēc ielādes parādās izmēra rokturis.', place:'top' },
-    { sel:'#resizeHandle',     title:'Izmēra rokturis', body:'Velc, lai mainītu lokālās kartes izmēru.', place:'bottom', optional:true, try:true, hint:'drag', live:true },
-    { sel:'#resetMap',         title:'Noņemt lokālo karti', body:'Notīra attēlu un atgriež sākumstāvokli.', place:'top', optional:true },
+    // Lokālā karte
+    { sel:'#mapCanvas',        title:'Lokālā karte', body:(isTouch?'Pincete — tālummaiņa; velc — pārvieto.':'Ritenis — tālummaiņa; velc — pārvieto.'), place:'bottom', optional:true },
+    { sel:'#uploadMap',        title:'Augšupielādēt karti', body:'Ielādē JPG/PNG; pēc ielādes parādās izmēra rokturis.', place:'top', optional:true },
+    { sel:'#resizeHandle',     title:'Izmēra rokturis', body:'Velc, lai mainītu lokālās kartes izmēru.', place:'bottom', optional:true },
+    { sel:'#resetMap',         title:'Notīrīt lokālo karti', body:'Atgriežas sākumstāvoklī.', place:'top', optional:true },
 
-    { sel:'#toggleOnlineMap',  title:'Tiešsaistes karte', ensure:()=>{ const m=qs('#onlineMap'); if(!m||!vis(m)) qs('#toggleOnlineMap')?.click(); }, body:(isTouch?'Pincete — tālummaiņa; velc — pārvieto.':'Ritenis — tālummaiņa; velc — pārvieto.')+' Labais klikšķis — koordinātes + “Kopēt”.', place:'bottom', try:true, hint:'drag' },
-    { sel:'.leaflet-control-zoom-in',  title:'Tālummaiņa (+/−)', body:'Pogas +/− vai žesti/ritenis.', place:'left', optional:true, try:true, hint:'zoom' },
-    { sel:'.leaflet-control-layers-toggle', title:'Slāņi', ensure:()=>qs('.leaflet-control-layers')||qs('.leaflet-control-layers-toggle')?.click(), body:T.layers, place:'left', optional:true, try:true },
-    { sel:'.leaflet-control-layers', title:'Slāņu panelis', body:'Pārslēdz pamatkartes/pārklājumus; aizver ar to pašu pogu.', place:'left', optional:true },
-    { sel:'#mapDimmerRange',   title:'Tumšuma slīdnis', body:'Samazini kartes spilgtumu, lai labāk saskatīt kompasu/iezīmējumus.', place:'right', optional:true, try:true, demo:(el)=>demoSlider(el), live:true },
+    // Tiešsaistes karte + slāņi + PDF
+    { sel:'#toggleOnlineMap',  title:'Tiešsaistes karte', ensure:()=>{ const m=qs('#onlineMap'); if(!m||!vis(m)) qs('#toggleOnlineMap')?.click(); }, body:'Ritenis/žesti — tālummaiņa; velc — pārvieto.', place:'bottom', optional:true },
+    { sel:'.leaflet-control-zoom-in', title:'Tālummaiņas pogas', body:'+ / −', place:'left', optional:true },
+    { sel:'.leaflet-control-layers-toggle', title:'Slāņi', ensure:()=>qs('.leaflet-control-layers')||qs('.leaflet-control-layers-toggle')?.click(), body:'Pamatkartes un pārklājumi.', place:'left', optional:true },
+    { sel:'.leaflet-control-layers', title:'Slāņu panelis', body:'Aizver ar to pašu pogu.', place:'left', optional:true },
+    { sel:'#mapDimmerRange',   title:'Tumšuma slīdnis', body:'Samazini kartes spilgtumu.', place:'right', optional:true },
+    { sel:'#preparePrintBtn',  title:'Sagatavot PDF', body:'Izvēlies formātu/mērogu, sagatavo drukai.', place:'left', optional:true },
 
-    { sel:'#preparePrintBtn',  title:'Sagatavot karti PDF', body:T.pdf, place:'left', optional:true },
-    { sel:'#toggleFullscreen', title:'Pilnekrāns', body:'Ieslēdz/izslēdz pilnekrānu ērtākam darbam.', place:'top', optional:true },
+    // Pilnekrāns
+    { sel:'#toggleFullscreen', title:'Pilnekrāns', body:'Ērtākam darbam.', place:'top', optional:true },
 
-    { sel:'.position-selector',      ensure:()=>qs('.toggle-selector')?.click(), title:'Pogu novietojums (labais)', body:'Apakša / Kreisā / Labā. Paneļi sinhronizējas.', place:'left', optional:true, try:true },
-    { sel:'.position-selector-left', ensure:()=>qs('.toggle-selector-left')?.click(), title:'Pogu novietojums (kreisais)', body:'Tas pats arī šeit.', place:'right', optional:true, try:true },
-
-    { sel:'#toggleInstruction', title:'Lietotāja ceļvedis', body:'Atver detalizētas instrukcijas.', place:'bottom', optional:true },
-    { sel:'#toggleMaterials',   title:'Mācību materiāli',   body:'Saīsnes uz PDF/video.', place:'bottom', optional:true },
-    { sel:'#about',             title:'Par / Ziņot / QR',   body:'Kontakti un koplietošana.', place:'top', optional:true },
+    // Info/Par
+    { sel:'#toggleInstruction', title:'Detalizētas instrukcijas', place:'bottom', optional:true },
+    { sel:'#toggleMaterials',   title:'Mācību materiāli', place:'bottom', optional:true },
+    { sel:'#about',             title:'Par / Ziņot / QR', place:'top', optional:true },
   ];
 
-  // ——— Plūsma (0.2s meklēšana; atlikšana -> beigās)
-  let index = -1;
+  // ——— Plūsma (ātra gaidīšana: ~0.2s; ja nav — atlikt uz beigām)
   const deferrals = Object.create(null);
-  function start(){ ensureUI(); resetPosMemo(); running=true; index=0; run(); }
-  function stop(){ running=false; hideUI(); }
-  function next(){ if (!running) return; index++; run(); }
-  function prev(){ if (!running) return; index=Math.max(0,index-1); run(true); }
+  function start(){ ensureUI(); resetTipMemo(); running=true; idx=0; run(); }
+  function stop(){ running=false; hideUI(); stopDemo(); }
+  function next(){ if(!running) return; idx++; run(); }
+  function prev(){ if(!running) return; idx=Math.max(0,idx-1); run(true); }
 
-  function run(){
+  function run(backwards=false){
+    stopDemo();
     if (!running) return;
-    if (index >= STEPS.length){ stop(); return; }
+    if (idx>=STEPS.length){ stop(); return; }
 
-    stopDemo(); // katra soļa sākumā apturam iepriekšējo demonstrāciju
-    const step = STEPS[index];
+    const s = STEPS[idx];
     showUI();
-    progress.textContent = `Ceļvedis — ${index+1}/${STEPS.length}`;
+    progress.textContent = `Ceļvedis — ${idx+1}/${STEPS.length}`;
+    try{ s.ensure && s.ensure(); }catch{}
 
-    try{ step.ensure && step.ensure(); }catch(_){}
-
-    let tries = 0;
-    (function waitFor(){
+    let tries=0;
+    (function wait(){
       if (!running) return;
-      const el = qs(step.sel);
+      const el = qs(s.sel);
       const ok = el && vis(el);
       if (!ok){
-        // tikai 0.2s: 2 mēģinājumi pa 100ms
-        if (tries++ < 2){ setTimeout(waitFor, 100); return; }
-        const maxDef = step.optional ? 2 : 1;
-        deferrals[step.sel] = (deferrals[step.sel]||0) + 1;
-        if (deferrals[step.sel] <= maxDef) STEPS.push(step); // atlikt uz beigām
-        index++; run();
-        return;
+        if (tries++<2){ setTimeout(wait, 100); return; } // ~0.2s max meklēšana
+        const maxDef = s.optional ? 2 : 1;
+        deferrals[s.sel]=(deferrals[s.sel]||0)+1;
+        if (deferrals[s.sel] <= maxDef) STEPS.push(s);
+        idx++; run(); return;
       }
 
       const r = el.getBoundingClientRect();
-      const spot = placeSpotFromEl(el, 8);
+      placeCutout(r, 8, 12);
+
       tip.innerHTML = `
         <button class="x" data-act="close" title="Beigt">×</button>
-        <h3>${step.title||''}</h3>
-        <p>${step.body||''}</p>
+        <h3>${s.title||''}</h3>
+        <p>${(typeof s.body==='function'?s.body():s.body)||''}</p>
         <div class="nav">
-          <span class="sp">${index+1}/${STEPS.length}</span>
-          ${index>0?'<button class="btn" data-act="prev">Atpakaļ</button>':''}
-          ${step.demo?'<button class="btn" data-act="demo">Demonstrēt</button>':''}
-          ${step.try!==false?'<button class="btn" data-act="try">Pamēģināt (5s)</button>':''}
-          <button class="btn" data-act="next">${index<STEPS.length-1?'Tālāk':'Pabeigt'}</button>
+          <span class="sp">${idx+1}/${STEPS.length}</span>
+          ${idx>0?'<button class="btn" data-act="prev">Atpakaļ</button>':''}
+          <button class="btn" data-act="next">${idx<STEPS.length-1?'Tālāk':'Pabeigt'}</button>
         </div>`;
+      placeTip(r, s.sel, s.place||'right');
 
-      placeTip(r, step.sel, step.place||'right');
+      // demo (ja definēts) — īss vizuāls mājiens
+      if (s.demo) { demoStop = s.demo(el); }
 
-      // Hint
-      hideHint();
-      if (step.hint){ showHint(r, step.hint); }
-
-      // Live-track (ja elements kustas/izmainās)
-      if (step.live){ startLiveTrack(()=>{ const rr = el.getBoundingClientRect(); placeSpotFromEl(el, 8); placeTip(rr, step.sel, step.place||'right'); if (step.hint) showHint(rr, step.hint); }); }
-      else { stopLiveTrack(); }
-
-      // Pogas
       tip.querySelectorAll('[data-act]').forEach(b=>{
-        b.onclick = ()=>{
-          const a=b.getAttribute('data-act');
+        b.onclick = (ev)=>{
+          ev.stopPropagation();
+          const a = b.getAttribute('data-act');
           if (a==='prev') prev();
-          else if (a==='next') (index<STEPS.length-1? next(): stop());
+          else if (a==='next') (idx<STEPS.length-1? next(): stop());
           else if (a==='close') stop();
-          else if (a==='demo' && step.demo){
-            stopDemo();
-            demoStop = step.demo(el);
-          } else if (a==='try'){
-            // Paslēpt tip uz 5s, ļaut pilnīgi brīvi pamēģināt
-            const old = {display: tip.style.display};
-            tip.style.display='none';
-            setTimeout(()=>{ tip.style.display=old.display||''; }, 5000);
-          }
         };
       });
     })();
   }
 
-  // ——— Live-track (RAF) — caurums seko elementam, kamēr lietotājs pamēģina
-  function startLiveTrack(onFrame){
-    stopLiveTrack();
-    const loop = ()=>{ onFrame && onFrame(); rafId = requestAnimationFrame(loop); };
-    rafId = requestAnimationFrame(loop);
-  }
-  function stopLiveTrack(){ if (rafId){ cancelAnimationFrame(rafId); rafId=null; } }
+  // ——— Repozicionēšana (resize/scroll/mutations)
+  const reposition = () => {
+    if (!running) return;
+    const s = STEPS[idx]; if (!s) return;
+    const el = qs(s.sel); if (!vis(el)) return;
+    const r = el.getBoundingClientRect(); placeCutout(r, 8, 12); placeTip(r, s.sel, s.place||'right');
+  };
+  addEventListener('resize', reposition, true);
+  addEventListener('scroll',  reposition, true);
+  visualViewport && (visualViewport.addEventListener('resize', reposition), visualViewport.addEventListener('scroll', reposition));
+  new MutationObserver(()=> running && reposition())
+    .observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden','open','aria-expanded','aria-hidden']});
 
-  // ——— Republiskais API
-  window.helpTour = { start, stop, next, prev, go:(n)=>{index=clamp(n|0,0,STEPS.length-1); run();} };
+  // ——— Publiskais API + “?” poga
+  window.helpTour = { start, stop, next, prev, go:(n)=>{ idx=clamp(n|0,0,STEPS.length-1); run(); } };
   window.startHelpTour = start;
 
-  // ——— “?” poga — vienmēr pieejama
   function ensureFab(){
-    let fab = qs('#helpFab');
+    let fab = qs('#helpFab', document);
     if (!fab){
       fab = document.createElement('button');
       fab.id='helpFab'; fab.type='button'; fab.textContent='?';
@@ -6724,26 +6614,28 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
         position:'fixed', right:'14px', bottom:'14px', width:'46px', height:'46px',
         borderRadius:'12px', border:'1px solid rgba(255,255,255,.16)',
         background:'linear-gradient(180deg,#1b1f25,#371017aa)', color:'#fff',
-        font:'900 20px/46px system-ui',
-        boxShadow:'0 12px 28px rgba(0,0,0,.55)',
-        zIndex:2147483656, cursor:'pointer'
+        font:'900 20px/46px system-ui', boxShadow:'0 12px 28px rgba(0,0,0,.55)', zIndex:2147483656, cursor:'pointer'
       });
       document.body.appendChild(fab);
     }
     if (!fab.__bound){ fab.__bound=1; fab.addEventListener('click', start); }
   }
-  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', ensureFab, {once:true});
-  else ensureFab();
+  (document.readyState==='loading') ? document.addEventListener('DOMContentLoaded', ensureFab, {once:true}) : ensureFab();
 
-  // ——— Klaviatūra
+  // Klaviatūra (sākšana/navigācija)
   document.addEventListener('keydown',(e)=>{
-    if (e.key==='h' || e.key==='H'){ e.preventDefault(); start(); }
+    if (e.key==='h'||e.key==='H'){ e.preventDefault(); start(); }
     if (!running) return;
     if (e.key==='Escape') stop();
     if (e.key==='ArrowRight') next();
     if (e.key==='ArrowLeft')  prev();
   });
 })();
+
+
+
+
+
 
 
 
