@@ -2284,7 +2284,7 @@ body.print-mode .leaflet-left .leaflet-control{
 
 
 /* ===== HELP FAB (peldošā “?” poga) ===== */
-/*#helpFab{
+#helpFab{
 position:fixed; right:16px; bottom:calc(var(--dock-bottom,35px) + 78px);
 width:46px; height:46px; border-radius:12px; border:1px solid #ffffff22;
 background:linear-gradient(180deg,#1b1f25,#2a0f0faa); color:#fff; font:900 20px/46px system-ui,sans-serif;
@@ -2296,11 +2296,10 @@ box-shadow:0 12px 28px rgba(0,0,0,.55);
 
 
 /* Ja ir ļoti šaurs ekrāns – pabīdam nedaudz uz iekšu */
-/*@media (max-width:520px){ #helpFab{ right:10px; bottom:calc(var(--dock-bottom,30px) + 70px);} }
-*/
+@media (max-width:520px){ #helpFab{ right:10px; bottom:calc(var(--dock-bottom,30px) + 70px);} }
 
 /* ===== TOUR OVERLAY ===== */
-/*.tour-mask{ position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:2147483000; }
+.tour-mask{ position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:2147483000; }
 .tour-hole{ position:fixed; z-index:2147483001; border-radius:12px; box-shadow:0 0 0 9999px rgba(0,0,0,.55); border:2px solid #ff3b3b; pointer-events:none; transition:all .18s ease; }
 .tour-tip{ position:fixed; max-width:min(420px, 88vw); z-index:2147483002; color:#eef2f7; background:linear-gradient(180deg,#1b1f25,#2a0f0faa); border:1px solid #ffffff22; border-radius:12px; padding:12px 14px; box-shadow:0 16px 40px rgba(0,0,0,.55); }
 .tour-tip h3{ margin:0 0 6px; font:700 15px/1.2 system-ui,sans-serif; }
@@ -2310,11 +2309,11 @@ box-shadow:0 12px 28px rgba(0,0,0,.55);
 .tour-tip .nav button:hover{ background:#ffffff22; }
 .tour-tip .nav .sp{ flex:1; text-align:left; color:#9aa4b2; font:12px/1.4 system-ui; }
 .tour-progress{ position:fixed; left:50%; bottom:12px; transform:translateX(-50%); z-index:2147483002; font:600 12px system-ui; color:#cfe8c1; background:#1b2118; border:1px solid #24361a; padding:4px 8px; border-radius:999px; }
-*/
+
 
 /* Neliels pulsējošs efekts mērķim */
-/*@keyframes pulseRing{ 0%{ box-shadow:0 0 0 0 rgba(255,59,59,.55);} 100%{ box-shadow:0 0 0 12px rgba(255,59,59,0);} }
-.tour-hole{ animation:pulseRing 1.2s ease-out infinite; }*/
+@keyframes pulseRing{ 0%{ box-shadow:0 0 0 0 rgba(255,59,59,.55);} 100%{ box-shadow:0 0 0 12px rgba(255,59,59,0);} }
+.tour-hole{ animation:pulseRing 1.2s ease-out infinite; }
 
 
 
