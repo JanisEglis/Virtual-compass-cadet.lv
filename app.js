@@ -6428,13 +6428,112 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 
   // ── Soļi ───────────────────────────────────────────────────────────
   // Dinamiski mēģinām piemeklēt esošās pogas/elementus; ja kāds nav, to izlaižam
+  // ————— Soļi — pilnais ceļvedis visām funkcijām —————
   const STEPS = [
-    { sel: '#toggleInstruction', title: 'Lietotāja ceļvedis', body: 'Atver detalizētas instrukcijas.', place: 'right' },
-    { sel: '#toggleMaterials',   title: 'Mācību materiāli',   body: 'Saīsnes uz materiāliem.',       place: 'right' },
-    { sel: '#toggleOnlineMap',   title: 'Tiešsaistes karte',  body: 'Pārslēdz karti (Leaflet) un tumšošanu.', place: 'bottom' },
-    { sel: '#preparePrintBtn',   title: 'Drukas režīms',      body: 'Parāda drukas laukumu un sagatavošanu.',  place: 'left' },
-    { sel: '#buttonContainer',   title: 'Ātrās darbības',     body: 'Galvenās vadības pogas. Turi pelīti virsū, lai redzētu aprakstus.', place: 'top' },
-  ].filter(s => qs(s.sel));
+    // Sākums / navigācija
+    { sel: '#buttonContainer',
+      title: 'Ātrās darbības',
+      body: 'Šeit atrodas galvenās pogas: lokālā karte, tiešsaistes karte, kompass, 90° režģi, pilnekrāns, druka u.c.',
+      place: 'top' },
+
+    // Kompass — pamati un žesti
+    { sel: '#compassContainer',
+      title: 'Kompass — pārvieto',
+      body: 'Satver un velc, lai pārvietotu kompasu. Skārienā: velc ar 1 pirkstu.',
+      place: 'right' },
+    { sel: '#compassContainer',
+      title: 'Kompass — mērogs',
+      body: 'ALT + rullītis → maina kompasa izmēru (globāli). Skārienā: “pincete” (2 pirksti – tuvina/tālina).',
+      place: 'right' },
+    { sel: '#compassContainer',
+      title: 'Kompass — rotācija',
+      body: 'SHIFT + rullītis → griež bāzi. CTRL + rullītis → griež skalu. Skārienā: 2 pirkstu pagrieziens griež aktīvo daļu.',
+      place: 'right' },
+
+    // Kompass — režīmi un atjaunošana
+    { sel: '#toggleRotationMode',
+      title: 'Bāze ⇄ Skala',
+      body: 'Pārslēdz, kuru daļu grozīt ar žestiem/ritentiņu. (Datorā to pašu panāk ar SHIFT un CTRL.)',
+      place: 'top' },
+    { sel: '#lockRotationMode',
+      title: 'Bloķēt rotāciju',
+      body: 'Ieslēdz/izslēdz rotācijas bloķēšanu. Noder, lai nejauši nesagrozītu jau iestatīto virzienu.',
+      place: 'top' },
+    { sel: '#rotateCompass90',
+      title: 'Režģa 90° izvēlne',
+      body: 'Atver izvēlni ar +90°/-90° variantiem. Pēc izvēles var arī fiksēt kompasu (bloķēt).',
+      place: 'top' },
+    { sel: '#resetCompass',
+      title: 'Atiestatīt kompasu',
+      body: 'Atgriež kompasu sākumstāvoklī (pozīcija, mērogs, bāzes/skalās rotācija).',
+      place: 'top' },
+
+    // Tiešsaistes karte (Leaflet)
+    { sel: '#toggleOnlineMap',
+      title: 'Tiešsaistes karte',
+      body: 'Ieslēdz/izslēdz karti. Kartē: rullītis/pincete — tālummaiņa, velc — pārvieto, labais klikšķis — koordinātes (WGS84/MGRS) ar “Kopēt” pogām.',
+      place: 'bottom' },
+    { sel: '#onlineMap',
+      title: 'Kartes tumšums',
+      body: 'Tumšošanas pārklājums palīdz redzēt kompasu virs kartes. Zemāk ir slīdnis “Tumšums”.',
+      place: 'bottom' },
+    { sel: '#mapDimmerRange',
+      title: 'Tumšuma slīdnis',
+      body: 'Velc, lai mainītu kartes tumšumu. Vērtība ir redzama blakus. (Strādā arī, ja pogas ir sānos.)',
+      place: 'top' },
+
+    // Lokālā karte (augšupielādēts attēls uz kanvas)
+    { sel: '#uploadMap',
+      title: 'Augšupielādēt karti',
+      body: 'Ielādē JPG/PNG. Pēc augšupielādes vari mērogot ar rullīti vai ar apakšējā-labā stūra rokturi.',
+      place: 'top' },
+    { sel: '#mapCanvas',
+      title: 'Lokālā karte — tālummaiņa/pārvietošana',
+      body: 'Rullītis → tālummaiņa. Velc uz kanvas → pārvieto attēlu. Skārienā: pincete mērogo, 2 pirksti pārvieto.',
+      place: 'top' },
+    { sel: '#resizeHandle',
+      title: 'Mērogošana ar rokturi',
+      body: 'Satver apakšējo labo rokturi un velc, lai mainītu attēla izmēru milimetros/pikseļos.',
+      place: 'top' },
+    { sel: '#resetMap',
+      title: 'Atiestatīt lokālo karti',
+      body: 'Notīra augšupielādēto attēlu un atgriež sākumstāvokli.',
+      place: 'top' },
+
+    // Druka
+    { sel: '#preparePrintBtn',
+      title: 'Druka',
+      body: 'Atver drukas iestatījumus (formāts, mērogs, virsraksts). Pirms drukas karte tiek izkārtota lapā ar rāmi un mērogu.',
+      place: 'left' },
+
+    // Pogu bloka novietojums un pilnekrāns
+    { sel: '#positionSelect',
+      title: 'Pogu novietojums',
+      body: 'Pārceļ pogu bloku: apakša / labā / kreisā. Tas pats pieejams arī kreisajā panelī.',
+      place: 'left' },
+    { sel: '#positionSelectLeft',
+      title: 'Novietojums (kreisais panelis)',
+      body: 'Paneļus vari atvērt/aizvērt ar bultiņām. Tie neaizsedz klikšķus kartei.',
+      place: 'right' },
+    { sel: '#toggleFullscreen',
+      title: 'Pilnekrāns',
+      body: 'Ieslēdz/izslēdz pilnekrānu — sevišķi ērti telefonā/planšetē.',
+      place: 'top' },
+
+    // Saites un materiāli
+    { sel: '#toggleInstruction',
+      title: 'Lietotāja ceļvedis (ārējās lapas)',
+      body: 'Atver detalizētās pamācības datoram un skārienierīcēm.',
+      place: 'bottom' },
+    { sel: '#toggleMaterials',
+      title: 'Mācību materiāli',
+      body: 'Saīsnes uz PDF/video materiāliem.',
+      place: 'bottom' },
+    { sel: '#about',
+      title: 'Par / Ziņot',
+      body: 'Atsauksmju forma un koplietošanas QR.',
+      place: 'top' }
+  ].filter(s => document.querySelector(s.sel));
 
   // Ja nekas neatradās, ieliekam fallback uz body, lai moduļa UI strādātu
   if (STEPS.length === 0) {
