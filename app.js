@@ -6335,7 +6335,7 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
     showOverlay(); // vizualizē print kasti
   }, true);
 })();
-//}
+
 
 
 
@@ -6535,7 +6535,7 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 // ===== /Interaktīvais ceļvedis =====
 
 
-
+} // Boot guard end
 
 
 
