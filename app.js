@@ -6382,18 +6382,17 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
     sh = host.attachShadow({mode:'open'});
 
     const css = `
-      .overlay{
-        position:fixed; inset:0;
-        background: rgba(8,10,14,.56);
-        ${/* viens blur visas lapas fonam */''}
-        backdrop-filter: blur(10px) saturate(1.05);
-        -webkit-backdrop-filter: blur(10px) saturate(1.05);
-        ${/* caurums ar evenodd — MĀINĀM tikai --cp */''}
-        clip-path: path(var(--cp, 'M0 0H100%V100%H0Z'));
-        clip-rule: evenodd;
-        transition: clip-path .18s ease, background-color .18s ease;
-        pointer-events: none; /* lai rīks pilnībā strādā zem cauruma */
-      }
+.overlay{
+  position:fixed; inset:0;
+  background: rgba(8,10,14,.56);
+  backdrop-filter: blur(10px) saturate(1.05);
+  -webkit-backdrop-filter: blur(10px) saturate(1.05);
+  /* clip-path tiks iestatīts dinamiski JS pusē */
+  clip-path: none;
+  transition: clip-path .18s ease, background-color .18s ease;
+  pointer-events: none;
+}
+
       .ring{
         position:fixed; pointer-events:none;
         border-radius:12px;
@@ -6454,18 +6453,29 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
   }
   function screenPath(){ return `M0 0H${VW()}V${VH()}H0Z`; }
 
-  function placeSpot(rect, pad=8, radius=12){
-    const x = clamp(Math.floor(rect.left)-pad, 0, VW());
-    const y = clamp(Math.floor(rect.top) -pad, 0, VH());
-    const w = Math.ceil(rect.width) + pad*2;
-    const h = Math.ceil(rect.height)+ pad*2;
+function placeSpot(rect, pad=8, radius=12){
+  const vw = VW(), vh = VH();
+  const x  = clamp(Math.floor(rect.left) - pad, 0, vw);
+  const y  = clamp(Math.floor(rect.top)  - pad, 0, vh);
+  const w  = Math.ceil(rect.width)  + pad*2;
+  const h  = Math.ceil(rect.height) + pad*2;
 
-    if (supportsPath){
-      const hole = roundedRectPath(x,y,w,h,radius);
-      overlay.style.setProperty('--cp', `${screenPath()} ${hole}`);
-    }
-    ring.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;border-radius:${radius}px`;
-  }
+  // Ārējais taisnstūris — pulksteņrādis (CW)
+  const outer = `M0 0H${vw}V${vh}H0Z`;
+
+  // Iekšējais taisnstūris — PRETĒJI (CCW), lai ar nonzero noteikumu izgrieztu CAURUMU
+  // (nekāds 'evenodd' nav vajadzīgs)
+  const innerCCW = `M${x} ${y}V${y+h}H${x+w}V${y}H${x}Z`;
+
+  // Iestati clip-path tieši (arī -webkit- prefiksu saderībai)
+  const d = `${outer} ${innerCCW}`;
+  overlay.style.clipPath = `path("${d}")`;
+  overlay.style.webkitClipPath = `path("${d}")`;
+
+  // Dekoratīvais gredzens ap caurumu (nav obligāts, bet palīdz fokusam)
+  ring.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;border-radius:${radius}px`;
+}
+
 
   // ——— “lipīgs” tooltip (nemētājas)
   const posMemo = Object.create(null);
