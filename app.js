@@ -6446,6 +6446,17 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
   const DYNAMIC_STEPS = [];
   function addDynamicStep(step){ DYNAMIC_STEPS.push(step); }
 
+// ✅ Eksportē API ārā, lai var pievienot soļus skrējiena laikā
+window.addDynamicStep = addDynamicStep;
+
+// Piemērs: kad atveras labais panelis (.position-selector), lai parādās papildu solis
+if (window.__HELP_TOUR_V2__){
+  // Pievienos soli, tiklīdz elements parādās DOM un ceļvedis ir aktīvs
+  (window.addDynamicStep || (window.addDynamicStep = function(){}))({
+    sel: '.position-selector', title: 'Novietojums (labais panelis)', body: 'Pārceļ pogu bloku: apakša / kreisā / labā.', place: 'left'
+  });
+}
+	
   // API piemērs (ja gribi ceļveža gaitā atvērt paneli un sagaidīt jaunu elementu):
   // addDynamicStep({ sel: '.position-selector', title:'Novietojums', body:'Pārceļ dokus.', place:'left' });
 
@@ -6571,24 +6582,21 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
     b.addEventListener('click', ()=> window.startHelpTour());
   }
 
+// ✅ Ja poga jau eksistē HTML — piesien klikšķi
+const existingFab = qs('#helpFab');
+if (existingFab && !existingFab.__tourBound){
+  existingFab.__tourBound = 1;
+  existingFab.addEventListener('click', ()=> window.startHelpTour());
+}
+
+
+	
   // Pirmā vizīte
   addEventListener('load', ()=>{
     if (!localStorage.getItem('tourSeen')){
       setTimeout(()=>{ if (document.visibilityState!=='hidden') window.startHelpTour(); }, 500);
     }
   });
-
-
-
-// Piemērs: kad atveras labais panelis (.position-selector), lai parādās papildu solis
-if (window.__HELP_TOUR_V2__){
-  // Pievienos soli, tiklīdz elements parādās DOM un ceļvedis ir aktīvs
-  (window.addDynamicStep || (window.addDynamicStep = function(){}))({
-    sel: '.position-selector', title: 'Novietojums (labais panelis)', body: 'Pārceļ pogu bloku: apakša / kreisā / labā.', place: 'left'
-  });
-}
-
-
 
 	
 })();
