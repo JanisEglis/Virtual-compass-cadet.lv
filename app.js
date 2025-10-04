@@ -275,12 +275,12 @@ function checkWindowSize() {
                         // Dinamiskās pogas konfigurācija: katrai pogai sākuma un alternatīvie attēli
 						const buttonImageMap = {
 							"toggleRotationMode": {
-								defaultSrc: "https://site-710050.mozfiles.com/files/710050/ROTATE_COMPASS_BASE__1__Cropped-Photoroom.png",
-								alternateSrc: "https://site-710050.mozfiles.com/files/710050/SCALE_ROTATE__1__Cropped-Photoroom.png"
+								defaultSrc: "/Virtual-compass-cadet.lv/img/ROTATE_COMPASS_BASE.png",
+								alternateSrc: "/Virtual-compass-cadet.lv/img/ROTATE_COMPASS_SCALE.png"
 							},
 							"lockRotationMode": {
-								defaultSrc: "https://site-710050.mozfiles.com/files/710050/COMPASS_ROTATE_LOCK_OPEN__1__Cropped-Photoroom.png",
-								alternateSrc: "https://site-710050.mozfiles.com/files/710050/COMPASS_ROTATE_LOCK__1__Cropped-Photoroom.png"
+								defaultSrc: "/Virtual-compass-cadet.lv/img/COMPASS_ROTATE_UNLOCK.png",
+								alternateSrc: "/Virtual-compass-cadet.lv/img/COMPASS_ROTATE_LOCK.png"
 							}
 						};
 
