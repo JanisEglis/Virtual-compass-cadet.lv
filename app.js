@@ -6492,7 +6492,7 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 // pogu novietojuma selektori	  
 {
   sel:'.toggle-selector',
-  title:'Pogu novietojuma izvēlne (labā puse)',
+  title:'Atvērt / aizvērt pogu novietojuma izvēlne (labā puse)',
   place:'left',
   optional:true,
   ensure:()=>{
@@ -6504,7 +6504,7 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 
 {
   sel:'.toggle-selector-left',
-  title:'Pogu novietojuma izvēlne (kreisā puse)',
+  title:'Atvērt / aizvērt pogu novietojuma izvēlne (kreisā puse)',
   place:'right',
   optional:true,
   ensure:()=>{
