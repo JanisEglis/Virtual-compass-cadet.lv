@@ -5262,7 +5262,7 @@ on(byId('rotateCompass90'), 'click', function (ev) {
     b90.id = 'rotateTo90';
     b90.className = 'popup-button';
     const img90 = document.createElement('img');
-    img90.src = 'https://site-710050.mozfiles.com/files/710050/GRID_VIEW_1_1.png';
+    img90.src = '/Virtual-compass-cadet.lv/img/GRID_VIEW_1_OPTION.png';
     img90.alt = 'Rotēt 90°';
     b90.appendChild(img90);
     row.appendChild(b90);
@@ -5272,7 +5272,7 @@ on(byId('rotateCompass90'), 'click', function (ev) {
     b_90.id = 'rotateToNegative90';
     b_90.className = 'popup-button';
     const img_90 = document.createElement('img');
-    img_90.src = 'https://site-710050.mozfiles.com/files/710050/GRID_VIEW_2.png';
+    img_90.src = '/Virtual-compass-cadet.lv/img/GRID_VIEW_2_OPTION.png';
     img_90.alt = 'Rotēt -90°';
     b_90.appendChild(img_90);
     row.appendChild(b_90);
@@ -5430,8 +5430,8 @@ const ok = Math.abs(left - init.left) < 1 &&
 								const fullscreenIcon = document.getElementById('fullscreenIcon');
 								const fullscreenPopup = document.getElementById('fullscreenPopup');
   if (!toggleFullscreenButton || !fullscreenIcon || !fullscreenPopup) return;
-								const enterFullscreenIcon = 'https://site-710050.mozfiles.com/files/710050/icon_fullscreen_enter.png';
-								const exitFullscreenIcon = 'https://site-710050.mozfiles.com/files/710050/icon_fullscreen_exit.png';
+								const enterFullscreenIcon = '/Virtual-compass-cadet.lv/img/fullscreen_enter.png';
+								const exitFullscreenIcon = '/Virtual-compass-cadet.lv/img/fullscreen_exit.png';
 
 								// Iestatām sākotnējo ikonu
 								fullscreenIcon.src = enterFullscreenIcon;
