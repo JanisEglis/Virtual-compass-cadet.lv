@@ -6351,7 +6351,7 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 
 
 // VC TOUR v11 — precīzs blur izgriezums, interaktīvs mērķis, base/scale atsevišķi, auto-open paneļi 
-<script>
+
 (() => {
   if (window.__VC_TOUR_V11__) return; window.__VC_TOUR_V11__ = 1;
 
@@ -6663,7 +6663,7 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
     if (e.key==='ArrowLeft')  prev();
   });
 })();
-</script>
+
 // ===== VC TOUR v11 ===== 
 
 
