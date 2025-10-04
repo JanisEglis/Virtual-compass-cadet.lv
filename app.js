@@ -6487,9 +6487,32 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
   };
 
   const STEPS = [
-    { sel:'#buttonContainer',  title:'Ātrās darbības', body:'Galvenās pogas: kompass, karte, druka, pilnekrāns u.c.', place:'top', optional:true },
+    { sel:'#buttonContainer',  title:'Ātrās darbības', body:'Galvenās kontroles pogas', place:'top', optional:true },
 
-   
+// pogu novietojuma selektori	  
+{
+  sel:'.toggle-selector',
+  title:'Pogu novietojuma izvēlne (labā puse)',
+  place:'left',
+  optional:true,
+  ensure:()=>{
+    const p = document.querySelector('.position-selector');
+    p && p.classList.remove('hidden');   // atver paneli (ja slēpts)
+  }
+},
+{ sel:'#positionSelect', title:'Izvēlies: Apakša / Pa kreisi / Pa labi', place:'left', optional:true },
+
+{
+  sel:'.toggle-selector-left',
+  title:'Pogu novietojuma izvēlne (kreisā puse)',
+  place:'right',
+  optional:true,
+  ensure:()=>{
+    const p = document.querySelector('.position-selector-left');
+    p && p.classList.remove('hidden-left'); // atver kreiso paneli (ja slēpts)
+  }
+},
+{ sel:'#positionSelectLeft', title:'Izvēlies: Apakša / Pa kreisi / Pa labi', place:'right', optional:true },   
 
     // BĀZE (vizuāli iezīmējam #compassBase)
 { sel:'#compassBase',  title:'Griezt BĀZI',  body:T.base,  place:'right',
@@ -6504,31 +6527,31 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 	  
     // Režīma pogas
     { sel:'#toggleRotationMode', title:'Bāze ⇄ Skala', body:'Pārslēdz, kuru daļu grozīt ar žestiem.', place:'top', optional:true },
-    { sel:'#lockRotationMode',   title:'Bloķēt rotāciju', body:'Fiksē rotāciju (ērti skārienā).', place:'top', optional:true },
-    { sel:'#rotateCompass90',    title:'Ātrie 90°', body:'Pagriez ±90° saskaņošanai ar režģi.', place:'top', optional:true },
-    { sel:'#resetCompass',       title:'Kompass 0°', body:'Atgriež sākumstāvoklī.', place:'top', optional:true },
+    { sel:'#lockRotationMode',   title:'Bloķēt rotāciju', body:'Fiksē rotāciju ērtai tālummaiņai.', place:'top', optional:true },
+    { sel:'#rotateCompass90',    title:'Koordināšu noteikšanas opcijas', body:'Izvēlies ar kādu metodi noteiksi koordinātes.', place:'top', optional:true },
+    { sel:'#resetCompass',       title:'Atjauno kompasu', body:'Atgriež sākumstāvoklī (pozīcija un izmērs).', place:'top', optional:true },
 
     // Lokālā karte
-    { sel:'#mapCanvas',        title:'Lokālā karte', body:(isTouch?'Pincete — tālummaiņa; velc — pārvieto.':'Ritenis — tālummaiņa; velc — pārvieto.'), place:'bottom', optional:true },
-    { sel:'#uploadMap',        title:'Augšupielādēt karti', body:'Ielādē JPG/PNG; pēc ielādes parādās izmēra rokturis.', place:'top', optional:true },
-    { sel:'#resizeHandle',     title:'Izmēra rokturis', body:'Velc, lai mainītu lokālās kartes izmēru.', place:'bottom', optional:true },
-    { sel:'#resetMap',         title:'Notīrīt lokālo karti', body:'Atgriežas sākumstāvoklī.', place:'top', optional:true },
+    { sel:'#uploadMap',        title:'Augšupielādēt karti', body:'Ielādē JPG/PNG/PDF (vienu vai vairāku lapu fails)/URL kartes.', place:'top', optional:true },
+    { sel:'#mapCanvas',        title:'Lokālā karte', body:(isTouch?'Tālummaiņa ritinot pelītes rulīti vai ar diviem pikstiem velkot uz augšu/leju touchpad; Pārvieto spiezot peles kreiso pogu un velkot.':'Tālummaiņa - divu pirkstu tuvināšana/tālināšana; Pārvietot - peskaries un velc.'), place:'bottom', optional:true },
+	{ sel:'#resizeHandle',     title:'Izmēra rokturis', body:'Uzspied un velc, lai mainītu lokālās kartes izmēru (ieteicams kalibrēšanai ar kompasu).', place:'bottom', optional:true },
+    { sel:'#resetMap',         title:'Atjauno lokālo karti.', body:'Atgriežas sākumstāvoklī (pozīcija un izmērs).', place:'top', optional:true },
 
     // Tiešsaistes karte + slāņi + PDF
-    { sel:'#toggleOnlineMap',  title:'Tiešsaistes karte', ensure:()=>{ const m=qs('#onlineMap'); if(!m||!vis(m)) qs('#toggleOnlineMap')?.click(); }, body:'Ritenis/žesti — tālummaiņa; velc — pārvieto.', place:'bottom', optional:true },
-    { sel:'.leaflet-control-zoom-in', title:'Tālummaiņas pogas', body:'+ / −', place:'left', optional:true },
+    { sel:'#toggleOnlineMap',  title:'Tiešsaistes karte', ensure:()=>{ const m=qs('#onlineMap'); if(!m||!vis(m)) qs('#toggleOnlineMap')?.click(); }, body:'Ritenis/touchpad/žesti — tālummaiņa; nospied un velc — pārvieto.', place:'bottom', optional:true },
+    { sel:'.leaflet-control-zoom-in', title:'Tālummaiņas pogas', body:'Tiešsaistes kartes + / −', place:'left', optional:true },
     { sel:'.leaflet-control-layers-toggle', title:'Slāņi', ensure:()=>qs('.leaflet-control-layers')||qs('.leaflet-control-layers-toggle')?.click(), body:'Pamatkartes un pārklājumi.', place:'left', optional:true },
-    { sel:'.leaflet-control-layers', title:'Slāņu panelis', body:'Aizver ar to pašu pogu.', place:'left', optional:true },
-    { sel:'#mapDimmerRange',   title:'Tumšuma slīdnis', body:'Samazini kartes spilgtumu.', place:'right', optional:true },
-    { sel:'#preparePrintBtn',  title:'Sagatavot PDF', body:'Izvēlies formātu/mērogu, sagatavo drukai.', place:'left', optional:true },
+  
+    { sel:'#mapDimmerRange',   title:'Tumšuma slīdnis', body:'Maini lokālās un tiešsaistes kartes spilgtumu, lai izceltu kompasu. Automātiski tiek noņemts drukā', place:'right', optional:true },
+    { sel:'#preparePrintBtn',  title:'Sagatavot drukai', body:'Izvēlies formātu/mērogu, sagatavo drukai vai saglabāšanai PDF.', place:'left', optional:true },
 
     // Pilnekrāns
-    { sel:'#toggleFullscreen', title:'Pilnekrāns', body:'Ērtākam darbam.', place:'top', optional:true },
+    { sel:'#toggleFullscreen', title:'Pilnekrāns', body:'Ieslēgt/izslēgt ērtākam darbam.', place:'top', optional:true },
 
     // Info/Par
     { sel:'#toggleInstruction', title:'Detalizētas instrukcijas', place:'bottom', optional:true },
     { sel:'#toggleMaterials',   title:'Mācību materiāli', place:'bottom', optional:true },
-    { sel:'#about',             title:'Par / Ziņot / QR', place:'top', optional:true },
+    { sel:'#about',             title:'Koplietošanas QR auditorijai / Par rīku / Ziņot.', place:'top', optional:true },
   ];
 
   // ——— Plūsma (ātra gaidīšana: ~0.2s; ja nav — atlikt uz beigām)
@@ -6636,7 +6659,7 @@ function ensureDockOpen(){
 
   // Klaviatūra (sākšana/navigācija)
   document.addEventListener('keydown',(e)=>{
-    if (e.key==='h'||e.key==='H'){ e.preventDefault(); start(); }
+    if (e.key==='i'||e.key==='I'){ e.preventDefault(); start(); }
     if (!running) return;
     if (e.key==='Escape') stop();
     if (e.key==='ArrowRight') next();
