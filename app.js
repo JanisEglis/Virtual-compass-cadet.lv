@@ -6489,8 +6489,7 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
   const STEPS = [
     { sel:'#buttonContainer',  title:'Ātrās darbības', body:'Galvenās pogas: kompass, karte, druka, pilnekrāns u.c.', place:'top', optional:true },
 
-    // Kompass — vispārīgi
-    { sel:'#compassContainer', title:'Kompass (pārvieto/mērogo/griez)', body:T.compass, place:'right' },
+   
 
     // BĀZE (vizuāli iezīmējam #compassBase)
 { sel:'#compassBase',  title:'Griezt BĀZI',  body:T.base,  place:'right',
@@ -6500,6 +6499,9 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 { sel:'#compassScale', title:'Griezt SKALU', body:T.scale, place:'right',
   demo:()=>demoRotate(document.getElementById('compassScaleInner')) },
 
+ // Kompass — vispārīgi
+    { sel:'#compassContainer', title:'Kompass (pārvieto/mērogo/griez)', body:T.compass, place:'right' },
+	  
     // Režīma pogas
     { sel:'#toggleRotationMode', title:'Bāze ⇄ Skala', body:'Pārslēdz, kuru daļu grozīt ar žestiem.', place:'top', optional:true },
     { sel:'#lockRotationMode',   title:'Bloķēt rotāciju', body:'Fiksē rotāciju (ērti skārienā).', place:'top', optional:true },
