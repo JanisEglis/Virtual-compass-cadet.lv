@@ -2288,7 +2288,7 @@ body.print-mode .leaflet-left .leaflet-control{
 position:fixed; right:16px; bottom:calc(var(--dock-bottom,35px) + 78px);
 width:46px; height:46px; border-radius:12px; border:1px solid #ffffff22;
 background:linear-gradient(180deg,#1b1f25,#2a0f0faa); color:#fff; font:900 20px/46px system-ui,sans-serif;
-text-align:center; cursor:pointer; z-index:2147482000;
+text-align:center; cursor:pointer; z-index:5;
 box-shadow:0 12px 28px rgba(0,0,0,.55);
 }
 #helpFab:focus{ outline:2px solid #437e12; outline-offset:2px; }
