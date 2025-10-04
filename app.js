@@ -6349,6 +6349,11 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 
 
 
+
+
+
+
+
 /* ===== VC TOUR v11 — clip-path izgriež mērķi no blur, stingra secība, “?” poga, demo animācijas ===== */
 (() => {
   if (window.__VC_TOUR_V11__) return; window.__VC_TOUR_V11__ = 1;
@@ -6648,9 +6653,3 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
 
 
 } // Boot guard end
-
-
-
-
-
-
