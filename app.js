@@ -6493,12 +6493,12 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
     { sel:'#compassContainer', title:'Kompass (pārvieto/mērogo/griez)', body:T.compass, place:'right' },
 
     // BĀZE (vizuāli iezīmējam #compassBase)
-    { sel:'#compassBase', title:'Griezt BĀZI', body:T.base, place:'right',
-      demo:(el)=>demoRotate(el) },
+{ sel:'#compassBase',  title:'Griezt BĀZI',  body:T.base,  place:'right',
+  demo:()=>demoRotate(document.getElementById('compassInner')) },
 
     // SKALA (iezīmējam #compassScale, lai lietotājs saprot atšķirību)
-    { sel:'#compassScale', title:'Griezt SKALU', body:T.scale, place:'right',
-      demo:(el)=>demoRotate(el) },
+{ sel:'#compassScale', title:'Griezt SKALU', body:T.scale, place:'right',
+  demo:()=>demoRotate(document.getElementById('compassScaleInner')) },
 
     // Režīma pogas
     { sel:'#toggleRotationMode', title:'Bāze ⇄ Skala', body:'Pārslēdz, kuru daļu grozīt ar žestiem.', place:'top', optional:true },
@@ -6536,9 +6536,19 @@ if (bc) bc.setAttribute('data-no-gap-fix', '1'); // izmanto jau esošo 'var bc'
   function next(){ if(!running) return; idx++; run(); }
   function prev(){ if(!running) return; idx=Math.max(0,idx-1); run(true); }
 
+
+// app.js — pie ceļveža koda (pirms run)
+function ensureDockOpen(){
+  const bc = qs('#buttonContainer');
+  if (bc && bc.classList.contains('docked')) bc.classList.remove('docked');
+}
+
+
+	
   function run(backwards=false){
     stopDemo();
     if (!running) return;
+	ensureDockOpen();
     if (idx>=STEPS.length){ stop(); return; }
 
     const s = STEPS[idx];
